@@ -1,8 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding assistants (Claude Code, Cursor, Codex) when working with this repository.
 
-> **Note**: Detailed engineering standards are in `.cursor/`. This file is a condensed reference; defer to `.cursor/` files for authoritative rules.
+> **Detailed engineering standards** live in `.cursor/01_engineering_standards.md` through `.cursor/08_frontend_standards.md`. This file is a condensed reference; defer to those files for authoritative rules.
 
 ## Repository Overview
 
@@ -19,15 +19,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 packages/
-├── starboard-core/         # Domain models, prompts, shared types (no dependencies)
-├── starboard-log-parser/   # Log parsing with credential provider framework
+├── starboard-core/         # Domain models, prompts, shared types (no I/O dependencies)
+├── starboard-log-parser/   # Spark event log parsing with credential provider framework
 ├── starboard-server/       # FastAPI backend with multi-agent system
-└── starboard-cli/          # Command-line interface
+├── starboard-cli/          # Command-line interface
+└── starboard-sdk/          # Thin SDK for notebook/programmatic use
 
 frontend/                   # Next.js 16 web UI (React 19, Material UI v7)
 ```
 
-**Dependency flow:** CLI/Server → Core (pure domain logic with no I/O dependencies)
+**Dependency flow:** CLI / Server / SDK → Core (pure domain logic, no I/O)
 
 ## Development Commands
 
@@ -52,7 +53,7 @@ make test-integration   # Integration tests only
 make test-golden        # Golden/snapshot tests
 make test-contract      # API contract tests (backend + frontend)
 make test-coverage      # With coverage report
-make test-parallel      # Parallel execution (faster)
+make test-frontend      # Frontend tests (Jest)
 
 # Run single test file
 cd packages/starboard-server && pytest tests/unit/path/to/test_file.py -v
@@ -66,10 +67,11 @@ pytest -m golden        # Only golden/snapshot tests
 ### Code Quality
 ```bash
 make lint               # Run ruff linter
+make lint-frontend      # Frontend linting (eslint + tsc)
 make type-check         # Run mypy type checking
 make format             # Auto-format code with ruff
 make check              # Run all checks (lint + type + test)
-make pre-commit         # Format + lint + type-check (run before commits)
+make pre-commit         # Run pre-commit hooks
 ```
 
 ### Package Manager
@@ -101,12 +103,12 @@ MultiAgentConversationManager (packages/starboard-server/starboard_server/agents
 - **AgentFactory**: Creates and caches domain agents with specialized prompts/tools
 - **AgentRegistry**: Central registry for agent metadata and capabilities
 
-**Important Architecture Patterns:**
+**Architecture Patterns:**
 - Agents use **continuous reasoning** (no predefined graphs)
-- **Dynamic tool selection** - agents see data before deciding next steps
-- **Adaptive workflows** - agents can change plans based on intermediate results
+- **Dynamic tool selection** — agents see data before deciding next steps
+- **Adaptive workflows** — agents can change plans based on intermediate results
 - **Real-time streaming** with SSE (Server-Sent Events)
-- **Interruptible reasoning** - user can provide context or corrections mid-reasoning
+- **Interruptible reasoning** — user can provide context or corrections mid-reasoning
 
 ### Architectural Layers
 
@@ -114,7 +116,7 @@ MultiAgentConversationManager (packages/starboard-server/starboard_server/agents
 domain/      – pure logic, deterministic, no I/O
 adapters/    – I/O boundaries (LLM SDKs, DB, HTTP, FS)
 agents/      – policies, tool routing, orchestration, conversation management
-app/         – CLI/API/Streamlit/FastAPI entrypoints
+app/         – CLI/API/FastAPI entrypoints
 infra/       – config, logging, DI/wiring, observability
 tools/       – tool implementations with explicit schemas
 ```
@@ -166,98 +168,47 @@ Repository pattern with pluggable storage backends:
 - **Type Safety**: Zod v4 schemas with contract tests
 - **Charts**: Recharts for data visualization
 
-## Engineering Standards
+## Engineering Standards Summary
 
-> **Authoritative source**: `.cursor/01_engineering_standards.md` through `.cursor/07_project_structure_and_tooling.md`
+> **Authoritative source**: `.cursor/01_engineering_standards.md` through `.cursor/08_frontend_standards.md`
 
-### Code Style (Enforced)
+### Code Style
 - **PEP 8** via Ruff (88 char line length)
-- **Type hints required** on all public functions (mypy strict mode)
+- **Type hints required** on all public functions; mypy in CI (`strict = false`, incrementally tightening)
 - **Google-style docstrings** with Args/Returns/Raises/Examples
 - **Pydantic V2** at all boundaries (user input, LLM output, HTTP)
 - **4 parameters max**; else group via dataclass/TypedDict
 - **No boolean flags**; use enums or separate functions
 
-### Error Handling (`.cursor/01_engineering_standards.md`)
+### Error Handling
 - **Fail fast** on invalid inputs/config
-- **Use specific exceptions** (never generic `Exception`)
-- **No bare `except:`**; catch expected types with explicit handling
+- **Specific exceptions** only (never generic `Exception` or bare `except:`)
 - **Context managers** for resources (files, DB connections, HTTP sessions)
-- **Log context + correlation IDs** (trace_id, request_id)
-- **Idempotent retries** with exponential backoff + jitter (max 3 retries)
+- **Idempotent retries** with exponential backoff + jitter (max 3)
 - **Circuit breakers** for external dependencies
+- LLM-specific: rate limits (429) → backoff; timeouts → retry; invalid JSON → repair prompt; moderation → refuse gracefully
 
-**LLM-Specific Error Handling:**
-- Rate limits (429) → backoff + retry
-- Timeouts → retry with extended timeout
-- Invalid JSON → repair prompt or fallback
-- Moderation flags → log + refuse gracefully
+### Observability
+Every log entry must include `trace_id`, `span_id`, `user_id`, `session_id`, `model`, `prompt_version`, `tokens_used`, `latency_ms`, `cost_usd`. Use distributed tracing with child spans for each tool call, LLM call, and retrieval.
 
-### Observability (`.cursor/05_observability_and_cost.md`)
-
-**Every log entry must include:**
-- `trace_id`, `span_id` - distributed tracing
-- `user_id`, `session_id` - user context
-- `model`, `prompt_version` - LLM context
-- `tokens_used`, `latency_ms`, `cost_usd` - cost tracking
-
-**Use structured logging:**
-```python
-logger.info(
-    "llm_call_completed",
-    extra={
-        "trace_id": trace_id,
-        "span_id": span_id,
-        "model": model_name,
-        "prompt_version": "v2",
-        "tokens_used": response.usage.total_tokens,
-        "latency_ms": latency,
-        "cost_usd": cost,
-    },
-)
-```
-
-**Distributed Tracing:**
-- Start a span for agent invocation
-- Use child spans for each tool call, LLM call, and retrieval
-- Include input/output sizes, latency, and errors in span attributes
-
-**Health Endpoints:**
-- `/health/live` – process is alive
-- `/health/ready` – ready to serve traffic and dependencies reachable
-
-### Cost Management (`.cursor/05_observability_and_cost.md`)
-- **Token budgeting**: Measure tokens per call, track rolling totals per user/session, enforce caps
-- **Cost attribution**: Tag every LLM call with `feature`, `agent`, `user_id`, `tenant_id`
-- **Caching strategies**: Semantic cache (5min TTL for tool results, 1hr for metadata)
-- **Circuit breakers**: Implement for expensive or unstable operations
-
-### Security (`.cursor/06_security_and_privacy.md`)
-- **Never commit secrets** - use `.env` + environment variables
-- **Secret scanning** in pre-commit (detect-secrets, gitleaks)
-- **Redact PII in logs** - avoid logging full prompts with sensitive data
-- **Validate all inputs** - Pydantic validation at boundaries
-- **Parameterized queries only** - no SQL injection risk
-- **Safe mode** available (`SAFE_MODE=true`) to disable external calls
-
-### Prompts & Schemas (`.cursor/03_prompts_and_schemas.md`)
-- **Constrain every LLM call** with JSON-mode/function-call schemas
-- **Centralized prompts** under `packages/starboard-server/starboard_server/prompts/`
-- **Versioned prompts**: `PROMPT_VERSION = "1.0.0"` in each prompt module
-- **Golden tests** for prompts (PRs must include diffs)
-- **Default temperatures**: structural/tool calls ≤0.4; creative ≤0.9
-
-### Testing (`.cursor/04_testing_and_evals.md`)
-- **Coverage**: ≥80% overall, **100% for agent policies, schema validators, tool routers**
+### Testing
+- **Coverage**: ≥80% overall, 100% for agent policies, schema validators, tool routers
 - **Golden tests** for prompts (snapshot + structured assertions)
 - **Mock external dependencies**; offline test mode required
-- **Test edge cases**: timeouts, rate limits, retries, invalid JSON, PII in prompts
+- **Use `respx`** for mocking httpx requests in integration tests
 - **Adversarial tests**: prompt injection, malformed inputs, resource exhaustion
 
-### Evaluations (`.cursor/04_testing_and_evals.md`)
-- Maintain `evals/` directory with task suites, golden datasets, evaluation runners
-- Run evals on PRs that touch prompts, schemas, or agents
-- Track: latency (p50/p95/p99), success rate, cost per query, retrieval quality
+### Prompts & Schemas
+- **Constrain every LLM call** with JSON-mode/function-call schemas
+- **Centralized prompts** under `packages/starboard-server/starboard_server/prompts/`
+- **Versioned prompts**: `PROMPT_VERSION = "1.0.0"` in each prompt module; never modify in place
+- **Golden tests** required for all prompt changes
+- **Default temperatures**: structural/tool calls ≤ 0.4; creative ≤ 0.9
+
+### Security
+- Never commit secrets; use `.env` + environment variables
+- Redact PII in logs; validate all inputs with Pydantic
+- Parameterized queries only; `SAFE_MODE=true` to disable external calls
 
 ## Common Development Tasks
 
@@ -290,26 +241,27 @@ logger.info(
 ## Important Files
 
 ### Configuration
-- `pyproject.toml` - Workspace configuration, tool settings
-- `.cursor/` - Complete engineering standards (must read before contributions)
-- `Makefile` - All development commands
-- `examples/env.example` - Environment variable template
-
-### Documentation
-- `docs/ARCHITECTURE.md` - System architecture deep dive
-- `docs/QUICKSTART.md` - Getting started guide
-- `docs/RUNBOOK.md` - Operational runbook
-- `docs/TOOL_ARCHITECTURE.md` - Tool system design
-- `docs/INTERRUPTIBLE_REASONING.md` - Agent reasoning patterns
+- `pyproject.toml` — Workspace configuration, tool settings (ruff, mypy, pytest, coverage)
+- `.cursor/` — Detailed engineering standards (7 files)
+- `Makefile` — All development commands
+- `examples/env.example` — Environment variable template
 
 ### Key Source Files
-- `packages/starboard-server/starboard_server/agents/conversation/multi_agent_manager.py` - Main orchestrator
-- `packages/starboard-server/starboard_server/agents/routing/intent_router.py` - Request routing
-- `packages/starboard-server/starboard_server/agents/domain/domain_agent.py` - Base domain agent
-- `packages/starboard-server/starboard_server/agents/agent_factory.py` - Agent creation and caching
-- `packages/starboard-server/starboard_server/prompts/` - Domain-specific prompts
-- `packages/starboard-server/starboard_server/tools/` - Tool implementations
-- `packages/starboard-server/starboard_server/infra/reliability/circuit_breaker.py` - Circuit breaker pattern
+- `packages/starboard-server/starboard_server/agents/conversation/multi_agent_manager.py` — Main orchestrator
+- `packages/starboard-server/starboard_server/agents/routing/intent_router.py` — Request routing
+- `packages/starboard-server/starboard_server/agents/domain/domain_agent.py` — Base domain agent
+- `packages/starboard-server/starboard_server/agents/agent_factory.py` — Agent creation and caching
+- `packages/starboard-server/starboard_server/prompts/` — Domain-specific prompts
+- `packages/starboard-server/starboard_server/tools/` — Tool implementations
+- `packages/starboard-server/starboard_server/infra/reliability/circuit_breaker.py` — Circuit breaker pattern
+
+### Documentation
+- `docs/` — MkDocs documentation site (build with `make docs`)
+- `docs/ARCHITECTURE.md` — System architecture deep dive
+- `docs/QUICKSTART.md` — Getting started guide
+- `docs/RUNBOOK.md` — Operational runbook
+- `docs/TOOL_ARCHITECTURE.md` — Tool system design
+- `docs/INTERRUPTIBLE_REASONING.md` — Agent reasoning patterns
 
 ## Anti-Patterns to Avoid
 
@@ -317,8 +269,7 @@ logger.info(
 - Modify prompts in place (always version: V1 → V2 → V3)
 - Skip golden tests when changing prompts
 - Use boolean flags (use enums instead)
-- Catch-and-ignore exceptions
-- Use bare `except:` without specific exception types
+- Catch-and-ignore exceptions or use bare `except:`
 - Block async event loop with sync I/O
 - Log PII or secrets
 - Hardcode configuration values
@@ -330,7 +281,7 @@ logger.info(
 
 ## Common Pitfalls
 
-1. **Running tests without test dependencies**: Run `make install-test` first
+1. **Running tests without test dependencies**: Run `make setup` or `make install-dev` first
 2. **Missing environment variables**: Copy `examples/env.example` to `.env`
 3. **Forgetting to activate venv**: Use `make` commands which handle this
 4. **Not versioning prompts**: Always create V2, V3... never modify existing versions
@@ -343,17 +294,8 @@ logger.info(
 - Main branch: `main`
 - Feature branches: `feature/description`
 - Create PRs against `main`
-- **Pre-commit checks**: `make pre-commit` (format + lint + type-check)
-- **CI requirements**: All tests pass, coverage ≥80%, no type errors, no security issues, golden tests pass, eval smoke tests pass
-
-## Performance Notes
-
-- Use **Polars** for data processing (10x faster than Pandas)
-- Connection pooling for all external services
-- Virtual scrolling in frontend for long conversations
-- Message compression (30-50% reduction)
-- Horizontal scaling: Multiple backend instances
-- Circuit breakers: Fail fast on external errors
+- **Pre-commit checks**: `make pre-commit` (runs pre-commit hooks)
+- **CI requirements**: All tests pass, coverage ≥ 80%, no type errors, golden tests pass
 
 ## Production Readiness Checklist
 

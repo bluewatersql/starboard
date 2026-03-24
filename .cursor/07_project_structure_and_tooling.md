@@ -20,7 +20,7 @@ project/
 - evals/  
 - docs/  
 - scripts/  
-- build & env files (pyproject.toml, lockfiles, Dockerfile, docker-compose.yml, .env.example, etc.)
+- build & env files (pyproject.toml, uv.lock, Makefile, .env.example, Dockerfile, etc.)
 
 ---
 
@@ -49,27 +49,24 @@ MUST: Never insert secrets directly; use environment variables and document them
 MUST: Use small, focused commits with clear messages (Conventional Commits or similar).  
 MUST: Use feature branches; PRs must pass at least:
 - Formatting (Ruff)  
-- Linting (Ruff, mypy/pyright)  
+- Linting (Ruff, mypy)  
 - Tests (pytest with coverage targets)  
 - Golden tests for prompts  
-- Eval smoke tests for key agents  
-- Security scans (pip-audit, detect-secrets)
 
 MUST: Exclude typical build artifacts and secrets from version control (pycache, .env, logs, local data, etc.).  
-MUST: CI should publish coverage and basic eval results and block merges on serious regressions or security issues.
+MUST: CI should publish coverage and block merges on serious regressions.
 
 ---
 
 ## Developer Experience
 
 MUST: Provide a local dev setup:
-- docker-compose with mock services where needed  
 - .env.example documenting all required variables  
 - a simple bootstrap command (e.g., make setup)  
 
 SHOULD: Support hot-reload for prompt changes and configuration where feasible.  
 SHOULD: Provide a small playground/REPL for testing agents interactively.  
-SHOULD: Use pre-commit hooks for formatting, linting, typing, and secret scanning.
+SHOULD: Use pre-commit hooks for formatting and linting.
 
 ---
 
@@ -79,5 +76,4 @@ MUST: Implement graceful degradation (fallbacks, cached responses, feature flags
 MUST: Implement circuit breakers and health checks for critical dependencies.  
 MUST: Have a clear rollback path for prompt and agent changes.  
 
-SHOULD: Use blue-green or canary patterns for rolling out high-impact changes.  
-SHOULD: Maintain runbooks in docs/runbooks/ for common incidents (high latency, cost spikes, LLM outages, data issues, security incidents).
+SHOULD: Use blue-green or canary patterns for rolling out high-impact changes.

@@ -1,69 +1,36 @@
-# Python AI Agent Engineering Standards – Global Rules
+# Cursor Workspace Rules – Starboard AI Agent
 
-These rules apply to ALL files. More detailed, domain-specific rules live in the `.cursor/` directory.
+> Full project context is in `CLAUDE.md`. Detailed engineering standards are in `.cursor/01-08*.md`.
+> These rules govern **Cursor-specific behavior only** to avoid duplicating those files.
 
 ---
 
-# High Priority Rules (Cursor)
+## Change Management
 
 - Make the smallest, safest change that satisfies the request.
-- Do not restructure the project (move/rename files or folders) unless I explicitly ask.
-- Write all change docs, summarys, hand offs, architecture & design specs to the /changes folder
-- When adding new code, always:
-  - Add/adjust tests in `tests/`.
-  - Use typed, documented functions.
-  - Wire observability and token/cost tracking where relevant.
+- Do not restructure the project (move/rename files or folders) unless explicitly asked.
+- Write change docs, summaries, hand-offs, architecture and design specs to the `changes/` folder.
+- Propose minimal diffs; preserve public APIs unless a spec change requires otherwise.
+- Never insert secrets directly; use environment variables and document them in `examples/env.example`.
 
----
+## When Adding New Code
 
-## Core Principles
+- Add or adjust tests in the appropriate `tests/` directory.
+- Use typed, documented functions (type hints + Google-style docstrings).
+- Wire observability (structured logging with trace_id, span_id) and token/cost tracking where relevant.
+- Use Pydantic models or TypedDicts for AI input/output validation.
+- Prefer async implementations; never block the event loop with sync I/O.
 
-**MUST**: Prefer simple, readable code; avoid cleverness.  
-**MUST**: Single responsibility per function/module; compose over inherit.  
-**MUST**: Deterministic by default (seed RNGs, stable configs); make nondeterminism explicit.  
-**MUST**: Explicit > implicit. No hidden globals or side effects.  
-**MUST**: Treat prompts and schemas as first-class artifacts (versioned, tested).  
+## References
 
-**SHOULD**: Document architectural decisions affecting agent behavior or prompt strategies.
-
----
-
-## Code Style
-
-**MUST**: Enforce PEP 8 with Ruff (line length 88, imports, lint, complexity).  
-**MUST**: Type hints required on all public functions/classes; run mypy or pyright in CI.  
-**MUST**: Google-style docstrings on public symbols (Args / Returns / Raises / Examples).  
-**MUST**: Descriptive names only; avoid ambiguous abbreviations.  
-
-**SHOULD**: Use @override decorator from typing (Python 3.12+) when implementing protocols.
-
----
-
-## Architecture & Layers
-
-Project layout (conceptual):
-
-domain/      – pure logic, deterministic, no I/O  
-adapters/    – I/O boundaries (LLM SDKs, DB, HTTP, FS)  
-agents/      – policies, tool routing, orchestration, conversation management  
-app/         – CLI/API/Streamlit/FastAPI entrypoints  
-infra/       – config, logging, DI/wiring, observability  
-tools/       – tool implementations with explicit schemas  
-
-MUST: Dependency injection for all external services (LLM clients, stores, clocks).  
-MUST: Pure functions in domain; side effects only in adapters.  
-MUST: Configuration via env or files; never hardcode secrets or environment specifics.  
-MUST: Separate prompting from tool calls; schemas live at boundaries.  
-
-SHOULD: Prefer immutable data (dataclasses(frozen=True), NamedTuple, tuple).  
-SHOULD: Agent state machines for multi-turn conversations (explicit states vs. implicit message lists).
-
-More detailed rules live in:
-
-- .cursor/01_engineering_standards.md  
-- .cursor/02_agents_and_architecture.md  
-- .cursor/03_prompts_and_schemas.md  
-- .cursor/04_testing_and_evals.md  
-- .cursor/05_observability_and_cost.md  
-- .cursor/06_security_and_privacy.md  
-- .cursor/07_project_structure_and_tooling.md
+| What | Where |
+|------|-------|
+| Project overview, architecture, commands, key files | `CLAUDE.md` |
+| Engineering standards (code style, errors, data structures) | `.cursor/01_engineering_standards.md` |
+| Agent architecture, multi-agent coordination, RAG | `.cursor/02_agents_and_architecture.md` |
+| Prompt design, schemas, golden tests | `.cursor/03_prompts_and_schemas.md` |
+| Testing strategy, evaluations, coverage targets | `.cursor/04_testing_and_evals.md` |
+| Observability, cost management, performance | `.cursor/05_observability_and_cost.md` |
+| Security, privacy, PII handling | `.cursor/06_security_and_privacy.md` |
+| Project structure, tooling, CI/CD, DX | `.cursor/07_project_structure_and_tooling.md` |
+| Frontend (Next.js, React, MUI, state, testing) | `.cursor/08_frontend_standards.md` |

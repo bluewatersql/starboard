@@ -146,7 +146,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["starboard_core", "starboard_log_parser", "starboard_server", "starboard_cli"]
+source = ["starboard_core", "starboard_log_parser", "starboard_server", "starboard_cli", "starboard_sdk"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",

@@ -18,12 +18,12 @@ SHOULD: Add regression tests to assert agent behavior remains stable across refa
 
 ## Evaluation & Monitoring
 
-MUST: Maintain an evals/ directory with:
+SHOULD: Maintain an evals/ directory with:
 - Task suites (accuracy, robustness, safety, latency)  
 - Golden datasets (input/expected output pairs)  
-- Evaluation runners (batch, CI, nightly)
+- Evaluation runners (batch, nightly)
 
-MUST: Run evals on PRs that touch prompts, schemas, or agents; block merge on significant regressions.  
+SHOULD: Run evals when touching prompts, schemas, or agents to detect regressions.  
 
 SHOULD: Track metrics such as:
 - Latency (p50, p95, p99 per agent/tool)  

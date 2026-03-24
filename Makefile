@@ -15,7 +15,8 @@ PACKAGE_MANAGER := $(shell command -v uv >/dev/null 2>&1 && echo "uv" || echo "p
 PY_PACKAGES := packages/starboard-core/starboard_core \
                packages/starboard-log-parser/starboard_log_parser \
                packages/starboard-server/starboard_server \
-               packages/starboard-cli/starboard_cli
+               packages/starboard-cli/starboard_cli \
+               packages/starboard-sdk/starboard_sdk
 PY_TESTS := packages/*/tests tests
 
 # Colors
@@ -96,10 +97,12 @@ install:
 	@if [ "$(PACKAGE_MANAGER)" = "uv" ]; then \
 		uv sync && \
 		uv pip install -e packages/starboard-core -e packages/starboard-log-parser \
-		              -e packages/starboard-server -e packages/starboard-cli; \
+		              -e packages/starboard-server -e packages/starboard-cli \
+		              -e packages/starboard-sdk; \
 	else \
 		pip install -e packages/starboard-core -e packages/starboard-log-parser \
-		            -e packages/starboard-server -e packages/starboard-cli; \
+		            -e packages/starboard-server -e packages/starboard-cli \
+		            -e packages/starboard-sdk; \
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
 
@@ -110,12 +113,14 @@ install-dev:
 		uv pip install -e "packages/starboard-core[test]" \
 		              -e "packages/starboard-log-parser[test,databricks,http]" \
 		              -e "packages/starboard-server[test,dev]" \
-		              -e "packages/starboard-cli[test]"; \
+		              -e "packages/starboard-cli[test]" \
+		              -e "packages/starboard-sdk[test]"; \
 	else \
 		pip install -e "packages/starboard-core[test]" \
 		            -e "packages/starboard-log-parser[test,databricks,http]" \
 		            -e "packages/starboard-server[test,dev]" \
-		            -e "packages/starboard-cli[test]"; \
+		            -e "packages/starboard-cli[test]" \
+		            -e "packages/starboard-sdk[test]"; \
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
 
@@ -131,11 +136,12 @@ install-frontend:
 
 verify:
 	@echo "$(BLUE)Verifying installation...$(NC)"
-	@python -c "import sys; assert sys.version_info >= (3, 11)" && echo "$(GREEN)✓ Python 3.11+$(NC)"
+	@python -c "import sys; assert sys.version_info >= (3, 12)" && echo "$(GREEN)✓ Python 3.12+$(NC)"
 	@python -c "import starboard_core" && echo "$(GREEN)✓ starboard-core$(NC)"
 	@python -c "import starboard_log_parser" && echo "$(GREEN)✓ starboard-log-parser$(NC)"
 	@python -c "import starboard_server" && echo "$(GREEN)✓ starboard-server$(NC)"
 	@python -c "import starboard_cli" && echo "$(GREEN)✓ starboard-cli$(NC)"
+	@python -c "import starboard_sdk" && echo "$(GREEN)✓ starboard-sdk$(NC)"
 
 # ================================
 # Development Servers
@@ -305,12 +311,14 @@ build:
 		uv build packages/starboard-core && \
 		uv build packages/starboard-log-parser && \
 		uv build packages/starboard-server && \
-		uv build packages/starboard-cli; \
+		uv build packages/starboard-cli && \
+		uv build packages/starboard-sdk; \
 	else \
 		cd packages/starboard-core && python -m build && \
 		cd ../starboard-log-parser && python -m build && \
 		cd ../starboard-server && python -m build && \
-		cd ../starboard-cli && python -m build; \
+		cd ../starboard-cli && python -m build && \
+		cd ../starboard-sdk && python -m build; \
 	fi
 	@echo "$(GREEN)✓ Build complete$(NC)"
 

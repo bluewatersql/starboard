@@ -1,280 +1,161 @@
 # Starboard AI Agent
 
-[![Coverage](https://img.shields.io/badge/coverage-49%25-yellow.svg)](./htmlcov/index.html)
-[![Tests](https://img.shields.io/badge/tests-3%2C269%20passed-brightgreen.svg)](./tests)
-[![Agents](https://img.shields.io/badge/agents-100%25_native-brightgreen.svg)](./changes/test_coverage/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
-[![Frontend](https://img.shields.io/badge/frontend-518%20tests-blue.svg)](./frontend)
+[![Frontend](https://img.shields.io/badge/frontend-Next.js_16-black.svg)](./frontend)
+[![Package Manager](https://img.shields.io/badge/pkg_manager-uv-purple.svg)](https://github.com/astral-sh/uv)
 
 AI-powered Databricks workload analysis and optimization platform.
 
 ## Overview
 
 Starboard AI Agent is a multi-package monorepo providing:
-- **Query Optimization**: AI-driven SQL query analysis and recommendations
-- **Job Optimization**: Databricks job performance analysis
-- **Pipeline Optimization**: Data pipeline lineage and optimization
-- **Real-time Streaming**: Live agent reasoning and tool execution
-- **Interruptible Reasoning**: User-in-the-loop interrupts and replanning
-- **Conversation Patterns**: Multi-turn conversations with intelligent routing and feedback
+- **Query Optimization** — AI-driven SQL query analysis and recommendations
+- **Job Optimization** — Databricks job performance analysis and tuning
+- **Unity Catalog** — Metadata, lineage, governance, and storage optimization
+- **Cluster Analysis** — Configuration and performance optimization
+- **FinOps Analytics** — Cost analysis, billing, budget forecasting, usage trends
+- **Warehouse Optimization** — SQL warehouse portfolio analysis
+- **Diagnostics** — Troubleshooting, debugging, and root cause analysis
+- **Real-time Streaming** — Live agent reasoning and tool execution via SSE
+- **Interruptible Reasoning** — User-in-the-loop interrupts and replanning
 
 ## Architecture
 
-This is a **multi-package monorepo** with the following packages:
+### Package Structure
 
 ```
 packages/
-├── starboard-core/      # Core domain models, prompts, shared types
-├── starboard-server/    # FastAPI backend server
-└── starboard-cli/       # Command-line interface
-frontend/                # Next.js web UI
-```
+├── starboard-core/         # Domain models, prompts, shared types (no I/O deps)
+├── starboard-log-parser/   # Spark event log parsing with credential providers
+├── starboard-server/       # FastAPI backend with multi-agent system
+├── starboard-cli/          # Command-line interface
+└── starboard-sdk/          # Thin SDK for notebook/programmatic use
 
-### Package Details
+frontend/                   # Next.js 16 web UI (React 19, Material UI v7)
+```
 
 | Package | Description | Dependencies |
 |---------|-------------|--------------|
 | **starboard-core** | Pure domain logic, prompts, types | None (core) |
-| **starboard-server** | FastAPI backend, agents, tools | starboard-core |
-| **starboard-cli** | CLI application | starboard-core |
+| **starboard-log-parser** | Spark event log parsing | starboard-core |
+| **starboard-server** | FastAPI backend, agents, tools | starboard-core, starboard-log-parser |
+| **starboard-cli** | CLI application | starboard-core, starboard-server |
+| **starboard-sdk** | Programmatic SDK for notebooks | starboard-core, starboard-server |
 | **frontend** | Next.js web interface | REST API client |
 
+### Multi-Agent System
+
+```
+MultiAgentConversationManager
+├── IntentRouter        → Classifies intent, routes to specialist
+├── QueryAgent          → SQL optimization and analysis
+├── JobAgent            → Job performance tuning
+├── UCAgent             → Unity Catalog governance
+├── ClusterAgent        → Cluster configuration
+├── AnalyticsAgent      → FinOps cost analysis
+├── WarehouseAgent      → Warehouse portfolio optimization
+└── DiagnosticAgent     → Troubleshooting and RCA
+```
+
+### Architectural Layers
+
+```
+domain/      – pure logic, deterministic, no I/O
+adapters/    – I/O boundaries (LLM SDKs, DB, HTTP, FS)
+agents/      – policies, tool routing, orchestration
+app/         – CLI/API/FastAPI entrypoints
+infra/       – config, logging, DI/wiring, observability
+tools/       – tool implementations with explicit schemas
+```
+
 ## Quick Start
-
-### First-Time Setup
-
-```bash
-# Bootstrap the development environment
-make setup
-
-# This will:
-# - Create virtual environment (.venv)
-# - Install all packages with test dependencies
-# - Verify installation is working
-```
-
-### Environment Configuration
-
-```bash
-# Copy example environment file
-cp examples/env.example .env
-
-# Edit .env and configure:
-# - DATABRICKS_HOST: Your Databricks workspace URL
-# - DATABRICKS_TOKEN: Databricks access token
-# - OPENAI_API_KEY: OpenAI API key
-```
-
-### Development
-
-```bash
-# Start the backend server
-make dev-server
-# Server runs on http://localhost:8000
-# API docs at http://localhost:8000/docs
-
-# Start the frontend (in another terminal)
-make dev-frontend
-# Frontend runs on http://localhost:3000
-
-# Or start both together
-make dev
-```
-
-### Testing
-
-```bash
-# Run all tests
-make test
-
-# Run only unit tests
-make test-unit
-
-# Run with coverage report
-make test-coverage
-
-# Run tests in parallel (faster)
-make test-parallel
-```
-
-### Code Quality
-
-```bash
-# Format code
-make format
-
-# Run linter
-make lint
-
-# Run type checking
-make type-check
-
-# Run all checks (format + lint + type + test)
-make check
-```
-
-### Using the CLI
-
-```bash
-# Optimize a query
-starboard query --sql "SELECT * FROM large_table WHERE date > '2024-01-01'"
-
-# Optimize a job
-starboard job --job-id 12345 --mode offline
-
-# Analyze a pipeline
-starboard pipeline --table catalog.schema.table
-```
-
-### Common Commands
-
-```bash
-make help            # Show all available commands
-make info            # Show environment information
-make verify-install  # Verify installation is working
-make clean           # Remove cache files
-```
-
-### Using the Web UI
-
-```bash
-# Start the Next.js web interface
-cd frontend
-npm install
-npm run dev
-
-# Open browser to http://localhost:3000
-# See frontend/docs/QUICKSTART.md for detailed setup
-```
-
-## Development
 
 ### Prerequisites
 
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
+- Node.js 18+ (for frontend)
 
 ### Setup
 
 ```bash
-# Clone repository
-git clone <repo-url>
-cd job-agent
+# Bootstrap the development environment
+make setup
 
-# Install with uv (recommended)
-uv sync
-
-# Or with pip
-pip install -e "packages/starboard-core[test]"
-pip install -e "packages/starboard-server[dev,test]"
-pip install -e "packages/starboard-cli[test]"
+# Configure environment
+cp examples/env.example .env
+# Edit .env with your Databricks and OpenAI credentials
 ```
 
-### Running Tests
+### Development
 
 ```bash
-# Run all tests
-uv run pytest
+# Start backend + frontend together
+make dev
 
-# Test specific package
-uv run pytest packages/starboard-server/tests/
+# Or individually:
+make dev-server         # Backend at http://localhost:8000 (API docs at /docs)
+make dev-frontend       # Frontend at http://localhost:3000
 
-# Run with coverage
-uv run pytest --cov=starboard_core --cov=starboard_server
+# Stop all dev servers
+make dev-stop
+```
+
+### Testing
+
+```bash
+make test               # All tests (unit + integration)
+make test-unit          # Unit tests only
+make test-integration   # Integration tests
+make test-golden        # Golden/snapshot tests
+make test-contract      # API contract tests (backend + frontend)
+make test-coverage      # With coverage report
+make test-frontend      # Frontend tests (Jest)
 ```
 
 ### Code Quality
 
 ```bash
-# Format code
-uv run ruff format packages/
-
-# Lint
-uv run ruff check packages/
-
-# Type check
-uv run mypy packages/
+make format             # Auto-format code (ruff)
+make lint               # Python linting (ruff)
+make lint-frontend      # Frontend linting (eslint + tsc)
+make type-check         # Python type checking (mypy)
+make check              # All checks (lint + type + test)
+make pre-commit         # Run pre-commit hooks
 ```
 
-### Package-Specific Commands
+### CLI Usage
 
 ```bash
-# Server development
-cd packages/starboard-server
-uvicorn starboard_server.main:app --reload
-
-# Web UI development
-cd frontend
-npm run dev
-
-# Run CLI locally
-cd packages/starboard-cli
-python -m starboard_cli.cli.main query --sql "SELECT 1"
+starboard query --sql "SELECT * FROM large_table WHERE date > '2024-01-01'"
+starboard job --job-id 12345 --mode offline
+starboard pipeline --table catalog.schema.table
 ```
 
 ## Project Structure
 
 ```
 job-agent/
-├── pyproject.toml              # Root workspace config
+├── pyproject.toml              # Root workspace config (uv, ruff, mypy, pytest)
 ├── uv.lock                     # Unified lockfile
-├── README.md                   # This file
-├── docs/                       # Documentation
-│   ├── QUICKSTART.md
-│   ├── ARCHITECTURE.md
-│   ├── API_REFERENCE.md
-│   ├── CONFIGURATION.md
-│   ├── DEPLOYMENT.md
-│   └── RUNBOOK.md
-├── packages/                   # Package source code
+├── Makefile                    # Development workflow commands
+├── CLAUDE.md                   # AI assistant project context
+├── .cursorrules                # Cursor workspace behavior rules
+├── .cursor/                    # Detailed engineering standards (8 files)
+├── packages/                   # Python packages
 │   ├── starboard-core/
-│   │   ├── pyproject.toml
-│   │   ├── starboard_core/
-│   │   ├── tests/
-│   │   └── README.md
+│   ├── starboard-log-parser/
 │   ├── starboard-server/
-│   │   ├── pyproject.toml
-│   │   ├── starboard_server/
-│   │   ├── tests/
-│   │   ├── Dockerfile
-│   │   └── README.md
-│   └── starboard-cli/
-├── frontend/                   # Next.js web UI
+│   ├── starboard-cli/
+│   └── starboard-sdk/
+├── frontend/                   # Next.js 16 web UI
+├── docs/                       # MkDocs documentation site
+├── tests/                      # Cross-package tests (contract, golden, integration)
+├── evals/                      # Evaluation assets
 ├── scripts/                    # Dev/ops scripts
-└── examples/                   # Usage examples
+├── examples/                   # Usage examples and env template
+└── changes/                    # Change docs, design specs, hand-offs
 ```
-
-## Documentation
-
-### Getting Started
-- **[Quick Start](docs/QUICKSTART.md)** - Get up and running in 5 minutes
-- **[Configuration](docs/CONFIGURATION.md)** - Configuration guide
-- **[Frontend Quick Start](frontend/docs/QUICKSTART.md)** - Web UI setup guide
-
-### Architecture & Design
-- **[System Architecture](docs/ARCHITECTURE.md)** - Complete system design
-- **[API Reference](docs/API_REFERENCE.md)** - REST & Chat APIs
-- **[Tool Architecture](docs/TOOL_ARCHITECTURE.md)** - Tool system design
-- **[Frontend Architecture](docs/FRONTEND_ARCHITECTURE.md)** - Frontend patterns and best practices
-- **[Interruptible Reasoning](docs/INTERRUPTIBLE_REASONING.md)** - Agent reasoning and interrupts
-- **[Conversation Patterns](docs/conversation-patterns/README.md)** - Multi-turn conversation system (Phases 1-4)
-- **[Future Patterns](docs/futures/README.md)** - Proposed enhancements (Phases 5-8)
-
-### Operations
-- **[Deployment](docs/DEPLOYMENT.md)** - Production deployment guide
-- **[Runbook](docs/RUNBOOK.md)** - Operational procedures
-- **[Testing](docs/TESTING.md)** - Testing strategies
-- **[Test Coverage Strategy](docs/TEST_COVERAGE_STRATEGY.md)** - Coverage improvement roadmap
-
-### Project History
-- **[Changelog](CHANGELOG.md)** - Release notes and version history
-- **[Refactoring History](docs/REFACTORING_HISTORY.md)** - Major refactoring initiative (Sprints 1-11)
-
-### Package Documentation
-- [starboard-core](packages/starboard-core/README.md) - Core domain models
-- [starboard-server](packages/starboard-server/README.md) - Backend server
-- [starboard-cli](packages/starboard-cli/README.md) - CLI usage
-- [frontend](frontend/README.md) - Next.js web UI
 
 ## Configuration
 
@@ -304,167 +185,79 @@ See [examples/env.example](examples/env.example) for full configuration options.
 
 ### Databricks Asset Bundles (Recommended)
 
-Deploy to Databricks with auto-scaling, integrated auth, and monitoring:
-
 ```bash
-# Quick deploy to development
-./scripts/databricks_deploy.sh dev
-
-# Deploy to production
-./scripts/databricks_deploy.sh prod
+./scripts/databricks_deploy.sh dev    # Deploy to development
+./scripts/databricks_deploy.sh prod   # Deploy to production
 ```
 
-**📚 Guides:**
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - All deployment options including Databricks
+See [Deployment Guide](docs/DEPLOYMENT.md) for all deployment options.
 
-### Docker Compose (Self-hosted)
+## Documentation
 
-```bash
-# Build and run with Docker Compose
-docker-compose up -d
+### Getting Started
+- [Quick Start](docs/QUICKSTART.md) — Get up and running
+- [Configuration](docs/CONFIGURATION.md) — Configuration guide
 
-# Or build for Databricks
-docker build -f Dockerfile.databricks -t starboard-agent .
-```
+### Architecture & Design
+- [System Architecture](docs/ARCHITECTURE.md) — Complete system design
+- [API Reference](docs/API_REFERENCE.md) — REST & Chat APIs
+- [Tool Architecture](docs/TOOL_ARCHITECTURE.md) — Tool system design
+- [Frontend Architecture](docs/FRONTEND_ARCHITECTURE.md) — Frontend patterns
+- [Interruptible Reasoning](docs/INTERRUPTIBLE_REASONING.md) — Agent reasoning patterns
 
-### Deployment Options
+### Operations
+- [Deployment](docs/DEPLOYMENT.md) — Production deployment guide
+- [Runbook](docs/RUNBOOK.md) — Operational procedures
+- [Testing](docs/TESTING.md) — Testing strategies
 
-| Option | Best For | Complexity | Auto-scaling |
-|--------|----------|------------|--------------|
-| **Databricks Apps** | Production | Low | ✅ Yes |
-| **Docker Compose** | Development/Self-hosted | Low | ❌ Manual |
-| **Kubernetes** | Enterprise | High | ✅ Yes |
+### Package Documentation
+- [starboard-core](packages/starboard-core/README.md)
+- [starboard-log-parser](packages/starboard-log-parser/README.md)
+- [starboard-server](packages/starboard-server/README.md)
+- [starboard-cli](packages/starboard-cli/README.md)
+- [starboard-sdk](packages/starboard-sdk/README.md)
+- [frontend](frontend/README.md)
 
-## Testing & Quality
-
-The project has comprehensive test coverage ensuring production readiness:
-
-### Coverage Metrics
-
-| Package | Tests | Coverage |
-|---------|-------|----------|
-| **starboard-server** | 1,489 | 49% |
-| **starboard-core** | 115 | 97% |
-| **starboard-cli** | 53 | 75% |
-| **frontend** | 518 | 51% |
-| **root tests** | 1,762 | - |
-
-- **Total Tests**: 3,269+ passing (100% pass rate)
-- **Core Domain**: 97% coverage
-- **Multi-Agent Framework**: 85%+ coverage
-- **Critical Paths**: 100% coverage (safety, events, checkpoints)
-
-### Test Suite Breakdown
-- **Tier 1 (Critical)**: ~500 tests, 95%+ coverage
-  - Safety & PII redaction
-  - Event streaming
-  - Checkpoint system
-  - Error recovery
-  - Intent routing
-  - Agent factory & configuration
-
-- **Tier 2 (High-Impact)**: ~700 tests, 85%+ coverage
-  - Configuration management
-  - State management
-  - Routing decisions
-  - Tool registry & factory
-  - Domain prompts
-  - Multi-agent coordination
-
-- **Tier 3 (Comprehensive)**: ~600 tests, 75%+ coverage
-  - Shared context
-  - Replan logic
-  - Metrics & monitoring
-  - LLM response handling
-  - Service integrations
-
-### Running Tests
-
-#### Quick Start - Install Test Dependencies
+### Full Documentation Site
 
 ```bash
-# One-time setup: Install test dependencies
-make install-test
-
-# Or use the setup script directly
-bash scripts/setup_testing.sh
+make docs-serve         # Serve docs at http://localhost:8000
 ```
-
-#### Run Tests
-
-```bash
-# Using Makefile (recommended)
-make test                # Run all tests
-make test-unit           # Run unit tests only
-make test-integration    # Run integration tests only
-make test-coverage       # Run with coverage report
-make test-parallel       # Run tests in parallel (faster)
-
-# Or run pytest directly
-cd packages/starboard-server
-pytest tests/unit/ -v                    # Unit tests
-pytest tests/integration/ -v             # Integration tests
-pytest tests/ --cov=starboard_server     # With coverage
-pytest tests/ -n auto                    # Parallel execution
-
-# View coverage report
-open htmlcov/index.html
-```
-
-#### Code Quality
-
-```bash
-# Run all quality checks
-make check               # Lint + type-check + tests
-
-# Individual checks
-make lint                # Run ruff linter
-make type-check          # Run mypy type checking
-make format              # Auto-format code
-```
-
-For detailed testing documentation, see [TESTING.md](docs/TESTING.md).
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests (`uv run pytest`)
-5. Ensure coverage doesn't decrease
-6. Format code (`uv run ruff format packages/`)
-7. Commit changes (`git commit -m 'Add amazing feature'`)
-8. Push to branch (`git push origin feature/amazing-feature`)
-9. Open a Pull Request
 
 ## Engineering Standards
 
-This project follows strict Python engineering standards documented in the repository rules. Key principles:
+This project follows strict Python engineering standards documented in `.cursor/`:
 
 - **Simple, readable code** over cleverness
-- **Type hints** on all public functions
+- **Type hints** on all public functions (mypy)
 - **Pydantic validation** at all boundaries
-- **Structured logging** with trace IDs
-- **Golden tests** for prompts
-- **Domain-driven design** with clear layers
+- **Structured logging** with trace IDs and cost tracking
+- **Golden tests** for all prompts (versioned, never modified in place)
+- **Domain-driven design** with clear architectural layers
 
-See engineering standards document for full details.
+See [CLAUDE.md](CLAUDE.md) for a detailed summary or `.cursor/` for the full standards.
+
+## Contributing
+
+1. Create a feature branch (`git checkout -b feature/description`)
+2. Make changes following the engineering standards
+3. Add/update tests (`make test`)
+4. Format and lint (`make format && make lint`)
+5. Run type checks (`make type-check`)
+6. Run pre-commit hooks (`make pre-commit`)
+7. Commit with a clear message
+8. Open a Pull Request against `main`
 
 ## License
 
 MIT
 
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/starboard-ai/job-agent/issues)
-- **Documentation**: [docs/](docs/)
-- **Examples**: [examples/](examples/)
-
 ## Acknowledgments
 
 Built with:
-- [FastAPI](https://fastapi.tiangolo.com/) - Backend framework
-- [Dash](https://dash.plotly.com/) - Web UI framework
-- [OpenAI](https://github.com/openai/openai-python) - LLM client and tool calling
-- [Databricks SDK](https://github.com/databricks/databricks-sdk-py) - Databricks integration
-- [OpenAI](https://openai.com/) - LLM provider
+- [FastAPI](https://fastapi.tiangolo.com/) — Backend framework
+- [Next.js](https://nextjs.org/) — Frontend framework
+- [Material UI](https://mui.com/) — UI component library
+- [OpenAI](https://openai.com/) — LLM provider
+- [Databricks SDK](https://github.com/databricks/databricks-sdk-py) — Databricks integration
+- [uv](https://github.com/astral-sh/uv) — Package management

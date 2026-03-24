@@ -58,10 +58,25 @@ MUST: Handle these LLM-specific errors explicitly:
 
 ---
 
+## Type Checking
+
+MUST: Type hints required on all public functions/classes.  
+MUST: Run mypy in CI via `make type-check`.  
+
+Current configuration (`pyproject.toml`):
+- `strict = false` — incrementally tightening; goal is strict mode once legacy issues are resolved.  
+- `check_untyped_defs = true` — type-checks function bodies even without annotations.  
+- Pydantic mypy plugin enabled.  
+- Several modules have `ignore_missing_imports` or `ignore_errors` overrides for legacy/third-party code.  
+
+SHOULD: Use `@override` decorator from `typing` (Python 3.12+) when implementing protocols.  
+SHOULD: When adding new modules, aim for mypy-strict-compatible annotations from the start.
+
+---
+
 ## Dependencies
 
 MUST: Minimize deps; prefer stdlib. Pin in pyproject.toml and lockfile.  
-MUST: Security checks in CI (pip-audit / OSV); allow Dependabot/Renovate.  
 SHOULD: Prefer async SDKs where available (aiohttp, httpx); never block event loops.  
 SHOULD: Use Polars unless a documented gap requires Pandas.
 
