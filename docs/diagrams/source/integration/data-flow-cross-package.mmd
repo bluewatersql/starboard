@@ -1,0 +1,57 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant Frontend as Frontend<br/>(Next.js)
+    participant API as Server API<br/>(FastAPI)
+    participant Agent as Multi-Agent<br/>System (Server)
+    participant Core as Core Models<br/>(starboard-core)
+    participant Tools as Tools<br/>(Server)
+    participant LogParser as Log Parser<br/>(starboard-log-parser)
+    participant DB as Databricks<br/>API
+    
+    User->>Frontend: "Analyze job 123"
+    Frontend->>API: POST /api/chat/messages
+    
+    Note over API: Route to multi-agent system
+    
+    API->>Agent: handle_message()
+    Agent->>Core: Load Message model
+    Core-->>Agent: Message instance
+    
+    Agent->>Agent: Route to JobAgent
+    Agent->>Tools: execute resolve_job("123")
+    Tools->>DB: GET /api/2.0/jobs/get?job_id=123
+    DB-->>Tools: Job metadata
+    
+    Note over Tools: Need to parse event logs
+    
+    Tools->>DB: Get log path
+    DB-->>Tools: dbfs:/cluster-logs/eventlog.gz
+    
+    Tools->>LogParser: create_spark_application(path)
+    LogParser->>DB: Read log from DBFS
+    DB-->>LogParser: Event log data
+    LogParser->>LogParser: Parse events
+    LogParser-->>Tools: SparkApplication
+    
+    Tools->>Tools: Extract metrics from SparkApplication
+    Tools-->>Agent: {job_data, metrics, ...}
+    
+    Agent->>Core: Create Episode (working memory)
+    Core-->>Agent: Episode instance
+    
+    Agent->>Agent: Generate recommendations
+    Agent->>Core: Create output Message
+    Core-->>Agent: Message instance
+    
+    Agent-->>API: FinalOutputEvent
+    API-->>Frontend: SSE: final_output
+    Frontend-->>User: Display recommendations
+    
+    Note over API: Persist conversation
+    
+    API->>Core: Conversation model
+    Core-->>API: Immutable Conversation
+    API->>API: Save to database
+

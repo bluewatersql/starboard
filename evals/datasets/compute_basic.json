@@ -1,0 +1,84 @@
+{
+  "domain": "compute",
+  "version": "1.0.0",
+  "description": "Basic evaluation cases for the Compute Agent",
+  "cases": [
+    {
+      "id": "compute_001",
+      "description": "Cluster sizing request",
+      "input": {
+        "goal": "What size cluster do I need for my workload?",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["cluster", "size"],
+        "category": "COMPUTE",
+        "min_confidence": 0.7
+      },
+      "tags": ["cluster", "sizing"]
+    },
+    {
+      "id": "compute_002",
+      "description": "Cluster configuration review",
+      "input": {
+        "goal": "Is my cluster configured correctly?",
+        "context": {
+          "cluster_id": "0101-123456-abcde"
+        }
+      },
+      "expected": {
+        "contains": ["cluster", "configuration"],
+        "category": "COMPUTE",
+        "min_confidence": 0.8
+      },
+      "tags": ["cluster", "configuration"]
+    },
+    {
+      "id": "compute_003",
+      "description": "Warehouse optimization",
+      "input": {
+        "goal": "How can I make my SQL warehouse faster?",
+        "context": {
+          "warehouse_id": "abc123def456"
+        }
+      },
+      "expected": {
+        "contains": ["warehouse", "performance"],
+        "category": "COMPUTE",
+        "min_confidence": 0.7
+      },
+      "tags": ["warehouse", "performance"]
+    },
+    {
+      "id": "compute_004",
+      "description": "Autoscaling configuration",
+      "input": {
+        "goal": "Should I enable autoscaling for my cluster?",
+        "context": {
+          "cluster_id": "0101-234567-fghij"
+        }
+      },
+      "expected": {
+        "contains": ["autoscale", "cluster"],
+        "category": "COMPUTE",
+        "min_confidence": 0.7
+      },
+      "tags": ["autoscale", "configuration"]
+    },
+    {
+      "id": "compute_005",
+      "description": "Compute cost optimization",
+      "input": {
+        "goal": "How can I reduce my compute costs?",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["cost", "compute"],
+        "category": "COMPUTE",
+        "min_confidence": 0.6
+      },
+      "tags": ["cost", "optimization"]
+    }
+  ]
+}
+

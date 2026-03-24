@@ -1,0 +1,536 @@
+# serializer version: 1
+# name: TestExecutionPatternGolden.test_executor_lost
+  dict({
+    'all_patterns': list([
+      'executor_lost',
+      'exit_code_137',
+    ]),
+    'has_matches': True,
+    'match_count': 2,
+    'top_match': dict({
+      'confidence': 0.9,
+      'evidence_refs': list([
+        'ExecutorLostFailure: Executor 3 exited due to SIGKILL',
+      ]),
+      'pattern_id': 'executor_lost',
+    }),
+  })
+# ---
+# name: TestExecutionPatternGolden.test_stage_failed_retries
+  dict({
+    'all_patterns': list([
+      'stage_failed_retries',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.7,
+      'evidence_refs': list([
+        'Job aborted due to stage failure: Stage 5 failed 4 times',
+      ]),
+      'pattern_id': 'stage_failed_retries',
+    }),
+  })
+# ---
+# name: TestExecutionPatternGolden.test_task_not_serializable
+  dict({
+    'all_patterns': list([
+      'task_not_serializable',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 1.0,
+      'evidence_refs': list([
+        'Caused by: java.io.NotSerializableException: com.example.DatabaseClient',
+      ]),
+      'pattern_id': 'task_not_serializable',
+    }),
+  })
+# ---
+# name: TestExitCodeTriageGolden.test_exit_137_no_context
+  dict({
+    'alternative_count': 2,
+    'exit_code': 137,
+    'is_signal': True,
+    'primary_hypothesis': dict({
+      'confidence': 0.6,
+      'next_steps': list([
+        'Check cluster event logs for OOMKilled events',
+        'Review GC logs for memory pressure before termination',
+      ]),
+      'supporting_evidence': list([
+      ]),
+      'type': 'oom',
+    }),
+    'raw_interpretation': 'Process terminated by SIGKILL (signal 9). Exit code 137 = 128 + 9. Forced kill (cannot be caught).',
+    'signal_number': 9,
+  })
+# ---
+# name: TestExitCodeTriageGolden.test_exit_137_with_oom_evidence
+  dict({
+    'alternative_count': 1,
+    'exit_code': 137,
+    'is_signal': True,
+    'primary_hypothesis': dict({
+      'confidence': 1.0,
+      'next_steps': list([
+        'Check cluster event logs for OOMKilled events',
+        'Review GC logs for memory pressure before termination',
+      ]),
+      'supporting_evidence': list([
+        'Container was killed by OOM killer',
+        'Linux OOM killer invoked',
+      ]),
+      'type': 'oom',
+    }),
+    'raw_interpretation': 'Process terminated by SIGKILL (signal 9). Exit code 137 = 128 + 9. Forced kill (cannot be caught).',
+    'signal_number': 9,
+  })
+# ---
+# name: TestExitCodeTriageGolden.test_exit_139_crash
+  dict({
+    'alternative_count': 0,
+    'exit_code': 139,
+    'is_signal': True,
+    'primary_hypothesis': dict({
+      'confidence': 0.8,
+      'next_steps': list([
+        'Check for core dump files if available',
+        'Review native library compatibility',
+      ]),
+      'supporting_evidence': list([
+      ]),
+      'type': 'crash',
+    }),
+    'raw_interpretation': 'Process terminated by SIGSEGV (signal 11). Exit code 139 = 128 + 11. Segmentation fault.',
+    'signal_number': 11,
+  })
+# ---
+# name: TestExitCodeTriageGolden.test_exit_143_cancellation
+  dict({
+    'alternative_count': 0,
+    'exit_code': 143,
+    'is_signal': True,
+    'primary_hypothesis': dict({
+      'confidence': 0.9,
+      'next_steps': list([
+        'Check job history for cancellation events',
+        'Verify if user cancelled the job',
+      ]),
+      'supporting_evidence': list([
+        'Job was cancelled',
+      ]),
+      'type': 'cancellation',
+    }),
+    'raw_interpretation': 'Process terminated by SIGTERM (signal 15). Exit code 143 = 128 + 15. Graceful termination.',
+    'signal_number': 15,
+  })
+# ---
+# name: TestExitCodeTriageGolden.test_exit_1_general_error
+  dict({
+    'alternative_count': 0,
+    'exit_code': 1,
+    'is_signal': False,
+    'primary_hypothesis': dict({
+      'confidence': 0.3,
+      'next_steps': list([
+        'Review full executor/driver logs around failure time',
+        'Check cluster event logs',
+      ]),
+      'supporting_evidence': list([
+      ]),
+      'type': 'unknown',
+    }),
+    'raw_interpretation': 'Process exited with code 1.',
+    'signal_number': None,
+  })
+# ---
+# name: TestMemoryPatternGolden.test_exit_code_137_oom_killed
+  dict({
+    'all_patterns': list([
+      'exit_code_137',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.8,
+      'evidence_refs': list([
+        'Container exited with code 137',
+      ]),
+      'pattern_id': 'exit_code_137',
+    }),
+  })
+# ---
+# name: TestMemoryPatternGolden.test_gc_overhead_limit
+  dict({
+    'all_patterns': list([
+      'direct_buffer_oom',
+      'gc_overhead_limit',
+      'java_heap_space',
+      'metaspace_oom',
+    ]),
+    'has_matches': True,
+    'match_count': 4,
+    'top_match': dict({
+      'confidence': 1.0,
+      'evidence_refs': list([
+        'java.lang.OutOfMemoryError: GC overhead limit exceeded',
+      ]),
+      'pattern_id': 'gc_overhead_limit',
+    }),
+  })
+# ---
+# name: TestMemoryPatternGolden.test_java_heap_space_oom
+  dict({
+    'all_patterns': list([
+      'direct_buffer_oom',
+      'gc_overhead_limit',
+      'java_heap_space',
+      'metaspace_oom',
+    ]),
+    'has_matches': True,
+    'match_count': 4,
+    'top_match': dict({
+      'confidence': 1.0,
+      'evidence_refs': list([
+        'Caused by: java.lang.OutOfMemoryError: Java heap space',
+      ]),
+      'pattern_id': 'java_heap_space',
+    }),
+  })
+# ---
+# name: TestMemoryPatternGolden.test_metaspace_oom
+  dict({
+    'all_patterns': list([
+      'direct_buffer_oom',
+      'gc_overhead_limit',
+      'java_heap_space',
+      'metaspace_oom',
+    ]),
+    'has_matches': True,
+    'match_count': 4,
+    'top_match': dict({
+      'confidence': 1.0,
+      'evidence_refs': list([
+        'java.lang.OutOfMemoryError: Metaspace',
+      ]),
+      'pattern_id': 'metaspace_oom',
+    }),
+  })
+# ---
+# name: TestNegativeSignalGolden.test_exit_137_reduced_by_cancellation
+  dict({
+    'all_patterns': list([
+      'exit_code_137',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.8,
+      'evidence_refs': list([
+        'Process exited with code 137',
+      ]),
+      'pattern_id': 'exit_code_137',
+    }),
+  })
+# ---
+# name: TestNegativeSignalGolden.test_java_heap_reduced_by_manual_stop
+  dict({
+    'all_patterns': list([
+      'direct_buffer_oom',
+      'gc_overhead_limit',
+      'java_heap_space',
+      'metaspace_oom',
+    ]),
+    'has_matches': True,
+    'match_count': 4,
+    'top_match': dict({
+      'confidence': 1.0,
+      'evidence_refs': list([
+        'java.lang.OutOfMemoryError: Java heap space',
+      ]),
+      'pattern_id': 'java_heap_space',
+    }),
+  })
+# ---
+# name: TestNetworkPatternGolden.test_connection_timeout
+  dict({
+    'all_patterns': list([
+      'connection_timeout',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.9,
+      'evidence_refs': list([
+        'java.net.SocketTimeoutException: Connection timed out',
+      ]),
+      'pattern_id': 'connection_timeout',
+    }),
+  })
+# ---
+# name: TestNetworkPatternGolden.test_shuffle_fetch_failed
+  dict({
+    'all_patterns': list([
+      'shuffle_fetch_failed',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.9,
+      'evidence_refs': list([
+        'org.apache.spark.shuffle.FetchFailedException:',
+      ]),
+      'pattern_id': 'shuffle_fetch_failed',
+    }),
+  })
+# ---
+# name: TestSqlPatternGolden.test_column_not_found
+  dict({
+    'all_patterns': list([
+      'column_not_found',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 1.0,
+      'evidence_refs': list([
+        "org.apache.spark.sql.AnalysisException: cannot resolve 'customer_id'",
+      ]),
+      'pattern_id': 'column_not_found',
+    }),
+  })
+# ---
+# name: TestSqlPatternGolden.test_permission_denied
+  dict({
+    'all_patterns': list([
+      'permission_denied',
+      'uc_permission_denied',
+    ]),
+    'has_matches': True,
+    'match_count': 2,
+    'top_match': dict({
+      'confidence': 0.7,
+      'evidence_refs': list([
+        "PERMISSION_DENIED: User 'user@example.com' does not have",
+      ]),
+      'pattern_id': 'permission_denied',
+    }),
+  })
+# ---
+# name: TestSqlPatternGolden.test_table_not_found
+  dict({
+    'all_patterns': list([
+      'table_or_view_not_found',
+      'uc_not_found',
+    ]),
+    'has_matches': True,
+    'match_count': 2,
+    'top_match': dict({
+      'confidence': 0.7,
+      'evidence_refs': list([
+        "TABLE_OR_VIEW_NOT_FOUND: Table or view 'missing_table' not found",
+      ]),
+      'pattern_id': 'table_or_view_not_found',
+    }),
+  })
+# ---
+# name: TestStoragePatternGolden.test_disk_space_exhausted
+  dict({
+    'all_patterns': list([
+      'disk_full',
+      'disk_space_exhausted',
+    ]),
+    'has_matches': True,
+    'match_count': 2,
+    'top_match': dict({
+      'confidence': 0.7,
+      'evidence_refs': list([
+        'java.io.IOException: No space left on device',
+      ]),
+      'pattern_id': 'disk_space_exhausted',
+    }),
+  })
+# ---
+# name: TestStoragePatternGolden.test_s3_access_denied
+  dict({
+    'all_patterns': list([
+      'permission_denied',
+      's3_access_denied',
+      'uc_permission_denied',
+    ]),
+    'has_matches': True,
+    'match_count': 3,
+    'top_match': dict({
+      'confidence': 1.0,
+      'evidence_refs': list([
+        'com.amazonaws.services.s3.model.AmazonS3Exception: Access Denied',
+      ]),
+      'pattern_id': 's3_access_denied',
+    }),
+  })
+# ---
+# name: TestTier2DataPatterns.test_data_skew_pattern
+  dict({
+    'all_patterns': list([
+      'data_skew',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.5,
+      'evidence_refs': list([
+        'WARNING: Data skew detected in stage 5',
+      ]),
+      'pattern_id': 'data_skew',
+    }),
+  })
+# ---
+# name: TestTier2DataPatterns.test_disk_full_pattern
+  dict({
+    'all_patterns': list([
+      'disk_full',
+      'disk_space_exhausted',
+    ]),
+    'has_matches': True,
+    'match_count': 2,
+    'top_match': dict({
+      'confidence': 0.7,
+      'evidence_refs': list([
+        'java.io.IOException: No space left on device',
+      ]),
+      'pattern_id': 'disk_space_exhausted',
+    }),
+  })
+# ---
+# name: TestTier2DataPatterns.test_shuffle_spill_pattern
+  dict({
+    'all_patterns': list([
+      'shuffle_spill',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.5,
+      'evidence_refs': list([
+        'Shuffle spill to disk: 4.5 GB',
+      ]),
+      'pattern_id': 'shuffle_spill',
+    }),
+  })
+# ---
+# name: TestTier2DeltaPatterns.test_delta_concurrent_write_pattern
+  dict({
+    'all_patterns': list([
+      'delta_concurrent_write',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.5,
+      'evidence_refs': list([
+        'ConcurrentModificationException: Conflicting write detected',
+      ]),
+      'pattern_id': 'delta_concurrent_write',
+    }),
+  })
+# ---
+# name: TestTier2DeltaPatterns.test_delta_corruption_pattern
+  dict({
+    'all_patterns': list([
+      'delta_corruption',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.5,
+      'evidence_refs': list([
+        'DeltaIllegalStateException: Table state is corrupted',
+      ]),
+      'pattern_id': 'delta_corruption',
+    }),
+  })
+# ---
+# name: TestTier2MiscPatterns.test_arrow_conversion_error_pattern
+  dict({
+    'all_patterns': list([
+      'arrow_conversion_error',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.5,
+      'evidence_refs': list([
+        'ArrowInvalid: cannot convert value',
+      ]),
+      'pattern_id': 'arrow_conversion_error',
+    }),
+  })
+# ---
+# name: TestTier2MiscPatterns.test_network_throttling_pattern
+  dict({
+    'all_patterns': list([
+      'network_throttling',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.5,
+      'evidence_refs': list([
+        'SlowDown: Rate limit exceeded',
+      ]),
+      'pattern_id': 'network_throttling',
+    }),
+  })
+# ---
+# name: TestTier2MiscPatterns.test_python_worker_crash_pattern
+  dict({
+    'all_patterns': list([
+      'python_worker_crash',
+    ]),
+    'has_matches': True,
+    'match_count': 1,
+    'top_match': dict({
+      'confidence': 0.5,
+      'evidence_refs': list([
+        'PythonException: Python worker crashed',
+      ]),
+      'pattern_id': 'python_worker_crash',
+    }),
+  })
+# ---
+# name: TestTier2UCPatterns.test_uc_not_found_pattern
+  dict({
+    'all_patterns': list([
+      'table_or_view_not_found',
+      'uc_not_found',
+    ]),
+    'has_matches': True,
+    'match_count': 2,
+    'top_match': dict({
+      'confidence': 0.7,
+      'evidence_refs': list([
+        "TABLE_OR_VIEW_NOT_FOUND: Table 'my_catalog.my_schema.my_table'",
+      ]),
+      'pattern_id': 'table_or_view_not_found',
+    }),
+  })
+# ---
+# name: TestTier2UCPatterns.test_uc_permission_denied_pattern
+  dict({
+    'all_patterns': list([
+      'permission_denied',
+      'uc_permission_denied',
+    ]),
+    'has_matches': True,
+    'match_count': 2,
+    'top_match': dict({
+      'confidence': 0.7,
+      'evidence_refs': list([
+        "PERMISSION_DENIED: User 'user@example.com' does not have",
+      ]),
+      'pattern_id': 'permission_denied',
+    }),
+  })
+# ---

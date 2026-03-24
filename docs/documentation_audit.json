@@ -1,0 +1,1316 @@
+{
+  "audit_date": "2026-03-24",
+  "project_name": "Starboard AI Agent",
+  "auditor": "Metis (Analyst Agent)",
+  "documents": [
+    {
+      "id": "docs-index",
+      "title": "Documentation Landing Page",
+      "path": "docs/index.md",
+      "personas": ["General"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "References diagrams that may not exist (diagrams/generated/architecture/system-overview.png)",
+        "Package structure lists 4 packages but SDK is mentioned elsewhere; index.md omits starboard-sdk from the tree",
+        "Uses MkDocs template variable {{ git_revision_date_localized }} -- will render raw if not using MkDocs"
+      ],
+      "reuse_sections": ["Start Here table", "Documentation Sections", "Agent System table", "Development Commands"],
+      "rewrite_sections": ["Package Structure (add SDK)"],
+      "notes": "Well-structured landing page with persona-based routing. Minor inaccuracies."
+    },
+    {
+      "id": "quickstart",
+      "title": "Quickstart",
+      "path": "docs/QUICKSTART.md",
+      "personas": ["General", "User"],
+      "disposition": "REWRITE",
+      "accuracy_score": 3,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Health check endpoint listed as /api/chat/health -- no such route found in source code. The actual endpoints are /health/live and /health/ready",
+        "API example uses /api/chat/conversations for REST -- endpoint path accuracy needs verification against actual router mounts",
+        "States 'installs all 5 packages' but make setup may not explicitly install starboard-sdk",
+        "Default model listed as gpt-4o-mini in comment but LLM_MODEL example shows databricks-claude-sonnet-4-5 -- mixed signals"
+      ],
+      "reuse_sections": ["Prerequisites table", "Step 1: Install", "Step 2: Configure", "Step 3: Start", "What Happens Behind the Scenes", "Next Steps"],
+      "rewrite_sections": ["Step 4: Run Your First Analysis (verify API paths)", "Health check verification (fix endpoint)"],
+      "notes": "Good structure and flow. Health endpoint is wrong and needs fixing urgently -- users will hit 404 following the guide."
+    },
+    {
+      "id": "quick-reference",
+      "title": "Quick Reference",
+      "path": "docs/QUICK_REFERENCE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "API Endpoints section lists /api/chat/health which does not exist in source",
+        "Key File Paths references agents/tools/registry.py -- actual path may differ",
+        "Lists 22 API endpoints -- count needs verification against actual routes",
+        "FastAPI App listed as api/main.py but actual entry point is main.py (not api/main.py)"
+      ],
+      "reuse_sections": ["At a Glance table", "Domain Agents table", "Packages table", "Common Commands", "Environment Variables", "Common Tasks", "Quick Links"],
+      "rewrite_sections": ["API Endpoints (verify paths)", "Key File Paths (verify FastAPI App path)"],
+      "notes": "Excellent single-page reference. Tool counts and agent counts are consistent with source (tool_categories.py). Minor path inaccuracies."
+    },
+    {
+      "id": "system-architecture",
+      "title": "System Architecture",
+      "path": "docs/architecture/SYSTEM_ARCHITECTURE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "Tool counts in table differ slightly from tool_categories.py: doc says Query=3, source has 8 tools for query domain (including core tools); doc says UC=16, source has 18 (including core). The doc appears to exclude core tools inconsistently",
+        "Discovery tools listed as 4, source shows 6 (including core tools)",
+        "Analytics tools listed as 4, source shows 6 (including core tools)",
+        "Mermaid diagrams may not render in all viewers"
+      ],
+      "reuse_sections": ["System Overview", "Architecture Principles", "Multi-Agent System", "Tool System Architecture", "State Management", "Streaming Architecture", "Design Patterns", "Deployment Architecture"],
+      "rewrite_sections": ["Tool Categories table (reconcile counts with/without core tools)"],
+      "notes": "Comprehensive and well-organized. The tool count discrepancy is because core tools (complete, request_user_input) are counted in source but not always in the doc table. Needs a consistent counting policy."
+    },
+    {
+      "id": "architecture-redirect",
+      "title": "Architecture (Redirect)",
+      "path": "docs/ARCHITECTURE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 5,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [],
+      "reuse_sections": ["All -- simple redirect"],
+      "rewrite_sections": [],
+      "notes": "Clean redirect to SYSTEM_ARCHITECTURE.md. Good backward compat."
+    },
+    {
+      "id": "tool-architecture",
+      "title": "Tool Architecture",
+      "path": "docs/TOOL_ARCHITECTURE.md",
+      "personas": ["Developer"],
+      "disposition": "REWRITE",
+      "accuracy_score": 3,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [
+        "Last updated December 2025 -- 3 months stale",
+        "References tool_factory module path as agents/tools/tool_registry.py -- needs verification",
+        "Missing Analytics tools section entirely",
+        "Missing Discovery tools section entirely",
+        "Missing Warehouse tools detail (only listed in overview, no deep section)",
+        "Tool counts in Overview don't include Discovery agent tools",
+        "Usage pattern references create_tool_registry from agents/tool_factory -- path needs verification"
+      ],
+      "reuse_sections": ["Architecture overview", "Layer Responsibilities", "Benefits", "Key Principles"],
+      "rewrite_sections": ["Tool Categories (add Analytics, Discovery, Warehouse detail)", "Directory Structure (verify paths)", "Usage Patterns (verify import paths)"],
+      "notes": "Good architectural overview but missing 3 agent tool categories. Needs update to reflect current tool inventory."
+    },
+    {
+      "id": "tool-catalog",
+      "title": "Tool Catalog",
+      "path": "docs/tools/TOOL_CATALOG.md",
+      "personas": ["Developer"],
+      "disposition": "REWRITE",
+      "accuracy_score": 2,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [
+        "Last updated December 2025 -- 3 months stale",
+        "Tool counts don't match tool_categories.py: doc says Query=4, source query domain has 8 tools; doc says Job=7, source has 14",
+        "Uses ComputeTools package name for cluster/warehouse/spark tools -- actual source splits these into separate adapter classes (cluster_tools.py, warehouse_tools.py)",
+        "Missing warehouse-specific tools section (get_warehouse_portfolio, get_warehouse_fingerprint, etc.) -- these are under a generic 'Compute Tools' heading",
+        "Missing analytics tools section entirely (build_analytics_context, build_sql_query, validate_sql_query, execute_sql_query)",
+        "Missing discovery tools section entirely (discover_active_products, run_discovery_queries, analyze_discovery_domain, synthesize_discovery_report)",
+        "Tool signature examples may not match current source code",
+        "References ComputeTools class but actual source has ClusterTools, WarehouseTools as separate classes"
+      ],
+      "reuse_sections": ["Overview", "Common Interface Pattern", "Tool Usage Patterns", "Error Handling"],
+      "rewrite_sections": ["Query Tools (update count)", "Job Tools (update count)", "UC Tools (verify tools)", "Add Cluster Tools section", "Add Warehouse Tools section", "Add Analytics Tools section", "Add Discovery Tools section"],
+      "notes": "Significantly outdated. The tool catalog is one of the most important developer references but is missing 3 entire tool categories and has wrong tool counts. High priority rewrite."
+    },
+    {
+      "id": "tool-development-guide",
+      "title": "Tool Development Guide",
+      "path": "docs/tools/TOOL_DEVELOPMENT_GUIDE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Last updated December 2025",
+        "Registration process references agents/tools/registry.py and agents/tools/tool_factory.py -- paths need verification",
+        "Missing mention of tool_display.py registration step (mentioned in Agent Implementation Guide but not here)"
+      ],
+      "reuse_sections": ["Overview", "Tool Architecture", "Creating a New Tool (all 3 steps)", "Tool Interface Requirements", "Testing Strategy", "Best Practices", "Examples"],
+      "rewrite_sections": ["Registration Process (verify paths, add tool_display step)"],
+      "notes": "Well-written guide. Process is accurate conceptually but specific file paths need verification."
+    },
+    {
+      "id": "interruptible-reasoning",
+      "title": "Interruptible Reasoning",
+      "path": "docs/INTERRUPTIBLE_REASONING.md",
+      "personas": ["User", "Developer"],
+      "disposition": "REWRITE",
+      "accuracy_score": 3,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Last updated November 2025 -- 4 months stale",
+        "API endpoints use /api/v2/ prefix but actual API may use /api/chat/ prefix -- needs verification",
+        "Streaming endpoint listed as /api/v2/chat/conversations/{id}/stream but Quickstart shows /api/chat/conversations/{id}/stream",
+        "Inject-input endpoint listed as /api/v2/chat/conversations/{id}/inject-input -- the v2 prefix needs verification",
+        "Checkpoint types and replan strategies need verification against current source"
+      ],
+      "reuse_sections": ["Overview concepts", "Core Concepts", "Usage Patterns", "Best Practices", "Troubleshooting"],
+      "rewrite_sections": ["API Reference (verify all endpoint paths)", "Event Streaming (verify event types against source)"],
+      "notes": "Good conceptual doc but API paths may be wrong. The /api/v2/ vs /api/chat/ discrepancy is confusing."
+    },
+    {
+      "id": "api-reference",
+      "title": "API Reference",
+      "path": "docs/api/API_REFERENCE.md",
+      "personas": ["Developer"],
+      "disposition": "REWRITE",
+      "accuracy_score": 2,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Last updated December 2025",
+        "Health check endpoint listed as /api/chat/health -- source has /health/live and /health/ready instead",
+        "Available agents list includes 'uc' but also references 'table' domain name in feedback endpoint",
+        "Streaming endpoint prefix is /api/conversations but other endpoints use /api/chat/conversations -- inconsistent",
+        "Authentication section says 'OAuth 2.0 (Future)' -- may still be accurate but needs review",
+        "Response models and field names need verification against actual Pydantic models in api/models/",
+        "22 endpoint count needs verification -- source shows many routes across conversation_routes.py, message_routes.py, config_routes.py, export_routes.py",
+        "Visualization and Template endpoints may not exist in current codebase"
+      ],
+      "reuse_sections": ["Error Handling", "Rate Limiting", "Pagination"],
+      "rewrite_sections": ["All endpoint definitions (regenerate from source)", "Health endpoints (fix paths)", "Streaming endpoint (fix prefix)"],
+      "notes": "Critical developer reference with multiple path inaccuracies. Should be auto-generated from OpenAPI spec at /docs endpoint."
+    },
+    {
+      "id": "configuration",
+      "title": "Configuration Guide",
+      "path": "docs/CONFIGURATION.md",
+      "personas": ["User", "Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "EnvConfig class confirmed in source (uses BaseSettings from pydantic-settings) -- accurate",
+        "Per-conversation config example uses /api/v2/chat/conversations -- v2 prefix needs verification",
+        "DATABRICKS_WAREHOUSE_ID listed as required in docs but env.example marks it optional"
+      ],
+      "reuse_sections": ["All sections are high quality"],
+      "rewrite_sections": ["Per-Conversation Configuration (verify API path)"],
+      "notes": "Comprehensive and well-organized. Cross-references env.example correctly. One of the best docs."
+    },
+    {
+      "id": "deployment",
+      "title": "Deployment Guide",
+      "path": "docs/DEPLOYMENT.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 3,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Last updated November 2025",
+        "Docker Compose section includes a sample docker-compose.yml but no actual docker-compose.yml exists in the repo",
+        "Kubernetes section references ./helm but no helm directory exists in the repo",
+        "Static frontend serving section says 'uv run starboard-server' -- actual command needs verification",
+        "Health endpoint paths /health/live and /health/ready are correct here but wrong in other docs",
+        "Databricks Apps deployment instructions reference scripts that may not exist (setup_databricks_secrets.sh, smoke_test.sh)"
+      ],
+      "reuse_sections": ["Databricks Apps Deployment", "Production Checklist", "Troubleshooting", "Rollback Procedures"],
+      "rewrite_sections": ["Docker Compose (verify files exist or mark as aspirational)", "Kubernetes (verify helm charts exist)", "Static Frontend Serving (verify command)"],
+      "notes": "Good structure covering 3 deployment options. However, Docker and K8s sections reference config files that may not exist yet."
+    },
+    {
+      "id": "runbook",
+      "title": "Operations Runbook",
+      "path": "docs/RUNBOOK.md",
+      "personas": ["Admin"],
+      "disposition": "REWRITE",
+      "accuracy_score": 3,
+      "completeness_score": 4,
+      "quality_score": 3,
+      "issues": [
+        "Last updated November 2025",
+        "Phase 9 sections (Service Catalog, Handoffs, Catalog Cache) reference a specific phase numbering that may be confusing to new readers",
+        "References service_catalog.yaml file -- needs verification that this file exists",
+        "References NextStepGenerator class -- needs verification",
+        "Health check paths /health/live and /health/ready are correct here",
+        "Alerting rules use Prometheus format but no Prometheus integration is documented",
+        "Log grep commands reference logs/app.log but actual log location depends on deployment"
+      ],
+      "reuse_sections": ["Common Issues (High Latency, Cost Spikes, Error Rate)", "Emergency Procedures", "Contact & Escalation"],
+      "rewrite_sections": ["Phase 9 sections (remove phase numbering, integrate into main flow)", "Monitoring (verify metrics implementation)", "Health Checks (standardize across all docs)"],
+      "notes": "Useful operational content but the Phase 9 framing is internal and confusing. Should be restructured as standard operational topics."
+    },
+    {
+      "id": "testing",
+      "title": "Testing Guide",
+      "path": "docs/TESTING.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [
+        "Last updated November 2025",
+        "Missing contract test details (mentioned in Makefile but not elaborated)",
+        "Missing golden test update workflow details",
+        "Coverage badge references scripts/update_coverage_badge.py -- needs verification",
+        "Missing test-parallel command documentation (present in Makefile)"
+      ],
+      "reuse_sections": ["Test Organization", "Running Tests", "Test Markers", "Coverage", "Best Practices", "Quick Reference"],
+      "rewrite_sections": ["Add contract test section", "Add golden test workflow details"],
+      "notes": "Solid but incomplete. Missing contract tests and golden test workflows."
+    },
+    {
+      "id": "agents-readme",
+      "title": "Agent Documentation Index",
+      "path": "docs/agents/README.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "References docs/architecture/multi-agent-handoff.md which does not appear to exist",
+        "Tool counts match source when including core tools -- this is consistent within this doc but inconsistent with SYSTEM_ARCHITECTURE.md"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": ["Fix broken link to multi-agent-handoff.md"],
+      "notes": "Excellent index page. Mermaid diagram, use case routing, evaluation matrix all valuable."
+    },
+    {
+      "id": "agent-implementation-guide",
+      "title": "Agent Implementation Guide",
+      "path": "docs/developer/agent/IMPLEMENTATION_GUIDE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "Step 2 shows build_system_prompt function pattern but Grep found no matches for 'def build_system_prompt' -- actual prompt builders may use different function signatures (e.g., constants like UC_SYSTEM_PROMPT, ANALYTICS_SYSTEM_PROMPT)",
+        "prompts/factories.py registration pattern needs verification -- factory may work differently",
+        "Handoff context section is valuable and matches source patterns"
+      ],
+      "reuse_sections": ["All sections -- comprehensive and well-structured"],
+      "rewrite_sections": ["Step 2: Create System Prompt (verify actual prompt builder pattern matches)", "Step 3: Register Prompt Builder (verify factories.py interface)"],
+      "notes": "One of the best dev docs. Step-by-step with code examples and checklist."
+    },
+    {
+      "id": "developer-agent-readme",
+      "title": "Agent Developer Documentation Index",
+      "path": "docs/developer/agent/README.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 5,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Could link to more resources (e.g., Tool Catalog, Testing Guide)"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Clean index page with report type matrix and key file locations."
+    },
+    {
+      "id": "frontend-architecture",
+      "title": "Frontend Architecture",
+      "path": "docs/FRONTEND_ARCHITECTURE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Frontend package.json confirms: Next.js 16.0.7, React 19.2.0, MUI 7.3.5, Zod 4.1.13, Zustand 5.0.9, Recharts 3.5.0 -- all match doc claims",
+        "Tailwind CSS v4 confirmed in devDependencies",
+        "Doc claims 'Auto-generated TypeScript types from backend' -- this may be aspirational"
+      ],
+      "reuse_sections": ["Technology Stack", "Architecture Overview"],
+      "rewrite_sections": ["Verify auto-generated types claim"],
+      "notes": "Tech stack claims verified against package.json. Accurate."
+    },
+    {
+      "id": "configuration-env-example",
+      "title": "Environment Variable Example",
+      "path": "examples/env.example",
+      "personas": ["User", "Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 5,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "DISABLED_AGENT_DOMAINS comment references 'table' and 'compute' domain names instead of 'uc' and 'cluster' -- stale domain names",
+        "LLM_PROVIDER lists 'anthropic' as option but may not be implemented"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": ["Fix domain names in DISABLED_AGENT_DOMAINS comment"],
+      "notes": "Comprehensive and well-commented. Best configuration reference alongside CONFIGURATION.md."
+    },
+    {
+      "id": "makefile-guide",
+      "title": "Makefile Guide",
+      "path": "docs/MAKEFILE_GUIDE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Need to verify all documented make targets actually exist in Makefile"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Useful development reference. Makefile confirmed to have the major targets."
+    },
+    {
+      "id": "cloud-authentication",
+      "title": "Cloud Authentication Guide",
+      "path": "docs/CLOUD_AUTHENTICATION.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Specific to starboard-log-parser package, not the main server"
+      ],
+      "reuse_sections": ["Authentication Patterns"],
+      "rewrite_sections": [],
+      "notes": "Niche doc for log parser cloud storage. Accurate for its scope."
+    },
+    {
+      "id": "s3-connector-guide",
+      "title": "S3 Connector Guide",
+      "path": "docs/S3_CONNECTOR_GUIDE.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Specific to starboard-log-parser package"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Niche but useful for S3 log parsing setups."
+    },
+    {
+      "id": "template-usage-guide",
+      "title": "Template Usage Guide",
+      "path": "docs/TEMPLATE_USAGE_GUIDE.md",
+      "personas": ["Developer"],
+      "disposition": "REWRITE",
+      "accuracy_score": 2,
+      "completeness_score": 3,
+      "quality_score": 3,
+      "issues": [
+        "Last updated November 2025",
+        "Uses emoji in headings (violates style guidelines)",
+        "References examples/template_discovery_demo.py -- needs verification",
+        "Template Discovery API may have changed significantly with analytics agent v3 (agentic RAG replaced templates)"
+      ],
+      "reuse_sections": [],
+      "rewrite_sections": ["Entire document may be obsolete if analytics agent v3 replaced template system"],
+      "notes": "Potentially obsolete. The analytics agent now uses agentic RAG with SQL generation rather than predefined templates. Needs assessment of whether template system still exists."
+    },
+    {
+      "id": "what-is-starboard",
+      "title": "What is Starboard?",
+      "path": "docs/overview/what-is-starboard.md",
+      "personas": ["General"],
+      "disposition": "REUSE",
+      "accuracy_score": 5,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Excellent product overview. Accurate agent descriptions, clear value prop."
+    },
+    {
+      "id": "agents-catalog",
+      "title": "Agent Catalog",
+      "path": "docs/overview/agents.md",
+      "personas": ["General", "User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Query Agent key tools lists 'analyze_explain_plan' but tool_categories.py lists 'analyze_query_plan' -- tool name mismatch"
+      ],
+      "reuse_sections": ["How Routing Works", "All agent overviews"],
+      "rewrite_sections": ["Query Agent key tools (fix tool name)"],
+      "notes": "Good user-facing agent descriptions with example questions."
+    },
+    {
+      "id": "glossary",
+      "title": "Glossary",
+      "path": "docs/overview/glossary.md",
+      "personas": ["General"],
+      "disposition": "REUSE",
+      "accuracy_score": 5,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [],
+      "reuse_sections": ["All terms"],
+      "rewrite_sections": [],
+      "notes": "New doc. Well-written definitions. Could expand with more Databricks-specific terms."
+    },
+    {
+      "id": "changelog",
+      "title": "Changelog",
+      "path": "docs/overview/changelog.md",
+      "personas": ["General"],
+      "disposition": "REUSE",
+      "accuracy_score": 5,
+      "completeness_score": 3,
+      "quality_score": 5,
+      "issues": [
+        "Only has [Unreleased] section -- no historical releases documented"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": ["Add historical release entries"],
+      "notes": "New doc. Good format but needs historical entries."
+    },
+    {
+      "id": "faq",
+      "title": "FAQ",
+      "path": "docs/guides/FAQ.md",
+      "personas": ["General", "User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Agent counts and descriptions are now consistent and accurate"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Recently updated. Clean, comprehensive FAQ."
+    },
+    {
+      "id": "web-ui-guide",
+      "title": "Web Interface Guide",
+      "path": "docs/user-guide/web-ui.md",
+      "personas": ["User"],
+      "disposition": "REWRITE",
+      "accuracy_score": 3,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [
+        "Manual startup command shows 'uvicorn starboard_server.main:app' which is correct, but this contradicts other docs that reference api.main",
+        "Docker startup references docker-compose which may not exist in repo"
+      ],
+      "reuse_sections": ["Starting the Web UI (make commands)"],
+      "rewrite_sections": ["Manual startup (standardize entry point)", "Docker section (verify compose file exists)"],
+      "notes": "Needs verification of commands and screenshots likely missing."
+    },
+    {
+      "id": "cli-reference",
+      "title": "CLI Reference",
+      "path": "docs/user-guide/cli.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Should cross-reference packages/starboard-cli/README.md to avoid duplication"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Good CLI reference matching the CLI README content."
+    },
+    {
+      "id": "sdk-guide",
+      "title": "SDK Usage Guide",
+      "path": "docs/user-guide/sdk.md",
+      "personas": ["User", "Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New doc matching SDK README content. Good notebook examples."
+    },
+    {
+      "id": "interruptible-reasoning-user",
+      "title": "Interruptible Reasoning (User Guide)",
+      "path": "docs/user-guide/interruptible-reasoning.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "New doc -- recently created",
+        "Should verify API paths match the main INTERRUPTIBLE_REASONING.md"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "User-facing version of the interruptible reasoning doc."
+    },
+    {
+      "id": "understanding-reports",
+      "title": "Understanding Reports",
+      "path": "docs/user-guide/understanding-reports.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New user guide for understanding agent output."
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting Guide",
+      "path": "docs/user-guide/troubleshooting.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New user-facing troubleshooting guide."
+    },
+    {
+      "id": "workflow-query-optimization",
+      "title": "Query Optimization Workflow",
+      "path": "docs/user-guide/workflows/query-optimization.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "End-to-end workflow guide."
+    },
+    {
+      "id": "workflow-job-debugging",
+      "title": "Job Debugging Workflow",
+      "path": "docs/user-guide/workflows/job-debugging.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "End-to-end workflow guide."
+    },
+    {
+      "id": "workflow-cost-analysis",
+      "title": "Cost Analysis Workflow",
+      "path": "docs/user-guide/workflows/cost-analysis.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "End-to-end workflow guide."
+    },
+    {
+      "id": "workflow-table-governance",
+      "title": "Table Governance Workflow",
+      "path": "docs/user-guide/workflows/table-governance.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "End-to-end workflow guide."
+    },
+    {
+      "id": "workflow-workspace-discovery",
+      "title": "Workspace Discovery Workflow",
+      "path": "docs/user-guide/workflows/workspace-discovery.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "End-to-end workflow guide."
+    },
+    {
+      "id": "workflow-cluster-optimization",
+      "title": "Cluster Optimization Workflow",
+      "path": "docs/user-guide/workflows/cluster-optimization.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New workflow guide."
+    },
+    {
+      "id": "workflow-warehouse-optimization",
+      "title": "Warehouse Optimization Workflow",
+      "path": "docs/user-guide/workflows/warehouse-optimization.md",
+      "personas": ["User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New workflow guide."
+    },
+    {
+      "id": "api-quickstart",
+      "title": "API Quickstart",
+      "path": "docs/integration/api-quickstart.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 3,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "API paths need verification against actual routes"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": ["Verify API endpoint paths"],
+      "notes": "Integration quickstart for REST API consumers."
+    },
+    {
+      "id": "sse-streaming",
+      "title": "SSE Streaming Guide",
+      "path": "docs/integration/sse-streaming.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "SSE integration guide."
+    },
+    {
+      "id": "package-integration",
+      "title": "Package Integration Guide",
+      "path": "docs/integration/PACKAGE_INTEGRATION.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 5,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Excellent package integration guide. Covers all 5 packages + frontend."
+    },
+    {
+      "id": "admin-monitoring",
+      "title": "Monitoring and Observability",
+      "path": "docs/admin/monitoring.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Health endpoints /health/live and /health/ready are correctly documented here"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Good admin monitoring guide. Health endpoint paths are correct."
+    },
+    {
+      "id": "admin-state-backends",
+      "title": "State Backends",
+      "path": "docs/admin/state-backends.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "State backend configuration guide."
+    },
+    {
+      "id": "admin-backup-recovery",
+      "title": "Backup and Recovery",
+      "path": "docs/admin/backup-recovery.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New admin guide. Well-structured backup procedures."
+    },
+    {
+      "id": "admin-capacity-planning",
+      "title": "Capacity Planning",
+      "path": "docs/admin/capacity-planning.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New admin guide. Good sizing guidance."
+    },
+    {
+      "id": "admin-cost-estimation",
+      "title": "LLM Cost Estimation",
+      "path": "docs/admin/cost-estimation.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New admin guide. Practical cost models."
+    },
+    {
+      "id": "admin-security-hardening",
+      "title": "Security Hardening",
+      "path": "docs/admin/security-hardening.md",
+      "personas": ["Admin"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "New doc -- recently created"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "New admin guide. Comprehensive security checklist with trust boundary diagram."
+    },
+    {
+      "id": "agent-output-consumers",
+      "title": "Agent Output Consumers",
+      "path": "docs/contracts/AGENT_OUTPUT_CONSUMERS.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 3,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [
+        "Need to verify output contract schemas match current source"
+      ],
+      "reuse_sections": ["Contract definitions"],
+      "rewrite_sections": ["Verify schemas against source"],
+      "notes": "Important for frontend/backend contract stability."
+    },
+    {
+      "id": "common-tasks",
+      "title": "Common Tasks Guide",
+      "path": "docs/guides/COMMON_TASKS.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [
+        "May overlap significantly with QUICK_REFERENCE.md common tasks section"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Could be consolidated with Quick Reference."
+    },
+    {
+      "id": "contributing",
+      "title": "Contributing Guide",
+      "path": "docs/guides/CONTRIBUTING.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Standard contributing guidelines."
+    },
+    {
+      "id": "getting-started",
+      "title": "Developer Getting Started",
+      "path": "docs/guides/GETTING_STARTED.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Overlaps with QUICKSTART.md -- may confuse developers on which to follow"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Developer-focused getting started. Distinct from user quickstart."
+    },
+    {
+      "id": "developer-standards-engineering",
+      "title": "Engineering Standards",
+      "path": "docs/developer/standards/engineering.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Should reference .cursor/ files as authoritative source"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Mirror of .cursor/01_engineering_standards.md for docs site."
+    },
+    {
+      "id": "developer-standards-prompts",
+      "title": "Prompts and Schemas Standards",
+      "path": "docs/developer/standards/prompts-schemas.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Mirror of .cursor/03_prompts_and_schemas.md."
+    },
+    {
+      "id": "developer-standards-testing",
+      "title": "Testing and Evals Standards",
+      "path": "docs/developer/standards/testing-evals.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Mirror of .cursor/04_testing_and_evals.md."
+    },
+    {
+      "id": "developer-standards-observability",
+      "title": "Observability Standards",
+      "path": "docs/developer/standards/observability.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Mirror of .cursor/05_observability_and_cost.md."
+    },
+    {
+      "id": "developer-standards-security",
+      "title": "Security Standards",
+      "path": "docs/developer/standards/security.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Mirror of .cursor/06_security_and_privacy.md."
+    },
+    {
+      "id": "report-ui-guidelines",
+      "title": "Report UI Guidelines",
+      "path": "docs/developer/agent/REPORT_UI_GUIDELINES.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Guidelines for agent report output rendering."
+    },
+    {
+      "id": "cli-readme",
+      "title": "CLI README",
+      "path": "packages/starboard-cli/README.md",
+      "personas": ["Developer", "User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "Duplicates content with docs/user-guide/cli.md"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Comprehensive CLI documentation. Well-structured with all options."
+    },
+    {
+      "id": "sdk-readme",
+      "title": "SDK README",
+      "path": "packages/starboard-sdk/README.md",
+      "personas": ["Developer", "User"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "Duplicates content with docs/user-guide/sdk.md"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Excellent SDK documentation with multi-turn conversation, streaming, and error handling examples."
+    },
+    {
+      "id": "server-readme",
+      "title": "Server README",
+      "path": "packages/starboard-server/README.md",
+      "personas": ["Developer"],
+      "disposition": "REWRITE",
+      "accuracy_score": 3,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "Default model listed as gpt-4o-mini but env.example and CONFIGURATION.md use databricks-claude-sonnet-4-5",
+        "Entry point in development section shows 'uvicorn starboard_server.api.main:app' but actual file is starboard_server.main (not api.main)",
+        "API Documentation section references /docs and /redoc endpoints -- need to verify these are mounted"
+      ],
+      "reuse_sections": ["Overview", "Domain Agents table", "Architecture tree", "Configuration table"],
+      "rewrite_sections": ["Quick Start (fix uvicorn entry point)", "Configuration (fix default model)"],
+      "notes": "Entry point path is wrong -- critical for developers trying to run the server."
+    },
+    {
+      "id": "core-readme",
+      "title": "Core README",
+      "path": "packages/starboard-core/README.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [
+        "References diagram files that may not exist"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Clean package README. Links to detailed architecture docs."
+    },
+    {
+      "id": "domain-agent-docs",
+      "title": "Domain Agent Documentation (8 agents)",
+      "path": "docs/agents/domain/*.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 5,
+      "issues": [
+        "Individual agent docs (query.md, job.md, uc.md, cluster.md, analytics.md, warehouse.md, discovery.md, diagnostic.md) follow consistent template",
+        "Tool names and counts should be verified against tool_categories.py for each agent"
+      ],
+      "reuse_sections": ["All agent documentation pages"],
+      "rewrite_sections": ["Verify tool names per agent match source"],
+      "notes": "Well-structured agent documentation following a consistent template."
+    },
+    {
+      "id": "intent-router-doc",
+      "title": "Intent Router Documentation",
+      "path": "docs/agents/framework/intent.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Framework agent documentation for the Intent Router."
+    },
+    {
+      "id": "package-docs-core",
+      "title": "Core Package Docs (3 files)",
+      "path": "docs/packages/starboard-core/*.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Package-level documentation for starboard-core."
+    },
+    {
+      "id": "package-docs-server",
+      "title": "Server Package Docs",
+      "path": "docs/packages/starboard-server/index.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [
+        "Should link to the main architecture and API docs"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Server package index."
+    },
+    {
+      "id": "package-docs-cli",
+      "title": "CLI Package Docs",
+      "path": "docs/packages/starboard-cli/architecture.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 3,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "CLI architecture documentation."
+    },
+    {
+      "id": "package-docs-log-parser",
+      "title": "Log Parser Package Docs",
+      "path": "docs/packages/starboard-log-parser/*.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 4,
+      "quality_score": 4,
+      "issues": [],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Log parser package documentation."
+    },
+    {
+      "id": "testing-prompts",
+      "title": "Cluster Agent Test Prompts",
+      "path": "docs/testing/CLUSTER_AGENT_TEST_PROMPTS.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 3,
+      "quality_score": 3,
+      "issues": [
+        "Only covers cluster agent -- other agent test prompts are missing"
+      ],
+      "reuse_sections": ["Test prompt examples"],
+      "rewrite_sections": [],
+      "notes": "Useful but limited to one agent."
+    },
+    {
+      "id": "api-reference-legacy",
+      "title": "API Reference (Legacy)",
+      "path": "docs/API_REFERENCE.md",
+      "personas": ["Developer"],
+      "disposition": "REPLACE",
+      "accuracy_score": 2,
+      "completeness_score": 2,
+      "quality_score": 3,
+      "issues": [
+        "Duplicate of docs/api/API_REFERENCE.md -- unclear which is canonical",
+        "Same accuracy issues as the other API reference"
+      ],
+      "reuse_sections": [],
+      "rewrite_sections": ["Remove or redirect to docs/api/API_REFERENCE.md"],
+      "notes": "Should be a redirect like ARCHITECTURE.md or removed entirely."
+    },
+    {
+      "id": "claude-md",
+      "title": "CLAUDE.md",
+      "path": "CLAUDE.md",
+      "personas": ["Developer"],
+      "disposition": "REUSE",
+      "accuracy_score": 4,
+      "completeness_score": 5,
+      "quality_score": 5,
+      "issues": [
+        "References starboard_server/agents/conversation/multi_agent_manager.py as key file -- needs path verification",
+        "Frontend section lists Next.js 16, React 19, Material UI v7 -- all verified correct from package.json",
+        "Anti-patterns and common pitfalls are excellent",
+        "Tool list is comprehensive but may not match current tool_categories.py exactly"
+      ],
+      "reuse_sections": ["All sections"],
+      "rewrite_sections": [],
+      "notes": "Excellent project-level documentation for AI assistants and developers. Well-maintained."
+    }
+  ],
+  "coverage_gaps": {
+    "General": [
+      "No README.md at project root (or not audited -- need to verify)",
+      "No release/versioning documentation beyond changelog stub",
+      "No roadmap document"
+    ],
+    "User": [
+      "No screenshot-based walkthrough of the Web UI",
+      "No video or animated demo references",
+      "No 'limitations and known issues' page"
+    ],
+    "Developer": [
+      "No auto-generated OpenAPI documentation reference (should link to /docs endpoint)",
+      "No migration guide for breaking changes between versions",
+      "No architecture decision records (ADRs)",
+      "No guide for running evaluations (evals/ directory exists with README but not linked from docs)",
+      "Contract test documentation is thin -- only a README in tests/contract/",
+      "No documentation for the visualization prompt system (prompts/visualization/v1.py exists)",
+      "No documentation for the starboard-log-parser test prompts beyond cluster agent"
+    ],
+    "Admin": [
+      "No disaster recovery procedures beyond backup/restore",
+      "No SLA/SLO definition guide for the platform itself",
+      "No upgrade/migration procedures for database schema changes",
+      "No log aggregation setup guide (ELK, CloudWatch, etc.)"
+    ]
+  },
+  "recommended_doc_structure": {
+    "General": [
+      "What is Starboard? (EXISTS - REUSE)",
+      "Quickstart (EXISTS - REWRITE health endpoint)",
+      "FAQ (EXISTS - REUSE)",
+      "Glossary (EXISTS - REUSE)",
+      "Changelog (EXISTS - expand with history)"
+    ],
+    "User": [
+      "Web UI Guide (EXISTS - REWRITE)",
+      "CLI Reference (EXISTS - REUSE)",
+      "SDK Usage Guide (EXISTS - REUSE)",
+      "Understanding Reports (EXISTS - REUSE)",
+      "Interruptible Reasoning (EXISTS - REUSE)",
+      "Troubleshooting (EXISTS - REUSE)",
+      "Workflow: Query Optimization (EXISTS - REUSE)",
+      "Workflow: Job Debugging (EXISTS - REUSE)",
+      "Workflow: Cost Analysis (EXISTS - REUSE)",
+      "Workflow: Table Governance (EXISTS - REUSE)",
+      "Workflow: Workspace Discovery (EXISTS - REUSE)",
+      "Workflow: Cluster Optimization (EXISTS - REUSE)",
+      "Workflow: Warehouse Optimization (EXISTS - REUSE)",
+      "Known Limitations (MISSING)"
+    ],
+    "Developer": [
+      "Quick Reference (EXISTS - REUSE)",
+      "System Architecture (EXISTS - REUSE)",
+      "Agent Documentation Index (EXISTS - REUSE)",
+      "Agent Implementation Guide (EXISTS - REUSE)",
+      "Tool Architecture (EXISTS - REWRITE)",
+      "Tool Catalog (EXISTS - REWRITE - HIGH PRIORITY)",
+      "Tool Development Guide (EXISTS - REUSE)",
+      "API Reference (EXISTS - REWRITE - HIGH PRIORITY)",
+      "Package Integration (EXISTS - REUSE)",
+      "Testing Guide (EXISTS - REUSE)",
+      "Contributing Guide (EXISTS - REUSE)",
+      "Engineering Standards (EXISTS - REUSE)",
+      "Report UI Guidelines (EXISTS - REUSE)",
+      "Frontend Architecture (EXISTS - REUSE)",
+      "Evaluations Guide (MISSING)",
+      "ADR Index (MISSING)"
+    ],
+    "Admin": [
+      "Deployment Guide (EXISTS - REUSE)",
+      "Configuration Guide (EXISTS - REUSE)",
+      "Operations Runbook (EXISTS - REWRITE)",
+      "Monitoring and Observability (EXISTS - REUSE)",
+      "State Backends (EXISTS - REUSE)",
+      "Backup and Recovery (EXISTS - REUSE)",
+      "Capacity Planning (EXISTS - REUSE)",
+      "Cost Estimation (EXISTS - REUSE)",
+      "Security Hardening (EXISTS - REUSE)",
+      "Cloud Authentication (EXISTS - REUSE)",
+      "Database Migration Guide (MISSING)",
+      "Log Aggregation Setup (MISSING)"
+    ]
+  },
+  "critical_issues_summary": [
+    {
+      "priority": 1,
+      "issue": "Health endpoint path inconsistency: QUICKSTART.md, QUICK_REFERENCE.md, and API_REFERENCE.md reference /api/chat/health which does not exist. Actual endpoints are /health/live and /health/ready. Users following the Quickstart will get a 404.",
+      "affected_docs": ["docs/QUICKSTART.md", "docs/QUICK_REFERENCE.md", "docs/api/API_REFERENCE.md"]
+    },
+    {
+      "priority": 2,
+      "issue": "FastAPI entry point path wrong: Server README and QUICK_REFERENCE list starboard_server.api.main:app but actual entry point is starboard_server.main:app (confirmed from source). Developers cannot start the server with the documented command.",
+      "affected_docs": ["packages/starboard-server/README.md", "docs/QUICK_REFERENCE.md"]
+    },
+    {
+      "priority": 3,
+      "issue": "API Reference is significantly inaccurate: endpoint paths inconsistent (/api/chat/ vs /api/conversations/ vs /api/v2/), some documented endpoints may not exist (visualization, template, query resolution), and tool counts are wrong. Should be regenerated from OpenAPI spec.",
+      "affected_docs": ["docs/api/API_REFERENCE.md", "docs/API_REFERENCE.md"]
+    },
+    {
+      "priority": 4,
+      "issue": "Tool Catalog is 3 months stale and missing 3 entire tool categories (Analytics, Discovery, Warehouse detail). Tool counts are wrong. This is the primary developer reference for tool implementations.",
+      "affected_docs": ["docs/tools/TOOL_CATALOG.md"]
+    },
+    {
+      "priority": 5,
+      "issue": "env.example uses deprecated domain names ('table', 'compute') in DISABLED_AGENT_DOMAINS comment instead of current names ('uc', 'cluster'). Could confuse administrators.",
+      "affected_docs": ["examples/env.example"]
+    }
+  ]
+}

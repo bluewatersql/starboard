@@ -1,0 +1,35 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+flowchart LR
+    %% User Input
+    User[User Message] --> Manager[Multi-Agent<br/>Manager]
+    
+    %% Intent Classification
+    Manager --> Router[Intent Router]
+    
+    %% Route to Agent
+    Router -->|Classify Domain| Agent["Domain Agent<br/>(Query, Job, UC, Cluster,<br/>Analytics, Warehouse, Diagnostic)"]
+    
+    %% Agent Reasoning
+    Agent -->|Reason| LLM[LLM Provider]
+    LLM -->|Decide Action| Agent
+    
+    %% Tool Execution
+    Agent -->|Execute Tool| Tools[Tool Registry]
+    Tools -->|Fetch Data| Databricks[(Databricks)]
+    Tools -->|Return Result| Agent
+    
+    %% Output
+    Agent -->|Complete| Output[Response]
+    Output -->|Stream SSE| Client[Client Browser]
+    
+    %% Styling
+    style User fill:#10b981,color:#fff
+    style Manager fill:#4f46e5,color:#fff
+    style Router fill:#7c3aed,color:#fff
+    style Agent fill:#06b6d4,color:#fff
+    style LLM fill:#ff6b6b,color:#fff
+    style Tools fill:#f59e0b,color:#fff
+    style Databricks fill:#ff6b6b,color:#fff
+    style Output fill:#8b5cf6,color:#fff
+    style Client fill:#10b981,color:#fff

@@ -1,0 +1,261 @@
+# Tier 2 Data Patterns
+# Data processing issues: skew, spill, disk
+version: "1.0.0"
+
+patterns:
+  # ============================================================================
+  # DATA SKEW PATTERNS
+  # ============================================================================
+  - id: data_skew
+    name: "Data Skew Detected"
+    category: execution
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "data skew"
+      - "skewed partition"
+      - "uneven distribution"
+      - "one partition much larger"
+      - "straggler task"
+
+    regex_patterns:
+      - "(?i)data\\s*skew"
+      - "(?i)skewed\\s*partition"
+      - "(?i)straggler\\s*task"
+      - "Task \\d+ took \\d+x longer than median"
+
+    root_cause: |
+      Data is unevenly distributed across partitions, causing some tasks to 
+      process significantly more data than others. This leads to stragglers 
+      and poor cluster utilization.
+
+    symptoms:
+      - "One or few tasks taking much longer than others"
+      - "Spark UI shows uneven task durations"
+      - "Stage stuck waiting for few tasks to complete"
+
+    root_causes:
+      - "Skewed join keys (null values, popular keys)"
+      - "Uneven data distribution in source"
+      - "GroupBy on low-cardinality columns"
+      - "Partition pruning leaving unbalanced partitions"
+
+    remediation:
+      - "Enable Adaptive Query Execution (AQE)"
+      - "Use salting for skewed keys"
+      - "Filter out null join keys"
+      - "Increase partition count with repartition()"
+
+    recommendations:
+      - id: enable_aqe_skew
+        priority: high
+        action: "Enable AQE skew join optimization"
+        implementation: |
+          spark.conf.set("spark.sql.adaptive.enabled", "true")
+          spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+          spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes", "256MB")
+        verification: "Check Spark UI for skew-optimized joins"
+
+      - id: salt_skewed_keys
+        priority: medium
+        action: "Apply salting to skewed join keys"
+        implementation: |
+          # Add salt to large table
+          df_large = df_large.withColumn("salt", (rand() * N).cast("int"))
+          # Explode salt in small table
+          df_small = df_small.crossJoin(spark.range(N).select(col("id").alias("salt")))
+          # Join with salt
+          result = df_large.join(df_small, ["key", "salt"])
+        verification: "Task durations become more uniform"
+
+    evidence_checklist:
+      required:
+        - "Significant variance in task durations (>10x difference)"
+      supporting:
+        - "Skew mentioned in Spark UI or logs"
+        - "Few tasks processing majority of data"
+
+    confidence_factors:
+      increase:
+        - "Spark UI shows task duration variance >10x"
+        - "Join operation on nullable column"
+        - "GroupBy on low-cardinality key"
+      decrease:
+        - "All tasks complete in similar time"
+        - "AQE already enabled"
+
+    related_patterns:
+      - shuffle_fetch_failed
+      - executor_lost
+
+    docs:
+      - "https://docs.databricks.com/optimizations/aqe.html"
+      - "https://spark.apache.org/docs/latest/sql-performance-tuning.html"
+
+  # ============================================================================
+  # SHUFFLE SPILL PATTERNS
+  # ============================================================================
+  - id: shuffle_spill
+    name: "Shuffle Spill to Disk"
+    category: execution
+    severity: medium
+    responsibility: configuration
+
+    keywords:
+      - "spill"
+      - "shuffle spill"
+      - "spilled to disk"
+      - "disk spill"
+      - "shuffle write"
+
+    regex_patterns:
+      - "(?i)shuffle.*spill"
+      - "(?i)spill.*disk"
+      - "Spill\\s*\\(Memory\\).*Spill\\s*\\(Disk\\)"
+      - "shuffle.*write.*spill"
+
+    root_cause: |
+      Shuffle data exceeds available memory and spills to disk. While Spark 
+      handles this gracefully, excessive spilling degrades performance 
+      significantly due to disk I/O.
+
+    symptoms:
+      - "Shuffle Spill (Disk) >> 0 in Spark UI"
+      - "Slow shuffle stages"
+      - "High disk I/O during shuffle"
+
+    root_causes:
+      - "Insufficient executor memory for shuffle"
+      - "Large shuffle without enough partitions"
+      - "Memory-intensive operations consuming shuffle space"
+
+    remediation:
+      - "Increase spark.executor.memory"
+      - "Increase number of shuffle partitions"
+      - "Reduce data processed per partition"
+
+    recommendations:
+      - id: reduce_spill_memory
+        priority: high
+        action: "Increase memory to reduce spilling"
+        implementation: |
+          spark.executor.memory = 16g
+          spark.memory.fraction = 0.7
+          spark.memory.storageFraction = 0.3
+        verification: "Shuffle Spill (Disk) approaches 0 in Spark UI"
+
+      - id: increase_shuffle_partitions
+        priority: medium
+        action: "Increase shuffle partitions to reduce per-partition size"
+        implementation: |
+          spark.conf.set("spark.sql.shuffle.partitions", "400")
+        verification: "Per-partition shuffle size < available memory"
+
+    evidence_checklist:
+      required:
+        - "Non-zero Shuffle Spill (Disk) in Spark UI"
+      supporting:
+        - "High disk I/O during shuffle"
+        - "Slow shuffle read/write"
+
+    confidence_factors:
+      increase:
+        - "Shuffle Spill (Disk) > 1GB"
+        - "Disk I/O correlates with shuffle stages"
+      decrease:
+        - "Minimal spill (< 100MB)"
+        - "SSD storage (less impactful)"
+
+    related_patterns:
+      - java_heap_space
+      - shuffle_fetch_failed
+
+    docs:
+      - "https://spark.apache.org/docs/latest/tuning.html#memory-management"
+
+  # ============================================================================
+  # DISK SPACE PATTERNS
+  # ============================================================================
+  - id: disk_full
+    name: "Disk Space Exhausted"
+    category: storage
+    severity: critical
+    responsibility: infrastructure
+
+    keywords:
+      - "No space left"
+      - "disk full"
+      - "out of disk"
+      - "ENOSPC"
+      - "no space on device"
+
+    regex_patterns:
+      - "(?i)no\\s*space\\s*left"
+      - "(?i)disk\\s*full"
+      - "ENOSPC"
+      - "(?i)out\\s*of\\s*disk"
+      - "(?i)insufficient\\s*disk"
+
+    root_cause: |
+      Local disk space exhausted on executor or driver. Common during 
+      shuffle-heavy operations, large caching, or when temporary files 
+      accumulate.
+
+    symptoms:
+      - "No space left on device errors"
+      - "Shuffle write failures"
+      - "Task failures with I/O errors"
+
+    root_causes:
+      - "Shuffle data exceeds local disk capacity"
+      - "Large cached DataFrames persisted to disk"
+      - "Temporary files not cleaned up"
+      - "Log files consuming disk space"
+
+    remediation:
+      - "Use larger instance types with more local storage"
+      - "Enable disk cleanup after job completion"
+      - "Reduce shuffle size with better partitioning"
+      - "Use external shuffle service"
+
+    recommendations:
+      - id: use_larger_storage
+        priority: high
+        action: "Use instance types with more local SSD storage"
+        implementation: |
+          # Use storage-optimized instances
+          # AWS: i3.xlarge, i3.2xlarge
+          # Azure: L-series
+        verification: "Monitor disk usage during job execution"
+
+      - id: enable_cleanup
+        priority: medium
+        action: "Enable aggressive cleanup of temporary files"
+        implementation: |
+          spark.cleaner.periodicGC.interval = 5min
+          spark.cleaner.referenceTracking.blocking = true
+        verification: "Disk usage stays within limits"
+
+    evidence_checklist:
+      required:
+        - "No space left on device error"
+      supporting:
+        - "Shuffle stage in progress"
+        - "Large data volume processed"
+
+    confidence_factors:
+      increase:
+        - "ENOSPC in system logs"
+        - "100% disk utilization"
+      decrease:
+        - "Disk has free space"
+        - "Error is transient"
+
+    related_patterns:
+      - shuffle_spill
+      - shuffle_fetch_failed
+
+    docs:
+      - "https://docs.databricks.com/clusters/configure.html"
+

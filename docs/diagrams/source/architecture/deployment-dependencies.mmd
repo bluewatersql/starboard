@@ -1,0 +1,52 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "Application"
+        Backend[FastAPI Backend]
+    end
+    
+    subgraph "Required Dependencies"
+        Databricks[Databricks Workspace<br/>✅ Required<br/>- Workspace APIs<br/>- OAuth authentication]
+        Lakebase[Lakebase Database<br/>✅ Required<br/>- Postgres-compatible<br/>- State storage]
+        LLM[LLM Provider<br/>✅ Required<br/>- OpenAI or Azure OpenAI<br/>- Agent reasoning]
+    end
+    
+    subgraph "Optional Dependencies"
+        Redis[Redis Cache<br/>⚪ Optional<br/>- Session caching<br/>- Distributed locking<br/>- Performance optimization]
+        ModelServing[Model Serving<br/>⚪ Optional<br/>- LLM endpoint proxy<br/>- Alternative to direct LLM]
+    end
+    
+    subgraph "Databricks Platform Services"
+        WorkspaceAPIs[Workspace APIs<br/>- Query History<br/>- Job Runs<br/>- UC Metadata]
+        SystemTables[System Tables<br/>- Usage/Cost data<br/>- Billing information]
+    end
+    
+    %% Required connections
+    Backend -->|Required| Databricks
+    Backend -->|Required| Lakebase
+    Backend -->|Required| LLM
+    
+    %% Optional connections
+    Backend -.->|Optional| Redis
+    Backend -.->|Optional| ModelServing
+    ModelServing -.->|Proxy| LLM
+    
+    %% Databricks services
+    Databricks --> WorkspaceAPIs
+    Databricks --> SystemTables
+    
+    Note1[Required Dependencies:<br/>- Must be configured for app to run<br/>- Authentication required<br/>- Core functionality depends on these]
+    
+    Note2[Optional Dependencies:<br/>- Enhance performance<br/>- Can run without these<br/>- Graceful degradation if unavailable]
+    
+    style Backend fill:#4f46e5,color:#fff
+    style Databricks fill:#ff6b6b,color:#fff
+    style Lakebase fill:#64748b,color:#fff
+    style LLM fill:#f59e0b,color:#fff
+    style Redis fill:#f59e0b,color:#fff,stroke-dasharray: 5 5
+    style ModelServing fill:#f59e0b,color:#fff,stroke-dasharray: 5 5
+    style WorkspaceAPIs fill:#22c55e,color:#fff
+    style SystemTables fill:#22c55e,color:#fff
+    style Note1 fill:#fef3c7,color:#000
+    style Note2 fill:#fef3c7,color:#000
+

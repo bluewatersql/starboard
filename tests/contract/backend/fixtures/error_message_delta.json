@@ -1,0 +1,12 @@
+{
+  "event_type": "error",
+  "data": {
+    "message_id": "msg_test_error",
+    "error": {
+      "message": "Test error occurred",
+      "type": "TEST_ERROR",
+      "is_recoverable": true,
+      "context": {}
+    }
+  }
+}

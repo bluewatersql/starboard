@@ -1,0 +1,31 @@
+graph TD
+    A[User Request] -->|statement_id or SQL| B[Query Agent]
+    B --> C{Has statement_id?}
+    C -->|No| D[request_user_input]
+    C -->|Yes| E[resolve_query]
+    D --> E
+    
+    E --> F{ONLINE Mode?}
+    F -->|Yes| G[analyze_query_plan<br/>MANDATORY]
+    F -->|No OFFLINE| H[discover_tables<br/>Static Analysis]
+    
+    G --> I[discover_tables]
+    I --> J[get_table_metadata<br/>PARALLEL]
+    H --> J
+    
+    J --> K{Sufficient Data?}
+    K -->|Yes| L[complete<br/>OptimizerAdvisorReport]
+    K -->|No| M[get_table_history<br/>Additional Context]
+    M --> L
+    
+    L --> N{Route to Specialist?}
+    N -->|Complex Table<br/>Optimization| O[UC Agent]
+    N -->|Warehouse<br/>Configuration| P[Warehouse Agent]
+    N -->|Cost<br/>Deep-Dive| Q[Analytics Agent]
+    N -->|Job<br/>Context| R[Job Agent]
+    N -->|No| S[End]
+    
+    style B fill:#4A90E2,color:#fff
+    style L fill:#7ED321,color:#000
+    style G fill:#F5A623,color:#000
+

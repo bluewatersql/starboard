@@ -1,0 +1,697 @@
+"""Discovery tool adapters — expose the DiscoveryEngine phases as agent tools.
+
+Provides 4 granular tools matching the engine's 4-phase pipeline, allowing the
+discovery agent to reason between phases and adapt its workflow dynamically:
+
+1. ``discover_active_products`` — Phase 1 (Audit)
+2. ``run_discovery_queries``    — Phase 2 (Query)
+3. ``analyze_discovery_domain`` — Phase 3 (Analyze, per-domain)
+4. ``synthesize_discovery_report`` — Phase 4 (Synthesize)
+
+Also retains the legacy ``run_workspace_discovery`` for backward-compatible
+programmatic/CLI-direct use.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import time
+import uuid
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
+
+from starboard_core.domain.models.discovery.analysis import DomainAnalysis
+from starboard_core.domain.models.discovery.query import PackResult
+from starboard_core.domain.models.discovery.report import AnalysisContext
+
+from starboard_server.discovery.analyzer import DomainAnalyzer, build_fallback_analysis
+from starboard_server.discovery.engine import DiscoveryEngine, EngineConfig
+from starboard_server.discovery.executor import QueryPackExecutor, SQLExecutor
+from starboard_server.discovery.heuristics import create_default_heuristic_registry
+from starboard_server.discovery.output.formatters import OutputFormatter
+from starboard_server.discovery.prompts.domain_analysis import PromptBuilder
+from starboard_server.discovery.query_packs.registry import create_default_registry
+from starboard_server.discovery.synthesizer import ReportAssembler
+from starboard_server.infra.core.config import EnvConfig
+from starboard_server.infra.observability.logging import get_logger
+
+if TYPE_CHECKING:
+    from starboard_core.domain.models.discovery.report import DiscoveryReport
+
+logger = get_logger(__name__)
+
+
+def _build_report_summary(report: DiscoveryReport) -> dict[str, Any]:
+    """Build a detailed report summary dict from a DiscoveryReport.
+
+    Shared between the granular Phase 4 tool and the legacy monolithic tool
+    to avoid duplicating the serialisation logic.
+
+    Args:
+        report: Completed discovery report with executive summary.
+
+    Returns:
+        Dict with overview, per-domain report cards with findings,
+        top priorities, and recommended actions.
+    """
+    return {
+        "overview": report.executive_summary.overview,
+        "primary_risks": report.executive_summary.primary_risks,
+        "report_cards": [
+            {
+                "domain": rc.domain,
+                "grade": rc.grade,
+                "score": rc.score,
+                "discussion": rc.discussion,
+                "finding_count": len(rc.top_findings),
+                "top_findings": [
+                    {
+                        "finding_id": f.finding_id,
+                        "title": f.title,
+                        "priority": f.priority,
+                        "impact": f.impact,
+                        "description": f.description,
+                        "evidence": [
+                            {
+                                "source_query_id": e.source_query_id,
+                                "excerpt": e.excerpt,
+                                "metric_name": e.metric_name,
+                                "metric_value": e.metric_value,
+                            }
+                            for e in f.evidence[:3]
+                        ],
+                        "remediation": {
+                            "immediate": f.remediation.immediate[:3],
+                            "medium_term": f.remediation.medium_term[:2],
+                        },
+                    }
+                    for f in rc.top_findings[:15]
+                ],
+            }
+            for rc in report.executive_summary.report_cards
+        ],
+        "domain_summaries": [
+            {
+                "domain": da.domain,
+                "grade": da.grade,
+                "score": da.score,
+                "summary": da.summary,
+                "observations": da.observations[:10],
+                "patterns": da.patterns[:5],
+                "recommended_actions": da.recommended_actions[:10],
+            }
+            for da in report.domain_analyses
+        ],
+        "top_findings": [
+            {
+                "finding_id": f.finding_id,
+                "title": f.title,
+                "priority": f.priority,
+                "impact": f.impact,
+                "domain": f.domain,
+                "description": f.description,
+                "expected_outcome": f.expected_outcome,
+            }
+            for f in report.top_priorities[:20]
+        ],
+        "top_actions": report.executive_summary.top_actions[:10],
+    }
+
+
+class DiscoveryTools:
+    """Agent tool adapters for workspace discovery.
+
+    Wraps the discovery pipeline components to expose each phase as an
+    independently callable agent tool, enabling step-by-step reasoning.
+
+    Args:
+        sql_executor: SQL executor for Databricks queries.
+        llm_client: LLM client for analysis and synthesis.
+        env_config: Environment configuration with discovery settings.
+    """
+
+    def __init__(
+        self,
+        sql_executor: SQLExecutor,
+        llm_client: Any | None = None,
+        env_config: EnvConfig | None = None,
+    ) -> None:
+        self._sql_executor = sql_executor
+        self._llm_client = llm_client
+        self._env_config = env_config or EnvConfig.from_env()
+
+        self._query_registry = create_default_registry()
+        self._heuristic_registry = create_default_heuristic_registry()
+        self._prompt_builder = PromptBuilder()
+        self._output_formatter = OutputFormatter()
+
+        # Shared state across tool calls within a single agent session.
+        # The agent calls tools sequentially within one reasoning loop, so
+        # these are safe to share without locking.
+        self._active_products: list[str] | None = None
+        self._pack_results: list[PackResult] | None = None
+        self._domain_analyses: list[DomainAnalysis] = []
+        self._trace_id: str = ""
+        self._lookback_days: int = self._env_config.discovery_lookback_days
+        self._discovery_markdown: str | None = None
+
+    def get_discovery_markdown(self) -> str | None:
+        """Return the rendered discovery report markdown, if available.
+
+        Populated after ``synthesize_discovery_report`` completes. Used by
+        the reasoning loop to inject pre-rendered content into the agent
+        output, bypassing LLM summarization.
+        """
+        return self._discovery_markdown
+
+    # ------------------------------------------------------------------
+    # Phase 1: Audit — discover active products
+    # ------------------------------------------------------------------
+
+    async def discover_active_products(
+        self,
+        lookback_days: int = 30,
+    ) -> dict[str, Any]:
+        """Audit the workspace to discover active Databricks products.
+
+        Queries ``system.billing.usage`` to determine which products
+        (JOBS, SQL, SERVING, etc.) have been active in the lookback window.
+        The result drives which query packs run in Phase 2.
+
+        Args:
+            lookback_days: Time window for the audit (30, 60, or 90 days).
+
+        Returns:
+            Dict with ``active_products``, ``available_domains``, and metadata.
+        """
+        self._trace_id = str(uuid.uuid4())
+        self._lookback_days = lookback_days
+        start = time.monotonic()
+
+        pack_executor = QueryPackExecutor(
+            sql_executor=self._sql_executor,
+            max_parallelism=self._env_config.discovery_max_parallelism,
+            default_lookback_days=lookback_days,
+        )
+
+        audit_packs = [
+            p for p in self._query_registry.all_packs if p.pack_id == "audit"
+        ]
+
+        if not audit_packs:
+            return {
+                "status": "error",
+                "error": "No audit pack registered",
+                "active_products": [],
+            }
+
+        results = await pack_executor.execute_packs(audit_packs)
+
+        audit_result = None
+        for pr in results:
+            for qr in pr.results:
+                if qr.query_id == "P-AUDIT01":
+                    audit_result = qr
+                    break
+
+        if (
+            audit_result is None
+            or not audit_result.succeeded
+            or audit_result.data is None
+        ):
+            self._active_products = []
+            error_msg = audit_result.error if audit_result else "Audit query not found"
+            return {
+                "status": "completed_with_warnings",
+                "trace_id": self._trace_id,
+                "warning": f"Audit query issue: {error_msg}. Will run default packs.",
+                "active_products": [],
+                "available_domains": ["billing", "governance", "migration"],
+                "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+            }
+
+        col = "billing_origin_product"
+        if col in audit_result.data.columns:
+            self._active_products = audit_result.data[col].unique().to_list()
+        else:
+            self._active_products = []
+
+        # Determine which domains will be analyzed
+        selected_packs = self._query_registry.get_packs_for_products(
+            active_products=set(self._active_products),
+        )
+        available_domains = sorted(
+            {p.domain for p in selected_packs if p.domain != "audit"}
+        )
+
+        return {
+            "status": "completed",
+            "trace_id": self._trace_id,
+            "lookback_days": lookback_days,
+            "active_products": self._active_products,
+            "product_count": len(self._active_products),
+            "available_domains": available_domains,
+            "pack_count": len(selected_packs),
+            "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+        }
+
+    # ------------------------------------------------------------------
+    # Phase 2: Query — execute discovery query packs
+    # ------------------------------------------------------------------
+
+    async def run_discovery_queries(
+        self,
+        domains: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Execute discovery query packs against system tables.
+
+        Runs SQL queries across selected domains. Must be called after
+        ``discover_active_products`` so the pack selection is informed by
+        which products are active.
+
+        Args:
+            domains: Optional list of specific domains to query.
+                     If omitted, queries all domains relevant to active products.
+
+        Returns:
+            Dict with per-domain query result summaries and metadata.
+        """
+        if self._active_products is None:
+            return {
+                "status": "error",
+                "error": "Call discover_active_products first to detect active products.",
+            }
+
+        start = time.monotonic()
+
+        pack_executor = QueryPackExecutor(
+            sql_executor=self._sql_executor,
+            max_parallelism=self._env_config.discovery_max_parallelism,
+            default_lookback_days=self._lookback_days,
+        )
+
+        packs = self._query_registry.get_packs_for_products(
+            active_products=set(self._active_products),
+            include=domains,
+        )
+
+        self._pack_results = await pack_executor.execute_packs(packs)
+
+        # Build per-domain summary
+        domain_summaries: dict[str, dict[str, Any]] = {}
+        for pr in self._pack_results:
+            if pr.domain == "audit":
+                continue
+            succeeded = sum(1 for qr in pr.results if qr.succeeded)
+            failed = sum(1 for qr in pr.results if not qr.succeeded)
+            total_rows = sum(qr.row_count for qr in pr.results if qr.succeeded)
+            domain_summaries.setdefault(
+                pr.domain,
+                {
+                    "queries_succeeded": 0,
+                    "queries_failed": 0,
+                    "total_rows": 0,
+                },
+            )
+            domain_summaries[pr.domain]["queries_succeeded"] += succeeded
+            domain_summaries[pr.domain]["queries_failed"] += failed
+            domain_summaries[pr.domain]["total_rows"] += total_rows
+
+        total_queries = sum(len(pr.results) for pr in self._pack_results)
+        total_succeeded = sum(
+            1 for pr in self._pack_results for qr in pr.results if qr.succeeded
+        )
+
+        return {
+            "status": "completed",
+            "trace_id": self._trace_id,
+            "packs_executed": len(self._pack_results),
+            "total_queries": total_queries,
+            "queries_succeeded": total_succeeded,
+            "queries_failed": total_queries - total_succeeded,
+            "domains_with_data": list(domain_summaries.keys()),
+            "domain_summaries": domain_summaries,
+            "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+        }
+
+    # ------------------------------------------------------------------
+    # Phase 3: Analyze — run heuristics + LLM for one or more domains
+    # ------------------------------------------------------------------
+
+    async def analyze_discovery_domain(
+        self,
+        domain: str | None = None,
+        domains: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Analyze one or more domains using heuristics and LLM reasoning.
+
+        Applies deterministic heuristic rules first, then uses the LLM for
+        deeper analysis. Produces a grade (A-F), score, findings, and
+        recommendations per domain.
+
+        Batch mode (``domains`` parameter) is **strongly preferred** — it uses
+        a single ``DomainAnalyzer`` with bounded parallelism and per-domain
+        timeouts, preventing resource exhaustion from concurrent LLM calls.
+
+        Must be called after ``run_discovery_queries``.
+
+        Args:
+            domain: Single domain to analyze (e.g. ``billing``).  Mutually
+                exclusive with ``domains``.
+            domains: List of domains to analyze in a single call.  Preferred
+                over calling once per domain.
+
+        Returns:
+            Dict with per-domain grades, scores, findings, and recommendations.
+        """
+        if self._pack_results is None:
+            return {
+                "status": "error",
+                "error": "Call run_discovery_queries first to gather data.",
+            }
+
+        # Resolve which domains to analyze
+        target_domains = self._resolve_target_domains(domain, domains)
+        if isinstance(target_domains, dict):
+            return target_domains  # error response
+        is_batch = len(target_domains) > 1
+
+        start = time.monotonic()
+
+        # Collect pack results per domain, noting domains with no data
+        domain_results: dict[str, list[PackResult]] = {}
+        skipped: list[str] = []
+        for d in target_domains:
+            packs = [pr for pr in self._pack_results if pr.domain == d]
+            if packs:
+                domain_results[d] = packs
+            else:
+                skipped.append(d)
+
+        if not domain_results:
+            resp: dict[str, Any] = {
+                "status": "no_data",
+                "message": "No query data available for any requested domain.",
+            }
+            if is_batch:
+                resp["domains"] = target_domains
+            else:
+                resp["domain"] = target_domains[0]
+            return resp
+
+        # Single analyzer — its internal semaphore (max_parallelism) gates
+        # concurrent LLM calls, so we can safely launch all domains at once.
+        if self._llm_client is None:
+            return {
+                "status": "error",
+                "error": "LLM client is required for domain analysis but was not configured.",
+            }
+
+        analyzer = DomainAnalyzer(
+            llm_client=self._llm_client,
+            heuristic_registry=self._heuristic_registry,
+            prompt_builder=self._prompt_builder,
+            max_parallelism=self._env_config.discovery_max_parallelism,
+            model=self._env_config.discovery_llm_model,
+            temperature=self._env_config.discovery_llm_temperature,
+        )
+
+        analyses: list[DomainAnalysis] = []
+        failed_domains: list[dict[str, str]] = []
+
+        async def _analyze_one(d: str, packs: list[PackResult]) -> None:
+            """Analyze a single domain, letting the analyzer handle its own LLM timeout."""
+            try:
+                result = await analyzer.analyze_domain(d, packs, trace_id=self._trace_id)
+                analyses.append(result)
+                self._domain_analyses.append(result)
+            except Exception as exc:
+                logger.error(
+                    "domain_analysis_failed_using_heuristic_fallback",
+                    extra={"domain": d, "error": str(exc)},
+                    exc_info=True,
+                )
+                query_results = [qr for pr in packs for qr in pr.results]
+                result_map = {
+                    qr.query_id: qr.data
+                    for qr in query_results
+                    if qr.succeeded and qr.data is not None
+                }
+                heuristic_findings = self._heuristic_registry.evaluate(d, result_map)
+                fallback = build_fallback_analysis(d, query_results, heuristic_findings)
+                analyses.append(fallback)
+                self._domain_analyses.append(fallback)
+                failed_domains.append({
+                    "domain": d,
+                    "error": str(exc),
+                    "fallback": "heuristic_analysis",
+                    "grade": fallback.grade,
+                })
+
+        # Run all domains concurrently; the analyzer's semaphore bounds
+        # actual LLM parallelism to max_parallelism (default 4).
+        async with asyncio.TaskGroup() as tg:
+            for d, packs in domain_results.items():
+                tg.create_task(_analyze_one(d, packs))
+
+        if not analyses:
+            return {
+                "status": "error",
+                "domains": target_domains,
+                "error": "Analysis produced no results for any domain.",
+                "failed_domains": failed_domains,
+            }
+
+        max_findings_per_domain = 10 if is_batch else 15
+        domain_results_out = []
+        for analysis in analyses:
+            findings_detail = [
+                {
+                    "finding_id": f.finding_id,
+                    "title": f.title,
+                    "priority": f.priority,
+                    "impact": f.impact,
+                    "domain": f.domain,
+                    "type": f.finding_type,
+                    "description": f.description,
+                    "evidence": [
+                        {
+                            "source_query_id": e.source_query_id,
+                            "excerpt": e.excerpt,
+                            "metric_name": e.metric_name,
+                            "metric_value": e.metric_value,
+                        }
+                        for e in f.evidence[:3]
+                    ],
+                    "remediation": {
+                        "immediate": f.remediation.immediate[:3],
+                        "medium_term": f.remediation.medium_term[:2],
+                    },
+                    "expected_outcome": f.expected_outcome,
+                }
+                for f in analysis.findings[:max_findings_per_domain]
+            ]
+            domain_results_out.append(
+                {
+                    "domain": analysis.domain,
+                    "grade": analysis.grade,
+                    "score": analysis.score,
+                    "summary": analysis.summary,
+                    "observations": analysis.observations[:10],
+                    "patterns": analysis.patterns[:5],
+                    "finding_count": len(analysis.findings),
+                    "findings": findings_detail,
+                    "recommended_actions": analysis.recommended_actions[:10],
+                    "data_coverage": {
+                        "queries_executed": analysis.data_coverage.queries_executed,
+                        "queries_succeeded": analysis.data_coverage.queries_succeeded,
+                        "queries_failed": (
+                            analysis.data_coverage.queries_executed
+                            - analysis.data_coverage.queries_succeeded
+                        ),
+                    },
+                }
+            )
+
+        # Single-domain backward-compatible response
+        if not is_batch and len(domain_results_out) == 1:
+            result_out = domain_results_out[0]
+            result_out["status"] = "completed"
+            result_out["elapsed_ms"] = round((time.monotonic() - start) * 1000, 1)
+            return result_out
+
+        return {
+            "status": "completed",
+            "domains_analyzed": len(analyses),
+            "domains_skipped": skipped,
+            "domains_failed": failed_domains,
+            "domain_results": domain_results_out,
+            "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+        }
+
+    def _resolve_target_domains(
+        self,
+        domain: str | None,
+        domains: list[str] | None,
+    ) -> list[str] | dict[str, Any]:
+        """Validate and resolve the domain/domains parameters.
+
+        Returns a list of domain strings, or an error dict if invalid.
+        """
+        if domain and domains:
+            return {
+                "status": "error",
+                "error": "Provide either 'domain' (single) or 'domains' (batch), not both.",
+            }
+        if domains:
+            return domains
+        if domain:
+            return [domain]
+        return {
+            "status": "error",
+            "error": "Provide 'domain' (single) or 'domains' (batch of all domains from Phase 2).",
+        }
+
+    # ------------------------------------------------------------------
+    # Phase 4: Synthesize — assemble the final report
+    # ------------------------------------------------------------------
+
+    async def synthesize_discovery_report(self) -> dict[str, Any]:
+        """Assemble all domain analyses into a final discovery report.
+
+        Builds report cards, ranks findings by priority, generates an
+        executive summary (via LLM if available), and writes output files.
+
+        Must be called after one or more ``analyze_discovery_domain`` calls.
+
+        Returns:
+            Dict with executive summary, report cards, top findings,
+            recommended actions, and output file paths.
+        """
+        if not self._domain_analyses:
+            return {
+                "status": "error",
+                "error": "No domain analyses available. Call analyze_discovery_domain first.",
+            }
+
+        start = time.monotonic()
+
+        # Build context
+        total_queries = sum(len(pr.results) for pr in (self._pack_results or []))
+        total_time = sum(
+            qr.execution_time_ms
+            for pr in (self._pack_results or [])
+            for qr in pr.results
+        )
+        context = AnalysisContext(
+            lookback_days=self._lookback_days,
+            analysis_timestamp=datetime.now(UTC).isoformat(),
+            domains_analyzed=[a.domain for a in self._domain_analyses],
+            total_queries_executed=total_queries,
+            total_execution_time_ms=total_time,
+        )
+
+        assembler = ReportAssembler(
+            llm_client=self._llm_client,
+            model=self._env_config.discovery_llm_model,
+            temperature=self._env_config.discovery_llm_temperature,
+        )
+
+        report = await assembler.assemble(
+            domain_analyses=self._domain_analyses,
+            context=context,
+            trace_id=self._trace_id,
+        )
+
+        output_dir = self._env_config.discovery_output_dir
+        output_files = await self._output_formatter.write_to_directory(
+            report, output_dir
+        )
+
+        self._discovery_markdown = self._output_formatter.to_markdown(report)
+
+        response: dict[str, Any] = {
+            "status": "completed",
+            "trace_id": self._trace_id,
+            "domains_analyzed": len(self._domain_analyses),
+            "output_files": [str(p) for p in output_files],
+            "report_summary": _build_report_summary(report),
+            "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+        }
+
+        # Reset shared state for next run
+        self._active_products = None
+        self._pack_results = None
+        self._domain_analyses = []
+
+        return response
+
+    # ------------------------------------------------------------------
+    # Legacy: monolithic run (kept for backward compatibility)
+    # ------------------------------------------------------------------
+
+    async def run_workspace_discovery(
+        self,
+        lookback_days: int = 30,
+        domains: list[str] | None = None,
+        data_only: bool = False,
+    ) -> dict[str, Any]:
+        """Run a full workspace health assessment (all 4 phases).
+
+        Retained for backward compatibility and programmatic use.
+        The discovery agent should prefer the granular phase tools.
+
+        Args:
+            lookback_days: Time window for analysis (30, 60, or 90 days).
+            domains: Specific domains to analyze (None = all active).
+            data_only: Skip LLM analysis and return raw query data.
+
+        Returns:
+            Dict with report summary, grades, top findings, and output paths.
+        """
+        env = self._env_config
+
+        config = EngineConfig(
+            lookback_days=lookback_days,
+            max_parallelism=env.discovery_max_parallelism,
+            domains=domains,
+            data_only=data_only,
+            output_dir=env.discovery_output_dir,
+            llm_model=env.discovery_llm_model,
+            llm_temperature=env.discovery_llm_temperature,
+        )
+
+        engine = DiscoveryEngine(
+            sql_executor=self._sql_executor,
+            llm_client=self._llm_client,
+            config=config,
+        )
+
+        result = await engine.run()
+
+        response: dict[str, Any] = {
+            "status": "completed" if not result.errors else "completed_with_errors",
+            "trace_id": result.trace_id,
+            "elapsed_ms": round(result.elapsed_ms, 1),
+            "packs_executed": len(result.pack_results),
+            "domains_analyzed": len(result.domain_analyses),
+            "output_files": result.output_files,
+            "errors": result.errors,
+        }
+
+        if result.report is not None:
+            report = result.report
+            response["report_summary"] = _build_report_summary(report)
+            response["markdown_report"] = self._output_formatter.to_markdown(report)
+        elif result.domain_analyses:
+            response["domain_summaries"] = [
+                {
+                    "domain": a.domain,
+                    "grade": a.grade,
+                    "score": a.score,
+                    "summary": a.summary,
+                }
+                for a in result.domain_analyses
+            ]
+
+        return response

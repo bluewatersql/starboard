@@ -1,0 +1,65 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant Agents as Multi-Agent System
+    participant Tools as Tool System
+    participant SDK as Databricks SDK
+    participant Workspace as Databricks Workspace
+    participant Lakebase as Lakebase DB
+    participant Cache as Redis Cache
+    
+    User->>Frontend: "Analyze job 123"
+    
+    Note over Frontend: Step 1: User Request
+    
+    Frontend->>Backend: POST /api/chat/messages<br/>{message, conversation_id}
+    
+    Note over Backend: Step 2: API Processing
+    
+    Backend->>Backend: Authenticate user
+    Backend->>Lakebase: Load conversation history
+    Lakebase-->>Backend: Previous messages
+    
+    Backend->>Agents: Route to appropriate agent
+    
+    Note over Agents: Step 3: Agent Processing
+    
+    Agents->>Tools: execute_tool("resolve_job", {job_id: 123})
+    
+    Tools->>SDK: GET /api/2.0/jobs/get?job_id=123
+    SDK->>Workspace: API Request
+    Workspace-->>SDK: Job metadata
+    SDK-->>Tools: Job data
+    
+    Tools->>Cache: Check cache (key: job:123)
+    
+    alt Cache hit
+        Cache-->>Tools: Cached result
+    else Cache miss
+        Tools->>SDK: GET /api/2.0/jobs/runs/list
+        SDK->>Workspace: API Request
+        Workspace-->>SDK: Job runs data
+        SDK-->>Tools: Runs data
+        
+        Tools->>Cache: Store in cache (TTL: 5min)
+        Tools-->>Agents: Tool result
+    end
+    
+    Note over Agents: Step 4: Generate Response
+    
+    Agents->>Agents: Process results, generate recommendations
+    Agents->>Lakebase: Persist conversation
+    Lakebase-->>Agents: ✓ Saved
+    
+    Agents-->>Backend: FinalOutputEvent
+    
+    Note over Backend: Step 5: Stream Response
+    
+    Backend->>Frontend: SSE: final_output<br/>{recommendations, metadata}
+    Frontend->>User: Display results
+    
+    Note over User: Data flow complete<br/>Request → Processing → Storage → Response
+

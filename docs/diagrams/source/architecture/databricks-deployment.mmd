@@ -1,0 +1,47 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph LR
+    %% Top level user access
+    Users[Users/Data Teams] -->|HTTPS| Browser[Web Browser]
+    Browser -->|Access| Frontend
+    
+    %% Databricks App Layer
+    Frontend[Next.js Frontend<br/>React 19 + MUI v7] -->|HTTP/SSE| Backend[FastAPI Backend<br/>Multi-Agent System]
+    
+    %% Backend to Platform
+    Backend -->|Python Client| SDK[Databricks SDK]
+    Backend -->|State| Lakebase[(Lakebase<br/>Postgres-compatible)]
+    Backend -->|Config| UCTables[(UC Tables<br/>Metadata)]
+    Backend -->|LLM| ModelServing[Model Serving<br/>LLM Endpoints]
+    
+    %% SDK to Workspace
+    SDK -->|Query/Job/UC APIs| Workspace[Workspace APIs]
+    
+    %% Workspace to Data
+    Workspace -->|Query Analysis| QueryHistory[SQL Query History]
+    Workspace -->|Job Analysis| JobRuns[Job Metadata]
+    Workspace -->|Governance| UCMetadata[UC Lineage]
+    Workspace -->|FinOps| BillingData[System Tables<br/>Usage/Cost]
+    
+    %% External LLM
+    ModelServing -.->|Proxy| LLMProvider[LLM Provider<br/>OpenAI/Azure]
+    Backend -.->|Optional Fallback| LLMProvider
+    Backend -.->|Optional| Redis[(Redis Cache)]
+    
+    %% Styling
+    style Users fill:#10b981,color:#fff
+    style Browser fill:#10b981,color:#fff
+    style Frontend fill:#06b6d4,color:#fff
+    style Backend fill:#4f46e5,color:#fff
+    style SDK fill:#7c3aed,color:#fff
+    style ModelServing fill:#f59e0b,color:#fff
+    style Workspace fill:#ff6b6b,color:#fff
+    style Lakebase fill:#64748b,color:#fff
+    style UCTables fill:#64748b,color:#fff
+    style Redis fill:#64748b,color:#fff
+    style QueryHistory fill:#22c55e,color:#fff
+    style JobRuns fill:#22c55e,color:#fff
+    style UCMetadata fill:#22c55e,color:#fff
+    style BillingData fill:#22c55e,color:#fff
+    style LLMProvider fill:#ff6b6b,color:#fff
+

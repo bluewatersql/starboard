@@ -1,0 +1,278 @@
+# Service Catalog Configuration
+# Phase 9: Service Catalog & Next-Step Suggestions
+#
+# This catalog defines available agents, tools, and capabilities for discovery.
+# Used by the router agent to provide cross-domain handoff recommendations.
+#
+# Valid domains (must match AgentDomain in routing_models.py):
+#   - query, job, uc, compute, analytics, diagnostic, warehouse
+
+version: "1.2.0"
+last_updated: "2025-12-08"
+
+# Core Domain Agents
+agents:
+  - service_id: "query_optimizer"
+    service_type: "agent"
+    name: "Query Optimizer"
+    domain: "query"
+    description: "Analyzes and optimizes Databricks SQL queries for performance and cost efficiency"
+    version: "1.0.0"
+    status: "active"
+    capabilities:
+      - capability_id: "analyze_query_performance"
+        name: "Analyze Query Performance"
+        description: "Evaluates query execution plans and identifies bottlenecks"
+      
+      - capability_id: "suggest_query_optimizations"
+        name: "Suggest Query Optimizations"
+        description: "Recommends specific query rewrites and optimizations"
+      
+      - capability_id: "explain_query_plan"
+        name: "Explain Query Plan"
+        description: "Breaks down query execution plans in human-readable form"
+    
+    examples:
+      - example_id: "query_slow"
+        user_query: "Why is my SELECT query running slow?"
+        expected_capability: "analyze_query_performance"
+      
+      - example_id: "query_optimize"
+        user_query: "How can I optimize this SQL query?"
+        expected_capability: "suggest_query_optimizations"
+      
+      - example_id: "query_explain"
+        user_query: "Explain what this query is doing"
+        expected_capability: "explain_query_plan"
+
+  - service_id: "job_analyzer"
+    service_type: "agent"
+    name: "Job Analyzer"
+    domain: "job"
+    description: "Analyzes Databricks job failures, performance issues, and execution patterns"
+    version: "1.0.0"
+    status: "active"
+    capabilities:
+      - capability_id: "diagnose_job_failure"
+        name: "Diagnose Job Failure"
+        description: "Investigates root causes of job failures and errors"
+      
+      - capability_id: "analyze_job_performance"
+        name: "Analyze Job Performance"
+        description: "Evaluates job execution time and resource usage"
+      
+      - capability_id: "compare_job_runs"
+        name: "Compare Job Runs"
+        description: "Compares metrics across multiple job executions"
+    
+    examples:
+      - example_id: "job_failed"
+        user_query: "Why did my job fail?"
+        expected_capability: "diagnose_job_failure"
+      
+      - example_id: "job_slow"
+        user_query: "My job is taking longer than usual"
+        expected_capability: "analyze_job_performance"
+      
+      - example_id: "job_compare"
+        user_query: "Compare today's job run with yesterday's"
+        expected_capability: "compare_job_runs"
+
+  - service_id: "uc_manager"
+    service_type: "agent"
+    name: "Unity Catalog Manager"
+    domain: "uc"
+    description: "Manages Unity Catalog objects, metadata, lineage, permissions, and governance"
+    version: "1.0.0"
+    status: "active"
+    capabilities:
+      - capability_id: "analyze_table_schema"
+        name: "Analyze Table Schema"
+        description: "Inspects table structure, columns, data types, and properties"
+      
+      - capability_id: "explore_lineage"
+        name: "Explore Data Lineage"
+        description: "Traces data flow and dependencies across tables"
+      
+      - capability_id: "manage_permissions"
+        name: "Manage Permissions"
+        description: "Reviews and manages grants, ownership, and access policies"
+      
+      - capability_id: "compare_schemas"
+        name: "Compare Schemas"
+        description: "Compares table schemas across environments or versions"
+      
+      - capability_id: "optimize_storage"
+        name: "Optimize Storage"
+        description: "Recommends partitioning, clustering, and storage optimization"
+    
+    examples:
+      - example_id: "table_schema"
+        user_query: "Show me the schema of my_table"
+        expected_capability: "analyze_table_schema"
+      
+      - example_id: "data_lineage"
+        user_query: "Where does the data in sales_table come from?"
+        expected_capability: "explore_lineage"
+      
+      - example_id: "permissions"
+        user_query: "Who has access to this table?"
+        expected_capability: "manage_permissions"
+      
+      - example_id: "schema_diff"
+        user_query: "Compare the schema between dev and prod"
+        expected_capability: "compare_schemas"
+
+  - service_id: "cluster_manager"
+    service_type: "agent"
+    name: "Cluster Manager"
+    domain: "cluster"
+    description: "Manages Databricks cluster configuration, autoscaling, and Spark tuning"
+    version: "1.0.0"
+    status: "active"
+    capabilities:
+      - capability_id: "analyze_cluster_config"
+        name: "Analyze Cluster Configuration"
+        description: "Reviews cluster settings and recommends improvements"
+      
+      - capability_id: "diagnose_cluster_issues"
+        name: "Diagnose Cluster Issues"
+        description: "Troubleshoots cluster startup and runtime problems"
+      
+      - capability_id: "optimize_autoscaling"
+        name: "Optimize Autoscaling"
+        description: "Analyzes autoscaling configuration and worker utilization"
+    
+    examples:
+      - example_id: "cluster_slow"
+        user_query: "My cluster is running slowly"
+        expected_capability: "analyze_cluster_config"
+      
+      - example_id: "cluster_failed"
+        user_query: "Cluster failed to start"
+        expected_capability: "diagnose_cluster_issues"
+      
+      - example_id: "autoscaling"
+        user_query: "Tune autoscaling settings"
+        expected_capability: "optimize_autoscaling"
+
+  - service_id: "diagnostic_agent"
+    service_type: "agent"
+    name: "Diagnostic Agent"
+    domain: "diagnostic"
+    description: "Performs general diagnostics and troubleshooting across Databricks platform"
+    version: "1.0.0"
+    status: "active"
+    capabilities:
+      - capability_id: "general_troubleshooting"
+        name: "General Troubleshooting"
+        description: "Diagnoses issues that don't fit specific domains"
+      
+      - capability_id: "collect_diagnostic_data"
+        name: "Collect Diagnostic Data"
+        description: "Gathers logs and metrics for analysis"
+      
+      - capability_id: "provide_recommendations"
+        name: "Provide Recommendations"
+        description: "Offers general best practices and recommendations"
+    
+    examples:
+      - example_id: "general_issue"
+        user_query: "Something is wrong with my workspace"
+        expected_capability: "general_troubleshooting"
+      
+      - example_id: "collect_logs"
+        user_query: "Collect logs for this issue"
+        expected_capability: "collect_diagnostic_data"
+      
+      - example_id: "best_practices"
+        user_query: "What are best practices for Databricks?"
+        expected_capability: "provide_recommendations"
+
+  - service_id: "analytics_agent"
+    service_type: "agent"
+    name: "Analytics Agent"
+    domain: "analytics"
+    description: "Provides FinOps cost analysis, spending trends, resource utilization, and billing insights"
+    version: "1.0.0"
+    status: "active"
+    capabilities:
+      - capability_id: "analyze_costs"
+        name: "Analyze Costs"
+        description: "Breaks down spending by warehouse, job, user, or time period"
+      
+      - capability_id: "identify_spending_trends"
+        name: "Identify Spending Trends"
+        description: "Tracks cost patterns over time and predicts future spending"
+      
+      - capability_id: "find_optimization_opportunities"
+        name: "Find Optimization Opportunities"
+        description: "Identifies expensive queries, underutilized resources, and cost savings"
+      
+      - capability_id: "generate_cost_reports"
+        name: "Generate Cost Reports"
+        description: "Creates formatted cost summaries with visualizations"
+    
+    examples:
+      - example_id: "cost_analysis"
+        user_query: "How much did we spend on Databricks last month?"
+        expected_capability: "analyze_costs"
+      
+      - example_id: "expensive_queries"
+        user_query: "What are our most expensive queries?"
+        expected_capability: "find_optimization_opportunities"
+      
+      - example_id: "spending_trend"
+        user_query: "Show me our DBU spending trend over time"
+        expected_capability: "identify_spending_trends"
+      
+      - example_id: "cost_report"
+        user_query: "Generate a cost report for this quarter"
+        expected_capability: "generate_cost_reports"
+
+  - service_id: "warehouse_agent"
+    service_type: "agent"
+    name: "Warehouse Agent"
+    domain: "warehouse"
+    description: "Optimizes SQL warehouse portfolio, sizing, scaling, and resource allocation"
+    version: "1.0.0"
+    status: "active"
+    capabilities:
+      - capability_id: "analyze_warehouse_portfolio"
+        name: "Analyze Warehouse Portfolio"
+        description: "Reviews all SQL warehouses and identifies optimization opportunities"
+      
+      - capability_id: "recommend_warehouse_sizing"
+        name: "Recommend Warehouse Sizing"
+        description: "Suggests optimal warehouse size based on workload patterns"
+      
+      - capability_id: "analyze_warehouse_utilization"
+        name: "Analyze Warehouse Utilization"
+        description: "Evaluates warehouse usage patterns and idle time"
+      
+      - capability_id: "compare_warehouse_performance"
+        name: "Compare Warehouse Performance"
+        description: "Compares query performance across different warehouses"
+    
+    examples:
+      - example_id: "warehouse_optimization"
+        user_query: "How can I optimize my SQL warehouses?"
+        expected_capability: "analyze_warehouse_portfolio"
+      
+      - example_id: "warehouse_sizing"
+        user_query: "What size should my warehouse be?"
+        expected_capability: "recommend_warehouse_sizing"
+      
+      - example_id: "warehouse_usage"
+        user_query: "Show me warehouse utilization metrics"
+        expected_capability: "analyze_warehouse_utilization"
+      
+      - example_id: "warehouse_compare"
+        user_query: "Compare performance between my warehouses"
+        expected_capability: "compare_warehouse_performance"
+
+# Future agents (to be implemented in later phases)
+# - performance_analyzer (deep Spark performance analysis)
+# - governance_manager (compliance and permissions)
+# - security_auditor (security best practices and auditing)
+

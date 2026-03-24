@@ -1,0 +1,35 @@
+graph TD
+    A[User Request] -->|job_id or name| B[Job Agent]
+    B --> C{Has job_id?}
+    C -->|No, has name| D[resolve_job]
+    C -->|Yes| E[get_job_config]
+    D --> E
+    
+    E --> F{Check cluster.type}
+    F -->|serverless| G[SERVERLESS Path]
+    F -->|job_cluster| H[STANDARD Path]
+    
+    G --> G1[analyze_job_history]
+    G1 --> G2[get_cluster_metrics<br/>via System Tables]
+    G2 --> G3[get_source_code<br/>PARALLEL]
+    
+    H --> H1[analyze_job_history]
+    H1 --> H2[get_spark_logs<br/>cluster_id from history]
+    H2 --> H3[get_source_code<br/>PARALLEL]
+    
+    G3 --> I[analyze_code_quality]
+    H3 --> I
+    
+    I --> J[complete<br/>JobOptimizationReport]
+    
+    J --> K{Route to Specialist?}
+    K -->|Cluster<br/>Sizing| L[Cluster Agent]
+    K -->|Query<br/>Optimization| M[Query Agent]
+    K -->|Tables<br/>Schema| N[UC Agent]
+    K -->|Cost<br/>Analysis| O[Analytics Agent]
+    K -->|No| P[End]
+    
+    style B fill:#E27A3F,color:#fff
+    style J fill:#7ED321,color:#000
+    style F fill:#F5A623,color:#000
+

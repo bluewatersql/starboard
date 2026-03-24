@@ -1,0 +1,622 @@
+"""Unit tests for Postgres memory store."""
+
+import json
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+
+from starboard_core.models.memory import Episode, Fact, SemanticQuery, UserProfile
+from starboard_server.adapters.state.postgres.memory_store import PostgresMemoryStore
+
+
+@pytest.fixture
+def connection_string():
+    """Provide test connection string."""
+    return "postgresql://user:pass@localhost:5432/testdb"
+
+
+@pytest.fixture
+def memory_store_with_mock_pool(connection_string):
+    """Create Postgres memory store with mocked pool."""
+    store = PostgresMemoryStore(connection_string)
+    
+    # Create mock pool
+    mock_pool = AsyncMock()
+    conn = AsyncMock()
+    pool.acquire.return_value.__aenter__.return_value = conn
+    pool.acquire.return_value.__aexit__.return_value = None
+    
+    store._pool = mock_pool
+    return store, mock_pool
+
+
+@pytest.fixture
+def sample_episode():
+    """Create a sample episode for testing."""
+    return Episode(
+        id="ep_123",
+        user_id="user_456",
+        conversation_id="conv_789",
+        summary="User optimized a query by adding indexes",
+        key_points=["Added index on user_id", "Reduced execution time by 50%"],
+        embedding=[0.1, 0.2, 0.3] * 512,  # 1536 dimensions
+        created_at=datetime.now(UTC),
+        metadata={"topic": "query_optimization"},
+    )
+
+
+@pytest.fixture
+def sample_fact():
+    """Create a sample fact for testing."""
+    return Fact(
+        id="fact_123",
+        user_id="user_456",
+        statement="User prefers Python for data processing",
+        category="preference",
+        confidence=0.95,
+        source="conversation:conv_789",
+        verified=False,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        metadata={"domain": "programming"},
+    )
+
+
+class TestPostgresMemoryStoreInitialization:
+    """Tests for PostgresMemoryStore initialization."""
+
+    def test_init_stores_connection_string(self, connection_string):
+        """Test that __init__ stores connection string."""
+        store = PostgresMemoryStore(connection_string)
+
+        assert store._connection_string == connection_string
+        assert store._pool is None
+
+    @pytest.mark.asyncio
+    async def test_connect_creates_pool(self, connection_string):
+        """Test that connect() creates connection pool."""
+        mock_pool = AsyncMock()
+        
+        with patch("asyncpg.create_pool", return_value=mock_pool) as mock_create:
+            store = PostgresMemoryStore(connection_string)
+            await store.connect()
+
+            mock_create.assert_called_once_with(
+                connection_string,
+                min_size=5,
+                max_size=20,
+                command_timeout=60,
+            )
+            assert store._pool is mock_pool
+
+    @pytest.mark.asyncio
+    async def test_close_closes_pool(self, memory_store_with_mock_pool):
+        """Test that close() closes the connection pool."""
+        memory_store, mock_pool = memory_store_with_mock_pool
+        await memory_store.close()
+
+        mock_pool.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_close_when_pool_is_none(self, connection_string):
+        """Test that close() handles None pool gracefully."""
+        store = PostgresMemoryStore(connection_string)
+        # Don't call connect()
+        await store.close()  # Should not raise
+
+
+class TestPostgresMemoryStoreEpisodicMemory:
+    """Tests for episodic memory operations."""
+
+    @pytest.mark.asyncio
+    async def test_store_episode(self, memory_store_with_mock_pool, sample_episode):
+        """Test storing an episode."""
+        memory_store, mock_pool = memory_store_with_mock_pool
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+
+        episode_id = await memory_store.store_episode(sample_episode)
+
+        assert episode_id == sample_episode.id
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        assert "INSERT INTO episodes" in call_args[0]
+        assert call_args[1] == sample_episode.id
+        assert call_args[2] == sample_episode.user_id
+
+    @pytest.mark.asyncio
+    async def test_store_episode_without_embedding(self, memory_store, mock_pool):
+        """Test storing episode without embedding."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        
+        episode = Episode(
+            id="ep_no_embed",
+            user_id="user_123",
+            conversation_id="conv_456",
+            summary="Test episode",
+            key_points=[],
+            embedding=None,
+            created_at=datetime.now(UTC),
+            metadata={},
+        )
+
+        episode_id = await memory_store.store_episode(episode)
+
+        assert episode_id == episode.id
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        assert call_args[6] is None  # embedding parameter
+
+    @pytest.mark.asyncio
+    async def test_recall_episodes(self, memory_store, mock_pool):
+        """Test recalling episodes (fallback without embedding)."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        mock_row = {
+            "id": "ep_123",
+            "user_id": "user_456",
+            "conversation_id": "conv_789",
+            "summary": "Test summary",
+            "key_points": ["point1", "point2"],
+            "embedding": [0.1, 0.2, 0.3],
+            "created_at": datetime.now(UTC),
+            "metadata": {"key": "value"},
+        }
+        conn.fetch.return_value = [mock_row]
+
+        episodes = await memory_store.recall_episodes("user_456", "test query", limit=5)
+
+        assert len(episodes) == 1
+        assert episodes[0].id == "ep_123"
+        assert episodes[0].summary == "Test summary"
+        conn.fetch.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_recall_episodes_by_embedding(self, memory_store, mock_pool):
+        """Test recalling episodes by embedding similarity."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        query_embedding = [0.1, 0.2, 0.3] * 512
+        
+        mock_row = {
+            "id": "ep_123",
+            "user_id": "user_456",
+            "conversation_id": "conv_789",
+            "summary": "Test summary",
+            "key_points": ["point1"],
+            "embedding": query_embedding,
+            "created_at": datetime.now(UTC),
+            "metadata": {},
+        }
+        conn.fetch.return_value = [mock_row]
+
+        episodes = await memory_store.recall_episodes_by_embedding(
+            "user_456", query_embedding, limit=10
+        )
+
+        assert len(episodes) == 1
+        assert episodes[0].id == "ep_123"
+        conn.fetch.assert_called_once()
+        call_args = conn.fetch.call_args[0]
+        # Check for pgvector operator <=>
+        assert "embedding <=> $1::vector" in call_args[0]
+
+    @pytest.mark.asyncio
+    async def test_get_recent_episodes(self, memory_store, mock_pool):
+        """Test getting recent episodes."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        
+        mock_row = {
+            "id": "ep_123",
+            "user_id": "user_456",
+            "conversation_id": "conv_789",
+            "summary": "Test summary",
+            "key_points": None,
+            "embedding": None,
+            "created_at": datetime.now(UTC),
+            "metadata": {},
+        }
+        conn.fetch.return_value = [mock_row]
+
+        episodes = await memory_store.get_recent_episodes("user_456", limit=5)
+
+        assert len(episodes) == 1
+        assert episodes[0].id == "ep_123"
+        conn.fetch.assert_called_once()
+        call_args = conn.fetch.call_args[0]
+        assert "ORDER BY created_at DESC" in call_args[0]
+
+
+class TestPostgresMemoryStoreSemanticMemory:
+    """Tests for semantic memory (facts) operations."""
+
+    @pytest.mark.asyncio
+    async def test_store_fact(self, memory_store, mock_pool, sample_fact):
+        """Test storing a fact."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+
+        fact_id = await memory_store.store_fact(sample_fact)
+
+        assert fact_id == sample_fact.id
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        assert "INSERT INTO facts" in call_args[0]
+        assert call_args[1] == sample_fact.id
+        assert call_args[2] == sample_fact.user_id
+
+    @pytest.mark.asyncio
+    async def test_query_facts_no_filters(self, memory_store, mock_pool):
+        """Test querying facts without filters."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        
+        mock_row = {
+            "id": "fact_123",
+            "user_id": "user_456",
+            "statement": "Test fact",
+            "category": "preference",
+            "confidence": 0.9,
+            "source": "test",
+            "verified": True,
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "metadata": {},
+        }
+        conn.fetch.return_value = [mock_row]
+
+        query = SemanticQuery(
+            text="test",
+            categories=None,
+            min_confidence=0.0,
+            include_unverified=True,
+            limit=10,
+        )
+        facts = await memory_store.query_facts("user_456", query)
+
+        assert len(facts) == 1
+        assert facts[0].id == "fact_123"
+        conn.fetch.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_query_facts_with_categories(self, memory_store, mock_pool):
+        """Test querying facts with category filter."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        conn.fetch.return_value = []
+
+        query = SemanticQuery(
+            text="test",
+            categories=["preference", "skill"],
+            min_confidence=0.5,
+            include_unverified=True,
+            limit=10,
+        )
+        await memory_store.query_facts("user_456", query)
+
+        conn.fetch.assert_called_once()
+        call_args = conn.fetch.call_args[0]
+        # Check for category filtering
+        assert "category = ANY($" in call_args[0]
+
+    @pytest.mark.asyncio
+    async def test_query_facts_verified_only(self, memory_store, mock_pool):
+        """Test querying verified facts only."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        conn.fetch.return_value = []
+
+        query = SemanticQuery(
+            text="test",
+            categories=None,
+            min_confidence=0.0,
+            include_unverified=False,
+            limit=10,
+        )
+        await memory_store.query_facts("user_456", query)
+
+        conn.fetch.assert_called_once()
+        call_args = conn.fetch.call_args[0]
+        assert "verified = true" in call_args[0]
+
+    @pytest.mark.asyncio
+    async def test_update_fact(self, memory_store, mock_pool):
+        """Test updating a fact."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+
+        await memory_store.update_fact(
+            "fact_123",
+            {"confidence": 1.0, "verified": True},
+        )
+
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        assert "UPDATE facts" in call_args[0]
+        assert "confidence = $2" in call_args[0]
+        assert "verified = $3" in call_args[0]
+
+    @pytest.mark.asyncio
+    async def test_update_fact_no_valid_updates(self, memory_store, mock_pool):
+        """Test updating fact with no valid update fields."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+
+        await memory_store.update_fact("fact_123", {"invalid_field": "value"})
+
+        # Should not call execute if no valid updates
+        conn.execute.assert_not_called()
+
+
+class TestPostgresMemoryStoreProfileMemory:
+    """Tests for profile memory operations."""
+
+    @pytest.mark.asyncio
+    async def test_get_profile_existing(self, memory_store, mock_pool):
+        """Test getting an existing profile."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        
+        mock_row = {
+            "user_id": "user_123",
+            "data": {
+                "job_preferences": {"role": "engineer"},
+                "technical_context": {},
+                "communication_preferences": {},
+                "custom_fields": {},
+            },
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+        }
+        conn.fetchrow.return_value = mock_row
+
+        profile = await memory_store.get_profile("user_123")
+
+        assert profile.user_id == "user_123"
+        assert profile.job_preferences == {"role": "engineer"}
+        conn.fetchrow.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_get_profile_creates_if_not_exists(self, memory_store, mock_pool):
+        """Test that get_profile creates profile if it doesn't exist."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        conn.fetchrow.return_value = None  # Profile doesn't exist
+
+        profile = await memory_store.get_profile("new_user")
+
+        assert profile.user_id == "new_user"
+        assert isinstance(profile.created_at, datetime)
+        # Should have inserted new profile
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        assert "INSERT INTO profiles" in call_args[0]
+
+    @pytest.mark.asyncio
+    async def test_update_profile(self, memory_store, mock_pool):
+        """Test updating user profile."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        
+        # Mock existing profile
+        mock_row = {
+            "user_id": "user_123",
+            "data": {
+                "job_preferences": {},
+                "technical_context": {},
+                "communication_preferences": {},
+                "custom_fields": {},
+            },
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+        }
+        conn.fetchrow.return_value = mock_row
+
+        await memory_store.update_profile(
+            "user_123",
+            {"job_preferences": {"role": "engineer"}},
+        )
+
+        # Should update profile
+        assert conn.execute.call_count >= 1
+        # Find the UPDATE call
+        update_calls = [
+            call for call in conn.execute.call_args_list
+            if "UPDATE profiles" in str(call)
+        ]
+        assert len(update_calls) > 0
+
+
+class TestPostgresMemoryStoreGDPR:
+    """Tests for GDPR compliance."""
+
+    @pytest.mark.asyncio
+    async def test_delete_user_data(self, memory_store, mock_pool):
+        """Test deleting all user data (GDPR compliance)."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        mock_transaction = AsyncMock()
+        conn.transaction.return_value = mock_transaction
+
+        await memory_store.delete_user_data("user_123")
+
+        # Should use transaction
+        conn.transaction.assert_called_once()
+        # Should delete from all three tables
+        assert conn.execute.call_count == 3
+        
+        calls = [str(call) for call in conn.execute.call_args_list]
+        assert any("DELETE FROM episodes" in call for call in calls)
+        assert any("DELETE FROM facts" in call for call in calls)
+        assert any("DELETE FROM profiles" in call for call in calls)
+
+
+class TestPostgresMemoryStoreRowConversion:
+    """Tests for row-to-object conversion helpers."""
+
+    def test_row_to_episode_with_all_fields(self, memory_store):
+        """Test converting database row to Episode with all fields."""
+        mock_row = {
+            "id": "ep_123",
+            "user_id": "user_456",
+            "conversation_id": "conv_789",
+            "summary": "Test summary",
+            "key_points": ["point1", "point2"],
+            "embedding": [0.1, 0.2, 0.3],
+            "created_at": datetime.now(UTC),
+            "metadata": {"key": "value"},
+        }
+
+        episode = memory_store._row_to_episode(mock_row)
+
+        assert episode.id == "ep_123"
+        assert episode.user_id == "user_456"
+        assert episode.summary == "Test summary"
+        assert episode.key_points == ["point1", "point2"]
+        assert episode.embedding == [0.1, 0.2, 0.3]
+        assert episode.metadata == {"key": "value"}
+
+    def test_row_to_episode_with_nulls(self, memory_store):
+        """Test converting database row with None values."""
+        mock_row = {
+            "id": "ep_123",
+            "user_id": "user_456",
+            "conversation_id": None,
+            "summary": "Test",
+            "key_points": None,
+            "embedding": None,
+            "created_at": datetime.now(UTC),
+            "metadata": None,
+        }
+
+        episode = memory_store._row_to_episode(mock_row)
+
+        assert episode.id == "ep_123"
+        assert episode.key_points == []
+        assert episode.embedding is None
+        assert episode.metadata == {}
+
+    def test_row_to_fact(self, memory_store):
+        """Test converting database row to Fact."""
+        mock_row = {
+            "id": "fact_123",
+            "user_id": "user_456",
+            "statement": "Test fact",
+            "category": "preference",
+            "confidence": 0.95,
+            "source": "test",
+            "verified": True,
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "metadata": {"key": "value"},
+        }
+
+        fact = memory_store._row_to_fact(mock_row)
+
+        assert fact.id == "fact_123"
+        assert fact.user_id == "user_456"
+        assert fact.statement == "Test fact"
+        assert fact.category == "preference"
+        assert fact.confidence == 0.95
+        assert fact.verified is True
+        assert fact.metadata == {"key": "value"}
+
+    def test_row_to_fact_with_null_metadata(self, memory_store):
+        """Test converting fact row with None metadata."""
+        mock_row = {
+            "id": "fact_123",
+            "user_id": "user_456",
+            "statement": "Test",
+            "category": "test",
+            "confidence": 0.9,
+            "source": None,
+            "verified": False,
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "metadata": None,
+        }
+
+        fact = memory_store._row_to_fact(mock_row)
+
+        assert fact.metadata == {}
+
+
+class TestPostgresMemoryStoreEdgeCases:
+    """Tests for edge cases and error conditions."""
+
+    @pytest.mark.asyncio
+    async def test_store_episode_with_empty_key_points(self, memory_store, mock_pool):
+        """Test storing episode with empty key points list."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        
+        episode = Episode(
+            id="ep_empty",
+            user_id="user_123",
+            conversation_id="conv_456",
+            summary="Test",
+            key_points=[],  # Empty list
+            embedding=None,
+            created_at=datetime.now(UTC),
+            metadata={},
+        )
+
+        await memory_store.store_episode(episode)
+
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        assert call_args[5] == []  # key_points parameter
+
+    @pytest.mark.asyncio
+    async def test_store_fact_with_zero_confidence(self, memory_store, mock_pool):
+        """Test storing fact with zero confidence."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        
+        fact = Fact(
+            id="fact_zero",
+            user_id="user_123",
+            statement="Low confidence fact",
+            category="test",
+            confidence=0.0,
+            source=None,
+            verified=False,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+        )
+
+        await memory_store.store_fact(fact)
+
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        assert call_args[5] == 0.0  # confidence parameter
+
+    @pytest.mark.asyncio
+    async def test_query_facts_with_high_limit(self, memory_store, mock_pool):
+        """Test querying facts with very high limit."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        conn.fetch.return_value = []
+
+        query = SemanticQuery(
+            text="test",
+            categories=None,
+            min_confidence=0.0,
+            include_unverified=True,
+            limit=1000,
+        )
+        await memory_store.query_facts("user_456", query)
+
+        conn.fetch.assert_called_once()
+        # Verify limit parameter is passed correctly
+        call_args = conn.fetch.call_args[0]
+        assert 1000 in call_args[1:]  # limit in params
+
+    @pytest.mark.asyncio
+    async def test_recall_episodes_empty_result(self, memory_store, mock_pool):
+        """Test recalling episodes when none exist."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+        conn.fetch.return_value = []
+
+        episodes = await memory_store.recall_episodes("nonexistent_user", "query")
+
+        assert episodes == []
+
+    @pytest.mark.asyncio
+    async def test_update_fact_updates_timestamp(self, memory_store, mock_pool):
+        """Test that updating fact updates the updated_at timestamp."""
+        conn = mock_pool.acquire.return_value.__aenter__.return_value
+
+        await memory_store.update_fact("fact_123", {"confidence": 0.99})
+
+        conn.execute.assert_called_once()
+        call_args = conn.execute.call_args[0]
+        # Should include updated_at in SET clause
+        assert "updated_at = $" in call_args[0]
+

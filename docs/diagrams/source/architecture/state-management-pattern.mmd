@@ -1,0 +1,50 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "Application Layer"
+        API[FastAPI Endpoints]
+        Agents[Multi-Agent System]
+    end
+    
+    subgraph "Repository Pattern - Abstraction"
+        ConvRepo[ConversationRepository<br/>Protocol]
+        EpisodeRepo[EpisodeRepository<br/>Protocol]
+        FactRepo[FactRepository<br/>Protocol]
+        UserRepo[UserRepository<br/>Protocol]
+    end
+    
+    subgraph "Data Models"
+        Conversation[Conversation<br/>id, user_id, created_at]
+        Episode[Episode<br/>conversation_id, summary]
+        Fact[Fact<br/>content, confidence, source]
+        UserProfile[UserProfile<br/>id, preferences]
+    end
+    
+    %% Application uses repositories
+    API -->|Uses| ConvRepo
+    API -->|Uses| UserRepo
+    Agents -->|Uses| ConvRepo
+    Agents -->|Uses| EpisodeRepo
+    Agents -->|Uses| FactRepo
+    
+    %% Repositories return domain models
+    ConvRepo -.->|Returns| Conversation
+    EpisodeRepo -.->|Returns| Episode
+    FactRepo -.->|Returns| Fact
+    UserRepo -.->|Returns| UserProfile
+    
+    %% Note: Implementations injected at runtime
+    Note1[Note: Storage implementations<br/>are injected via dependency injection]
+    
+    style API fill:#4f46e5,color:#fff
+    style Agents fill:#06b6d4,color:#fff
+    style ConvRepo fill:#8b5cf6,color:#fff
+    style EpisodeRepo fill:#8b5cf6,color:#fff
+    style FactRepo fill:#8b5cf6,color:#fff
+    style UserRepo fill:#8b5cf6,color:#fff
+    style Conversation fill:#64748b,color:#fff
+    style Episode fill:#64748b,color:#fff
+    style Fact fill:#64748b,color:#fff
+    style UserProfile fill:#64748b,color:#fff
+    style Note1 fill:#fef3c7,color:#000
+

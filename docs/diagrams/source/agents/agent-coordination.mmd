@@ -1,0 +1,42 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant U as User
+    participant API as FastAPI
+    participant MM as MultiAgentManager
+    participant IR as IntentRouter
+    participant QA as QueryAgent
+    participant T as Tools
+    participant DB as Databricks
+    
+    U->>API: POST /chat/message
+    API->>MM: process_message()
+    MM->>IR: classify_intent()
+    
+    Note over IR: Analyzes message<br/>using LLM
+    
+    IR-->>MM: Intent: QUERY_OPTIMIZATION
+    MM->>QA: activate(message, context)
+    
+    Note over QA: Agent becomes active<br/>builds context
+    
+    QA->>T: execute_tool("resolve_query")
+    T->>DB: GET /api/2.0/sql/queries
+    DB-->>T: query metadata
+    T-->>QA: ToolResult(data)
+    
+    QA->>QA: analyze_results()<br/>decide_next_action()
+    
+    QA->>T: execute_tool("analyze_query_plan")
+    T->>DB: GET /api/2.0/sql/history
+    DB-->>T: execution history
+    T-->>QA: ToolResult(data)
+    
+    Note over QA: Generates<br/>recommendations
+    
+    QA-->>MM: FinalResponse(recommendations)
+    MM->>API: stream_events()
+    API-->>U: SSE events
+    
+    Note over U: Real-time updates<br/>displayed in UI
+

@@ -1,0 +1,45 @@
+[project]
+name = "starboard-core"
+version = "0.1.0"
+description = "Starboard AI Agent - Core domain models, prompts, and shared types"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+    "pydantic>=2.12.3",
+    "typing-extensions>=4.14.1",
+    "orjson>=3.11.4",
+    "pyyaml>=6.0.3",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatchling.build.targets.wheel]
+packages = ["starboard_core"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=starboard_core",
+    "--cov-report=term-missing",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+]
+asyncio_mode = "auto"
+

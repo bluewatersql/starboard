@@ -1,0 +1,235 @@
+{
+  "success_with_advisor_report": {
+    "message_id": "msg_test_advisor",
+    "output": {
+      "status": "success",
+      "complete_report": {
+        "report_type": "advisor",
+        "summary": {
+          "overview": "Query analysis complete. Found 2 performance issues.",
+          "current_state": {
+            "cloud_provider": "aws",
+            "runtime_version": "14.3",
+            "warehouse_tier": "serverless",
+            "warehouse_size": "medium"
+          }
+        },
+        "analysis": {
+          "findings": [
+            {
+              "id": "finding_1",
+              "category": "QUERY",
+              "title": "Expensive hash join operation",
+              "recommendation": "Add broadcast hint for smaller table",
+              "fixes": [
+                {
+                  "type": "sql_rewrite",
+                  "before": "SELECT * FROM large_table l JOIN small_table s ON l.id = s.id",
+                  "after": "SELECT /*+ BROADCAST(s) */ * FROM large_table l JOIN small_table s ON l.id = s.id"
+                }
+              ],
+              "proofs": {
+                "evidence": ["Query plan shows shuffle exchange"],
+                "references": ["Databricks optimization guide"]
+              },
+              "impact_estimate": {
+                "level": "high",
+                "description": "Up to 50% reduction in query time"
+              },
+              "effort": {
+                "level": "low",
+                "estimate_hours": 0.5
+              },
+              "risks": ["May increase driver memory usage"],
+              "rank": 1
+            },
+            {
+              "id": "finding_2",
+              "category": "TABLE",
+              "title": "Missing partition pruning",
+              "recommendation": "Add partition filter to WHERE clause",
+              "impact_estimate": {
+                "level": "medium",
+                "description": "30-40% improvement"
+              },
+              "effort": {
+                "level": "low",
+                "estimate_hours": 0.25
+              },
+              "risks": [],
+              "rank": 2
+            }
+          ]
+        },
+        "next_steps": [
+          {
+            "id": "step_1",
+            "number": 1,
+            "title": "Apply broadcast hint",
+            "description": "I can help you implement the broadcast hint fix",
+            "action_type": "continue"
+          },
+          {
+            "id": "step_2",
+            "number": 2,
+            "title": "Analyze cluster configuration",
+            "description": "Check if cluster is properly sized",
+            "action_type": "route",
+            "target_agent": "cluster",
+            "parameters": {
+              "focus": "sizing"
+            }
+          }
+        ]
+      },
+      "next_steps": [
+        {
+          "id": "step_1",
+          "number": 1,
+          "title": "Apply broadcast hint",
+          "description": "I can help you implement the broadcast hint fix",
+          "action_type": "continue",
+          "target_agent": null,
+          "tool_name": null,
+          "parameters": null
+        },
+        {
+          "id": "step_2",
+          "number": 2,
+          "title": "Analyze cluster configuration",
+          "description": "Check if cluster is properly sized",
+          "action_type": "route",
+          "target_agent": "cluster",
+          "tool_name": null,
+          "parameters": {
+            "focus": "sizing"
+          }
+        }
+      ],
+      "tokens_used": 2500,
+      "cost_usd": 0.0375,
+      "duration_seconds": 8.5,
+      "steps_taken": 4
+    },
+    "formatted_markdown": "## Query Analysis Report\n\n### Overview\nQuery analysis complete. Found 2 performance issues.\n\n### Findings\n\n#### 1. Expensive hash join operation\n**Category:** QUERY | **Impact:** High | **Effort:** Low\n\n**Recommendation:** Add broadcast hint for smaller table\n\n---\n\n#### 2. Missing partition pruning\n**Category:** TABLE | **Impact:** Medium | **Effort:** Low\n\n**Recommendation:** Add partition filter to WHERE clause"
+  },
+  "success_with_analytics_report": {
+    "message_id": "msg_test_analytics",
+    "output": {
+      "status": "success",
+      "complete_report": {
+        "report_type": "analytics",
+        "summary": {
+          "overview": "Cost analysis complete. Found $500/month in potential savings."
+        },
+        "findings": [
+          {
+            "id": "finding_1",
+            "category": "COST_OPTIMIZATION",
+            "title": "Idle warehouse detected",
+            "recommendation": "Enable auto-suspend after 5 minutes",
+            "cost_impact": {
+              "monthly_savings_usd": 300,
+              "confidence": "high"
+            },
+            "effort": {
+              "level": "low",
+              "estimate_hours": 0.25
+            },
+            "rank": 1
+          },
+          {
+            "id": "finding_2",
+            "category": "WASTE_DETECTION",
+            "title": "Oversized warehouse",
+            "recommendation": "Downsize from Large to Medium",
+            "cost_impact": {
+              "monthly_savings_usd": 200,
+              "confidence": "medium"
+            },
+            "effort": {
+              "level": "medium",
+              "estimate_hours": 2
+            },
+            "rank": 2
+          }
+        ],
+        "cost_summary": {
+          "total_monthly_cost_usd": 5000,
+          "potential_savings_usd": 500,
+          "optimization_coverage_percent": 10
+        },
+        "next_steps": []
+      },
+      "next_steps": null,
+      "tokens_used": 1800,
+      "cost_usd": 0.027,
+      "duration_seconds": 6.2,
+      "steps_taken": 3
+    },
+    "formatted_markdown": "## Cost Analysis Report\n\n### Overview\nCost analysis complete. Found $500/month in potential savings.\n\n### Cost Summary\n- **Monthly Cost:** $5,000\n- **Potential Savings:** $500 (10%)"
+  },
+  "success_with_warehouse_report": {
+    "message_id": "msg_test_warehouse",
+    "output": {
+      "status": "success",
+      "complete_report": {
+        "report_type": "warehouse",
+        "summary": {
+          "overview": "Warehouse portfolio analysis complete. 5 warehouses analyzed."
+        },
+        "portfolio_summary": {
+          "total_warehouses": 5,
+          "active_warehouses": 3,
+          "total_monthly_cost_usd": 8000
+        },
+        "health_metrics": {
+          "avg_utilization_percent": 45,
+          "avg_queue_time_seconds": 2.5
+        },
+        "warehouses": [
+          {
+            "warehouse_id": "wh_prod_001",
+            "name": "Production Analytics",
+            "size": "Large",
+            "utilization_percent": 75,
+            "monthly_cost_usd": 3000
+          },
+          {
+            "warehouse_id": "wh_dev_001",
+            "name": "Development",
+            "size": "Small",
+            "utilization_percent": 15,
+            "monthly_cost_usd": 500
+          }
+        ],
+        "next_steps": [
+          {
+            "id": "step_1",
+            "number": 1,
+            "title": "Optimize dev warehouse",
+            "action_type": "continue"
+          }
+        ]
+      },
+      "next_steps": [
+        {
+          "id": "step_1",
+          "number": 1,
+          "title": "Optimize dev warehouse",
+          "description": null,
+          "action_type": "continue",
+          "target_agent": null,
+          "tool_name": null,
+          "parameters": null
+        }
+      ],
+      "tokens_used": 2100,
+      "cost_usd": 0.0315,
+      "duration_seconds": 7.1,
+      "steps_taken": 3
+    },
+    "formatted_markdown": "## Warehouse Portfolio Report\n\n### Overview\nWarehouse portfolio analysis complete. 5 warehouses analyzed.\n\n### Portfolio Summary\n- **Total Warehouses:** 5\n- **Active:** 3\n- **Monthly Cost:** $8,000"
+  }
+}
+

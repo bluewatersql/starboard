@@ -1,0 +1,27 @@
+graph TD
+    A[User Request] --> B[UC Agent]
+    B --> C{Pattern Detection}
+    
+    C -->|Discovery<br/>"list", "show"| D[list_uc_assets]
+    C -->|Analysis<br/>"analyze", "optimize"| E[get_table_metadata]
+    C -->|Lineage<br/>"where does", "what uses"| F[get_table_lineage]
+    
+    D --> G[data_table Output<br/>ALL items]
+    G --> H[complete<br/>UCAnalysisReport]
+    
+    E --> I[get_table_history]
+    I --> H
+    
+    F --> J[get_table_metadata<br/>PARALLEL for key tables]
+    J --> H
+    
+    H --> K{Route to Specialist?}
+    K -->|Query<br/>Performance| L[Query Agent]
+    K -->|Job<br/>ETL Pipeline| M[Job Agent]
+    K -->|Cost<br/>Per-Table| N[Analytics Agent]
+    K -->|No| O[End]
+    
+    style B fill:#9013FE,color:#fff
+    style H fill:#7ED321,color:#000
+    style C fill:#F5A623,color:#000
+

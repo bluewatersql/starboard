@@ -1,0 +1,54 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant Agent as Domain Agent
+    participant LLM as LLM Provider
+    participant Tools as Tool System
+    participant CM as Conversation Manager
+    
+    Note over Agent: Single Agent Reasoning Cycle
+    
+    Agent->>LLM: "What should I do next?<br/>Context: {user_message, history, facts}"
+    
+    LLM-->>Agent: {<br/>  "reasoning": "Need to resolve query first",<br/>  "tool": "resolve_query",<br/>  "parameters": {"query_id": "abc123"}<br/>}
+    
+    Note over Agent: Step 1: Execute tool
+    
+    Agent->>Tools: execute_tool("resolve_query", {...})
+    Tools-->>Agent: ToolResult {<br/>  success: true,<br/>  data: {...}<br/>}
+    
+    Agent->>CM: ToolEndEvent (streaming)
+    CM-->>User: SSE: tool_end event
+    
+    Note over Agent: Step 2: Analyze results
+    
+    Agent->>LLM: "Analyze this query plan:<br/>{tool_result_data}"
+    
+    LLM-->>Agent: {<br/>  "reasoning": "Query has performance issues",<br/>  "tool": "analyze_query_plan",<br/>  "parameters": {...}<br/>}
+    
+    Agent->>Tools: execute_tool("analyze_query_plan", {...})
+    Tools-->>Agent: ToolResult {<br/>  performance_issues: [...]<br/>}
+    
+    Agent->>CM: ToolEndEvent
+    CM-->>User: SSE: tool_end event
+    
+    Note over Agent: Step 3: Evaluate completion
+    
+    Agent->>Agent: Has enough information?<br/>Check: facts gathered, user intent satisfied
+    
+    alt Need more information
+        Note over Agent: Continue reasoning loop
+        Agent->>LLM: "What should I do next?"
+    else Ready to generate output
+        Agent->>LLM: "Generate recommendations<br/>based on: {all_facts, analysis}"
+        
+        LLM-->>Agent: Recommendations:<br/>"Optimize query by adding index..."
+        
+        Agent->>Agent: Format output
+        
+        Agent-->>CM: FinalOutputEvent
+        CM-->>User: SSE: final_output
+    end
+    
+    Note over Agent: Reasoning complete<br/>Agent can handoff or finish
+

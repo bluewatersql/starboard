@@ -1,0 +1,43 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+flowchart TD
+    Start([Agent calls tool]) --> Validate{Valid<br/>parameters?}
+    Validate -->|No| ErrorResponse[Return ToolResult<br/>with error]
+    Validate -->|Yes| CheckCache{Result<br/>in cache?}
+    
+    CheckCache -->|Yes| ReturnCached[Return cached result]
+    CheckCache -->|No| CircuitCheck{Circuit<br/>breaker<br/>open?}
+    
+    CircuitCheck -->|Yes| ServiceUnavail[Return service<br/>unavailable error]
+    CircuitCheck -->|No| Execute[Execute tool domain logic]
+    
+    Execute --> CallAPI[Call external API<br/>Databricks/LLM]
+    CallAPI -->|Success| ProcessData[Process response]
+    CallAPI -->|Error| Retry{Retry<br/>count < 3?}
+    
+    Retry -->|Yes| Backoff[Exponential backoff]
+    Backoff --> CallAPI
+    Retry -->|No| APIError[Return API error]
+    
+    ProcessData --> Validate2{Validate<br/>response?}
+    Validate2 -->|Invalid| DataError[Return validation error]
+    Validate2 -->|Valid| CacheResult[Cache result<br/>TTL: 5min]
+    
+    CacheResult --> ReturnResult[Return ToolResult<br/>with data]
+    
+    ErrorResponse --> End([Complete])
+    ReturnCached --> End
+    ServiceUnavail --> End
+    ReturnResult --> End
+    APIError --> End
+    DataError --> End
+    
+    style Start fill:#10b981,color:#fff
+    style End fill:#10b981,color:#fff
+    style ErrorResponse fill:#ef4444,color:#fff
+    style ServiceUnavail fill:#ef4444,color:#fff
+    style APIError fill:#ef4444,color:#fff
+    style DataError fill:#ef4444,color:#fff
+    style Execute fill:#4f46e5,color:#fff
+    style CacheResult fill:#f59e0b,color:#fff
+

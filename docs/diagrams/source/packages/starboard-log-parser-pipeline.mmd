@@ -1,0 +1,68 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+flowchart TB
+    Start([Source Path]) --> Detect{Detect<br/>Format}
+    
+    Detect -->|Local File| LocalLoader[LocalFileLoader]
+    Detect -->|dbfs:/| DBFSLoader[DBFSLoader]
+    Detect -->|/Volumes/| UCLoader[Unity Catalog]
+    Detect -->|https://| HTTPSLoader[HTTPSLoader]
+    Detect -->|s3://| S3Loader[S3Loader]
+    
+    LocalLoader --> Archive{Compressed?}
+    DBFSLoader --> Archive
+    UCLoader --> Archive
+    HTTPSLoader --> Archive
+    S3Loader --> Archive
+    
+    Archive -->|.gz| Gunzip[Decompress gzip]
+    Archive -->|.zip| Unzip[Extract zip]
+    Archive -->|.tar.gz| Untar[Extract tar.gz]
+    Archive -->|No| Stream
+    
+    Gunzip --> Stream[Stream Lines]
+    Unzip --> Stream
+    Untar --> Stream
+    
+    Stream --> ParseJSON{Valid<br/>JSON?}
+    
+    ParseJSON -->|Yes| EventType{Event<br/>Type}
+    ParseJSON -->|No| ErrorLog[Log Error]
+    
+    EventType -->|JobStart| JobParser[Job Parser]
+    EventType -->|StageSubmit| StageParser[Stage Parser]
+    EventType -->|TaskStart| TaskParser[Task Parser]
+    EventType -->|ExecutorAdded| ExecParser[Executor Parser]
+    EventType -->|Other| OtherParser[Other Events]
+    
+    JobParser --> UpdateState[Update Internal State]
+    StageParser --> UpdateState
+    TaskParser --> UpdateState
+    ExecParser --> UpdateState
+    OtherParser --> UpdateState
+    
+    UpdateState --> Validate{Validate}
+    Validate -->|Invalid| WarnLog[Log Warning]
+    Validate -->|Valid| Continue
+    
+    WarnLog --> Continue{More<br/>Lines?}
+    Continue -->|Yes| Stream
+    Continue -->|No| Finalize[Finalize Models]
+    
+    Finalize --> BuildApp[Build SparkApplication]
+    BuildApp --> End([Return Result])
+    
+    ErrorLog --> Continue
+    
+    style Start fill:#10b981,color:#fff
+    style End fill:#10b981,color:#fff
+    style LocalLoader fill:#4f46e5,color:#fff
+    style DBFSLoader fill:#4f46e5,color:#fff
+    style S3Loader fill:#4f46e5,color:#fff
+    style JobParser fill:#06b6d4,color:#fff
+    style StageParser fill:#06b6d4,color:#fff
+    style TaskParser fill:#06b6d4,color:#fff
+    style BuildApp fill:#10b981,color:#fff
+    style ErrorLog fill:#ef4444,color:#fff
+    style WarnLog fill:#f59e0b,color:#fff
+

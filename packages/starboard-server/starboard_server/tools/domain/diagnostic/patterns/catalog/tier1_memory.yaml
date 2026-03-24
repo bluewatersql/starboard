@@ -1,0 +1,457 @@
+# Tier 1 Memory Patterns
+# Exit codes and OOM-related failures
+version: "1.0.0"
+
+patterns:
+  # ============================================================================
+  # EXIT CODE PATTERNS
+  # ============================================================================
+  - id: exit_code_137
+    name: "Process Killed by SIGKILL (Exit Code 137)"
+    category: memory
+    severity: high
+    responsibility: configuration
+
+    keywords:
+      - "exit code 137"
+      - "exited with code 137"
+      - "Command exited with code 137"
+      - "SIGKILL"
+      - "signal 9"
+
+    regex_patterns:
+      - "exit(?:ed)?\\s*(?:with\\s*)?code\\s*137"
+      - "Command exited with code 137"
+      - "killed by signal 9"
+      - "SIGKILL"
+
+    exit_code: 137
+
+    root_cause: |
+      Exit code 137 = 128 + 9 (SIGKILL). The OS kernel terminated the process 
+      forcefully. Common causes: OOM killer, admin intervention, health check 
+      failure, or container resource limits exceeded.
+
+    symptoms:
+      - "Exit code 137 in logs"
+      - "Process terminated unexpectedly"
+      - "Container killed by orchestrator"
+
+    root_causes:
+      - "Memory exhaustion (OOM killer)"
+      - "Container/pod memory limit exceeded"
+      - "Admin or orchestrator killed the process"
+      - "Health check failure"
+
+    remediation:
+      - "Check for 'OOMKilled' or 'Killed' in container/cluster logs"
+      - "Increase executor memory (spark.executor.memory)"
+      - "Increase memory overhead (spark.executor.memoryOverhead)"
+      - "Review GC logs for memory pressure before termination"
+
+    recommendations:
+      - id: increase_executor_memory
+        priority: high
+        action: "Increase Spark executor memory by 50-100%"
+        implementation: |
+          spark.executor.memory = 16g
+          spark.executor.memoryOverhead = 4g
+        verification: "Rerun job and confirm no exit code 137"
+        tradeoffs: "Higher memory per executor means fewer executors per node"
+
+    evidence_checklist:
+      required:
+        - "Exit code 137 present in logs"
+      supporting:
+        - "OOMKilled annotation in container logs"
+        - "GC logs showing memory pressure"
+        - "Memory usage near limit before termination"
+
+    confidence_factors:
+      increase:
+        - "OOMKilled present in container/Kubernetes logs"
+        - "GC overhead limit warnings before termination"
+        - "Memory-intensive operations (collect, cache, broadcast)"
+      decrease:
+        - "Job was manually cancelled"
+        - "Admin kill command found in audit logs"
+        - "Cluster shutdown/scale-down event"
+
+    related_patterns:
+      - java_heap_space
+      - gc_overhead_limit
+      - executor_lost
+
+    docs:
+      - "https://docs.databricks.com/kb/clusters/out-of-memory.html"
+
+  - id: exit_code_143
+    name: "Process Terminated by SIGTERM (Exit Code 143)"
+    category: execution
+    severity: medium
+    responsibility: infrastructure
+
+    keywords:
+      - "exit code 143"
+      - "exited with code 143"
+      - "SIGTERM"
+      - "signal 15"
+      - "terminated"
+
+    regex_patterns:
+      - "exit(?:ed)?\\s*(?:with\\s*)?code\\s*143"
+      - "killed by signal 15"
+      - "SIGTERM"
+      - "graceful shutdown"
+
+    exit_code: 143
+
+    root_cause: |
+      Exit code 143 = 128 + 15 (SIGTERM). Graceful termination was requested.
+      Common causes: job cancellation, timeout, cluster shutdown, or autoscaling.
+
+    symptoms:
+      - "Exit code 143 in logs"
+      - "Graceful shutdown messages"
+      - "Task cancelled notifications"
+
+    root_causes:
+      - "User cancelled the job"
+      - "Job timeout exceeded"
+      - "Cluster shutdown or scale-down"
+      - "Spot instance termination"
+
+    remediation:
+      - "Check job history for cancellation events"
+      - "Review cluster event logs for shutdown reasons"
+      - "Check for timeout configurations"
+
+    recommendations:
+      - id: check_cancellation
+        priority: medium
+        action: "Verify if job was intentionally cancelled"
+        implementation: "Review job run history in Databricks UI"
+        verification: "Confirm cancellation source (user, timeout, or system)"
+
+    evidence_checklist:
+      required:
+        - "Exit code 143 present in logs"
+      supporting:
+        - "Job cancelled message in history"
+        - "Cluster shutdown event"
+        - "Timeout warning before termination"
+
+    confidence_factors:
+      increase:
+        - "Job cancellation event in audit logs"
+        - "Timeout exceeded warning"
+        - "Cluster termination event"
+      decrease:
+        - "No cancellation event found"
+        - "Job was running normally"
+
+    related_patterns:
+      - executor_lost
+
+    docs:
+      - "https://docs.databricks.com/jobs/jobs-troubleshooting.html"
+
+  # ============================================================================
+  # JVM MEMORY PATTERNS
+  # ============================================================================
+  - id: java_heap_space
+    name: "Java Heap Space OutOfMemoryError"
+    category: memory
+    severity: critical
+    responsibility: configuration
+
+    keywords:
+      - "OutOfMemoryError"
+      - "Java heap space"
+      - "java.lang.OutOfMemoryError"
+      - "heap space"
+
+    regex_patterns:
+      - "java\\.lang\\.OutOfMemoryError:\\s*Java heap space"
+      - "OutOfMemoryError.*heap space"
+
+    exception_class: "java\\.lang\\.OutOfMemoryError"
+    message_pattern: "Java heap space"
+
+    root_cause: |
+      JVM heap memory exhausted. The application attempted to allocate more 
+      memory than available in the heap. Common in data-intensive operations 
+      like collect(), broadcast(), or processing skewed partitions.
+
+    symptoms:
+      - "java.lang.OutOfMemoryError: Java heap space"
+      - "Task failures with OOM"
+      - "Executor lost after OOM"
+
+    root_causes:
+      - "collect() on large DataFrame"
+      - "Large broadcast variable"
+      - "Data skew causing memory concentration"
+      - "Insufficient executor memory"
+
+    remediation:
+      - "Avoid collect() on large datasets; use distributed writes"
+      - "Reduce broadcast size or disable auto-broadcast"
+      - "Increase spark.executor.memory"
+      - "Add more partitions to reduce per-partition size"
+
+    recommendations:
+      - id: avoid_collect
+        priority: high
+        action: "Replace collect() with distributed operations"
+        implementation: |
+          # Instead of: df.collect()
+          # Use: df.write.format("delta").save("/path/to/output")
+        verification: "Job completes without OOM errors"
+
+      - id: increase_heap
+        priority: medium
+        action: "Increase executor heap memory"
+        implementation: |
+          spark.executor.memory = 16g
+        verification: "Monitor memory usage in Spark UI"
+
+    evidence_checklist:
+      required:
+        - "java.lang.OutOfMemoryError: Java heap space in logs"
+      supporting:
+        - "collect() or toPandas() in code"
+        - "Large broadcast variable"
+        - "GC pressure before OOM"
+
+    confidence_factors:
+      increase:
+        - "collect() call in stack trace"
+        - "Broadcast variable size > driver memory"
+        - "Full GC events before OOM"
+      decrease:
+        - "Plenty of heap memory configured (>32GB)"
+        - "Small dataset size"
+
+    related_patterns:
+      - exit_code_137
+      - gc_overhead_limit
+
+    docs:
+      - "https://docs.databricks.com/kb/clusters/out-of-memory.html"
+      - "https://spark.apache.org/docs/latest/tuning.html#memory-management"
+
+  - id: gc_overhead_limit
+    name: "GC Overhead Limit Exceeded"
+    category: memory
+    severity: critical
+    responsibility: configuration
+
+    keywords:
+      - "GC overhead limit exceeded"
+      - "OutOfMemoryError"
+      - "GC overhead"
+
+    regex_patterns:
+      - "java\\.lang\\.OutOfMemoryError:\\s*GC overhead limit exceeded"
+      - "GC overhead limit exceeded"
+
+    exception_class: "java\\.lang\\.OutOfMemoryError"
+    message_pattern: "GC overhead limit exceeded"
+
+    root_cause: |
+      JVM spent >98% of time in garbage collection with minimal memory recovery.
+      The application is creating objects faster than GC can reclaim, typically 
+      indicating severe memory pressure or memory leaks.
+
+    symptoms:
+      - "java.lang.OutOfMemoryError: GC overhead limit exceeded"
+      - "Frequent Full GC events with minimal recovery"
+      - "Application becomes unresponsive"
+
+    root_causes:
+      - "Memory-intensive operations with insufficient heap"
+      - "Large number of small objects overwhelming GC"
+      - "Data skew causing memory concentration"
+      - "Memory leak in user code or libraries"
+
+    remediation:
+      - "Increase executor memory significantly (2-3x)"
+      - "Reduce data processed per partition"
+      - "Review code for object creation patterns"
+      - "Consider G1GC tuning for large heaps"
+
+    recommendations:
+      - id: increase_memory_gc
+        priority: high
+        action: "Increase executor memory by 2-3x"
+        implementation: |
+          spark.executor.memory = 32g
+          spark.executor.memoryOverhead = 8g
+        verification: "GC logs show healthy collection patterns"
+
+      - id: tune_gc
+        priority: medium
+        action: "Tune G1GC for large heaps"
+        implementation: |
+          spark.executor.extraJavaOptions = "-XX:+UseG1GC -XX:G1HeapRegionSize=16m"
+        verification: "Reduced Full GC frequency"
+
+    evidence_checklist:
+      required:
+        - "GC overhead limit exceeded in logs"
+      supporting:
+        - "Frequent Full GC in GC logs"
+        - "Minimal memory recovery after GC"
+
+    confidence_factors:
+      increase:
+        - "Multiple Full GC events before failure"
+        - "GC logs show <2% memory recovered"
+      decrease:
+        - "Single GC event (transient)"
+        - "Application just starting up"
+
+    related_patterns:
+      - java_heap_space
+      - exit_code_137
+
+    docs:
+      - "https://docs.databricks.com/kb/clusters/gc-overhead-limit.html"
+
+  - id: metaspace_oom
+    name: "Metaspace OutOfMemoryError"
+    category: memory
+    severity: high
+    responsibility: configuration
+
+    keywords:
+      - "Metaspace"
+      - "OutOfMemoryError"
+      - "class metadata"
+
+    regex_patterns:
+      - "java\\.lang\\.OutOfMemoryError:\\s*Metaspace"
+      - "OutOfMemoryError.*Metaspace"
+
+    exception_class: "java\\.lang\\.OutOfMemoryError"
+    message_pattern: "Metaspace"
+
+    root_cause: |
+      JVM Metaspace (class metadata storage) exhausted. Common when loading 
+      many classes dynamically, using code generation, or running many 
+      SparkSQL queries with codegen.
+
+    symptoms:
+      - "java.lang.OutOfMemoryError: Metaspace"
+      - "Class loading failures"
+      - "Slow startup with many libraries"
+
+    root_causes:
+      - "Too many dynamically generated classes"
+      - "Many SparkSQL queries with codegen"
+      - "Large number of JARs/libraries loaded"
+      - "Classloader leaks"
+
+    remediation:
+      - "Increase MaxMetaspaceSize"
+      - "Reduce codegen usage if applicable"
+      - "Review library dependencies for duplicates"
+
+    recommendations:
+      - id: increase_metaspace
+        priority: high
+        action: "Increase Metaspace limit"
+        implementation: |
+          spark.executor.extraJavaOptions = "-XX:MaxMetaspaceSize=512m"
+          spark.driver.extraJavaOptions = "-XX:MaxMetaspaceSize=512m"
+        verification: "No Metaspace OOM errors"
+
+    evidence_checklist:
+      required:
+        - "OutOfMemoryError: Metaspace in logs"
+      supporting:
+        - "Many libraries/JARs loaded"
+        - "Heavy codegen usage"
+
+    confidence_factors:
+      increase:
+        - "Metaspace usage near limit in GC logs"
+        - "Many SQL queries executed"
+      decrease:
+        - "Minimal library usage"
+        - "Single simple job"
+
+    related_patterns:
+      - java_heap_space
+
+    docs:
+      - "https://docs.databricks.com/kb/clusters/metaspace.html"
+
+  - id: direct_buffer_oom
+    name: "Direct Buffer Memory OutOfMemoryError"
+    category: memory
+    severity: high
+    responsibility: configuration
+
+    keywords:
+      - "Direct buffer memory"
+      - "OutOfMemoryError"
+      - "direct memory"
+
+    regex_patterns:
+      - "java\\.lang\\.OutOfMemoryError:\\s*Direct buffer memory"
+      - "OutOfMemoryError.*[Dd]irect buffer"
+
+    exception_class: "java\\.lang\\.OutOfMemoryError"
+    message_pattern: "[Dd]irect buffer"
+
+    root_cause: |
+      Off-heap direct buffer memory exhausted. Used by Netty, NIO, and Spark 
+      shuffle. Common during heavy shuffle or network operations.
+
+    symptoms:
+      - "java.lang.OutOfMemoryError: Direct buffer memory"
+      - "Shuffle write/read failures"
+      - "Network transfer issues"
+
+    root_causes:
+      - "Heavy shuffle operations"
+      - "Many concurrent network connections"
+      - "Insufficient memoryOverhead"
+
+    remediation:
+      - "Increase spark.executor.memoryOverhead"
+      - "Reduce shuffle parallelism"
+      - "Increase MaxDirectMemorySize"
+
+    recommendations:
+      - id: increase_overhead
+        priority: high
+        action: "Increase memory overhead for off-heap buffers"
+        implementation: |
+          spark.executor.memoryOverhead = 4g
+        verification: "No direct buffer OOM errors"
+
+    evidence_checklist:
+      required:
+        - "Direct buffer memory in error message"
+      supporting:
+        - "Shuffle operations in progress"
+        - "High network activity"
+
+    confidence_factors:
+      increase:
+        - "Shuffle stage running"
+        - "Many concurrent tasks"
+      decrease:
+        - "No shuffle in job"
+        - "Simple compute-only job"
+
+    related_patterns:
+      - shuffle_fetch_failed
+      - java_heap_space
+
+    docs:
+      - "https://spark.apache.org/docs/latest/tuning.html#memory-management"
+

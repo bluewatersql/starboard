@@ -1,0 +1,67 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant Frontend as Frontend<br/>(Next.js)
+    participant API as Server API<br/>(FastAPI)
+    participant Agent as Multi-Agent System<br/>(starboard-server)
+    participant Core as Core Models<br/>(starboard-core)
+    participant Tools as Tools<br/>(starboard-server)
+    participant DB as Databricks API
+    
+    User->>Frontend: "Analyze job 123"
+    
+    Note over Frontend: Step 1: User Request
+    
+    Frontend->>API: POST /api/chat/messages<br/>{message, conversation_id}
+    
+    Note over API: Step 2: API Layer
+    
+    API->>API: Authenticate & validate
+    API->>Agent: handle_message(message)
+    
+    Note over Agent: Step 3: Agent Processing
+    
+    Agent->>Core: Load Message model
+    Core-->>Agent: Message instance
+    
+    Agent->>Agent: Route to JobAgent<br/>(IntentRouter)
+    
+    Agent->>Tools: execute_tool("resolve_job", {job_id: "123"})
+    
+    Note over Tools: Step 4: Tool Execution
+    
+    Tools->>DB: GET /api/2.0/jobs/get?job_id=123
+    DB-->>Tools: Job metadata
+    
+    Tools->>DB: GET /api/2.0/jobs/runs/list
+    DB-->>Tools: Job runs data
+    
+    Tools-->>Agent: ToolResult {job_data, runs, ...}
+    
+    Note over Agent: Step 5: Process Results
+    
+    Agent->>Core: Create Episode (working memory)
+    Core-->>Agent: Episode instance
+    
+    Agent->>Agent: Generate recommendations<br/>(LLM reasoning)
+    
+    Agent->>Core: Create output Message
+    Core-->>Agent: Message instance
+    
+    Agent-->>API: FinalOutputEvent
+    
+    Note over API: Step 6: Stream Response
+    
+    API->>Frontend: SSE: final_output<br/>{recommendations, metadata}
+    
+    Note over API: Step 7: Persist Conversation
+    
+    API->>Core: Conversation model
+    Core-->>API: Immutable Conversation
+    API->>API: Save to database
+    
+    Frontend->>User: Display recommendations
+    
+    Note over User: Main request flow complete<br/>Frontend → API → Agent → Tools → Databricks
+

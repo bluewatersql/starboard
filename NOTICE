@@ -1,0 +1,211 @@
+NOTICE - Third-Party Software Licenses
+========================================
+
+Starboard AI Agent
+Copyright (c) 2025 Starboard AI
+Licensed under the MIT License (see LICENSE file)
+
+This software includes or depends upon the following third-party components,
+each with its own license terms:
+
+================================================================================
+BACKEND DEPENDENCIES (Python)
+================================================================================
+
+FastAPI
+  License: MIT
+  Copyright: Sebastián Ramírez
+  URL: https://github.com/tiangolo/fastapi
+
+OpenAI Python SDK
+  License: Apache License 2.0
+  Copyright: OpenAI
+  URL: https://github.com/openai/openai-python
+
+Databricks SDK for Python
+  License: Apache License 2.0
+  Copyright: Databricks, Inc.
+  URL: https://github.com/databricks/databricks-sdk-py
+
+Pydantic
+  License: MIT
+  Copyright: Samuel Colvin
+  URL: https://github.com/pydantic/pydantic
+
+Polars
+  License: MIT
+  Copyright: Ritchie Vink
+  URL: https://github.com/pola-rs/polars
+
+Pandas
+  License: BSD 3-Clause
+  Copyright: Pandas Development Team
+  URL: https://github.com/pandas-dev/pandas
+
+SQLGlot
+  License: MIT
+  Copyright: Toby Mao
+  URL: https://github.com/tobymao/sqlglot
+
+Uvicorn
+  License: BSD 3-Clause
+  Copyright: Tom Christie
+  URL: https://github.com/encode/uvicorn
+
+Starlette
+  License: BSD 3-Clause
+  Copyright: Tom Christie
+  URL: https://github.com/encode/starlette
+
+httpx
+  License: BSD 3-Clause
+  Copyright: Tom Christie
+  URL: https://github.com/encode/httpx
+
+structlog
+  License: MIT / Apache License 2.0 (dual-licensed)
+  Copyright: Hynek Schlawack
+  URL: https://github.com/hynek/structlog
+
+redis-py
+  License: MIT
+  Copyright: Redis Inc.
+  URL: https://github.com/redis/redis-py
+
+asyncpg
+  License: Apache License 2.0
+  Copyright: MagicStack Inc.
+  URL: https://github.com/MagicStack/asyncpg
+
+pgvector
+  License: MIT
+  Copyright: Andrew Kane
+  URL: https://github.com/pgvector/pgvector-python
+
+aiosqlite
+  License: MIT
+  Copyright: Amethyst Reese
+  URL: https://github.com/omnilib/aiosqlite
+
+Altair
+  License: BSD 3-Clause
+  Copyright: Altair Developers
+  URL: https://github.com/altair-viz/altair
+
+Rich
+  License: MIT
+  Copyright: Will McGugan
+  URL: https://github.com/Textualize/rich
+
+pytest
+  License: MIT
+  Copyright: Holger Krekel and others
+  URL: https://github.com/pytest-dev/pytest
+
+================================================================================
+FRONTEND DEPENDENCIES (JavaScript/TypeScript)
+================================================================================
+
+Next.js
+  License: MIT
+  Copyright: Vercel, Inc.
+  URL: https://github.com/vercel/next.js
+
+React
+  License: MIT
+  Copyright: Meta Platforms, Inc.
+  URL: https://github.com/facebook/react
+
+Material-UI (MUI)
+  License: MIT
+  Copyright: MUI SAS
+  URL: https://github.com/mui/material-ui
+
+Emotion
+  License: MIT
+  Copyright: Emotion team
+  URL: https://github.com/emotion-js/emotion
+
+TanStack Query (React Query)
+  License: MIT
+  Copyright: Tanner Linsley
+  URL: https://github.com/TanStack/query
+
+Zustand
+  License: MIT
+  Copyright: Paul Henschel
+  URL: https://github.com/pmndrs/zustand
+
+Recharts
+  License: MIT
+  Copyright: Recharts team
+  URL: https://github.com/recharts/recharts
+
+react-markdown
+  License: MIT
+  Copyright: Espen Hovlandsdal
+  URL: https://github.com/remarkjs/react-markdown
+
+Zod
+  License: MIT
+  Copyright: Colin McDonnell
+  URL: https://github.com/colinhacks/zod
+
+Tailwind CSS
+  License: MIT
+  Copyright: Tailwind Labs, Inc.
+  URL: https://github.com/tailwindlabs/tailwindcss
+
+date-fns
+  License: MIT
+  Copyright: Sasha Koss
+  URL: https://github.com/date-fns/date-fns
+
+Shiki
+  License: MIT
+  Copyright: Pine Wu
+  URL: https://github.com/shikijs/shiki
+
+================================================================================
+LICENSE SUMMARIES
+================================================================================
+
+MIT License:
+  - Permits commercial use, modification, distribution, and private use
+  - Requires inclusion of copyright notice and license text
+  - Provides no warranty
+
+Apache License 2.0:
+  - Permits commercial use, modification, distribution, and private use
+  - Requires inclusion of copyright notice, license text, and change notices
+  - Provides express grant of patent rights
+  - Provides no warranty
+
+BSD 3-Clause License:
+  - Permits commercial use, modification, distribution, and private use
+  - Requires inclusion of copyright notice and license text
+  - Prohibits use of contributor names for endorsement
+  - Provides no warranty
+
+================================================================================
+FULL LICENSE TEXTS
+================================================================================
+
+For the full text of each license, see:
+- MIT: https://opensource.org/licenses/MIT
+- Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0
+- BSD 3-Clause: https://opensource.org/licenses/BSD-3-Clause
+
+================================================================================
+ATTRIBUTION
+================================================================================
+
+This software would not be possible without the incredible work of the
+open-source community. We are grateful to all contributors and maintainers
+of the projects listed above.
+
+If you believe any attribution is missing or incorrect, please contact us
+or submit an issue on our repository.
+
+Last updated: 2025-12-02
+

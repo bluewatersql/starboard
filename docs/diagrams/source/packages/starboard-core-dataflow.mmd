@@ -1,0 +1,37 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant Client as Client Code<br/>(starboard-server)
+    participant Repo as ConversationRepository<br/>(starboard-core)
+    participant Port as StateStore Protocol<br/>(starboard-core)
+    participant Impl as PostgresStateStore<br/>(starboard-server)
+    participant DB as Database
+
+    Note over Client,DB: Repository Pattern Flow
+
+    Client->>Repo: get_or_create(user_id)
+    
+    Repo->>Port: load_conversation(id)
+    Note over Port: Protocol defines interface<br/>not implementation
+    
+    Port->>Impl: (protocol satisfied)
+    Impl->>DB: SELECT * FROM conversations
+    DB-->>Impl: Raw data
+    Impl-->>Port: Conversation (domain model)
+    Port-->>Repo: Conversation
+    
+    Repo->>Repo: Business logic<br/>(pure domain)
+    
+    Repo-->>Client: Conversation (type-safe)
+    
+    Note over Client: Client works with<br/>domain models only.<br/>No database knowledge.
+    
+    Client->>Repo: add_episode(conv_id, episode)
+    Repo->>Port: save_conversation(conversation)
+    Port->>Impl: (protocol satisfied)
+    Impl->>DB: INSERT INTO episodes
+    DB-->>Impl: Success
+    Impl-->>Port: conversation_id
+    Port-->>Repo: conversation_id
+    Repo-->>Client: Done
+

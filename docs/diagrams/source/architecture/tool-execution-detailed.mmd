@@ -1,0 +1,51 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant Agent as Domain Agent
+    participant Registry as Tool Registry
+    participant Cache as Cache Layer
+    participant Adapter as Tool Adapter
+    participant DB as Databricks API
+    participant Events as Event Stream
+    
+    Note over Agent,Events: Simplified Tool Execution Flow
+    
+    Agent->>Registry: execute_tool("resolve_query", params)
+    Registry->>Events: ToolStartEvent
+    Events-->>Agent: (stream)
+    
+    Registry->>Registry: Validate Parameters
+    
+    Registry->>Cache: Check Cache
+    
+    alt Cache Hit
+        Cache-->>Registry: Cached Result
+        Registry->>Events: ToolEndEvent (cached)
+    else Cache Miss
+        Cache-->>Registry: Not Cached
+        
+        Registry->>Adapter: Execute Tool
+        Note over Adapter: Domain Logic<br/>+ Service Layer
+        
+        Adapter->>DB: API Call
+        
+        alt Success
+            DB-->>Adapter: Response Data
+            Adapter->>Adapter: Transform to Domain Model
+            Adapter-->>Registry: Result
+            
+            Registry->>Cache: Store Result (5min TTL)
+            Registry->>Events: ToolEndEvent (success)
+            
+        else API Error
+            DB-->>Adapter: Error Response
+            Adapter-->>Registry: ToolExecutionError
+            Registry->>Events: ToolEndEvent (error)
+        end
+    end
+    
+    Events-->>Agent: (stream)
+    Registry-->>Agent: Final Result
+    
+    Note over Agent: Process result and<br/>continue reasoning
+

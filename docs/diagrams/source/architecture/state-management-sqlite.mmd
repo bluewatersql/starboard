@@ -1,0 +1,77 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "Application Layer"
+        API[FastAPI Endpoints]
+        Agents[Multi-Agent System]
+    end
+    
+    subgraph "Repository Protocols"
+        ConvRepo[ConversationRepository]
+        EpisodeRepo[EpisodeRepository]
+        FactRepo[FactRepository]
+        UserRepo[UserRepository]
+    end
+    
+    subgraph "SQLite Implementation"
+        SQLiteConv[SQLiteConversationStore<br/>aiosqlite + sqlite-vec]
+        SQLiteEp[SQLiteEpisodeStore]
+        SQLiteFact[SQLiteFactStore]
+        SQLiteUser[SQLiteUserStore]
+    end
+    
+    subgraph "SQLite Database"
+        DB[(starboard_state.db<br/>Conversations, Episodes, Facts)]
+    end
+    
+    subgraph "Data Models"
+        Conversation[Conversation]
+        Episode[Episode]
+        Fact[Fact]
+        UserProfile[UserProfile]
+    end
+    
+    %% Application uses repositories
+    API -->|Uses| ConvRepo
+    API -->|Uses| UserRepo
+    Agents -->|Uses| ConvRepo
+    Agents -->|Uses| EpisodeRepo
+    Agents -->|Uses| FactRepo
+    
+    %% Protocols implemented by SQLite
+    ConvRepo -.->|Implemented by| SQLiteConv
+    EpisodeRepo -.->|Implemented by| SQLiteEp
+    FactRepo -.->|Implemented by| SQLiteFact
+    UserRepo -.->|Implemented by| SQLiteUser
+    
+    %% SQLite stores to database
+    SQLiteConv -->|Stores| DB
+    SQLiteEp -->|Stores| DB
+    SQLiteFact -->|Stores| DB
+    SQLiteUser -->|Stores| DB
+    
+    %% Returns domain models
+    SQLiteConv -->|Returns| Conversation
+    SQLiteEp -->|Returns| Episode
+    SQLiteFact -->|Returns| Fact
+    SQLiteUser -->|Returns| UserProfile
+    
+    Note1[Use Case: Development and Testing<br/>Features: Vector search via sqlite-vec<br/>Location: dev_data/starboard_state.db]
+    
+    style API fill:#4f46e5,color:#fff
+    style Agents fill:#06b6d4,color:#fff
+    style ConvRepo fill:#8b5cf6,color:#fff
+    style EpisodeRepo fill:#8b5cf6,color:#fff
+    style FactRepo fill:#8b5cf6,color:#fff
+    style UserRepo fill:#8b5cf6,color:#fff
+    style SQLiteConv fill:#22c55e,color:#fff
+    style SQLiteEp fill:#22c55e,color:#fff
+    style SQLiteFact fill:#22c55e,color:#fff
+    style SQLiteUser fill:#22c55e,color:#fff
+    style DB fill:#64748b,color:#fff
+    style Conversation fill:#64748b,color:#fff
+    style Episode fill:#64748b,color:#fff
+    style Fact fill:#64748b,color:#fff
+    style UserProfile fill:#64748b,color:#fff
+    style Note1 fill:#fef3c7,color:#000
+

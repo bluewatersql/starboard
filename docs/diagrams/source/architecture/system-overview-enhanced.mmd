@@ -1,0 +1,35 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph LR
+    %% User Layer
+    User[Users] -->|HTTPS| API[FastAPI API]
+    
+    %% API to Routing
+    API -->|Authenticate| Router[Intent Router]
+    
+    %% Router to Agents
+    Router -->|Route Request| Agents["Domain Agents<br/>(Query, Job, UC, Cluster,<br/>Analytics, Warehouse, Diagnostic)"]
+    
+    %% Agents to Tools
+    Agents -->|Execute| Tools[Tool Registry<br/>45+ Tools]
+    
+    %% Agents to LLM
+    Agents -->|Reasoning| LLM[LLM Provider]
+    
+    %% Tools to Services
+    Tools -->|Fetch Data| Databricks[Databricks<br/>Workspace APIs]
+    
+    %% State Management
+    API -->|Persist| State[(State Store<br/>SQLite/Postgres/Lakebase)]
+    API -->|Cache| Redis[(Redis)]
+    
+    %% Styling
+    style User fill:#10b981,color:#fff
+    style API fill:#4f46e5,color:#fff
+    style Router fill:#7c3aed,color:#fff
+    style Agents fill:#06b6d4,color:#fff
+    style Tools fill:#f59e0b,color:#fff
+    style LLM fill:#ff6b6b,color:#fff
+    style Databricks fill:#ff6b6b,color:#fff
+    style State fill:#64748b,color:#fff
+    style Redis fill:#64748b,color:#fff

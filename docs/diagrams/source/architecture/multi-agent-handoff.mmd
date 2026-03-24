@@ -1,0 +1,71 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant CM as Conversation Manager
+    participant Router as Intent Router
+    participant AgentA as Query Agent
+    participant AgentB as Job Agent
+    participant LLM
+    participant Tools
+    participant State as State Store
+    
+    User->>CM: "Find expensive queries in job 123"
+    
+    Note over CM: Complex request spans<br/>multiple domains
+    
+    CM->>Router: classify_intent()
+    Router->>LLM: "Classify user intent"
+    LLM-->>Router: { primary: "job", secondary: "query" }
+    Router-->>CM: Start with JobAgent
+    
+    CM->>AgentA: create_agent(JobAgent)
+    CM->>State: Create SharedContext
+    State-->>CM: Context ID
+    
+    Note over AgentA: Process job analysis
+    AgentA->>Tools: resolve_job(123)
+    Tools-->>AgentA: Job Metadata
+    
+    AgentA->>Tools: get_job_tasks(123)
+    Tools-->>AgentA: Task List
+    
+    Note over AgentA: Identifies query<br/>optimization needed
+    
+    AgentA->>CM: request_handoff(QueryAgent, context)
+    
+    Note over CM: Preserve context<br/>for handoff
+    CM->>State: Update SharedContext<br/>{ job_id: 123, tasks: [...] }
+    State-->>CM: ✓ Updated
+    
+    CM->>AgentA: finalize_output()
+    AgentA-->>CM: Partial Output
+    
+    CM->>AgentB: create_agent(QueryAgent)
+    CM->>State: Load SharedContext
+    State-->>CM: { job_id: 123, tasks: [...] }
+    
+    CM->>AgentB: process_with_context(message, context)
+    
+    Note over AgentB: Continue from where<br/>JobAgent left off
+    
+    AgentB->>Tools: resolve_query(statement_ids)
+    Tools-->>AgentB: Query Details
+    
+    AgentB->>Tools: analyze_query_plan()
+    Tools-->>AgentB: Performance Issues
+    
+    AgentB->>LLM: "Generate optimization recommendations"
+    LLM-->>AgentB: Recommendations
+    
+    AgentB-->>CM: FinalOutputEvent
+    
+    CM->>CM: merge_outputs(JobAgent, QueryAgent)
+    
+    CM->>State: Persist Full Conversation
+    Note over State: Stores agent transitions<br/>and shared context
+    
+    CM-->>User: Combined Output<br/>(Job + Query Analysis)
+    
+    Note over User: Seamless experience<br/>despite agent handoff
+

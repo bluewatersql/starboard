@@ -1,0 +1,151 @@
+[project]
+name = "starboard-server"
+version = "0.1.0"
+description = "Starboard AI Agent - FastAPI Backend Server"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+    "starboard-core", # Workspace dependency
+    "starboard-log-parser[databricks,http]", # Workspace dependency - Log parser
+    # FastAPI stack
+    "fastapi>=0.104.0,<1.0.0",
+    "uvicorn[standard]>=0.24.0,<1.0.0",
+    "python-multipart>=0.0.6",
+    "websockets>=12.0",
+    # Databricks & LLM
+    "databricks-sdk>=0.73.0,<1.0.0",
+    "databricks-sql-connector>=3.0.0",
+    "openai>=2.6.0,<3.0.0",
+    "tiktoken>=0.12.0",
+    # Data processing
+    "pandas>=2.3.3,<3.0.0",
+    "polars>=1.17.0,<2.0.0", # Modern DataFrame library (10x faster than Pandas)
+    "pyarrow>=18.0.0,<19.0.0", # Required for Arrow format with Databricks + Polars integration
+    "numpy<2.2.0,>=1.24.0",
+    "sqlglot>=27.29.0,<28.0.0",
+    "sqlparse>=0.4.4,<1.0.0", # SQL parsing for query validation
+    "requests>=2.31.0,<3.0.0", # Required for downloading EXTERNAL_LINKS chunks
+    "rapidfuzz>=3.14.1,<4.0.0",
+    # Data visualization (FinOps charts)
+    "altair>=5.0.0,<6.0.0", # Declarative visualization with Vega-Lite
+    "vl-convert-python>=1.0.0,<2.0.0", # Convert Vega-Lite to PNG/SVG
+    # Configuration
+    "pydantic>=2.0.0,<3.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+    # Infrastructure
+    "httpx>=0.28.1,<1.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "rich>=13.0.0,<14.0.0",
+    "structlog>=24.0.0",
+    "redis>=5.0.0,<6.0.0",
+    "slowapi>=0.1.9,<1.0.0", # Rate limiting for FastAPI
+    "stream-unzip>=0.0.94",
+    # Database (State Management)
+    "asyncpg>=0.29.0,<1.0.0", # Async Postgres driver
+    "pgvector>=0.3.0,<1.0.0", # Vector similarity search extension
+    "aiosqlite>=0.19.0,<1.0.0", # Async SQLite driver for dev/testing
+    "sqlite-vec>=0.1.1,<1.0.0", # Vector similarity search for SQLite
+    # MCP protocol
+    "mcp>=1.19.0,<2.0.0",
+    "slack-sdk>=3.39.0,<4.0.0",
+    "tabulate>=0.9.0,<1.0.0",
+    "chromadb>=0.4.22",
+    "orjson>=3.11.4",
+    "aiofiles>=24.1",
+]
+
+[project.optional-dependencies]
+observability = [
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-instrumentation-fastapi>=0.41b0",
+    "prometheus-client>=0.19.0",
+]
+
+test = [
+    # Core testing framework
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "pytest-xdist>=3.5.0",  # Parallel test execution
+    
+    # Advanced testing (Week 3)
+    "syrupy>=4.6.0",  # Snapshot/golden testing
+    "pytest-benchmark>=4.0.0",  # Performance benchmarking
+    "hypothesis>=6.92.0",  # Property-based testing
+    
+    # Test utilities
+    "httpx>=0.28.1",
+    "respx>=0.22.0",  # Mock httpx requests for testing
+    "faker>=28.0.0",  # Generate test data
+    "freezegun>=1.5.0",  # Mock datetime
+    
+    # Type checking and linting for tests
+    "mypy>=1.10.0",
+    "ruff>=0.4.0",  # Formatting and linting
+    "types-aiofiles>=24.1",
+]
+
+load = [
+    "locust>=2.0.0",
+]
+
+dev = [
+    "uvicorn[standard]>=0.24.0",
+    "playwright>=1.40.0",  # Browser automation for debug logging
+]
+
+all = [
+    "starboard-server[test,observability,dev,load]",
+]
+
+[project.scripts]
+starboard-server = "starboard_server.main:run"
+starboard-mcp = "starboard_server.mcp.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatchling.build.targets.wheel]
+packages = ["starboard_server"]
+
+# Include data files in package distribution
+[tool.hatchling.build.targets.wheel.shared-data]
+"starboard_server/tools/domain/analytics/data" = "starboard_server/tools/domain/analytics/data"
+
+[tool.hatchling.build.targets.sdist]
+include = [
+    "starboard_server/**/*.py",
+    "starboard_server/tools/domain/analytics/data/*.json",
+]
+
+[tool.mypy]
+exclude = [
+    "experiment/",  # Exclude experiment folder (prototype code)
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=starboard_server",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (may require external services)",
+    "golden: Golden/snapshot tests for prompts and schemas",
+    "slow: Tests that take significant time",
+    "baseline: Baseline tests to ensure backward compatibility (Phase 0)",
+]
+asyncio_mode = "auto"
+

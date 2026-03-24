@@ -1,0 +1,129 @@
+{
+  "$defs": {
+    "FileAttachment": {
+      "description": "Represents a file attachment in a message.\n\nFor large files (>50KB), content is stored in cache and only\nmetadata is passed through the message pipeline.\n\nAttributes:\n    id: Cache key for retrieving content (set for large files)\n    filename: Original filename\n    size: File size in bytes\n    content: Full file content (only for small files)\n    content_preview: First 500 chars for display\n    is_large_file: True if content is stored in cache\n    detected_type: Auto-detected artifact type (optional)\n\nNote:\n    This model accepts both camelCase (from frontend) and snake_case field names\n    via populate_by_name=True and alias configuration.",
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cache key for large file content",
+          "title": "Id"
+        },
+        "filename": {
+          "description": "Original filename",
+          "title": "Filename",
+          "type": "string"
+        },
+        "size": {
+          "description": "File size in bytes",
+          "title": "Size",
+          "type": "integer"
+        },
+        "content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Content (small files only)",
+          "title": "Content"
+        },
+        "contentPreview": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "First 500 chars for display",
+          "title": "Contentpreview"
+        },
+        "isLargeFile": {
+          "default": false,
+          "description": "True if stored in cache",
+          "title": "Islargefile",
+          "type": "boolean"
+        },
+        "detectedType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Auto-detected artifact type",
+          "title": "Detectedtype"
+        }
+      },
+      "required": [
+        "filename",
+        "size"
+      ],
+      "title": "FileAttachment",
+      "type": "object"
+    }
+  },
+  "description": "Request to send a message in a conversation.\n\nSupports file attachments for artifact analysis. Large files (>50KB)\nare automatically routed to the diagnostic agent for incremental discovery.",
+  "properties": {
+    "content": {
+      "description": "Message content",
+      "minLength": 1,
+      "title": "Content",
+      "type": "string"
+    },
+    "attachments": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/FileAttachment"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional file attachments",
+      "title": "Attachments"
+    },
+    "metadata": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional metadata",
+      "title": "Metadata"
+    }
+  },
+  "required": [
+    "content"
+  ],
+  "title": "SendMessageRequest",
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "starboard://SendMessageRequest"
+}

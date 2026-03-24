@@ -1,0 +1,29 @@
+graph TD
+    A[User Request] --> B[Intent Agent<br/>Router]
+    B --> C{Extract Identifiers}
+    
+    C -->|statement_id| D[Query Agent]
+    C -->|job_id| E[Job Agent]
+    C -->|table/catalog| F[UC Agent]
+    C -->|cluster_id| G[Cluster Agent]
+    C -->|warehouse_id| H{Context Check}
+    C -->|cost/dbu| I[Analytics Agent]
+    C -->|error/stack| J[Diagnostic Agent]
+    
+    H -->|fleet/SLO<br/>chargeback| K[Warehouse Agent]
+    H -->|config only| G
+    
+    C -->|No clear ID| L{Score All Domains<br/>Parallel}
+    L -->|High Confidence<br/>>0.7| M[Route to<br/>Best Match]
+    L -->|Medium Confidence<br/>0.4-0.6| N[Present Options<br/>User Selection]
+    L -->|Low Confidence<br/><0.4| O[resolve_user_intent<br/>LLM Fallback]
+    
+    O --> P{Resolved?}
+    P -->|Yes| M
+    P -->|No| Q[request_user_input<br/>MAX 1 Attempt]
+    Q --> R[Best-Effort Route]
+    
+    style B fill:#417505,color:#fff
+    style M fill:#7ED321,color:#000
+    style N fill:#F5A623,color:#000
+

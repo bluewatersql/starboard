@@ -1,0 +1,123 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "Application Layer"
+        API[FastAPI Endpoints]
+        Agents[Multi-Agent System]
+    end
+    
+    subgraph "Repository Pattern - Abstract Interface"
+        ConvRepo[ConversationRepository<br/>Protocol]
+        EpisodeRepo[EpisodeRepository<br/>Protocol]
+        FactRepo[FactRepository<br/>Protocol]
+        UserRepo[UserRepository<br/>Protocol]
+    end
+    
+    subgraph "Storage Implementations"
+        subgraph "SQLite (Dev/Test)"
+            SQLiteConv[SQLiteConversationStore]
+            SQLiteEp[SQLiteEpisodeStore]
+            SQLiteFact[SQLiteFactStore]
+            SQLiteUser[SQLiteUserStore]
+        end
+        
+        subgraph "PostgreSQL (Production)"
+            PGConv[PostgresConversationStore]
+            PGEp[PostgresEpisodeStore]
+            PGFact[PostgresFactStore]
+            PGUser[PostgresUserStore]
+        end
+        
+        subgraph "Databricks Lakebase (Cloud)"
+            LakeConv[LakebaseConversationStore]
+            LakeEp[LakebaseEpisodeStore]
+            LakeFact[LakebaseFactStore]
+            LakeUser[LakebaseUserStore]
+        end
+        
+        subgraph "Redis (Cache)"
+            RedisCache[Redis Session Cache]
+            RedisLock[Redis Distributed Lock]
+        end
+        
+        subgraph "In-Memory (Test)"
+            MemConv[InMemoryConversationStore]
+            MemEp[InMemoryEpisodeStore]
+            MemFact[InMemoryFactStore]
+        end
+    end
+    
+    subgraph "Data Models - Domain Layer"
+        Conversation[Conversation<br/>id, user_id, created_at]
+        Message[Message<br/>role, content, metadata]
+        Episode[Episode<br/>conversation_id, summary]
+        Fact[Fact<br/>content, confidence, source]
+        UserProfile[UserProfile<br/>id, preferences, history]
+    end
+    
+    %% API to Repositories
+    API -->|Uses| ConvRepo
+    API -->|Uses| UserRepo
+    Agents -->|Uses| ConvRepo
+    Agents -->|Uses| EpisodeRepo
+    Agents -->|Uses| FactRepo
+    
+    %% Repositories to Implementations (Dependency Injection)
+    ConvRepo -.->|Implements| SQLiteConv
+    ConvRepo -.->|Implements| PGConv
+    ConvRepo -.->|Implements| LakeConv
+    ConvRepo -.->|Implements| MemConv
+    
+    EpisodeRepo -.->|Implements| SQLiteEp
+    EpisodeRepo -.->|Implements| PGEp
+    EpisodeRepo -.->|Implements| LakeEp
+    EpisodeRepo -.->|Implements| MemEp
+    
+    FactRepo -.->|Implements| SQLiteFact
+    FactRepo -.->|Implements| PGFact
+    FactRepo -.->|Implements| LakeFact
+    FactRepo -.->|Implements| MemFact
+    
+    UserRepo -.->|Implements| SQLiteUser
+    UserRepo -.->|Implements| PGUser
+    UserRepo -.->|Implements| LakeUser
+    
+    %% Cache Layer
+    ConvRepo -->|Cache| RedisCache
+    UserRepo -->|Cache| RedisCache
+    
+    %% Concurrency
+    SQLiteConv -->|Locks| RedisLock
+    PGConv -->|Locks| RedisLock
+    
+    %% Implementations to Models
+    SQLiteConv -->|Returns| Conversation
+    SQLiteConv -->|Returns| Message
+    SQLiteEp -->|Returns| Episode
+    SQLiteFact -->|Returns| Fact
+    
+    PGConv -->|Returns| Conversation
+    PGEp -->|Returns| Episode
+    PGFact -->|Returns| Fact
+    
+    LakeConv -->|Returns| Conversation
+    LakeEp -->|Returns| Episode
+    LakeFact -->|Returns| Fact
+    
+    MemConv -->|Returns| Conversation
+    MemEp -->|Returns| Episode
+    
+    style API fill:#4f46e5,color:#fff
+    style Agents fill:#06b6d4,color:#fff
+    style ConvRepo fill:#8b5cf6,color:#fff
+    style EpisodeRepo fill:#8b5cf6,color:#fff
+    style FactRepo fill:#8b5cf6,color:#fff
+    style UserRepo fill:#8b5cf6,color:#fff
+    style SQLiteConv fill:#22c55e,color:#fff
+    style PGConv fill:#22c55e,color:#fff
+    style LakeConv fill:#22c55e,color:#fff
+    style RedisCache fill:#f59e0b,color:#fff
+    style Conversation fill:#64748b,color:#fff
+    style Episode fill:#64748b,color:#fff
+    style Fact fill:#64748b,color:#fff
+

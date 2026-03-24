@@ -1,0 +1,45 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    User[User/Browser] -->|HTTP/SSE| API[FastAPI Backend]
+    API -->|Classifies| Router[Intent Router]
+    
+    Router -->|Query| QueryAgent[Query Agent]
+    Router -->|Job| JobAgent[Job Agent]
+    Router -->|UC| UCAgent[UC Agent]
+    Router -->|Analytics| AnalyticsAgent[Analytics Agent]
+    Router -->|Warehouse| WarehouseAgent[Warehouse Agent]
+    Router -->|Diagnostic| DiagAgent[Diagnostic Agent]
+    
+    QueryAgent -->|Executes| Tools[Tool System<br/>45+ Tools]
+    JobAgent -->|Executes| Tools
+    UCAgent -->|Executes| Tools
+    AnalyticsAgent -->|Executes| Tools
+    WarehouseAgent -->|Executes| Tools
+    DiagAgent -->|Executes| Tools
+    
+    Tools -->|Fetches| Databricks[Databricks API]
+    
+    QueryAgent -->|Reasoning| LLMProvider[LLM Provider<br/>OpenAI/Azure]
+    JobAgent -->|Reasoning| LLMProvider
+    UCAgent -->|Reasoning| LLMProvider
+    AnalyticsAgent -->|Reasoning| LLMProvider
+    WarehouseAgent -->|Reasoning| LLMProvider
+    DiagAgent -->|Reasoning| LLMProvider
+    
+    API -->|Persists| StateStore[(State Store<br/>SQLite/Postgres/Lakebase)]
+    API -->|Caches| Cache[(Redis Cache)]
+    
+    style User fill:#10b981,color:#fff
+    style API fill:#4f46e5,color:#fff
+    style Router fill:#7c3aed,color:#fff
+    style QueryAgent fill:#06b6d4,color:#fff
+    style JobAgent fill:#06b6d4,color:#fff
+    style UCAgent fill:#06b6d4,color:#fff
+    style AnalyticsAgent fill:#06b6d4,color:#fff
+    style WarehouseAgent fill:#06b6d4,color:#fff
+    style DiagAgent fill:#06b6d4,color:#fff
+    style Tools fill:#f59e0b,color:#fff
+    style Databricks fill:#ff6b6b,color:#fff
+    style LLMProvider fill:#ff6b6b,color:#fff
+

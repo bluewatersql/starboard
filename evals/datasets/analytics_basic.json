@@ -1,0 +1,96 @@
+{
+  "domain": "analytics",
+  "version": "1.0.0",
+  "description": "Basic evaluation cases for the Analytics/FinOps Agent",
+  "cases": [
+    {
+      "id": "analytics_001",
+      "description": "Cost breakdown request",
+      "input": {
+        "goal": "Show me a breakdown of our Databricks costs",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["cost", "breakdown"],
+        "category": "ANALYTICS",
+        "min_confidence": 0.8
+      },
+      "tags": ["finops", "cost"]
+    },
+    {
+      "id": "analytics_002",
+      "description": "Top expensive jobs",
+      "input": {
+        "goal": "What are our most expensive jobs?",
+        "context": {
+          "time_range": "30d"
+        }
+      },
+      "expected": {
+        "contains": ["job", "cost", "expensive"],
+        "category": "ANALYTICS",
+        "min_confidence": 0.8
+      },
+      "tags": ["finops", "jobs"]
+    },
+    {
+      "id": "analytics_003",
+      "description": "Usage trends",
+      "input": {
+        "goal": "How has our compute usage changed over time?",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["usage", "trend"],
+        "category": "ANALYTICS",
+        "min_confidence": 0.7
+      },
+      "tags": ["usage", "trends"]
+    },
+    {
+      "id": "analytics_004",
+      "description": "Budget forecast",
+      "input": {
+        "goal": "Will we stay within our budget this month?",
+        "context": {
+          "budget_usd": 50000
+        }
+      },
+      "expected": {
+        "contains": ["budget", "forecast"],
+        "category": "ANALYTICS",
+        "min_confidence": 0.7
+      },
+      "tags": ["budget", "forecast"]
+    },
+    {
+      "id": "analytics_005",
+      "description": "User cost attribution",
+      "input": {
+        "goal": "Which team is using the most compute resources?",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["team", "cost", "attribution"],
+        "category": "ANALYTICS",
+        "min_confidence": 0.7
+      },
+      "tags": ["attribution", "teams"]
+    },
+    {
+      "id": "analytics_006",
+      "description": "System query discovery",
+      "input": {
+        "goal": "What reports can you generate for cost analysis?",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["query", "report"],
+        "category": "ANALYTICS",
+        "min_confidence": 0.6
+      },
+      "tags": ["discovery", "catalog"]
+    }
+  ]
+}
+

@@ -1,0 +1,48 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant Tools as Tools<br/>(starboard-server)
+    participant LogParser as Log Parser<br/>(starboard-log-parser)
+    participant DBFS as Databricks DBFS
+    participant Agent as Agent System
+    
+    Note over Tools: Tool needs Spark event log analysis
+    
+    Tools->>Tools: resolve_job() identifies<br/>need for log parsing
+    
+    Tools->>DBFS: Get log path from job run<br/>GET /api/2.0/jobs/runs/get-output
+    
+    DBFS-->>Tools: Log path:<br/>dbfs:/cluster-logs/eventlog.gz
+    
+    Note over Tools: Step 1: Initialize Log Parser
+    
+    Tools->>LogParser: create_spark_application(<br/>  log_path="dbfs:/cluster-logs/eventlog.gz"<br/>)
+    
+    Note over LogParser: Step 2: Read Log File
+    
+    LogParser->>DBFS: Read event log file<br/>GET /api/2.0/dbfs/read<br/>?path=dbfs:/cluster-logs/eventlog.gz
+    
+    DBFS-->>LogParser: Compressed event log data
+    
+    Note over LogParser: Step 3: Parse Events
+    
+    LogParser->>LogParser: Decompress log file<br/>(gzip)
+    
+    LogParser->>LogParser: Parse Spark events:<br/>- SparkListenerJobStart<br/>- SparkListenerTaskEnd<br/>- SparkListenerStageCompleted<br/>- etc.
+    
+    LogParser->>LogParser: Build SparkApplication model:<br/>- Jobs<br/>- Stages<br/>- Tasks<br/>- Metrics
+    
+    Note over LogParser: Step 4: Return Parsed Data
+    
+    LogParser-->>Tools: SparkApplication {<br/>  jobs: [...],<br/>  stages: [...],<br/>  tasks: [...],<br/>  metrics: {...}<br/>}
+    
+    Note over Tools: Step 5: Extract Metrics
+    
+    Tools->>Tools: Extract performance metrics:<br/>- Task duration<br/>- Shuffle read/write<br/>- Data skew<br/>- Resource utilization
+    
+    Tools-->>Agent: ToolResult {<br/>  job_data: {...},<br/>  spark_metrics: {...},<br/>  performance_issues: [...]<br/>}
+    
+    Note over Agent: Agent uses metrics for<br/>optimization recommendations
+    
+    Note over Tools: Log parser integration complete<br/>Enables detailed Spark analysis
+

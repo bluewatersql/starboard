@@ -1,0 +1,171 @@
+# Workspace configuration for uv
+# This is a workspace-only root, not an installable package
+[tool.uv.workspace]
+members = [
+    "packages/starboard-core",
+    "packages/starboard-log-parser",
+    "packages/starboard-server",
+    "packages/starboard-cli",
+    "packages/starboard-sdk",
+]
+
+# Workspace sources - tells uv where to find workspace packages
+[tool.uv.sources]
+starboard-core = { workspace = true }
+starboard-log-parser = { workspace = true }
+starboard-server = { workspace = true }
+starboard-cli = { workspace = true }
+starboard-sdk = { workspace = true }
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by ruff format)
+    "B008",  # function calls in argument defaults
+    "B905",  # zip without explicit strict
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ARG", "S101", "B017"]  # Allow assert, unused args, bare exceptions in tests
+"**/tests/**/*.py" = ["ARG", "S101", "B017"]  # Allow assert, unused args, bare exceptions in all test files
+"scripts/*.py" = ["ARG001", "SIM102", "SIM105"]  # Scripts may have unused args, intentional nested ifs, and try-except-pass
+
+[tool.mypy]
+python_version = "3.12"
+# Incrementally enable strict checking - disabled for now due to many legacy issues
+strict = false
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+# Exclude package-level tests/conftest to avoid duplicate module errors in monorepo
+# Also exclude experiment directories (prototype code)
+exclude = [
+    "^packages/.*/tests/",
+    "^packages/.*/conftest\\.py$",
+    "^packages/starboard-server/experiment/",
+    "^scripts/",
+    "^tests/",
+    "^changes/",
+    "\\.ipynb$",
+]
+
+# Type checking settings
+warn_redundant_casts = true
+warn_unused_ignores = false
+warn_return_any = false
+disallow_untyped_defs = false
+disallow_untyped_decorators = false
+check_untyped_defs = true
+
+# Allow incremental typing adoption
+[[tool.mypy.overrides]]
+module = [
+    "databricks.*",
+    "sqlglot.*",
+    "sqlparse.*",
+    "rapidfuzz.*",
+    "asyncpg.*",
+    "pandas.*",
+    "requests.*",
+    "yaml.*",
+    "psycopg2.*",
+    "pyarrow.*",
+    "sqlite_vec.*",
+    "starboard_core.*",
+    "starboard_log_parser.*",
+    "polars.*",
+    "openai.*",
+    "structlog.*",
+    "aiohttp.*",
+    "redis.*",
+    "aiosqlite.*",
+    "starboard_server.infra.config",
+    "starboard_server.repositories.conversation_repository",
+    "starboard_server.agents.multi_agent_manager",
+    "starboard_server.agents.config.agent_config",
+    # Missing stubs for optional/dev dependencies
+    "boto3.*",
+    "botocore.*",
+    "pyspark.*",
+    "matplotlib.*",
+    "prophet.*",
+    "sklearn.*",
+    "tabulate.*",
+    "playwright.*",
+]
+ignore_missing_imports = true
+
+# Scripts have complex types from external libs
+[[tool.mypy.overrides]]
+module = "starboard_server.tools.domain.analytics.scripts.*"
+ignore_errors = true
+
+# Experiment directory is prototype code - skip type checking
+[[tool.mypy.overrides]]
+module = "starboard_server.experiment.*"
+ignore_errors = true
+
+# Log parser has legacy type issues - skip strict checking
+[[tool.mypy.overrides]]
+module = "starboard_log_parser.*"
+ignore_errors = true
+
+[tool.basedpyright]
+exclude = ["**/*.ipynb", "examples/"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages/*/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "unit: Unit tests (no external dependencies)",
+    "integration: Integration tests (may call external services)",
+    "golden: Golden/snapshot tests for prompts",
+    "slow: Tests that take >1s to run",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["starboard_core", "starboard_log_parser", "starboard_server", "starboard_cli"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+# No build-system needed for workspace-only root

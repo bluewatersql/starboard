@@ -1,0 +1,27 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph LR
+    %% User Interfaces
+    Browser[Web Browser<br/>Next.js] -->|HTTP/SSE| Server
+    CLI[CLI Tool] -->|Import| Server
+    
+    %% Package Structure
+    Server[starboard-server] -->|Import| Core[starboard-core<br/>Domain Models]
+    Server -->|Import| LogParser[starboard-log-parser]
+    CLI -->|Import| Core
+    
+    %% External Services
+    Server -->|API| Databricks[Databricks]
+    Server -->|LLM| LLMProvider[LLM Provider]
+    Server -->|Store| Storage[(Database)]
+    
+    %% Styling
+    style Browser fill:#10b981,color:#fff
+    style CLI fill:#10b981,color:#fff
+    style Server fill:#4f46e5,color:#fff
+    style Core fill:#22c55e,color:#fff
+    style LogParser fill:#06b6d4,color:#fff
+    style Databricks fill:#ff6b6b,color:#fff
+    style LLMProvider fill:#ff6b6b,color:#fff
+    style Storage fill:#64748b,color:#fff
+

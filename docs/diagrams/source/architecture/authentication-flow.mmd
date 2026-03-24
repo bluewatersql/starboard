@@ -1,0 +1,100 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant Browser
+    participant API as FastAPI API
+    participant Auth as Auth Middleware
+    participant Provider as Databricks Auth Provider
+    participant DB as Databricks Workspace
+    participant UserStore as User Repository
+    participant Session as Session Store
+    
+    Note over User,Session: Initial Authentication
+    
+    User->>Browser: Click "Login with Databricks"
+    Browser->>API: GET /auth/login
+    API->>Provider: initiate_oauth_flow()
+    Provider-->>API: { auth_url, state }
+    API->>Session: Store state
+    Session-->>API: ✓
+    API-->>Browser: Redirect to auth_url
+    
+    Browser->>DB: OAuth Authorization Request
+    Note over User,DB: User enters Databricks credentials
+    User->>DB: Authenticate
+    DB-->>Browser: Redirect with code
+    
+    Browser->>API: GET /auth/callback?code=xxx&state=yyy
+    API->>Session: Verify state
+    Session-->>API: ✓ Valid
+    
+    API->>Provider: exchange_code_for_token(code)
+    Provider->>DB: POST /oauth/token
+    DB-->>Provider: { access_token, refresh_token }
+    Provider-->>API: Tokens
+    
+    API->>Provider: get_user_info(access_token)
+    Provider->>DB: GET /api/2.0/preview/scim/v2/Me
+    DB-->>Provider: User Profile
+    Provider-->>API: { user_id, email, name }
+    
+    API->>UserStore: create_or_update_user(profile)
+    UserStore-->>API: User Record
+    
+    API->>Session: create_session(user_id, tokens)
+    Session-->>API: session_id
+    
+    API-->>Browser: Set-Cookie: session_id<br/>Redirect to /chat
+    Browser-->>User: Show Chat Interface
+    
+    Note over User,Session: Authenticated Request
+    
+    User->>Browser: Send Message
+    Browser->>API: POST /chat/message<br/>Cookie: session_id
+    
+    API->>Auth: validate_request()
+    Auth->>Session: get_session(session_id)
+    Session-->>Auth: { user_id, access_token }
+    
+    Auth->>Provider: validate_token(access_token)
+    
+    alt Token Valid
+        Provider-->>Auth: ✓ Valid
+        Auth->>UserStore: get_user(user_id)
+        UserStore-->>Auth: User Profile
+        Auth-->>API: ✓ Authenticated User
+        API->>API: Process Request
+        API-->>Browser: Response
+    else Token Expired
+        Provider-->>Auth: ✗ Expired
+        Auth->>Provider: refresh_token(refresh_token)
+        Provider->>DB: POST /oauth/token (refresh)
+        DB-->>Provider: New Tokens
+        Provider-->>Auth: { new_access_token }
+        Auth->>Session: update_tokens(session_id)
+        Session-->>Auth: ✓ Updated
+        Auth-->>API: ✓ Authenticated User (refreshed)
+        API->>API: Process Request
+        API-->>Browser: Response
+    else Token Invalid
+        Provider-->>Auth: ✗ Invalid
+        Auth->>Session: delete_session(session_id)
+        Session-->>Auth: ✓ Deleted
+        Auth-->>API: ✗ Unauthorized
+        API-->>Browser: 401 Unauthorized<br/>Redirect to /auth/login
+    end
+    
+    Note over User,Session: Logout
+    
+    User->>Browser: Click "Logout"
+    Browser->>API: POST /auth/logout
+    API->>Session: delete_session(session_id)
+    Session-->>API: ✓ Deleted
+    API->>Provider: revoke_token(access_token)
+    Provider->>DB: POST /oauth/revoke
+    DB-->>Provider: ✓ Revoked
+    Provider-->>API: ✓
+    API-->>Browser: Clear-Cookie: session_id<br/>Redirect to /
+    Browser-->>User: Show Landing Page
+

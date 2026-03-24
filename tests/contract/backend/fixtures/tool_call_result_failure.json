@@ -1,0 +1,13 @@
+{
+  "message_id": "msg_test_tool_failure",
+  "tool_call": {
+    "tool_name": "fetch_table_metadata",
+    "friendly_name": "Fetching Table Metadata for main.users",
+    "tool_call_id": "call_test_123",
+    "success": false,
+    "status": "failed",
+    "result": null,
+    "error": "Table not found",
+    "duration_ms": 200
+  }
+}

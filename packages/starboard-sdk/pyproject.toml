@@ -1,0 +1,40 @@
+[project]
+name = "starboard-sdk"
+version = "0.1.0"
+description = "Starboard AI Agent - Python SDK for notebooks and programmatic access"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+    "starboard-core",
+    "starboard-server",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatchling.build.targets.wheel]
+packages = ["starboard_sdk"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+]
+asyncio_mode = "auto"

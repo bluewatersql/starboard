@@ -1,0 +1,51 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant AgentA as Agent A<br/>(Job Agent)
+    participant CM as Conversation Manager
+    participant State as State Store
+    participant AgentB as Agent B<br/>(Query Agent)
+    
+    Note over AgentA: Processing job analysis
+    
+    AgentA->>AgentA: resolve_job(123)
+    AgentA->>AgentA: get_job_tasks(123)
+    AgentA->>AgentA: Analyze tasks, identify queries
+    
+    Note over AgentA: Step 1: Agent A identifies<br/>need for handoff
+    
+    AgentA->>CM: request_handoff(<br/>  target_agent="QueryAgent",<br/>  reason="Query optimization needed"<br/>)
+    
+    Note over CM: Step 2: Preserve context<br/>before handoff
+    
+    CM->>State: Update SharedContext<br/>{<br/>  job_id: 123,<br/>  tasks: [...],<br/>  query_ids: [456, 789],<br/>  agent_transitions: ["JobAgent"]<br/>}
+    
+    State-->>CM: ✓ Context saved<br/>(context_id: "abc123")
+    
+    CM->>AgentA: finalize_output()
+    AgentA-->>CM: Partial output:<br/>"Job 123 has 5 tasks,<br/>queries 456 and 789 need optimization"
+    
+    Note over CM: Step 3: Create Agent B<br/>with preserved context
+    
+    CM->>AgentB: create_agent(QueryAgent)
+    
+    CM->>State: Load SharedContext(context_id: "abc123")
+    State-->>CM: {<br/>  job_id: 123,<br/>  tasks: [...],<br/>  query_ids: [456, 789]<br/>}
+    
+    CM->>AgentB: process_with_context(<br/>  message="Continue query analysis",<br/>  context={...}<br/>)
+    
+    Note over AgentB: Step 4: Agent B continues<br/>with full context
+    
+    AgentB->>AgentB: resolve_query(456, 789)
+    AgentB->>AgentB: analyze_query_plan()
+    
+    AgentB-->>CM: Final output with context
+    
+    Note over CM: Step 5: Merge outputs
+    
+    CM->>CM: merge_outputs(<br/>  JobAgent: partial_output,<br/>  QueryAgent: final_output<br/>)
+    
+    CM->>State: Persist conversation<br/>with agent transitions
+    
+    Note over State: Full conversation stored<br/>with context preservation
+

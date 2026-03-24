@@ -1,0 +1,79 @@
+{
+  "$defs": {
+    "FeedbackCategoryEnum": {
+      "description": "Categories for negative feedback.",
+      "enum": [
+        "inaccurate",
+        "too_vague",
+        "too_verbose",
+        "irrelevant",
+        "missing_info",
+        "bad_format",
+        "other"
+      ],
+      "title": "FeedbackCategoryEnum",
+      "type": "string"
+    },
+    "FeedbackRatingEnum": {
+      "description": "User feedback rating for agent responses.",
+      "enum": [
+        "positive",
+        "negative"
+      ],
+      "title": "FeedbackRatingEnum",
+      "type": "string"
+    }
+  },
+  "description": "Request to submit user feedback on an agent response.\n\nArgs:\n    message_id: ID of the message being rated\n    rating: User's rating (positive/negative)\n    categories: Optional categories for negative feedback\n    comment: Optional free-text comment\n\nExamples:\n    >>> request = SubmitFeedbackRequest(\n    ...     message_id=\"msg_123\",\n    ...     rating=\"positive\"\n    ... )\n    >>> request_negative = SubmitFeedbackRequest(\n    ...     message_id=\"msg_456\",\n    ...     rating=\"negative\",\n    ...     categories=[\"inaccurate\", \"too_vague\"],\n    ...     comment=\"Not specific enough\"\n    ... )",
+  "properties": {
+    "message_id": {
+      "description": "ID of the message being rated",
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Message Id",
+      "type": "string"
+    },
+    "rating": {
+      "$ref": "#/$defs/FeedbackRatingEnum",
+      "description": "User's rating (positive or negative)"
+    },
+    "categories": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/FeedbackCategoryEnum"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Categories for negative feedback (required for negative rating)",
+      "title": "Categories"
+    },
+    "comment": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional free-text comment",
+      "title": "Comment"
+    }
+  },
+  "required": [
+    "message_id",
+    "rating"
+  ],
+  "title": "SubmitFeedbackRequest",
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "starboard://SubmitFeedbackRequest"
+}

@@ -1,0 +1,82 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant API as FastAPI API
+    participant Auth as Auth Middleware
+    participant CM as Conversation Manager
+    participant Router as Intent Router
+    participant Agent as Domain Agent
+    participant Tools as Tool System
+    participant LLM as LLM Provider
+    participant DB as Databricks
+    participant State as State Store
+    
+    User->>API: POST /chat/message<br/>"Optimize query abc123"
+    API->>Auth: Validate Token
+    Auth->>State: Lookup User
+    State-->>Auth: User Profile
+    Auth-->>API: ✓ Authenticated
+    
+    API->>CM: handle_message()
+    CM->>State: Load Conversation History
+    State-->>CM: Previous Messages
+    
+    Note over CM: Check if new conversation
+    CM->>Router: classify_intent(message)
+    Router->>LLM: "Classify this request..."
+    LLM-->>Router: { domain: "query" }
+    Router-->>CM: QueryAgent
+    
+    CM->>Agent: create_agent(QueryAgent)
+    Note over Agent: Load query-specific<br/>prompts and tools
+    
+    CM->>Agent: process_message(message, context)
+    
+    loop Reasoning Loop
+        Agent->>LLM: "What should I do next?"
+        LLM-->>Agent: "Use resolve_query tool"
+        
+        Agent->>Tools: execute_tool("resolve_query", {...})
+        Tools->>DB: GET /api/2.0/sql/history/queries/{id}
+        DB-->>Tools: Query Metadata
+        Tools-->>Agent: Tool Result
+        
+        Agent-->>API: ToolEndEvent (streaming)
+        API-->>User: SSE: tool_end {...}
+        
+        Agent->>LLM: "Analyze query plan..."
+        LLM-->>Agent: "Use analyze_query_plan"
+        
+        Agent->>Tools: execute_tool("analyze_query_plan", {...})
+        Tools->>DB: GET query execution plan
+        DB-->>Tools: Execution Plan
+        Tools-->>Agent: Plan Analysis
+        
+        Agent-->>API: ToolEndEvent
+        API-->>User: SSE: tool_end {...}
+        
+        Note over Agent: Evaluate if enough<br/>information gathered
+        Agent->>LLM: "Generate recommendations"
+        LLM-->>Agent: Recommendations
+    end
+    
+    Agent->>Agent: format_output()
+    Agent-->>CM: FinalOutputEvent
+    
+    CM->>State: Persist Conversation
+    State-->>CM: ✓ Saved
+    
+    CM->>State: Store Facts
+    State-->>CM: ✓ Stored
+    
+    CM-->>API: Complete Output
+    API-->>User: SSE: final_output {...}
+    
+    Note over User: Display formatted<br/>recommendations
+    
+    User->>API: GET /chat/history/{conv_id}
+    API->>State: Fetch History
+    State-->>API: Messages
+    API-->>User: Full Conversation
+

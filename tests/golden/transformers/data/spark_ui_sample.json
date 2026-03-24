@@ -1,0 +1,169 @@
+{
+  "jobData": [
+    {
+      "job_id": 1,
+      "sql_id": "sql_001",
+      "duration": 5432,
+      "stage_ids": [1, 2, 3]
+    },
+    {
+      "job_id": 2,
+      "sql_id": "sql_001",
+      "duration": 3210,
+      "stage_ids": [4, 5]
+    },
+    {
+      "job_id": 3,
+      "sql_id": "sql_002",
+      "duration": 8765,
+      "stage_ids": [6, 7, 8, 9]
+    }
+  ],
+  "stageData": [
+    {
+      "stage_id": 1,
+      "query_id": "sql_001",
+      "job_id": 1,
+      "duration": 1200,
+      "num_tasks": 50,
+      "input_mb": 1024.5,
+      "shuffle_mb_written": 512.25,
+      "remote_mb_read": 256.0,
+      "output_mb": 800.0,
+      "memory_bytes_spilled": 10485760,
+      "disk_bytes_spilled": 5242880,
+      "stage_info": {
+        "stage_name": "Exchange"
+      }
+    },
+    {
+      "stage_id": 2,
+      "query_id": "sql_001",
+      "job_id": 1,
+      "duration": 2100,
+      "num_tasks": 75,
+      "input_mb": 2048.0,
+      "shuffle_mb_written": 1024.0,
+      "remote_mb_read": 512.0,
+      "output_mb": 1500.0,
+      "memory_bytes_spilled": 0,
+      "disk_bytes_spilled": 0,
+      "stage_info": {
+        "stage_name": "Aggregate"
+      }
+    },
+    {
+      "stage_id": 3,
+      "query_id": "sql_001",
+      "job_id": 1,
+      "duration": 1500,
+      "num_tasks": 25,
+      "input_mb": 500.0,
+      "shuffle_mb_written": 0,
+      "remote_mb_read": 0,
+      "output_mb": 400.0,
+      "memory_bytes_spilled": 0,
+      "disk_bytes_spilled": 0,
+      "stage_info": {
+        "stage_name": "FileScan"
+      }
+    },
+    {
+      "stage_id": 4,
+      "query_id": "sql_001",
+      "job_id": 2,
+      "duration": 1800,
+      "num_tasks": 40,
+      "input_mb": 1500.0,
+      "shuffle_mb_written": 750.0,
+      "remote_mb_read": 300.0,
+      "output_mb": 1200.0,
+      "memory_bytes_spilled": 0,
+      "disk_bytes_spilled": 0,
+      "stage_info": {
+        "stage_name": "Project"
+      }
+    },
+    {
+      "stage_id": 5,
+      "query_id": "sql_001",
+      "job_id": 2,
+      "duration": 1200,
+      "num_tasks": 20,
+      "input_mb": 800.0,
+      "shuffle_mb_written": 0,
+      "remote_mb_read": 0,
+      "output_mb": 700.0,
+      "memory_bytes_spilled": 0,
+      "disk_bytes_spilled": 0,
+      "stage_info": {
+        "stage_name": "Filter"
+      }
+    },
+    {
+      "stage_id": 6,
+      "query_id": "sql_002",
+      "job_id": 3,
+      "duration": 3500,
+      "num_tasks": 150,
+      "input_mb": 4096.0,
+      "shuffle_mb_written": 2048.0,
+      "remote_mb_read": 1024.0,
+      "output_mb": 3000.0,
+      "memory_bytes_spilled": 20971520,
+      "disk_bytes_spilled": 10485760,
+      "stage_info": {
+        "stage_name": "HashAggregate"
+      }
+    },
+    {
+      "stage_id": 7,
+      "query_id": "sql_002",
+      "job_id": 3,
+      "duration": 2800,
+      "num_tasks": 100,
+      "input_mb": 3000.0,
+      "shuffle_mb_written": 1500.0,
+      "remote_mb_read": 750.0,
+      "output_mb": 2500.0,
+      "memory_bytes_spilled": 0,
+      "disk_bytes_spilled": 0,
+      "stage_info": {
+        "stage_name": "Exchange"
+      }
+    },
+    {
+      "stage_id": 8,
+      "query_id": "sql_002",
+      "job_id": 3,
+      "duration": 1500,
+      "num_tasks": 50,
+      "input_mb": 2000.0,
+      "shuffle_mb_written": 0,
+      "remote_mb_read": 0,
+      "output_mb": 1800.0,
+      "memory_bytes_spilled": 0,
+      "disk_bytes_spilled": 0,
+      "stage_info": {
+        "stage_name": "Sort"
+      }
+    },
+    {
+      "stage_id": 9,
+      "query_id": "sql_002",
+      "job_id": 3,
+      "duration": 900,
+      "num_tasks": 25,
+      "input_mb": 1000.0,
+      "shuffle_mb_written": 0,
+      "remote_mb_read": 0,
+      "output_mb": 900.0,
+      "memory_bytes_spilled": 0,
+      "disk_bytes_spilled": 0,
+      "stage_info": {
+        "stage_name": "FileScan"
+      }
+    }
+  ]
+}
+

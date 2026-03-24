@@ -1,0 +1,50 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "User Layer"
+        Users[Users/Data Teams]
+        Browser[Web Browser]
+    end
+    
+    subgraph "Application Layer"
+        Frontend[Next.js Frontend<br/>React 19 + MUI v7]
+        Backend[FastAPI Backend<br/>Multi-Agent System]
+    end
+    
+    subgraph "Databricks Platform"
+        SDK[Databricks SDK]
+        Workspace[Workspace APIs]
+        Lakebase[(Lakebase<br/>Postgres-compatible)]
+    end
+    
+    subgraph "External Services"
+        LLM[LLM Provider<br/>OpenAI/Azure]
+        Redis[(Redis Cache<br/>Optional)]
+    end
+    
+    %% User access
+    Users -->|HTTPS| Browser
+    Browser -->|Access| Frontend
+    
+    %% Application flow
+    Frontend -->|HTTP/SSE| Backend
+    Backend -->|Python Client| SDK
+    SDK -->|Query/Job/UC APIs| Workspace
+    
+    %% State storage
+    Backend -->|State| Lakebase
+    
+    %% External dependencies
+    Backend -.->|LLM Calls| LLM
+    Backend -.->|Cache| Redis
+    
+    style Users fill:#10b981,color:#fff
+    style Browser fill:#10b981,color:#fff
+    style Frontend fill:#06b6d4,color:#fff
+    style Backend fill:#4f46e5,color:#fff
+    style SDK fill:#7c3aed,color:#fff
+    style Workspace fill:#ff6b6b,color:#fff
+    style Lakebase fill:#64748b,color:#fff
+    style LLM fill:#f59e0b,color:#fff
+    style Redis fill:#f59e0b,color:#fff,stroke-dasharray: 5 5
+

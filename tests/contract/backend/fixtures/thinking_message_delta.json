@@ -1,0 +1,9 @@
+{
+  "event_type": "message.delta",
+  "data": {
+    "message_id": "msg_test_thinking",
+    "delta": {
+      "content": "Analyzing the query to identify optimization opportunities..."
+    }
+  }
+}

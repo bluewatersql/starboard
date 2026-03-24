@@ -1,0 +1,59 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "Application Layer"
+        API[FastAPI Endpoints]
+        Agents[Multi-Agent System]
+    end
+    
+    subgraph "Repository Protocols"
+        ConvRepo[ConversationRepository]
+        UserRepo[UserRepository]
+    end
+    
+    subgraph "Storage Implementations"
+        SQLiteConv[SQLiteConversationStore]
+        PGConv[PostgresConversationStore]
+    end
+    
+    subgraph "Redis Cache Layer"
+        RedisCache["Redis Session Cache<br/>TTL: 5 minutes<br/>Key: conversation:id"]
+        RedisLock["Redis Distributed Lock<br/>Prevents concurrent writes<br/>Key: lock:resource_id"]
+    end
+    
+    subgraph "Redis Instance"
+        Redis[(Redis Server<br/>Optional, for production<br/>Session caching + locking)]
+    end
+    
+    %% Application uses repositories
+    API -->|Uses| ConvRepo
+    API -->|Uses| UserRepo
+    
+    %% Repositories use cache
+    ConvRepo -->|Cache| RedisCache
+    UserRepo -->|Cache| RedisCache
+    
+    %% Storage implementations use locks
+    SQLiteConv -->|Locks| RedisLock
+    PGConv -->|Locks| RedisLock
+    
+    %% Cache connects to Redis
+    RedisCache -->|Connects| Redis
+    RedisLock -->|Connects| Redis
+    
+    Note1[Cache Strategy:<br/>- Conversation data cached for 5 minutes<br/>- User profiles cached for 1 hour<br/>- Cache invalidation on updates]
+    
+    Note2[Distributed Locking:<br/>- Prevents race conditions<br/>- Used for concurrent writes<br/>- Automatic expiration on failure]
+    
+    style API fill:#4f46e5,color:#fff
+    style Agents fill:#06b6d4,color:#fff
+    style ConvRepo fill:#8b5cf6,color:#fff
+    style UserRepo fill:#8b5cf6,color:#fff
+    style SQLiteConv fill:#22c55e,color:#fff
+    style PGConv fill:#22c55e,color:#fff
+    style RedisCache fill:#f59e0b,color:#fff
+    style RedisLock fill:#f59e0b,color:#fff
+    style Redis fill:#ef4444,color:#fff
+    style Note1 fill:#fef3c7,color:#000
+    style Note2 fill:#fef3c7,color:#000
+

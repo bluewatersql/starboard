@@ -1,0 +1,57 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "starboard-core (Pure Domain)"
+        subgraph "domain/"
+            Models[domain/models/<br/>Context, Databricks,<br/>LLM, Recommendations]
+            Services[domain/services/<br/>Admin operations]
+            Models --> Services
+        end
+        
+        subgraph "models/"
+            SharedModels[Conversation<br/>Memory<br/>Episodes<br/>Facts]
+        end
+        
+        subgraph "ports/ (Protocols)"
+            StateStore[StateStore<br/>Protocol]
+            MemoryStore[MemoryStore<br/>Protocol]
+            CacheStore[CacheStore<br/>Protocol]
+        end
+        
+        subgraph "repositories/"
+            ConvRepo[ConversationRepository]
+            MemRepo[MemoryRepository]
+            CacheMgr[CacheManager]
+        end
+        
+        Models -.depends on.-> SharedModels
+        StateStore -.uses.-> SharedModels
+        MemoryStore -.uses.-> SharedModels
+        CacheStore -.uses.-> SharedModels
+        
+        ConvRepo -->|implements via| StateStore
+        MemRepo -->|implements via| MemoryStore
+        CacheMgr -->|implements via| CacheStore
+    end
+    
+    subgraph "External Packages"
+        Server[starboard-server<br/>Implements protocols]
+        CLI[starboard-cli<br/>Uses models]
+    end
+    
+    Server -.implements.-> StateStore
+    Server -.implements.-> MemoryStore
+    Server -.implements.-> CacheStore
+    CLI -.uses.-> Models
+    CLI -.uses.-> SharedModels
+    
+    style Models fill:#4f46e5,color:#fff
+    style Services fill:#7c3aed,color:#fff
+    style SharedModels fill:#06b6d4,color:#fff
+    style StateStore fill:#f59e0b,color:#fff
+    style MemoryStore fill:#f59e0b,color:#fff
+    style CacheStore fill:#f59e0b,color:#fff
+    style ConvRepo fill:#10b981,color:#fff
+    style MemRepo fill:#10b981,color:#fff
+    style CacheMgr fill:#10b981,color:#fff
+

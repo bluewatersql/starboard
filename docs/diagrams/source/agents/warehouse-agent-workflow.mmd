@@ -1,0 +1,34 @@
+graph TD
+    A[User Request] --> B[Warehouse Agent]
+    B --> C{Pattern Detection}
+    
+    C -->|Portfolio<br/>"show warehouses"| D[get_warehouse_portfolio]
+    C -->|Health<br/>"check health"| E[get_warehouse_health]
+    C -->|Fingerprint<br/>"analyze workload"| F[get_warehouse_fingerprint]
+    C -->|Chargeback<br/>"cost allocation"| G[generate_warehouse_chargeback]
+    C -->|Topology<br/>"consolidation"| H[analyze_warehouse_topology]
+    
+    D --> I[Portfolio Summary<br/>Fleet Metrics]
+    I --> J[complete<br/>WarehouseReport]
+    
+    E --> K[Health Score 0-100<br/>SLO Compliance]
+    K --> J
+    
+    F --> L[Workload Patterns<br/>P50-P99 Latencies]
+    L --> J
+    
+    G --> M[data_table<br/>ALL User Allocations]
+    M --> J
+    
+    H --> N[Overlap Detection<br/>Consolidation Opportunities]
+    N --> J
+    
+    J --> O{Route to Specialist?}
+    O -->|Query<br/>Optimization| P[Query Agent]
+    O -->|Cost<br/>Deep-Dive| Q[Analytics Agent]
+    O -->|No| R[End]
+    
+    style B fill:#BD10E0,color:#fff
+    style J fill:#7ED321,color:#000
+    style C fill:#F5A623,color:#000
+

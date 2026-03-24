@@ -1,0 +1,39 @@
+graph TD
+    A[User Request + Artifacts] --> B[Diagnostic Agent]
+    B --> C[Artifact Identification]
+    C --> D{Artifact Type}
+    
+    D -->|Error Message| E[Pattern Match<br/>Known Errors]
+    D -->|Stack Trace| F[Extract Exception<br/>Chain]
+    D -->|Logs| G[Search Error<br/>Signals]
+    D -->|Query Profile| H[Analyze Execution<br/>Metrics]
+    D -->|Code| I[Static Analysis<br/>Anti-Patterns]
+    
+    E --> J[Confidence Assessment]
+    F --> J
+    G --> J
+    H --> J
+    I --> J
+    
+    J --> K{Confidence Level}
+    K -->|≥80%<br/>High| L[complete<br/>DiagnosticReport]
+    K -->|<80%<br/>ONLINE Mode| M[Context Enrichment]
+    K -->|<80%<br/>OFFLINE Mode| N[request_user_input<br/>Specific Evidence]
+    
+    M --> O[get_spark_logs<br/>get_run_output<br/>get_cluster_events]
+    O --> J
+    
+    N --> P[Wait for Evidence]
+    P --> J
+    
+    L --> Q{Route to Specialist?}
+    Q -->|Memory/Sizing| R[Cluster Agent]
+    Q -->|Query Plan| S[Query Agent]
+    Q -->|Job Config| T[Job Agent]
+    Q -->|Permissions| U[UC Agent]
+    Q -->|No| V[End]
+    
+    style B fill:#F5A623,color:#000
+    style L fill:#7ED321,color:#000
+    style K fill:#F5A623,color:#000
+

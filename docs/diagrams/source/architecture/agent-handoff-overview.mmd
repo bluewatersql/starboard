@@ -1,0 +1,30 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant CM as Conversation Manager
+    participant Router as Intent Router
+    participant AgentA as Agent A<br/>(Job Agent)
+    participant AgentB as Agent B<br/>(Query Agent)
+    
+    User->>CM: "Find expensive queries in job 123"
+    
+    Note over CM,Router: Step 1: Classify Intent
+    CM->>Router: classify_intent()
+    Router-->>CM: Route to JobAgent
+    
+    Note over CM,AgentA: Step 2: Process with Agent A
+    CM->>AgentA: Process job analysis
+    AgentA->>AgentA: Analyze job, identify queries
+    AgentA-->>CM: Partial results + handoff request
+    
+    Note over CM,AgentB: Step 3: Handoff to Agent B
+    CM->>AgentB: Continue with query analysis
+    AgentB->>AgentB: Analyze queries, generate recommendations
+    AgentB-->>CM: Final results
+    
+    Note over CM,User: Step 4: Return Combined Results
+    CM-->>User: Combined output<br/>(Job + Query Analysis)
+    
+    Note over User: Seamless experience<br/>despite agent handoff
+

@@ -1,0 +1,124 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.json
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+test.log
+
+# Debug output
+.debug/
+
+# Output (top-level only; don't ignore source packages named "output")
+/output/
+/out/
+/**/discovery_output/
+*.md.tmp
+
+# Build artifacts
+*.whl
+*.tar.gz
+
+# uv
+uv.lock
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Data
+*.db
+*.sqlite
+
+# ML Models (top-level only, not package submodules)
+/models/
+/embeddings/
+
+# OMC state
+.omc/
+
+# Temporary
+tmp/
+temp/
+.cache/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Package-specific
+packages/*/dist/
+packages/*/build/
+packages/*/.pytest_cache/
+packages/*/.mypy_cache/
+packages/*/.ruff_cache/
+
+# Old structure (archived)
+.archive/
+
+/changes/*
+.hypothesis/*
+*/dev_data/*
+dev_data/
+**/dev_data/
+# Configuration files with secrets
+config.yaml
+!examples/config.yaml.example
+site/
+docs/diagrams/generated/
+
+#No log files
+*.log
+
+#Local experimental code/not for checking in
+packages/starboard-server/experiment/*
+
+results/*

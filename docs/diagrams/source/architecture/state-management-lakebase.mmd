@@ -1,0 +1,88 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    subgraph "Application Layer"
+        API[FastAPI Endpoints]
+        Agents[Multi-Agent System]
+    end
+    
+    subgraph "Repository Protocols"
+        ConvRepo[ConversationRepository]
+        EpisodeRepo[EpisodeRepository]
+        FactRepo[FactRepository]
+        UserRepo[UserRepository]
+    end
+    
+    subgraph "Lakebase Implementation"
+        LakeConv[LakebaseConversationStore<br/>Postgres-compatible]
+        LakeEp[LakebaseEpisodeStore]
+        LakeFact[LakebaseFactStore]
+        LakeUser[LakebaseUserStore]
+    end
+    
+    subgraph "OAuth & Authentication"
+        OAuth[OAuth Token Refresh<br/>Automatic token renewal]
+    end
+    
+    subgraph "Databricks Lakebase"
+        LakeDB[(Lakebase Database<br/>Postgres-compatible API<br/>Managed by Databricks)]
+    end
+    
+    subgraph "Data Models"
+        Conversation[Conversation]
+        Episode[Episode]
+        Fact[Fact]
+        UserProfile[UserProfile]
+    end
+    
+    %% Application uses repositories
+    API -->|Uses| ConvRepo
+    API -->|Uses| UserRepo
+    Agents -->|Uses| ConvRepo
+    Agents -->|Uses| EpisodeRepo
+    Agents -->|Uses| FactRepo
+    
+    %% Protocols implemented by Lakebase
+    ConvRepo -.->|Implemented by| LakeConv
+    EpisodeRepo -.->|Implemented by| LakeEp
+    FactRepo -.->|Implemented by| LakeFact
+    UserRepo -.->|Implemented by| LakeUser
+    
+    %% OAuth handling
+    LakeConv -->|Uses| OAuth
+    LakeEp -->|Uses| OAuth
+    LakeFact -->|Uses| OAuth
+    LakeUser -->|Uses| OAuth
+    
+    %% Lakebase stores to database
+    LakeConv -->|Stores| LakeDB
+    LakeEp -->|Stores| LakeDB
+    LakeFact -->|Stores| LakeDB
+    LakeUser -->|Stores| LakeDB
+    
+    %% Returns domain models
+    LakeConv -->|Returns| Conversation
+    LakeEp -->|Returns| Episode
+    LakeFact -->|Returns| Fact
+    LakeUser -->|Returns| UserProfile
+    
+    Note1[Use Case: Cloud Deployment on Databricks<br/>Features: Postgres-compatible API<br/>OAuth token refresh handling<br/>Managed service, no infrastructure]
+    
+    style API fill:#4f46e5,color:#fff
+    style Agents fill:#06b6d4,color:#fff
+    style ConvRepo fill:#8b5cf6,color:#fff
+    style EpisodeRepo fill:#8b5cf6,color:#fff
+    style FactRepo fill:#8b5cf6,color:#fff
+    style UserRepo fill:#8b5cf6,color:#fff
+    style LakeConv fill:#22c55e,color:#fff
+    style LakeEp fill:#22c55e,color:#fff
+    style LakeFact fill:#22c55e,color:#fff
+    style LakeUser fill:#22c55e,color:#fff
+    style OAuth fill:#f59e0b,color:#fff
+    style LakeDB fill:#64748b,color:#fff
+    style Conversation fill:#64748b,color:#fff
+    style Episode fill:#64748b,color:#fff
+    style Fact fill:#64748b,color:#fff
+    style UserProfile fill:#64748b,color:#fff
+    style Note1 fill:#fef3c7,color:#000
+

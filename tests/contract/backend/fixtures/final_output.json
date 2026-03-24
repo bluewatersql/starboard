@@ -1,0 +1,67 @@
+{
+  "success": {
+    "message_id": "msg_test_123",
+    "output": {
+      "status": "success",
+      "complete_report": null,
+      "next_steps": null,
+      "tokens_used": 100,
+      "cost_usd": 0.01,
+      "duration_seconds": 1.5,
+      "steps_taken": 1
+    },
+    "formatted_markdown": null
+  },
+  "error": {
+    "message_id": "msg_test_123",
+    "output": {
+      "status": "error",
+      "complete_report": null,
+      "next_steps": null,
+      "tokens_used": 100,
+      "cost_usd": 0.01,
+      "duration_seconds": 1.5,
+      "steps_taken": 1
+    },
+    "formatted_markdown": null
+  },
+  "budget_exceeded": {
+    "message_id": "msg_test_123",
+    "output": {
+      "status": "budget_exceeded",
+      "complete_report": null,
+      "next_steps": null,
+      "tokens_used": 100,
+      "cost_usd": 0.01,
+      "duration_seconds": 1.5,
+      "steps_taken": 1
+    },
+    "formatted_markdown": null
+  },
+  "max_steps_reached": {
+    "message_id": "msg_test_123",
+    "output": {
+      "status": "max_steps_reached",
+      "complete_report": null,
+      "next_steps": null,
+      "tokens_used": 100,
+      "cost_usd": 0.01,
+      "duration_seconds": 1.5,
+      "steps_taken": 1
+    },
+    "formatted_markdown": null
+  },
+  "unknown": {
+    "message_id": "msg_test_123",
+    "output": {
+      "status": "unknown",
+      "complete_report": null,
+      "next_steps": null,
+      "tokens_used": 100,
+      "cost_usd": 0.01,
+      "duration_seconds": 1.5,
+      "steps_taken": 1
+    },
+    "formatted_markdown": null
+  }
+}

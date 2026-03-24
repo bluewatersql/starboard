@@ -1,0 +1,29 @@
+graph TD
+    A[User Request] --> B[Cluster Agent]
+    B --> C{Request Type}
+    
+    C -->|Fleet Discovery<br/>"show clusters"| D[list_clusters]
+    C -->|Health Check<br/>"check health"| E[get_cluster_health]
+    C -->|Deep Analysis<br/>"optimize"| F[get_cluster_config]
+    
+    D --> G[Portfolio Summary<br/>by state/source/size]
+    G --> H[complete<br/>ClusterOptimizationReport]
+    
+    E --> H
+    
+    F --> I[get_cluster_health<br/>Health Score 0-100]
+    I --> J[get_cluster_metrics<br/>CPU/Memory/IO]
+    J --> K{Need Spark Details?}
+    K -->|Yes| L[get_cluster_events<br/>Scaling Patterns]
+    K -->|No| H
+    L --> H
+    
+    H --> M{Route to Specialist?}
+    M -->|Jobs on<br/>Cluster| N[Job Agent]
+    M -->|Cost<br/>Trends| O[Analytics Agent]
+    M -->|No| P[End]
+    
+    style B fill:#50E3C2,color:#000
+    style H fill:#7ED321,color:#000
+    style C fill:#F5A623,color:#000
+

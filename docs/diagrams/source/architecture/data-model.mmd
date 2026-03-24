@@ -1,0 +1,79 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+erDiagram
+    USER ||--o{ CONVERSATION : has
+    CONVERSATION ||--o{ EPISODE : contains
+    EPISODE ||--|| USER_MESSAGE : has
+    EPISODE ||--|| AGENT_MESSAGE : has
+    EPISODE ||--o{ TOOL_CALL : includes
+    CONVERSATION ||--o{ FACT : accumulates
+    USER ||--|| USER_PROFILE : has
+    
+    USER {
+        string id PK
+        string email
+        string name
+        datetime created_at
+    }
+    
+    CONVERSATION {
+        string id PK
+        string user_id FK
+        datetime created_at
+        datetime updated_at
+        string status
+        string title
+    }
+    
+    EPISODE {
+        string id PK
+        string conversation_id FK
+        datetime timestamp
+        int sequence_number
+        string agent_type
+    }
+    
+    USER_MESSAGE {
+        string id PK
+        string episode_id FK
+        string content
+        dict metadata
+        datetime timestamp
+    }
+    
+    AGENT_MESSAGE {
+        string id PK
+        string episode_id FK
+        string content
+        dict metadata
+        datetime timestamp
+        string reasoning
+    }
+    
+    TOOL_CALL {
+        string id PK
+        string episode_id FK
+        string tool_name
+        dict parameters
+        dict result
+        datetime executed_at
+        int duration_ms
+        bool success
+    }
+    
+    FACT {
+        string id PK
+        string conversation_id FK
+        string fact_type
+        dict data
+        datetime learned_at
+        float confidence
+    }
+    
+    USER_PROFILE {
+        string user_id PK
+        dict preferences
+        dict usage_stats
+        datetime updated_at
+    }
+

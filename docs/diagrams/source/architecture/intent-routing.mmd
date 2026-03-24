@@ -1,0 +1,40 @@
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant User
+    participant CM as Conversation Manager
+    participant Router as Intent Router
+    participant LLM as LLM Provider
+    
+    User->>CM: "Find expensive queries in job 123"
+    
+    Note over CM: Step 1: Receive user message
+    
+    CM->>Router: classify_intent(message, history)
+    
+    Note over Router: Step 2: Analyze request
+    
+    Router->>Router: Pattern matching<br/>(keywords, regex)
+    
+    alt Pattern match found
+        Router-->>CM: Direct route to agent
+    else Need LLM classification
+        Router->>LLM: "Classify this request:<br/>User: 'Find expensive queries in job 123'<br/>Available domains: query, job, uc, analytics..."
+        
+        Note over LLM: Analyzes intent using<br/>domain knowledge
+        
+        LLM-->>Router: {<br/>  "primary": "job",<br/>  "secondary": ["query"],<br/>  "confidence": 0.95<br/>}
+        
+        Router->>Router: Select primary agent<br/>(JobAgent)
+        
+        Router-->>CM: Route to JobAgent<br/>with secondary hints
+    end
+    
+    Note over CM: Step 3: Create appropriate agent
+    
+    CM->>CM: create_agent(JobAgent)
+    
+    CM-->>User: Processing with JobAgent...
+    
+    Note over User: Routing complete<br/>Agent selected based on intent
+

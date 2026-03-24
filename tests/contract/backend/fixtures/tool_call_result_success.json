@@ -1,0 +1,13 @@
+{
+  "message_id": "msg_test_tool_success",
+  "tool_call": {
+    "tool_name": "fetch_table_metadata",
+    "friendly_name": "Fetching Table Metadata for main.users",
+    "tool_call_id": "call_test_123",
+    "success": true,
+    "status": "completed",
+    "result": "Found table with 5 columns, 1M rows",
+    "error": null,
+    "duration_ms": 500
+  }
+}

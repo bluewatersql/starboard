@@ -1,0 +1,1596 @@
+{
+  "schema_version": "1.0",
+  "name": "databricks_system_tables_codebook",
+  "generated_at_utc": "2025-12-23T12:12:32Z",
+  "description": "Codebooks for Databricks System Tables",
+  "ingestion_conventions": {
+    "id_format": "nuance::<topic_id>::<doc_type>::<chunk_name>@@domain=<domain>",
+    "base_id_format": "nuance::<topic_id>::<doc_type>::<chunk_name>",
+    "parent_id_format": "nuance::<topic_id>",
+    "metadata_constraints": "All metadata values must be scalar primitives. Arrays must be encoded as comma-separated strings.",
+    "recommended_filters": [
+      "domain",
+      "doc_type",
+      "code_key",
+      "warehouse_type",
+      "time_validity",
+      "involves_tags",
+      "sku_family",
+      "is_active"
+    ]
+  },
+  "records": [
+    {
+      "id": "nuance::codebook_access_audit_level::codebook::values@@domain=security_access",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.audit.audit_level\nSUMMARY: Scope of the audit event (account vs workspace).\nVALUES:\n- ACCOUNT_LEVEL\n- WORKSPACE_LEVEL\nSQL_HINT: When mixing account + workspace audit logs, filter audit_level explicitly; workspace_id=0 commonly indicates ACCOUNT_LEVEL events.",
+      "metadata": {
+        "domain": "security_access",
+        "doc_type": "codebook",
+        "topic_id": "codebook_access_audit_level",
+        "parent_id": "nuance::codebook_access_audit_level",
+        "base_id": "nuance::codebook_access_audit_level::codebook::values",
+        "code_key": "system.access.audit.audit_level",
+        "values_csv": "ACCOUNT_LEVEL,WORKSPACE_LEVEL",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_access_workspaces_status::codebook::values@@domain=security_access",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.workspaces_latest.status\nSUMMARY: Workspace lifecycle state.\nVALUES:\n- NOT_PROVISIONED\n- PROVISIONING\n- RUNNING\n- FAILED\n- BANNED\nSQL_HINT: Use status='RUNNING' for active inventory; exclude FAILED/BANNED when calculating coverage.",
+      "metadata": {
+        "domain": "security_access",
+        "doc_type": "codebook",
+        "topic_id": "codebook_access_workspaces_status",
+        "parent_id": "nuance::codebook_access_workspaces_status",
+        "base_id": "nuance::codebook_access_workspaces_status::codebook::values",
+        "code_key": "system.access.workspaces_latest.status",
+        "values_csv": "NOT_PROVISIONED,PROVISIONING,RUNNING,FAILED,BANNED",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_access_audit_service_action::codebook::patterns@@domain=security_access",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.audit.service_name + system.access.audit.action_name\nSUMMARY: Service/action are large and evolving; treat as drilldown facets and allow prefix/contains matching.\nPATTERNS/EXAMPLES (non-exhaustive):\n- service_name='workspace' AND action_name LIKE 'clusters/%'\n- service_name='unityCatalog' AND action_name LIKE 'grants/%'\n- service_name='sql' AND action_name LIKE 'warehouses/%'\n- service_name='jobs' AND action_name LIKE 'runs/%'\nSQL_HINT: Start with service_name equality + action_name LIKE 'prefix/%' instead of enumerating all actions; group by service_name then top action_name.",
+      "metadata": {
+        "domain": "security_access",
+        "doc_type": "codebook",
+        "topic_id": "codebook_access_audit_service_action",
+        "parent_id": "nuance::codebook_access_audit_service_action",
+        "base_id": "nuance::codebook_access_audit_service_action::codebook::patterns",
+        "code_key": "system.access.audit.service_name + system.access.audit.action_name",
+        "values_csv": "service_name='workspace' AND action_name LIKE 'clusters/%',service_name='unityCatalog' AND action_name LIKE 'grants/%',service_name='sql' AND action_name LIKE 'warehouses/%',service_name='jobs' AND action_name LIKE 'runs/%'",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_lineage_entity_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.table_lineage.entity_type (also system.access.column_lineage.entity_type)\nSUMMARY: Originating entity type for a lineage event (what produced the data movement/transformation).\nVALUES:\n- NOTEBOOK\n- JOB\n- PIPELINE\n- DASHBOARD_V3\n- DBSQL_DASHBOARD\n- DBSQL_QUERY\n- NULL\nSQL_HINT: When a user asks \"lineage from jobs\", filter entity_type='JOB'. For warehouse-only lineage (SQL), filter entity_type='DBSQL_QUERY' or entity_run_id/statement_id is not null.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_lineage_entity_type",
+        "parent_id": "nuance::codebook_lineage_entity_type",
+        "base_id": "nuance::codebook_lineage_entity_type::codebook::values",
+        "code_key": "system.access.table_lineage.entity_type",
+        "values_csv": "NOTEBOOK,JOB,PIPELINE,DASHBOARD_V3,DBSQL_DASHBOARD,DBSQL_QUERY,NULL",
+        "time_validity": "none",
+        "involves_tags": false,
+        "warehouse_type": "both",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_lineage_source_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.table_lineage.source_type\nSUMMARY: Source object type (table/path/view/etc).\nVALUES:\n- TABLE\n- PATH\n- VIEW\n- MATERIALIZED_VIEW\n- METRIC_VIEW\n- STREAMING_TABLE\nSQL_HINT: When source_type='PATH', use source_path for attribution; when 'TABLE' use source_table_full_name.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_lineage_source_type",
+        "parent_id": "nuance::codebook_lineage_source_type",
+        "base_id": "nuance::codebook_lineage_source_type::codebook::values",
+        "code_key": "system.access.table_lineage.source_type",
+        "values_csv": "TABLE,PATH,VIEW,MATERIALIZED_VIEW,METRIC_VIEW,STREAMING_TABLE",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_lineage_target_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.table_lineage.target_type\nSUMMARY: Target object type (table/path/view/etc).\nVALUES:\n- TABLE\n- PATH\n- VIEW\n- MATERIALIZED_VIEW\n- METRIC_VIEW\n- STREAMING_TABLE\nSQL_HINT: When target_type='STREAMING_TABLE', expect pipeline-related contexts more frequently; join with Lakeflow pipeline update tables when available.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_lineage_target_type",
+        "parent_id": "nuance::codebook_lineage_target_type",
+        "base_id": "nuance::codebook_lineage_target_type::codebook::values",
+        "code_key": "system.access.table_lineage.target_type",
+        "values_csv": "TABLE,PATH,VIEW,MATERIALIZED_VIEW,METRIC_VIEW,STREAMING_TABLE",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_column_lineage_entity_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.column_lineage.entity_type\nSUMMARY: Entity type that produced the column lineage event.\nVALUES:\n- NOTEBOOK\n- JOB\n- PIPELINE\n- DASHBOARD_V3\n- DBSQL_DASHBOARD\n- DBSQL_QUERY\n- NULL\nSQL_HINT: Same semantics as table_lineage.entity_type; prefer statement_id joins for DBSQL_QUERY and job_run_id joins for JOB.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_column_lineage_entity_type",
+        "parent_id": "nuance::codebook_column_lineage_entity_type",
+        "base_id": "nuance::codebook_column_lineage_entity_type::codebook::values",
+        "code_key": "system.access.column_lineage.entity_type",
+        "values_csv": "NOTEBOOK,JOB,PIPELINE,DASHBOARD_V3,DBSQL_DASHBOARD,DBSQL_QUERY,NULL",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_column_lineage_source_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.column_lineage.source_type\nSUMMARY: Source object type for column lineage.\nVALUES:\n- TABLE\n- PATH\n- VIEW\n- MATERIALIZED_VIEW\n- METRIC_VIEW\n- STREAMING_TABLE\nSQL_HINT: Use source_column_name only when source_type is TABLE/VIEW/MATERIALIZED_VIEW/METRIC_VIEW/STREAMING_TABLE.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_column_lineage_source_type",
+        "parent_id": "nuance::codebook_column_lineage_source_type",
+        "base_id": "nuance::codebook_column_lineage_source_type::codebook::values",
+        "code_key": "system.access.column_lineage.source_type",
+        "values_csv": "TABLE,PATH,VIEW,MATERIALIZED_VIEW,METRIC_VIEW,STREAMING_TABLE",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_column_lineage_target_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.column_lineage.target_type\nSUMMARY: Target object type for column lineage.\nVALUES:\n- TABLE\n- PATH\n- VIEW\n- MATERIALIZED_VIEW\n- METRIC_VIEW\n- STREAMING_TABLE\nSQL_HINT: Use target_column_name only when target_type is TABLE/VIEW/MATERIALIZED_VIEW/METRIC_VIEW/STREAMING_TABLE.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_column_lineage_target_type",
+        "parent_id": "nuance::codebook_column_lineage_target_type",
+        "base_id": "nuance::codebook_column_lineage_target_type::codebook::values",
+        "code_key": "system.access.column_lineage.target_type",
+        "values_csv": "TABLE,PATH,VIEW,MATERIALIZED_VIEW,METRIC_VIEW,STREAMING_TABLE",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_warehouse_type::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouses.warehouse_type\nSUMMARY: SQL warehouse type. Drives attribution logic (dedicated vs shared/serverless) and which joins are reliable.\nVALUES:\n- CLASSIC\n- PRO\n- SERVERLESS\nSQL_HINT: If users ask for \"serverless warehouse\" analysis, filter warehouse_type='SERVERLESS' (from system.compute.warehouses) and avoid assuming 1:1 warehouse_id -> cost without validating billing origin + serverless flags.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_warehouse_type",
+        "parent_id": "nuance::codebook_warehouse_type",
+        "base_id": "nuance::codebook_warehouse_type::codebook::values",
+        "code_key": "system.compute.warehouses.warehouse_type",
+        "values_csv": "CLASSIC,PRO,SERVERLESS",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": true,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_warehouse_channel::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouses.warehouse_channel\nSUMMARY: Release channel for SQL warehouse.\nVALUES:\n- CURRENT\n- PREVIEW\nSQL_HINT: When diagnosing regressions, segment by warehouse_channel (PREVIEW may include new engine/runtime behavior).",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_warehouse_channel",
+        "parent_id": "nuance::codebook_warehouse_channel",
+        "base_id": "nuance::codebook_warehouse_channel::codebook::values",
+        "code_key": "system.compute.warehouses.warehouse_channel",
+        "values_csv": "CURRENT,PREVIEW",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_warehouse_size::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouses.warehouse_size\nSUMMARY: SQL warehouse size tier.\nVALUES:\n- 2X_SMALL\n- X_SMALL\n- SMALL\n- MEDIUM\n- LARGE\n- X_LARGE\n- 2X_LARGE\n- 3X_LARGE\n- 4X_LARGE\n- 5X_LARGE\nSQL_HINT: If the user asks for \"X-LARGE\" or \"largest\" warehouses, filter warehouse_size IN ('X_LARGE','2X_LARGE','3X_LARGE','4X_LARGE','5X_LARGE'). Pair with utilization metrics (events/query history) to justify resizing.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_warehouse_size",
+        "parent_id": "nuance::codebook_warehouse_size",
+        "base_id": "nuance::codebook_warehouse_size::codebook::values",
+        "code_key": "system.compute.warehouses.warehouse_size",
+        "values_csv": "2X_SMALL,X_SMALL,SMALL,MEDIUM,LARGE,X_LARGE,2X_LARGE,3X_LARGE,4X_LARGE,5X_LARGE",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": true,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_warehouse_event_type::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouse_events.event_type\nSUMMARY: Warehouse lifecycle/scale event type.\nVALUES:\n- SCALED_UP\n- SCALED_DOWN\n- STOPPING\n- RUNNING\n- STARTING\n- STOPPED\nSQL_HINT: To measure scaling volatility, count SCALED_UP/SCALED_DOWN per day. For availability windows, use STARTING->RUNNING and STOPPING->STOPPED transitions.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_warehouse_event_type",
+        "parent_id": "nuance::codebook_warehouse_event_type",
+        "base_id": "nuance::codebook_warehouse_event_type::codebook::values",
+        "code_key": "system.compute.warehouse_events.event_type",
+        "values_csv": "SCALED_UP,SCALED_DOWN,STOPPING,RUNNING,STARTING,STOPPED",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_cluster_source::codebook::values@@domain=compute_clusters",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.clusters.cluster_source\nSUMMARY: Where/why a cluster was created (critical for governance + attribution).\nVALUES:\n- UI\n- API\n- JOB\n- PIPELINE\n- PIPELINE_MAINTENANCE\nSQL_HINT: Prefer cluster_source='JOB'/'PIPELINE' for workload compute inventories; treat UI/API as interactive/all-purpose unless proven otherwise.",
+      "metadata": {
+        "domain": "compute_clusters",
+        "doc_type": "codebook",
+        "topic_id": "codebook_cluster_source",
+        "parent_id": "nuance::codebook_cluster_source",
+        "base_id": "nuance::codebook_cluster_source::codebook::values",
+        "code_key": "system.compute.clusters.cluster_source",
+        "values_csv": "UI,API,JOB,PIPELINE,PIPELINE_MAINTENANCE",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": true,
+        "sku_family": "compute",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_jobs_trigger_type::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.trigger_type\nSUMMARY: What triggered the job run (schedule/continuous/file/onetime).\nVALUES:\n- CONTINUOUS\n- CRON\n- FILE_ARRIVAL\n- ONETIME\n- ONETIME_RETRY\nSQL_HINT: Use trigger_type to segment reliability/latency (CRON vs FILE_ARRIVAL). For retries, ONETIME_RETRY often implies upstream transient failure or rate limiting.",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_jobs_trigger_type",
+        "parent_id": "nuance::codebook_jobs_trigger_type",
+        "base_id": "nuance::codebook_jobs_trigger_type::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.trigger_type",
+        "values_csv": "CONTINUOUS,CRON,FILE_ARRIVAL,ONETIME,ONETIME_RETRY",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_jobs_result_state::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.result_state\nSUMMARY: Outcome classification for a job/task run.\nVALUES:\n- SUCCEEDED\n- FAILED\n- SKIPPED\n- CANCELLED\n- TIMED_OUT\n- ERROR\n- BLOCKED\n- NULL (only for intermediate hourly slices of long runs; final slice carries the result)\nSQL_HINT: For run-level outcome counts, filter to the terminal slice: result_state IS NOT NULL (or pick the max(period_end_time) per run_id).",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_jobs_result_state",
+        "parent_id": "nuance::codebook_jobs_result_state",
+        "base_id": "nuance::codebook_jobs_result_state::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.result_state",
+        "values_csv": "SUCCEEDED,FAILED,SKIPPED,CANCELLED,TIMED_OUT,ERROR,BLOCKED,NULL",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_jobs_run_type::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.run_type\nSUMMARY: Shape of a run (standard job run vs submitted run vs notebook workflow run).\nVALUES:\n- JOB_RUN\n- SUBMIT_RUN\n- WORKFLOW_RUN\nSQL_HINT: For operational dashboards, JOB_RUN is the common baseline. WORKFLOW_RUN may appear only in job_run_timeline and can be missing from other jobs tables; treat as a special class when joining dimensions.",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_jobs_run_type",
+        "parent_id": "nuance::codebook_jobs_run_type",
+        "base_id": "nuance::codebook_jobs_run_type::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.run_type",
+        "values_csv": "JOB_RUN,SUBMIT_RUN,WORKFLOW_RUN",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_jobs_termination::codebook::patterns@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.termination_code + termination_type\nSUMMARY: Termination codes/types vary and evolve; treat as drilldown facets and build fallbacks when fields are NULL (older rows).\nPATTERNS/EXAMPLES (non-exhaustive):\n- termination_type='SUCCESS' AND termination_code IS NULL\n- termination_type='CLIENT_ERROR' AND termination_code LIKE 'COMMAND_EXECUTION_ERROR%'\n- termination_type='SERVICE_ERROR' AND termination_code LIKE 'INTERNAL_ERROR%'\nSQL_HINT: If termination_code is missing (older data), derive status from result_state; otherwise use termination_type as primary and termination_code as detailed reason.",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_jobs_termination",
+        "parent_id": "nuance::codebook_jobs_termination",
+        "base_id": "nuance::codebook_jobs_termination::codebook::patterns",
+        "code_key": "system.lakeflow.job_run_timeline.termination_code + termination_type",
+        "values_csv": "termination_type='SUCCESS' AND termination_code IS NULL,termination_type='CLIENT_ERROR' AND termination_code LIKE 'COMMAND_EXECUTION_ERROR%',termination_type='SERVICE_ERROR' AND termination_code LIKE 'INTERNAL_ERROR%'",
+        "warehouse_type": "na",
+        "time_validity": "evolving",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipelines_update_type::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.update_type\nSUMMARY: Type of pipeline update execution.\nVALUES:\n- UPDATE\n- FULL_REFRESH\n- RESET\nSQL_HINT: When users say 'full refresh', filter update_type='FULL_REFRESH' and analyze durations/costs separately from incremental UPDATE.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipelines_update_type",
+        "parent_id": "nuance::codebook_pipelines_update_type",
+        "base_id": "nuance::codebook_pipelines_update_type::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.update_type",
+        "values_csv": "UPDATE,FULL_REFRESH,RESET",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipelines_result_state::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.result_state\nSUMMARY: Outcome of a pipeline update.\nVALUES:\n- SUCCESS\n- FAILED\n- CANCELED\n- TIMEDOUT\n- SKIPPED\n- BLOCKED\n- INTERNAL_ERROR\nSQL_HINT: Use INTERNAL_ERROR to flag platform-side failures; pair with request_id to identify retries.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipelines_result_state",
+        "parent_id": "nuance::codebook_pipelines_result_state",
+        "base_id": "nuance::codebook_pipelines_result_state::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.result_state",
+        "values_csv": "SUCCESS,FAILED,CANCELED,TIMEDOUT,SKIPPED,BLOCKED,INTERNAL_ERROR",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipelines_trigger_type::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.trigger_type\nSUMMARY: What triggered the pipeline update.\nVALUES:\n- MANUAL\n- SCHEDULE\n- JOB_TASK\n- CONTINUOUS\nSQL_HINT: If trigger_type='JOB_TASK', use trigger_details.job_task.* to join back to the job that triggered the pipeline.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipelines_trigger_type",
+        "parent_id": "nuance::codebook_pipelines_trigger_type",
+        "base_id": "nuance::codebook_pipelines_trigger_type::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.trigger_type",
+        "values_csv": "MANUAL,SCHEDULE,JOB_TASK,CONTINUOUS",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipelines_settings_edition::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipelines.settings.edition\nSUMMARY: Pipeline edition (commercial tier) when present.\nVALUES:\n- CORE\n- PRO\n- ADVANCED\n- NULL\nSQL_HINT: If edition is NULL for older rows, infer tier via billing usage.product_features.dlt_tier when available.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipelines_settings_edition",
+        "parent_id": "nuance::codebook_pipelines_settings_edition",
+        "base_id": "nuance::codebook_pipelines_settings_edition::codebook::values",
+        "code_key": "system.lakeflow.pipelines.settings.edition",
+        "values_csv": "CORE,PRO,ADVANCED,NULL",
+        "warehouse_type": "na",
+        "time_validity": "evolving",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipelines_settings_channel::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipelines.settings.channel\nSUMMARY: Release channel for pipeline.\nVALUES:\n- CURRENT\n- PREVIEW\n- NULL\nSQL_HINT: When diagnosing regressions, split by channel to isolate PREVIEW behavior; treat NULL as 'unknown/older'.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipelines_settings_channel",
+        "parent_id": "nuance::codebook_pipelines_settings_channel",
+        "base_id": "nuance::codebook_pipelines_settings_channel::codebook::values",
+        "code_key": "system.lakeflow.pipelines.settings.channel",
+        "values_csv": "CURRENT,PREVIEW,NULL",
+        "warehouse_type": "na",
+        "time_validity": "evolving",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipelines_settings_serverless::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipelines.settings.serverless\nSUMMARY: Whether the pipeline is configured for serverless execution.\nVALUES:\n- true\n- false\nSQL_HINT: User prompts like 'serverless pipeline' map to settings.serverless=true; for billing, corroborate with usage.product_features.is_serverless where applicable.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipelines_settings_serverless",
+        "parent_id": "nuance::codebook_pipelines_settings_serverless",
+        "base_id": "nuance::codebook_pipelines_settings_serverless::codebook::values",
+        "code_key": "system.lakeflow.pipelines.settings.serverless",
+        "values_csv": "true,false",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_query_execution_status::codebook::values@@domain=query",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.query.history.execution_status\nSUMMARY: Terminal status of the statement execution.\nVALUES:\n- FINISHED\n- FAILED\n- CANCELED\nSQL_HINT: For performance analytics, default to execution_status='FINISHED'. For reliability, compute failure_rate using (FAILED + CANCELED) / total. When investigating CANCELED, also group by executed_by and client_application to find automation cancel patterns.",
+      "metadata": {
+        "domain": "query",
+        "doc_type": "codebook",
+        "topic_id": "codebook_query_execution_status",
+        "parent_id": "nuance::codebook_query_execution_status",
+        "base_id": "nuance::codebook_query_execution_status::codebook::values",
+        "code_key": "system.query.history.execution_status",
+        "values_csv": "FINISHED,FAILED,CANCELED",
+        "time_validity": "none",
+        "involves_tags": true,
+        "warehouse_type": "both",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_query_compute_type::codebook::values@@domain=query",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.query.history.compute.type\nSUMMARY: Compute type used to run the statement.\nVALUES:\n- WAREHOUSE\n- SERVERLESS_COMPUTE\nSQL_HINT: If the user asks \u201cserverless queries\u201d, filter compute.type='SERVERLESS_COMPUTE' (not warehouse inventory). If the user asks \u201cserverless warehouses\u201d, filter system.compute.warehouses.warehouse_type='SERVERLESS' (inventory).",
+      "metadata": {
+        "domain": "query",
+        "doc_type": "codebook",
+        "topic_id": "codebook_query_compute_type",
+        "parent_id": "nuance::codebook_query_compute_type",
+        "base_id": "nuance::codebook_query_compute_type::codebook::values",
+        "code_key": "system.query.history.compute.type",
+        "values_csv": "WAREHOUSE,SERVERLESS_COMPUTE",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "query",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_query_client_application::codebook::patterns@@domain=query",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.query.history.client_application\nSUMMARY: Client application name is non-exhaustive and ecosystem-driven (BI tools, Databricks UI, connectors).\nPATTERNS/EXAMPLES (non-exhaustive):\n- Databricks SQL\n- Tableau\n- Power BI\n- JDBC\n- ODBC\n- dbt\nSQL_HINT: Group by client_application to spot noisy clients; normalize case and strip versions if present.",
+      "metadata": {
+        "domain": "query",
+        "doc_type": "codebook",
+        "topic_id": "codebook_query_client_application",
+        "parent_id": "nuance::codebook_query_client_application",
+        "base_id": "nuance::codebook_query_client_application::codebook::patterns",
+        "code_key": "system.query.history.client_application",
+        "values_csv": "Databricks SQL,Tableau,Power BI,JDBC,ODBC,dbt",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_query_statement_type::codebook::patterns@@domain=query",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.query.history.statement_type\nSUMMARY: Statement types are numerous; treat as facet for grouping and use LIKE for families (e.g., 'CREATE', 'ALTER').\nPATTERNS/EXAMPLES (non-exhaustive):\n- SELECT\n- INSERT\n- UPDATE\n- DELETE\n- MERGE\n- CREATE\n- ALTER\n- DROP\n- COPY\nSQL_HINT: When measuring read-heavy workload, focus on statement_type IN ('SELECT') or use statement_text parsing for mixed statements.",
+      "metadata": {
+        "domain": "query",
+        "doc_type": "codebook",
+        "topic_id": "codebook_query_statement_type",
+        "parent_id": "nuance::codebook_query_statement_type",
+        "base_id": "nuance::codebook_query_statement_type::codebook::patterns",
+        "code_key": "system.query.history.statement_type",
+        "values_csv": "SELECT,INSERT,UPDATE,DELETE,MERGE,CREATE,ALTER,DROP,COPY",
+        "warehouse_type": "na",
+        "time_validity": "evolving",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_mlflow_run_status::codebook::values@@domain=mlflow",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.mlflow.runs_latest.status\nSUMMARY: MLflow run status (from MLflow RunStatus enum).\nVALUES:\n- SCHEDULED\n- RUNNING\n- FINISHED\n- FAILED\n- KILLED\nSQL_HINT: For experiment health, group by status; treat KILLED as user/system interruption distinct from FAILED.",
+      "metadata": {
+        "domain": "mlflow",
+        "doc_type": "codebook",
+        "topic_id": "codebook_mlflow_run_status",
+        "parent_id": "nuance::codebook_mlflow_run_status",
+        "base_id": "nuance::codebook_mlflow_run_status::codebook::values",
+        "code_key": "system.mlflow.runs_latest.status",
+        "values_csv": "SCHEDULED,RUNNING,FINISHED,FAILED,KILLED",
+        "warehouse_type": "na",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_serving_entity_type::codebook::values@@domain=serving",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.serving.served_entities.entity_type\nSUMMARY: Served entity category behind an endpoint.\nVALUES:\n- FEATURE_SPEC\n- EXTERNAL_MODEL\n- FOUNDATION_MODEL\n- CUSTOM_MODEL\nSQL_HINT: Use entity_type to split platform costs/usage patterns (foundation vs custom vs external). Join endpoint_usage -> served_entities on served_entity_id for attribution.",
+      "metadata": {
+        "domain": "serving",
+        "doc_type": "codebook",
+        "topic_id": "codebook_serving_entity_type",
+        "parent_id": "nuance::codebook_serving_entity_type",
+        "base_id": "nuance::codebook_serving_entity_type::codebook::values",
+        "code_key": "system.serving.served_entities.entity_type",
+        "values_csv": "FEATURE_SPEC,EXTERNAL_MODEL,FOUNDATION_MODEL,CUSTOM_MODEL",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_serving_task::codebook::values@@domain=serving",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.serving.served_entities.task\nSUMMARY: Serving request API shape for the served entity.\nVALUES:\n- llm/v1/chat\n- llm/v1/completions\n- llm/v1/embeddings\nSQL_HINT: Use task to segment token-heavy workloads (chat/completions) vs embedding throughput. Pair with endpoint_usage token counts for cost/latency analysis.",
+      "metadata": {
+        "domain": "serving",
+        "doc_type": "codebook",
+        "topic_id": "codebook_serving_task",
+        "parent_id": "nuance::codebook_serving_task",
+        "base_id": "nuance::codebook_serving_task::codebook::values",
+        "code_key": "system.serving.served_entities.task",
+        "values_csv": "llm/v1/chat,llm/v1/completions,llm/v1/embeddings",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_serving_compute_type::codebook::patterns@@domain=serving",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.serving.served_entities.custom_model_config.compute_type\nSUMMARY: Compute type for custom models/features (non-exhaustive, depends on platform).\nPATTERNS/EXAMPLES (non-exhaustive):\n- CPU\n- GPU\nSQL_HINT: Use compute_type to split infra needs; corroborate with SKU/billing where available.",
+      "metadata": {
+        "domain": "serving",
+        "doc_type": "codebook",
+        "topic_id": "codebook_serving_compute_type",
+        "parent_id": "nuance::codebook_serving_compute_type",
+        "base_id": "nuance::codebook_serving_compute_type::codebook::patterns",
+        "code_key": "system.serving.served_entities.custom_model_config.compute_type",
+        "values_csv": "CPU,GPU",
+        "warehouse_type": "na",
+        "time_validity": "evolving",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_predictive_optimization_operation_type::codebook::values@@domain=storage_optimization",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.storage.predictive_optimization_operations_history.operation_type\nSUMMARY: Optimization operation performed by predictive optimization.\nVALUES:\n- COMPACTION\n- VACUUM\nSQL_HINT: Use operation_type to split cost/impact (VACUUM may not reduce file counts the same way COMPACTION does).",
+      "metadata": {
+        "domain": "storage_optimization",
+        "doc_type": "codebook",
+        "topic_id": "codebook_predictive_optimization_operation_type",
+        "parent_id": "nuance::codebook_predictive_optimization_operation_type",
+        "base_id": "nuance::codebook_predictive_optimization_operation_type::codebook::values",
+        "code_key": "system.storage.predictive_optimization_operations_history.operation_type",
+        "values_csv": "COMPACTION,VACUUM",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "storage",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_predictive_optimization_operation_status::codebook::values@@domain=storage_optimization",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.storage.predictive_optimization_operations_history.operation_status\nSUMMARY: Status for predictive optimization operation.\nVALUES:\n- SUCCESSFUL\n- FAILED: INTERNAL_ERROR\nSQL_HINT: Track failure counts by catalog/schema to detect systemic issues (permissions, metastore instability, platform incidents).",
+      "metadata": {
+        "domain": "storage_optimization",
+        "doc_type": "codebook",
+        "topic_id": "codebook_predictive_optimization_operation_status",
+        "parent_id": "nuance::codebook_predictive_optimization_operation_status",
+        "base_id": "nuance::codebook_predictive_optimization_operation_status::codebook::values",
+        "code_key": "system.storage.predictive_optimization_operations_history.operation_status",
+        "values_csv": "SUCCESSFUL,FAILED: INTERNAL_ERROR",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "storage",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_predictive_optimization_usage_unit::codebook::values@@domain=storage_optimization",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.storage.predictive_optimization_operations_history.usage_unit\nSUMMARY: Unit used to bill the optimization operation.\nVALUES:\n- DBU\n- NULL\nSQL_HINT: Always group by usage_unit before summing usage_quantity; treat NULL as unknown (older rows / partial ingestion).",
+      "metadata": {
+        "domain": "storage_optimization",
+        "doc_type": "codebook",
+        "topic_id": "codebook_predictive_optimization_usage_unit",
+        "parent_id": "nuance::codebook_predictive_optimization_usage_unit",
+        "base_id": "nuance::codebook_predictive_optimization_usage_unit::codebook::values",
+        "code_key": "system.storage.predictive_optimization_operations_history.usage_unit",
+        "values_csv": "DBU,NULL",
+        "warehouse_type": "na",
+        "time_validity": "evolving",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_billing_origin_product::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.billing_origin_product\nSUMMARY: Databricks product that originated the usage record. Useful to split shared SKUs (serverless jobs SKU can include multiple originating products).\nVALUES:\n- JOBS\n- DLT\n- SQL\n- ALL_PURPOSE\n- MODEL_SERVING\n- INTERACTIVE\n- DEFAULT_STORAGE\n- VECTOR_SEARCH\n- LAKEHOUSE_MONITORING\n- PREDICTIVE_OPTIMIZATION\n- ONLINE_TABLES\n- FOUNDATION_MODEL_TRAINING\n- AGENT_EVALUATION\n- FINE_GRAINED_ACCESS_CONTROL\n- BASE_ENVIRONMENTS\n- DATA_CLASSIFICATION\n- DATA_QUALITY_MONITORING\n- AI_GATEWAY\n- AI_RUNTIME\n- NETWORKING\n- APPS\n- DATABASE\n- AI_FUNCTIONS\n- AGENT_BRICKS\n- CLEAN_ROOM\n- LAKEFLOW_CONNECT\nSQL_HINT: When users ask for \u201cserverless spend\u201d, prefer filtering by billing_origin_product + product_features.is_serverless rather than SKU name alone.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_billing_origin_product",
+        "parent_id": "nuance::codebook_billing_origin_product",
+        "base_id": "nuance::codebook_billing_origin_product::codebook::values",
+        "code_key": "system.billing.usage.billing_origin_product",
+        "values_csv": "JOBS,DLT,SQL,ALL_PURPOSE,MODEL_SERVING,INTERACTIVE,DEFAULT_STORAGE,VECTOR_SEARCH,LAKEHOUSE_MONITORING,PREDICTIVE_OPTIMIZATION,ONLINE_TABLES,FOUNDATION_MODEL_TRAINING,AGENT_EVALUATION,FINE_GRAINED_ACCESS_CONTROL,BASE_ENVIRONMENTS,DATA_CLASSIFICATION,DATA_QUALITY_MONITORING,AI_GATEWAY,AI_RUNTIME,NETWORKING,APPS,DATABASE,AI_FUNCTIONS,AGENT_BRICKS,CLEAN_ROOM,LAKEFLOW_CONNECT",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_usage_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.usage_type\nSUMMARY: Billing usage type classification; choose aggregation and units accordingly.\nVALUES:\n- COMPUTE_TIME\n- STORAGE_SPACE\n- NETWORK_BYTE\n- NETWORK_HOUR\n- API_OPERATION\n- TOKEN\n- GPU_TIME\n- ANSWER\nSQL_HINT: Never SUM(usage_quantity) across mixed usage_type (or mixed usage_unit). Partition by usage_type first.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_usage_type",
+        "parent_id": "nuance::codebook_usage_type",
+        "base_id": "nuance::codebook_usage_type::codebook::values",
+        "code_key": "system.billing.usage.usage_type",
+        "values_csv": "COMPUTE_TIME,STORAGE_SPACE,NETWORK_BYTE,NETWORK_HOUR,API_OPERATION,TOKEN,GPU_TIME,ANSWER",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_record_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.record_type\nSUMMARY: Correction mechanism. Retractions negate originals (negative usage_quantity); restatements contain corrected values.\nVALUES:\n- ORIGINAL\n- RETRACTION\n- RESTATEMENT\nSQL_HINT: For \u201ctrue totals\u201d, SUM(usage_quantity) across all record_type; do NOT filter to ORIGINAL unless you explicitly want pre-correction numbers.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_record_type",
+        "parent_id": "nuance::codebook_record_type",
+        "base_id": "nuance::codebook_record_type::codebook::values",
+        "code_key": "system.billing.usage.record_type",
+        "values_csv": "ORIGINAL,RETRACTION,RESTATEMENT",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_storage_api_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.usage_metadata.storage_api_type\nSUMMARY: Tier classification for default storage operations.\nVALUES:\n- TIER_1 (PUT, COPY, POST, LIST)\n- TIER_2 (other operations)\nSQL_HINT: Use this only when billing_origin_product=DEFAULT_STORAGE (otherwise often NULL).",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_storage_api_type",
+        "parent_id": "nuance::codebook_storage_api_type",
+        "base_id": "nuance::codebook_storage_api_type::codebook::values",
+        "code_key": "system.billing.usage.usage_metadata.storage_api_type",
+        "values_csv": "TIER_1,TIER_2",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "default_storage",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_product_features_jobs_tier::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.jobs_tier\nSUMMARY: Jobs tier feature hint.\nVALUES:\n- LIGHT\n- CLASSIC\n- null\nSQL_HINT: Use jobs_tier to split costs within JOBS where available; otherwise fall back to SKU + compute type.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_product_features_jobs_tier",
+        "parent_id": "nuance::codebook_product_features_jobs_tier",
+        "base_id": "nuance::codebook_product_features_jobs_tier::codebook::values",
+        "code_key": "system.billing.usage.product_features.jobs_tier",
+        "values_csv": "LIGHT,CLASSIC,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "jobs",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_product_features_sql_tier::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.sql_tier\nSUMMARY: SQL tier feature hint.\nVALUES:\n- CLASSIC\n- PRO\n- null\nSQL_HINT: Combine with usage_metadata.warehouse_id to attribute spend to a warehouse (standard) vs allocate (serverless).",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_product_features_sql_tier",
+        "parent_id": "nuance::codebook_product_features_sql_tier",
+        "base_id": "nuance::codebook_product_features_sql_tier::codebook::values",
+        "code_key": "system.billing.usage.product_features.sql_tier",
+        "values_csv": "CLASSIC,PRO,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "sql_warehouse",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_product_features_dlt_tier::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.dlt_tier\nSUMMARY: Lakeflow Spark Declarative Pipelines tier.\nVALUES:\n- CORE\n- PRO\n- ADVANCED\n- null\nSQL_HINT: If users ask \u201cDLT spend by tier\u201d, filter billing_origin_product=DLT and group by dlt_tier.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_product_features_dlt_tier",
+        "parent_id": "nuance::codebook_product_features_dlt_tier",
+        "base_id": "nuance::codebook_product_features_dlt_tier::codebook::values",
+        "code_key": "system.billing.usage.product_features.dlt_tier",
+        "values_csv": "CORE,PRO,ADVANCED,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_product_features_serving_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.serving_type\nSUMMARY: Model serving usage subtype.\nVALUES:\n- MODEL\n- GPU_MODEL\n- FOUNDATION_MODEL\n- FEATURE\n- null\nSQL_HINT: Use serving_type for cost attribution across endpoint categories when billing_origin_product=MODEL_SERVING.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_product_features_serving_type",
+        "parent_id": "nuance::codebook_product_features_serving_type",
+        "base_id": "nuance::codebook_product_features_serving_type::codebook::values",
+        "code_key": "system.billing.usage.product_features.serving_type",
+        "values_csv": "MODEL,GPU_MODEL,FOUNDATION_MODEL,FEATURE,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "serving",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_product_features_offering_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.offering_type\nSUMMARY: Offering type for certain serving workloads.\nVALUES:\n- BATCH_INFERENCE\n- null",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_product_features_offering_type",
+        "parent_id": "nuance::codebook_product_features_offering_type",
+        "base_id": "nuance::codebook_product_features_offering_type::codebook::values",
+        "code_key": "system.billing.usage.product_features.offering_type",
+        "values_csv": "BATCH_INFERENCE,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "serving",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_product_features_performance_target::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.performance_target\nSUMMARY: Performance mode for serverless job or pipeline.\nVALUES:\n- PERFORMANCE_OPTIMIZED\n- STANDARD\n- null\nSQL_HINT: Only meaningful for serverless workloads; classic compute typically yields null here.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_product_features_performance_target",
+        "parent_id": "nuance::codebook_product_features_performance_target",
+        "base_id": "nuance::codebook_product_features_performance_target::codebook::values",
+        "code_key": "system.billing.usage.product_features.performance_target",
+        "values_csv": "PERFORMANCE_OPTIMIZED,STANDARD,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "serverless",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_product_features_networking_connectivity_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.networking.connectivity_type\nSUMMARY: Serverless networking connectivity type.\nVALUES:\n- PUBLIC_IP\n- PRIVATE_IP\nSQL_HINT: Use to split serverless networking spend when billing_origin_product=NETWORKING.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_product_features_networking_connectivity_type",
+        "parent_id": "nuance::codebook_product_features_networking_connectivity_type",
+        "base_id": "nuance::codebook_product_features_networking_connectivity_type::codebook::values",
+        "code_key": "system.billing.usage.product_features.networking.connectivity_type",
+        "values_csv": "PUBLIC_IP,PRIVATE_IP",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "networking",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_agent_bricks_problem_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.agent_bricks.problem_type\nSUMMARY: Agent Bricks problem type.\nVALUES:\n- AGENT_BRICKS_KNOWLEDGE_ASSISTANT\n- null",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_agent_bricks_problem_type",
+        "parent_id": "nuance::codebook_agent_bricks_problem_type",
+        "base_id": "nuance::codebook_agent_bricks_problem_type::codebook::values",
+        "code_key": "system.billing.usage.product_features.agent_bricks.problem_type",
+        "values_csv": "AGENT_BRICKS_KNOWLEDGE_ASSISTANT,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "agent_bricks",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_agent_bricks_workload_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.product_features.agent_bricks.workload_type\nSUMMARY: Agent Bricks workload type.\nVALUES:\n- AGENT_BRICKS_REAL_TIME_INFERENCE\n- null",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_agent_bricks_workload_type",
+        "parent_id": "nuance::codebook_agent_bricks_workload_type",
+        "base_id": "nuance::codebook_agent_bricks_workload_type::codebook::values",
+        "code_key": "system.billing.usage.product_features.agent_bricks.workload_type",
+        "values_csv": "AGENT_BRICKS_REAL_TIME_INFERENCE,null",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "agent_bricks",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_usage_metadata_keys::codebook::keys@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.usage_metadata.<keys>\nSUMMARY: Keys in usage_metadata (all strings) that help attribute billing usage back to resource model objects.\nCOMMON_KEYS:\n- cluster_id (classic compute)\n- job_id, job_run_id, job_name (jobs compute / serverless jobs)\n- warehouse_id (SQL workloads)\n- notebook_id, notebook_path (serverless notebooks)\n- dlt_pipeline_id, dlt_update_id, dlt_maintenance_id (pipelines + related features)\n- endpoint_id, endpoint_name (model serving + vector search endpoints)\n- metastore_id, uc_table_catalog, uc_table_schema, uc_table_name (UC-linked usage)\n- app_id, app_name (Databricks Apps)\nSQL_HINT: If billing_origin_product=SQL or product_features.sql_tier is set, warehouse_id is often your primary attribution key; for shared/serverless patterns, allocate by query history.",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_usage_metadata_keys",
+        "parent_id": "nuance::codebook_usage_metadata_keys",
+        "base_id": "nuance::codebook_usage_metadata_keys::codebook::keys",
+        "code_key": "system.billing.usage.usage_metadata",
+        "values_csv": "cluster_id,job_id,job_run_id,job_name,warehouse_id,notebook_id,notebook_path,dlt_pipeline_id,dlt_update_id,dlt_maintenance_id,endpoint_id,endpoint_name,metastore_id,uc_table_catalog,uc_table_schema,uc_table_name,app_id,app_name",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": true,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_billing_cloud::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.billing.usage.cloud\nSUMMARY: Cloud provider associated with usage/pricing rows.\nVALUES:\n- AWS\n- AZURE\n- GCP\nSQL_HINT: If you join usage to prices, always join on sku_name AND cloud (and currency_code where relevant).",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_billing_cloud",
+        "parent_id": "nuance::codebook_billing_cloud",
+        "base_id": "nuance::codebook_billing_cloud::codebook::values",
+        "code_key": "system.billing.usage.cloud",
+        "values_csv": "AWS,AZURE,GCP",
+        "warehouse_type": "both",
+        "time_validity": "range_join_required",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251222
+      }
+    },
+    {
+      "id": "nuance::codebook_workspace_status::codebook::values@@domain=workspace_admin",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.workspaces_latest.status\nSUMMARY: Workspace lifecycle status. Useful for filtering out deleted/banned/provisioning workspaces from rollups.\nVALUES:\n- NOT_PROVISIONED\n- PROVISIONING\n- RUNNING\n- FAILED\n- BANNED\nSQL_HINT: For account-wide aggregations, default to status='RUNNING'. If including others, label them explicitly so counts/costs aren't interpreted as active usage.",
+      "metadata": {
+        "domain": "workspace_admin",
+        "doc_type": "codebook",
+        "topic_id": "codebook_workspace_status",
+        "parent_id": "nuance::codebook_workspace_status",
+        "base_id": "nuance::codebook_workspace_status::codebook::values",
+        "code_key": "system.access.workspaces_latest.status",
+        "values_csv": "NOT_PROVISIONED,PROVISIONING,RUNNING,FAILED,BANNED",
+        "time_validity": "none",
+        "involves_tags": false,
+        "warehouse_type": "both",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_audit_level::codebook::values@@domain=security_access",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.audit.audit_level\nSUMMARY: Indicates whether an audit event was captured at account-level or workspace-level.\nVALUES:\n- ACCOUNT_LEVEL\n- WORKSPACE_LEVEL\nSQL_HINT: Always filter audit_level when answering compliance questions; account-level events may have workspace_id=0 and should not be joined to workspace-scoped tables without guarding logic.",
+      "metadata": {
+        "domain": "security_access",
+        "doc_type": "codebook",
+        "topic_id": "codebook_audit_level",
+        "parent_id": "nuance::codebook_audit_level",
+        "base_id": "nuance::codebook_audit_level::codebook::values",
+        "code_key": "system.access.audit.audit_level",
+        "values_csv": "ACCOUNT_LEVEL,WORKSPACE_LEVEL",
+        "time_validity": "none",
+        "involves_tags": false,
+        "warehouse_type": "both",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_lineage_object_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.table_lineage.source_type / target_type (also system.access.column_lineage.source_type / target_type)\nSUMMARY: The kind of object or source involved in lineage (table vs view vs path vs streaming).\nVALUES:\n- TABLE\n- PATH\n- VIEW\n- MATERIALIZED_VIEW\n- METRIC_VIEW\n- STREAMING_TABLE\nSQL_HINT: If source_type='PATH', expect source_table_full_name may be null and use source_path. If target_type='VIEW', joins to UC tables may not apply; treat as logical output.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_lineage_object_type",
+        "parent_id": "nuance::codebook_lineage_object_type",
+        "base_id": "nuance::codebook_lineage_object_type::codebook::values",
+        "code_key": "system.access.table_lineage.source_type",
+        "values_csv": "TABLE,PATH,VIEW,MATERIALIZED_VIEW,METRIC_VIEW,STREAMING_TABLE",
+        "time_validity": "none",
+        "involves_tags": false,
+        "warehouse_type": "both",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_jobs_termination_code::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.termination_code\nSUMMARY: Root termination reason used for triage (quota limits, cluster failures, auth, etc.).\nVALUES:\n- SUCCESS\n- CANCELLED\n- SKIPPED\n- DRIVER_ERROR\n- CLUSTER_ERROR\n- REPOSITORY_CHECKOUT_FAILED\n- INVALID_CLUSTER_REQUEST\n- WORKSPACE_RUN_LIMIT_EXCEEDED\n- FEATURE_DISABLED\n- CLUSTER_REQUEST_LIMIT_EXCEEDED\n- STORAGE_ACCESS_ERROR\n- RUN_EXECUTION_ERROR\n- UNAUTHORIZED_ERROR\n- LIBRARY_INSTALLATION_ERROR\n- MAX_CONCURRENT_RUNS_EXCEEDED\n- MAX_SPARK_CONTEXTS_EXCEEDED\n- RESOURCE_NOT_FOUND\n- INVALID_RUN_CONFIGURATION\n- CLOUD_FAILURE\n- MAX_JOB_QUEUE_SIZE_EXCEEDED\nSQL_HINT: For reliability dashboards, group by termination_code and surface top-N. Distinguish user cancel vs platform cancel: termination_code=CANCELLED can mean platform cancellation (exceeded max duration, etc.) while result_state=CANCELLED reflects the run\u2019s outcome state.",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_jobs_termination_code",
+        "parent_id": "nuance::codebook_jobs_termination_code",
+        "base_id": "nuance::codebook_jobs_termination_code::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.termination_code",
+        "values_csv": "SUCCESS,CANCELLED,SKIPPED,DRIVER_ERROR,CLUSTER_ERROR,REPOSITORY_CHECKOUT_FAILED,INVALID_CLUSTER_REQUEST,WORKSPACE_RUN_LIMIT_EXCEEDED,FEATURE_DISABLED,CLUSTER_REQUEST_LIMIT_EXCEEDED,STORAGE_ACCESS_ERROR,RUN_EXECUTION_ERROR,UNAUTHORIZED_ERROR,LIBRARY_INSTALLATION_ERROR,MAX_CONCURRENT_RUNS_EXCEEDED,MAX_SPARK_CONTEXTS_EXCEEDED,RESOURCE_NOT_FOUND,INVALID_RUN_CONFIGURATION,CLOUD_FAILURE,MAX_JOB_QUEUE_SIZE_EXCEEDED",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipelines_pipeline_type::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipelines.pipeline_type\nSUMMARY: What kind of Lakeflow pipeline this is (ETL vs MV vs streaming table vs ingestion).\nVALUES:\n- ETL_PIPELINE\n- MATERIALIZED_VIEW\n- STREAMING_TABLE\n- INGESTION_PIPELINE\n- INGESTION_GATEWAY\nSQL_HINT: Pipeline behavior/latency expectations differ: STREAMING_TABLE is continuous-ish, MATERIALIZED_VIEW is refresh-driven; use pipeline_type to choose SLA dashboards and cost attribution logic.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipelines_pipeline_type",
+        "parent_id": "nuance::codebook_pipelines_pipeline_type",
+        "base_id": "nuance::codebook_pipelines_pipeline_type::codebook::values",
+        "code_key": "system.lakeflow.pipelines.pipeline_type",
+        "values_csv": "ETL_PIPELINE,MATERIALIZED_VIEW,STREAMING_TABLE,INGESTION_PIPELINE,INGESTION_GATEWAY",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipeline_update_result_state::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.result_state\nSUMMARY: Outcome state for pipeline updates.\nVALUES:\n- COMPLETED\n- FAILED\n- CANCELED\nSQL_HINT: For reliability reporting, compute success_rate = COMPLETED / (COMPLETED+FAILED+CANCELED) over a date window. For incident triage, filter FAILED then join to trigger context (request_id, trigger_type/details).",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipeline_update_result_state",
+        "parent_id": "nuance::codebook_pipeline_update_result_state",
+        "base_id": "nuance::codebook_pipeline_update_result_state::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.result_state",
+        "values_csv": "COMPLETED,FAILED,CANCELED",
+        "time_validity": "none",
+        "involves_tags": true,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipeline_update_type::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.update_type\nSUMMARY: Why the pipeline update happened.\nVALUES:\n- API_CALL\n- RETRY_ON_FAILURE\n- SERVICE_UPGRADE\n- SCHEMA_CHANGE\n- JOB_TASK\n- USER_ACTION\n- DBSQL_REQUEST\n- SETTINGS_CHANGE\n- SCHEMA_EXPLORATION\n- INFRASTRUCTURE_MAINTENANCE\n- START_RESOURCES\nSQL_HINT: In incident reviews, separate USER_ACTION/SETTINGS_CHANGE/SCHEMA_CHANGE from INFRASTRUCTURE_MAINTENANCE/SERVICE_UPGRADE to reduce false attribution.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipeline_update_type",
+        "parent_id": "nuance::codebook_pipeline_update_type",
+        "base_id": "nuance::codebook_pipeline_update_type::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.update_type",
+        "values_csv": "API_CALL,RETRY_ON_FAILURE,SERVICE_UPGRADE,SCHEMA_CHANGE,JOB_TASK,USER_ACTION,DBSQL_REQUEST,SETTINGS_CHANGE,SCHEMA_EXPLORATION,INFRASTRUCTURE_MAINTENANCE,START_RESOURCES",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipeline_trigger_job_task_performance_target::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.trigger_details.job_task.performance_target\nSUMMARY: Performance mode for serverless pipeline updates triggered by job tasks.\nVALUES:\n- PERFORMANCE_OPTIMIZED\n- STANDARD\nSQL_HINT: Only populated for serverless pipeline updates. When users ask for \u201cperformance optimized pipelines\u201d, filter performance_target='PERFORMANCE_OPTIMIZED' and join to pipeline_id to attribute owners/tags.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipeline_trigger_job_task_performance_target",
+        "parent_id": "nuance::codebook_pipeline_trigger_job_task_performance_target",
+        "base_id": "nuance::codebook_pipeline_trigger_job_task_performance_target::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.trigger_details.job_task.performance_target",
+        "values_csv": "PERFORMANCE_OPTIMIZED,STANDARD",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_predictive_opt_operation_type::codebook::values@@domain=storage_optimization",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.storage.predictive_optimization_operations_history.operation_type\nSUMMARY: Which optimization action ran.\nVALUES:\n- COMPACTION\n- VACUUM\nSQL_HINT: COMPACTION impacts file counts/read performance; VACUUM impacts retention and storage. Separate metrics by operation_type; never compare usage_quantity across operation_type without normalizing units.",
+      "metadata": {
+        "domain": "storage_optimization",
+        "doc_type": "codebook",
+        "topic_id": "codebook_predictive_opt_operation_type",
+        "parent_id": "nuance::codebook_predictive_opt_operation_type",
+        "base_id": "nuance::codebook_predictive_opt_operation_type::codebook::values",
+        "code_key": "system.storage.predictive_optimization_operations_history.operation_type",
+        "values_csv": "COMPACTION,VACUUM",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_predictive_opt_operation_status::codebook::values@@domain=storage_optimization",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.storage.predictive_optimization_operations_history.operation_status\nSUMMARY: Final status of the predictive optimization operation.\nVALUES:\n- SUCCESSFUL\n- FAILED: INTERNAL_ERROR\nSQL_HINT: For failure dashboards, filter operation_status LIKE 'FAILED%' and group by catalog/schema/table to detect systemic issues.",
+      "metadata": {
+        "domain": "storage_optimization",
+        "doc_type": "codebook",
+        "topic_id": "codebook_predictive_opt_operation_status",
+        "parent_id": "nuance::codebook_predictive_opt_operation_status",
+        "base_id": "nuance::codebook_predictive_opt_operation_status::codebook::values",
+        "code_key": "system.storage.predictive_optimization_operations_history.operation_status",
+        "values_csv": "SUCCESSFUL,FAILED: INTERNAL_ERROR",
+        "time_validity": "none",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_sql_warehouse_type::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouses.warehouse_type\nSUMMARY: SQL warehouse type classification.\nVALUES:\n- CLASSIC\n- PRO\n- SERVERLESS\nSQL_HINT: When users ask for \u201cserverless warehouses\u201d, filter system.compute.warehouses.warehouse_type='SERVERLESS' (resource dimension) and only then join/query workload/cost tables at matching grain.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_sql_warehouse_type",
+        "parent_id": "nuance::codebook_sql_warehouse_type",
+        "base_id": "nuance::codebook_sql_warehouse_type::codebook::values",
+        "code_key": "system.compute.warehouses.warehouse_type",
+        "values_csv": "CLASSIC,PRO,SERVERLESS",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "sql_warehouse",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_sql_warehouse_size::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouses.warehouse_size\nSUMMARY: SQL warehouse size enumeration (cluster size).\nVALUES:\n- 2X_SMALL\n- X_SMALL\n- SMALL\n- MEDIUM\n- LARGE\n- X_LARGE\n- 2X_LARGE\n- 3X_LARGE\n- 4X_LARGE\n- 5X_LARGE\nSQL_HINT: When users ask for \u201cX-LARGE warehouses\u201d, filter warehouse_size='X_LARGE'. Treat this as a dimension filter (warehouse inventory) and then join to query/workload/cost by warehouse_id + time.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_sql_warehouse_size",
+        "parent_id": "nuance::codebook_sql_warehouse_size",
+        "base_id": "nuance::codebook_sql_warehouse_size::codebook::values",
+        "code_key": "system.compute.warehouses.warehouse_size",
+        "values_csv": "2X_SMALL,X_SMALL,SMALL,MEDIUM,LARGE,X_LARGE,2X_LARGE,3X_LARGE,4X_LARGE,5X_LARGE",
+        "warehouse_type": "standard",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "sql_warehouse",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_sql_warehouse_channel::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouses.warehouse_channel\nSUMMARY: SQL warehouse release channel.\nVALUES:\n- CURRENT\n- PREVIEW\nSQL_HINT: Use warehouse_channel to separate preview-feature risk/perf investigations vs steady-state production.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_sql_warehouse_channel",
+        "parent_id": "nuance::codebook_sql_warehouse_channel",
+        "base_id": "nuance::codebook_sql_warehouse_channel::codebook::values",
+        "code_key": "system.compute.warehouses.warehouse_channel",
+        "values_csv": "CURRENT,PREVIEW",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "sql_warehouse",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_sql_warehouse_event_type::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouse_events.event_type\nSUMMARY: Warehouse lifecycle / scaling events.\nVALUES:\n- SCALED_UP\n- SCALED_DOWN\n- STOPPING\n- RUNNING\n- STARTING\n- STOPPED\nSQL_HINT: Use event_type + event_time to explain capacity changes (queueing, bursts, auto-stop behavior) around a performance/cost incident window.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_sql_warehouse_event_type",
+        "parent_id": "nuance::codebook_sql_warehouse_event_type",
+        "base_id": "nuance::codebook_sql_warehouse_event_type::codebook::values",
+        "code_key": "system.compute.warehouse_events.event_type",
+        "values_csv": "SCALED_UP,SCALED_DOWN,STOPPING,RUNNING,STARTING,STOPPED",
+        "warehouse_type": "standard",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "sql_warehouse",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_workspace_lifecycle_status::codebook::values@@domain=workspace_admin",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.workspaces_latest.status\nSUMMARY: Workspace lifecycle status.\nVALUES:\n- NOT_PROVISIONED\n- PROVISIONING\n- RUNNING\n- FAILED\n- BANNED\nSQL_HINT: For inventory reports, default to status='RUNNING' unless explicitly auditing failures/banned workspaces.",
+      "metadata": {
+        "domain": "workspace_admin",
+        "doc_type": "codebook",
+        "topic_id": "codebook_workspace_lifecycle_status",
+        "parent_id": "nuance::codebook_workspace_lifecycle_status",
+        "base_id": "nuance::codebook_workspace_lifecycle_status::codebook::values",
+        "code_key": "system.access.workspaces_latest.status",
+        "values_csv": "NOT_PROVISIONED,PROVISIONING,RUNNING,FAILED,BANNED",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "workspace",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_audit_audit_level::codebook::values@@domain=security_access",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.audit.audit_level\nSUMMARY: Whether an audit event is emitted at account or workspace scope.\nVALUES:\n- ACCOUNT_LEVEL\n- WORKSPACE_LEVEL\nSQL_HINT: If you are investigating org-wide admin changes, start with audit_level='ACCOUNT_LEVEL'. For workspace operational actions, use audit_level='WORKSPACE_LEVEL' and filter workspace_id.",
+      "metadata": {
+        "domain": "security_access",
+        "doc_type": "codebook",
+        "topic_id": "codebook_audit_audit_level",
+        "parent_id": "nuance::codebook_audit_audit_level",
+        "base_id": "nuance::codebook_audit_audit_level::codebook::values",
+        "code_key": "system.access.audit.audit_level",
+        "values_csv": "ACCOUNT_LEVEL,WORKSPACE_LEVEL",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "audit",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_job_trigger_type::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.trigger_type\nSUMMARY: What triggered the job run.\nVALUES:\n- CONTINUOUS\n- CRON\n- FILE_ARRIVAL\n- ONETIME\n- ONETIME_RETRY\nSQL_HINT: For reliability analysis, group failures by trigger_type; CRON/FILE_ARRIVAL often correlate with bursty concurrency and queue time.",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_job_trigger_type",
+        "parent_id": "nuance::codebook_job_trigger_type",
+        "base_id": "nuance::codebook_job_trigger_type::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.trigger_type",
+        "values_csv": "CONTINUOUS,CRON,FILE_ARRIVAL,ONETIME,ONETIME_RETRY",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "jobs",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_job_trigger_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.trigger_type\nSUMMARY: What triggered a job run. Useful for spend allocation and operational/cost correlation (e.g., continuous jobs tend to be always-on).\nVALUES:\n- CONTINUOUS\n- CRON\n- FILE_ARRIVAL\n- ONETIME\n- ONETIME_RETRY\nSQL_HINT: For cost attribution, join/allocate by job_id/job_run_id when available; otherwise use trigger_type to separate always-on (CONTINUOUS) patterns from batch (CRON/ONETIME).",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_job_trigger_type",
+        "parent_id": "nuance::codebook_job_trigger_type",
+        "base_id": "nuance::codebook_job_trigger_type::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.trigger_type",
+        "values_csv": "CONTINUOUS,CRON,FILE_ARRIVAL,ONETIME,ONETIME_RETRY",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "jobs",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_job_run_type::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.run_type\nSUMMARY: Job run category.\nVALUES:\n- JOB_RUN\n- SUBMIT_RUN\n- WORKFLOW_RUN\nSQL_HINT: WORKFLOW_RUN indicates orchestration-style runs (multi-task). SUBMIT_RUN tends to be ad hoc; consider separating in reporting.",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_job_run_type",
+        "parent_id": "nuance::codebook_job_run_type",
+        "base_id": "nuance::codebook_job_run_type::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.run_type",
+        "values_csv": "JOB_RUN,SUBMIT_RUN,WORKFLOW_RUN",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "jobs",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_job_run_type::codebook::values@@domain=finops_billing",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.run_type\nSUMMARY: Structural category of a job execution. Useful for cost attribution caveats and allocation strategies.\nVALUES:\n- JOB_RUN\n- SUBMIT_RUN\n- WORKFLOW_RUN\nSQL_HINT: Prefer direct attribution via usage_metadata.job_id/job_run_id where available; treat WORKFLOW_RUN carefully (may not have 1:1 usage attribution in all cases).",
+      "metadata": {
+        "domain": "finops_billing",
+        "doc_type": "codebook",
+        "topic_id": "codebook_job_run_type",
+        "parent_id": "nuance::codebook_job_run_type",
+        "base_id": "nuance::codebook_job_run_type::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.run_type",
+        "values_csv": "JOB_RUN,SUBMIT_RUN,WORKFLOW_RUN",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "jobs",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_job_result_state::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.result_state (also in system.lakeflow.job_task_run_timeline.result_state)\nSUMMARY: Outcome state for job runs and task runs. Important for filtering \"failed\" vs \"blocked\" vs \"intermediate\" slices.\nVALUES:\n- SUCCEEDED\n- FAILED\n- SKIPPED\n- CANCELLED\n- TIMED_OUT\n- ERROR\n- BLOCKED\n- NULL\nSQL_HINT: When aggregating outcomes, treat result_state=NULL as an intermediate slice for a long-running run (only the final slice has the terminal result_state).",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_job_result_state",
+        "parent_id": "nuance::codebook_job_result_state",
+        "base_id": "nuance::codebook_job_result_state::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.result_state",
+        "values_csv": "SUCCEEDED,FAILED,SKIPPED,CANCELLED,TIMED_OUT,ERROR,BLOCKED,NULL",
+        "time_validity": "none",
+        "involves_tags": false,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_job_termination_code::codebook::values@@domain=workload_jobs",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.job_run_timeline.termination_code (also in system.lakeflow.job_task_run_timeline.termination_code)\nSUMMARY: Termination reason category. Useful to separate user-cancel, platform limits, infra faults, storage/security errors.\nVALUES:\n- SUCCESS\n- CANCELLED\n- SKIPPED\n- DRIVER_ERROR\n- CLUSTER_ERROR\n- REPOSITORY_CHECKOUT_FAILED\n- INVALID_CLUSTER_REQUEST\n- WORKSPACE_RUN_LIMIT_EXCEEDED\n- FEATURE_DISABLED\n- CLUSTER_REQUEST_LIMIT_EXCEEDED\n- MAX_CONCURRENT_RUNS_EXCEEDED\n- MAX_JOB_QUEUE_SIZE_EXCEEDED\n- MAX_JOB_QUEUE_TIME_EXCEEDED\n- MAXIMUM_NUMBER_OF_RUNS_REACHED\n- MAXIMUM_CONCURRENT_RUNS_REACHED\n- TASK_FAILED\n- TRANSIENT_FAILURE\n- SERVICE_FAULT\n- COMPLIANCE_SECURITY_PROFILE_DTL_MISSING\n- COMPLIANCE_SECURITY_PROFILE_IS_MISSING\n- COMPLIANCE_SECURITY_PROFILE_INTERNAL_ERROR\n- USER_ERROR\n- INVALID_CLIENT_CONFIGURATION\n- EXECUTION_TIMEOUT\n- EXECUTION_FAILURE\n- UNEXPECTED_FAILURE\n- RATE_LIMITED\n- STORAGE_ACCESS_ERROR\nSQL_HINT: For operational triage, GROUP BY termination_code first, then drill into error fields/logs. For capacity issues, look for *_LIMIT_EXCEEDED and MAX_*_REACHED codes; for repo issues, REPOSITORY_CHECKOUT_FAILED.",
+      "metadata": {
+        "domain": "workload_jobs",
+        "doc_type": "codebook",
+        "topic_id": "codebook_job_termination_code",
+        "parent_id": "nuance::codebook_job_termination_code",
+        "base_id": "nuance::codebook_job_termination_code::codebook::values",
+        "code_key": "system.lakeflow.job_run_timeline.termination_code",
+        "values_csv": "SUCCESS,CANCELLED,SKIPPED,DRIVER_ERROR,CLUSTER_ERROR,REPOSITORY_CHECKOUT_FAILED,INVALID_CLUSTER_REQUEST,WORKSPACE_RUN_LIMIT_EXCEEDED,FEATURE_DISABLED,CLUSTER_REQUEST_LIMIT_EXCEEDED,MAX_CONCURRENT_RUNS_EXCEEDED,MAX_JOB_QUEUE_SIZE_EXCEEDED,MAX_JOB_QUEUE_TIME_EXCEEDED,MAXIMUM_NUMBER_OF_RUNS_REACHED,MAXIMUM_CONCURRENT_RUNS_REACHED,TASK_FAILED,TRANSIENT_FAILURE,SERVICE_FAULT,COMPLIANCE_SECURITY_PROFILE_DTL_MISSING,COMPLIANCE_SECURITY_PROFILE_IS_MISSING,COMPLIANCE_SECURITY_PROFILE_INTERNAL_ERROR,USER_ERROR,INVALID_CLIENT_CONFIGURATION,EXECUTION_TIMEOUT,EXECUTION_FAILURE,UNEXPECTED_FAILURE,RATE_LIMITED,STORAGE_ACCESS_ERROR",
+        "time_validity": "none",
+        "involves_tags": false,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipeline_type::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipelines.pipeline_type\nSUMMARY: Pipeline family classification.\nVALUES:\n- dlt\n- lakeflow\nSQL_HINT: Use pipeline_type to separate classic DLT vs newer Lakeflow pipeline families before comparing KPIs (latency, success rate, cost attribution).",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipeline_type",
+        "parent_id": "nuance::codebook_pipeline_type",
+        "base_id": "nuance::codebook_pipeline_type::codebook::values",
+        "code_key": "system.lakeflow.pipelines.pipeline_type",
+        "values_csv": "dlt,lakeflow",
+        "time_validity": "none",
+        "involves_tags": true,
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipeline_result_state::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.result_state\nSUMMARY: Outcome of the pipeline update.\nVALUES:\n- COMPLETED\n- FAILED\n- CANCELED\nSQL_HINT: Pair FAILED with update_type to separate user-caused config/schema failures from infrastructure/maintenance-driven failures.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipeline_result_state",
+        "parent_id": "nuance::codebook_pipeline_result_state",
+        "base_id": "nuance::codebook_pipeline_result_state::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.result_state",
+        "values_csv": "COMPLETED,FAILED,CANCELED",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipeline_trigger_type::codebook::values@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipeline_update_timeline.trigger_type\nSUMMARY: Trigger category for pipeline updates.\nVALUES:\n- job_task\nSQL_HINT: If trigger_type='job_task', use trigger_details.job_task.* to join back to jobs/job_task_run_timeline for upstream attribution.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipeline_trigger_type",
+        "parent_id": "nuance::codebook_pipeline_trigger_type",
+        "base_id": "nuance::codebook_pipeline_trigger_type::codebook::values",
+        "code_key": "system.lakeflow.pipeline_update_timeline.trigger_type",
+        "values_csv": "job_task",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_pipeline_settings_keys::codebook::keys@@domain=workload_pipelines",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.lakeflow.pipelines.settings.<keys>\nSUMMARY: Keys inside pipelines.settings (struct) that describe runtime/feature configuration for a pipeline.\nKEYS:\n- photon\n- development\n- continuous\n- serverless\n- edition\n- channel\nSQL_HINT: Treat settings as config facets; for fleet analysis, explode the struct into columns (or use dot access) and group by these keys. Combine with update_type=SETTINGS_CHANGE to measure configuration churn.",
+      "metadata": {
+        "domain": "workload_pipelines",
+        "doc_type": "codebook",
+        "topic_id": "codebook_pipeline_settings_keys",
+        "parent_id": "nuance::codebook_pipeline_settings_keys",
+        "base_id": "nuance::codebook_pipeline_settings_keys::codebook::keys",
+        "code_key": "system.lakeflow.pipelines.settings",
+        "values_csv": "photon,development,continuous,serverless,edition,channel",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "pipelines",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_data_security_mode::codebook::values@@domain=compute_clusters",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.clusters.data_security_mode\nSUMMARY: Governance / isolation mode for compute.\nVALUES:\n- NONE\n- LEGACY_TABLE_ACL\n- LEGACY_PASSTHROUGH\n- LEGACY_SINGLE_USER\n- SINGLE_USER\n- USER_ISOLATION\nSQL_HINT: Segment workloads by data_security_mode when diagnosing permission issues, UC compatibility, and performance overhead from isolation/credential passthrough.",
+      "metadata": {
+        "domain": "compute_clusters",
+        "doc_type": "codebook",
+        "topic_id": "codebook_data_security_mode",
+        "parent_id": "nuance::codebook_data_security_mode",
+        "base_id": "nuance::codebook_data_security_mode::codebook::values",
+        "code_key": "system.compute.clusters.data_security_mode",
+        "values_csv": "NONE,LEGACY_TABLE_ACL,LEGACY_PASSTHROUGH,LEGACY_SINGLE_USER,SINGLE_USER,USER_ISOLATION",
+        "warehouse_type": "none",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "clusters",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_runtime_engine::codebook::values@@domain=compute_clusters",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: clusters.runtime_engine\nSUMMARY: Execution engine selection for clusters.\nVALUES:\n- STANDARD\n- PHOTON\nSQL_HINT: When users say \"Photon on/off\", this is the facet. For performance triage, compare PHOTON vs STANDARD cohorts controlling for node_type + DBR.",
+      "metadata": {
+        "domain": "compute_clusters",
+        "doc_type": "codebook",
+        "topic_id": "codebook_runtime_engine",
+        "parent_id": "nuance::codebook_runtime_engine",
+        "base_id": "nuance::codebook_runtime_engine::codebook::values",
+        "code_key": "clusters.runtime_engine",
+        "values_csv": "STANDARD,PHOTON",
+        "warehouse_type": "none",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "clusters",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_gcp_availability::codebook::values@@domain=compute_clusters",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.clusters.gcp_attributes.availability\nSUMMARY: GCP compute availability class.\nVALUES:\n- ON_DEMAND_GCP\n- PREEMPTIBLE_GCP\nSQL_HINT: Use PREEMPTIBLE_GCP cohorting when analyzing churny executors / task retries; correlate with node_timeline interruptions and job failures.",
+      "metadata": {
+        "domain": "compute_clusters",
+        "doc_type": "codebook",
+        "topic_id": "codebook_gcp_availability",
+        "parent_id": "nuance::codebook_gcp_availability",
+        "base_id": "nuance::codebook_gcp_availability::codebook::values",
+        "code_key": "system.compute.clusters.gcp_attributes.availability",
+        "values_csv": "ON_DEMAND_GCP,PREEMPTIBLE_GCP",
+        "warehouse_type": "none",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "clusters",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_audit_level::codebook::values@@domain=security_audit",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.audit.audit_level\nSUMMARY: Scope of audit event.\nVALUES:\n- ACCOUNT_LEVEL\n- WORKSPACE_LEVEL\nSQL_HINT: Use audit_level to separate account admin actions from in-workspace user actions.",
+      "metadata": {
+        "domain": "security_audit",
+        "doc_type": "codebook",
+        "topic_id": "codebook_audit_level",
+        "parent_id": "nuance::codebook_audit_level",
+        "base_id": "nuance::codebook_audit_level::codebook::values",
+        "code_key": "system.access.audit.audit_level",
+        "values_csv": "ACCOUNT_LEVEL,WORKSPACE_LEVEL",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "governance",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_lineage_entity_type::codebook::values@@domain=governance_lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.(table_lineage|column_lineage).entity_type\nSUMMARY: Originating entity kind that produced the lineage transaction.\nVALUES:\n- NOTEBOOK\n- JOB\n- PIPELINE\n- DASHBOARD_V3\n- DBSQL_DASHBOARD\n- DBSQL_QUERY\n- NULL\nSQL_HINT: For DBSQL_QUERY, entity_run_id often corresponds to statement_id; join to system.query.history when present.",
+      "metadata": {
+        "domain": "governance_lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_lineage_entity_type",
+        "parent_id": "nuance::codebook_lineage_entity_type",
+        "base_id": "nuance::codebook_lineage_entity_type::codebook::values",
+        "code_key": "system.access.table_lineage.entity_type",
+        "values_csv": "NOTEBOOK,JOB,PIPELINE,DASHBOARD_V3,DBSQL_DASHBOARD,DBSQL_QUERY,NULL",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "governance",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_lineage_dataset_type::codebook::values@@domain=governance_lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.(table_lineage|column_lineage).(source_type|target_type)\nSUMMARY: Dataset type for lineage endpoints.\nVALUES:\n- TABLE\n- PATH\n- VIEW\n- MATERIALIZED_VIEW\n- METRIC_VIEW\n- STREAMING_TABLE\nSQL_HINT: PATH indicates file/path reads/writes outside registered UC tables; treat as higher governance risk.",
+      "metadata": {
+        "domain": "governance_lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_lineage_dataset_type",
+        "parent_id": "nuance::codebook_lineage_dataset_type",
+        "base_id": "nuance::codebook_lineage_dataset_type::codebook::values",
+        "code_key": "system.access.table_lineage.source_type",
+        "values_csv": "TABLE,PATH,VIEW,MATERIALIZED_VIEW,METRIC_VIEW,STREAMING_TABLE",
+        "warehouse_type": "both",
+        "time_validity": "none",
+        "involves_tags": false,
+        "sku_family": "governance",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_query_execution_status::codebook::values@@domain=query_history",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.query.history.execution_status\nSUMMARY: Terminal state for statement execution.\nVALUES:\n- FINISHED\n- FAILED\n- CANCELED\nSQL_HINT: For performance analytics, filter execution_status='FINISHED' before computing latency percentiles; keep FAILED for reliability analysis.",
+      "metadata": {
+        "domain": "query_history",
+        "doc_type": "codebook",
+        "topic_id": "codebook_query_execution_status",
+        "parent_id": "nuance::codebook_query_execution_status",
+        "base_id": "nuance::codebook_query_execution_status::codebook::values",
+        "code_key": "system.query.history.execution_status",
+        "values_csv": "FINISHED,FAILED,CANCELED",
+        "warehouse_type": "sql",
+        "time_validity": "none",
+        "involves_tags": true,
+        "sku_family": "sql",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_warehouse_events_event_type::codebook::values@@domain=compute_warehouses",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.compute.warehouse_events.event_type\nSUMMARY: Warehouse lifecycle + autoscaling events.\nVALUES:\n- SCALED_UP\n- SCALED_DOWN\n- STOPPING\n- RUNNING\n- STARTING\n- STOPPED\nSQL_HINT: For reliability analysis, compute durations between STARTING->RUNNING and RUNNING->STOPPED; for capacity, track cluster_count over time around SCALED_UP/DOWN.",
+      "metadata": {
+        "domain": "compute_warehouses",
+        "doc_type": "codebook",
+        "topic_id": "codebook_warehouse_events_event_type",
+        "parent_id": "nuance::codebook_warehouse_events_event_type",
+        "base_id": "nuance::codebook_warehouse_events_event_type::codebook::values",
+        "code_key": "system.compute.warehouse_events.event_type",
+        "values_csv": "SCALED_UP,SCALED_DOWN,STOPPING,RUNNING,STARTING,STOPPED",
+        "warehouse_type": "both",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "sql_warehouse",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    },
+    {
+      "id": "nuance::codebook_lineage_table_type::codebook::values@@domain=lineage",
+      "document": "DOC_TYPE: codebook\nCODE_KEY: system.access.table_lineage.source_type | target_type (and similarly in column_lineage)\nSUMMARY: Type of the source/target in lineage edges.\nVALUES:\n- TABLE\n- PATH\n- VIEW\n- MATERIALIZED_VIEW\n- METRIC_VIEW\n- STREAMING_TABLE\nSQL_HINT: Prefer TABLE/STREAMING_TABLE for governance joins (catalog/schema/table). Treat PATH edges as \u201cunmanaged\u201d reads/writes and use source_path/target_path for storage attribution.",
+      "metadata": {
+        "domain": "lineage",
+        "doc_type": "codebook",
+        "topic_id": "codebook_lineage_table_type",
+        "parent_id": "nuance::codebook_lineage_table_type",
+        "base_id": "nuance::codebook_lineage_table_type::codebook::values",
+        "code_key": "system.access.table_lineage.source_type",
+        "values_csv": "TABLE,PATH,VIEW,MATERIALIZED_VIEW,METRIC_VIEW,STREAMING_TABLE",
+        "warehouse_type": "both",
+        "time_validity": "stable",
+        "involves_tags": false,
+        "sku_family": "all",
+        "is_active": true,
+        "doc_set_version": 20251223
+      }
+    }
+  ],
+  "index": {
+    "packs_count": 20,
+    "records_count": 85
+  }
+}

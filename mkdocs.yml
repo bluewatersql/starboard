@@ -1,0 +1,179 @@
+site_name: Starboard AI Agent Documentation
+site_description: AI-powered Databricks workload analysis and optimization
+site_url: https://starboard-ai.github.io/job-agent
+repo_url: https://github.com/starboard-ai/job-agent
+repo_name: starboard-ai/job-agent
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.follow
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang: en
+  - mermaid2
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - macros
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - def_list
+  - toc:
+      permalink: true
+      toc_depth: 4
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/starboard-ai
+
+nav:
+  - Home: index.md
+
+  - Overview:
+      - What is Starboard?: overview/what-is-starboard.md
+      - Agent Catalog: overview/agents.md
+      - Quickstart: QUICKSTART.md
+      - Configuration: CONFIGURATION.md
+
+  - User Guide:
+      - Web Interface: user-guide/web-ui.md
+      - CLI Reference: user-guide/cli.md
+      - Workflows:
+          - Query Optimization: user-guide/workflows/query-optimization.md
+          - Job Debugging: user-guide/workflows/job-debugging.md
+          - Cost Analysis: user-guide/workflows/cost-analysis.md
+          - Table Governance: user-guide/workflows/table-governance.md
+          - Workspace Discovery: user-guide/workflows/workspace-discovery.md
+      - Quick Reference: QUICK_REFERENCE.md
+      - FAQ: guides/FAQ.md
+
+  - Agents:
+      - Overview: agents/README.md
+      - Domain Agents:
+          - Query: agents/domain/query.md
+          - Job: agents/domain/job.md
+          - Unity Catalog: agents/domain/uc.md
+          - Cluster: agents/domain/cluster.md
+          - Analytics (FinOps): agents/domain/analytics.md
+          - Warehouse: agents/domain/warehouse.md
+          - Discovery: agents/domain/discovery.md
+          - Diagnostic: agents/domain/diagnostic.md
+      - Framework:
+          - Intent Router: agents/framework/intent.md
+
+  - Architecture:
+      - System Architecture: architecture/SYSTEM_ARCHITECTURE.md
+      - Multi-Agent Reasoning: INTERRUPTIBLE_REASONING.md
+      - Tool System: TOOL_ARCHITECTURE.md
+      - Frontend Architecture: FRONTEND_ARCHITECTURE.md
+      - Output Contracts: contracts/AGENT_OUTPUT_CONSUMERS.md
+
+  - Developer Guide:
+      - Getting Started: guides/GETTING_STARTED.md
+      - Common Tasks: guides/COMMON_TASKS.md
+      - Contributing: guides/CONTRIBUTING.md
+      - Testing: TESTING.md
+      - Standards:
+          - Engineering: developer/standards/engineering.md
+          - Prompts & Schemas: developer/standards/prompts-schemas.md
+          - Testing & Evals: developer/standards/testing-evals.md
+          - Security: developer/standards/security.md
+          - Observability & Cost: developer/standards/observability.md
+      - Agent Development:
+          - Implementation Guide: developer/agent/IMPLEMENTATION_GUIDE.md
+          - Report UI Guidelines: developer/agent/REPORT_UI_GUIDELINES.md
+      - Tools & API:
+          - Tool Catalog: tools/TOOL_CATALOG.md
+          - Tool Development Guide: tools/TOOL_DEVELOPMENT_GUIDE.md
+          - API Reference: api/API_REFERENCE.md
+          - API Quickstart: integration/api-quickstart.md
+          - SSE Streaming Guide: integration/sse-streaming.md
+      - Packages:
+          - Integration Guide: integration/PACKAGE_INTEGRATION.md
+          - starboard-core:
+              - Overview: packages/starboard-core/index.md
+              - Architecture: packages/starboard-core/architecture.md
+              - Modules: packages/starboard-core/modules.md
+          - starboard-server:
+              - Overview: packages/starboard-server/index.md
+              - Architecture: packages/starboard-server/architecture.md
+          - starboard-log-parser:
+              - Overview: packages/starboard-log-parser/index.md
+              - Architecture: packages/starboard-log-parser/architecture.md
+          - starboard-cli:
+              - Overview: packages/starboard-cli/index.md
+              - Architecture: packages/starboard-cli/architecture.md
+
+  - Administration:
+      - State Backends: admin/state-backends.md
+      - Monitoring & Observability: admin/monitoring.md
+
+  - Operations:
+      - Deployment: DEPLOYMENT.md
+      - Runbook: RUNBOOK.md
+      - Cloud Authentication: CLOUD_AUTHENTICATION.md
+      - Makefile Guide: MAKEFILE_GUIDE.md
+      - S3 Connector: S3_CONNECTOR_GUIDE.md
+      - Template Usage: TEMPLATE_USAGE_GUIDE.md
+
