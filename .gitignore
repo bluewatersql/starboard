@@ -32,7 +32,6 @@ env/
 *.swp
 *.swo
 *~
-.DS_Store
 
 # Testing
 .pytest_cache/
@@ -43,25 +42,28 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 .pytype/
+.hypothesis/
 
-# Environment
+# Environment / secrets
 .env
 .env.local
 .env.*.local
+config.yaml
+!examples/config.yaml.example
 
 # Logs
 *.log
 logs/
-test.log
 
 # Debug output
 .debug/
 
-# Output (top-level only; don't ignore source packages named "output")
+# Output
 /output/
 /out/
 /**/discovery_output/
 *.md.tmp
+results/
 
 # Build artifacts
 *.whl
@@ -74,9 +76,18 @@ uv.lock
 .ipynb_checkpoints/
 *.ipynb
 
-# Data
+# SQLite / databases
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 *.sqlite
+*.sqlite3
+
+# Data / checkpoints
+data/
+dev_data/
+**/dev_data/
 
 # ML Models (top-level only, not package submodules)
 /models/
@@ -85,14 +96,14 @@ uv.lock
 # OMC state
 .omc/
 
-# Temporary
+# Temporary / cache
 tmp/
 temp/
 .cache/
 
 # OS
-Thumbs.db
 .DS_Store
+Thumbs.db
 
 # Package-specific
 packages/*/dist/
@@ -101,24 +112,16 @@ packages/*/.pytest_cache/
 packages/*/.mypy_cache/
 packages/*/.ruff_cache/
 
-# Old structure (archived)
+# Archived / working docs
 .archive/
+/changes/
 
-/changes/*
-.hypothesis/*
-*/dev_data/*
-dev_data/
-**/dev_data/
-# Configuration files with secrets
-config.yaml
-!examples/config.yaml.example
+# Generated docs
 site/
 docs/diagrams/generated/
 
-#No log files
-*.log
+# Local experimental code
+packages/starboard-server/experiment/
 
-#Local experimental code/not for checking in
-packages/starboard-server/experiment/*
-
-results/*
+# Git hooks (local only)
+.githooks/
