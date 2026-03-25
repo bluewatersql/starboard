@@ -101,9 +101,7 @@ defaults than to block on unnecessary clarification.
 # COMBINED SECTION
 # =============================================================================
 
-USER_INPUT_POLICY_SECTION = f"""{DATE_POLICY}
-{PARAMETER_DEFAULTS}
-{USER_INPUT_POLICY}"""
+USER_INPUT_POLICY_SECTION = DATE_POLICY + "\n" + PARAMETER_DEFAULTS + "\n" + USER_INPUT_POLICY
 
 
 # =============================================================================

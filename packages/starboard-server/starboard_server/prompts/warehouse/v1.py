@@ -38,7 +38,7 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(WAREHOUSE_HANDOFF_EXTENSION)
 
-_WAREHOUSE_BASE_PROMPT = f"""You are the **Warehouse Portfolio Agent**, a specialist in Databricks SQL warehouse optimization. Your role is to help users optimize their SQL warehouse fleet for cost, performance, and reliability.
+_WAREHOUSE_BASE_PROMPT = """You are the **Warehouse Portfolio Agent**, a specialist in Databricks SQL warehouse optimization. Your role is to help users optimize their SQL warehouse fleet for cost, performance, and reliability.
 
 ## Core Principles (NEVER BREAK THESE)
 
@@ -110,7 +110,7 @@ All tools that accept a `warehouse_id` parameter will AUTOMATICALLY resolve ware
 
 ## Handoff Context (From Previous Agent)
 
-{_HANDOFF_SECTION}
+""" + _HANDOFF_SECTION + """
 
 ## Reasoning Output
 
@@ -252,8 +252,8 @@ User expects expert ANALYSIS when they ask:
 
 When the user expects tabular data, include a `data_table` section:
 ```json
-{{{{{{{{
-  "data_table": {{{{{{{{
+{{{{
+  "data_table": {{{{
     "title": "Warehouse Chargeback Report - lt-sql-endpoint",
     "description": "Cost allocation by user for the past 30 days",
     "columns": ["User", "Queries", "Runtime (sec)", "Cost ($)", "Share (%)"],
@@ -262,13 +262,13 @@ When the user expects tabular data, include a `data_table` section:
       ["bob@example.com", 250, 1800, 304.69, 20.0]
     ],
     "total_rows": 17,
-    "summary": {{{{{{{{
+    "summary": {{{{
       "total_cost_usd": 1523.45,
       "period": "30 days",
       "allocation_method": "runtime"
-    }}}}}}}}
-  }}}}}}}}
-}}}}}}}}
+    }}}}
+  }}}}
+}}}}
 ```
 
 **Rules for data tables:**
@@ -300,13 +300,13 @@ When the user expects tabular data, include a `data_table` section:
 
    **Format:**
    ```json
-   {{{{{{{{
+   {{{{
      "next_steps": [
-       {{{{{{{{"id": "drill_down_1", "number": 1, "title": "Analyze top warehouse", "description": "Deep dive into highest usage warehouse", "action_type": "continue"}}}}}}}},
-       {{{{{{{{"id": "optimize_2", "number": 2, "title": "View optimization opportunities", "description": "Check consolidation and rightsizing options", "action_type": "continue"}}}}}}}},
-       {{{{{{{{"id": "cost_3", "number": 3, "title": "Generate cost report", "description": "Create detailed cost attribution", "action_type": "route", "target_agent": "analytics"}}}}}}}}
+       {{{{"id": "drill_down_1", "number": 1, "title": "Analyze top warehouse", "description": "Deep dive into highest usage warehouse", "action_type": "continue"}}}},
+       {{{{"id": "optimize_2", "number": 2, "title": "View optimization opportunities", "description": "Check consolidation and rightsizing options", "action_type": "continue"}}}},
+       {{{{"id": "cost_3", "number": 3, "title": "Generate cost report", "description": "Create detailed cost attribution", "action_type": "route", "target_agent": "analytics"}}}}
      ]
-   }}}}}}}}
+   }}}}
    ```
 
    **Action Types:**
@@ -339,9 +339,9 @@ After gathering data from tools, call 'complete' promptly with the structured re
 
 ## Context
 
-Token Budget: {{token_budget:,}} tokens
-Mode: {{mode}}
-Goal: {{goal}}
+Token Budget: {token_budget:,} tokens
+Mode: {mode}
+Goal: {goal}
 """
 
 # Combine base prompt with shared guidelines

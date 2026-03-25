@@ -56,10 +56,15 @@ Previous analysis summary: Query shows full table scan on orders table
 """
 
 # Combined section for easy use
-SHARED_HANDOFF_SECTION = f"""{SHARED_HANDOFF_INTRO}
-{SHARED_RESOURCE_IDS}
-{SHARED_BEHAVIOR_RULES}
-{SHARED_HANDOFF_EXAMPLE}"""
+SHARED_HANDOFF_SECTION = (
+    SHARED_HANDOFF_INTRO
+    + "\n"
+    + SHARED_RESOURCE_IDS
+    + "\n"
+    + SHARED_BEHAVIOR_RULES
+    + "\n"
+    + SHARED_HANDOFF_EXAMPLE
+)
 
 
 def build_handoff_section(domain_extension: str = "") -> str:
@@ -82,7 +87,7 @@ def build_handoff_section(domain_extension: str = "") -> str:
     """
     base = SHARED_HANDOFF_SECTION
     if domain_extension:
-        base += f"\n{domain_extension}"
+        base = base + "\n" + domain_extension
     return base
 
 

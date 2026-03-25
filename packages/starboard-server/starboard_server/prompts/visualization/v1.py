@@ -346,6 +346,64 @@ FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
 ]
 
 
+_USER_CONTENT_TEMPLATE = """Analyze this data and recommend a visualization:
+
+**Query Context:**
+- Name: {query_name}
+- Description: {query_description}
+- Goals: {goals_str}
+- Recommended Chart Types: {recommended_str}
+
+**Data Profile:**
+```json
+{data_profile_json}
+```
+
+**Required Output Format:**
+Return a JSON object with exactly these three fields:
+```json
+{{
+  "summary": "Brief description of the data and visualization choice",
+  "chart_recommendation": {{
+    "chart_type": "bar|line|area|scatter|histogram|table",
+    "reasoning": "Explain why this chart type is appropriate",
+    "confidence": 0.0-1.0
+  }},
+  "chart_config": {{
+    "chart_type": "same as above",
+    "title": "Chart title",
+    "description": "Chart description (optional)",
+    "encodings": {{
+      "x": {{"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}},
+      "y": {{"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}}
+    }},
+    "options": {{}}
+  }}
+}}
+```
+
+**For table views (chart_type="table"):**
+```json
+{{
+  "chart_config": {{
+    "chart_type": "table",
+    "title": "Data Table"
+  }}
+}}
+```
+Note: Omit encodings for tables!
+
+**Important:**
+- chart_config is ALWAYS required (never null)
+- For tables: ONLY include chart_type and title (no encodings)
+- For charts: MUST include encodings with x and y
+- Only use columns present in the data profile
+- Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
+- Prefer recommended chart types when provided
+- DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
+"""
+
+
 def build_visualization_prompt(
     query_metadata: dict[str, Any], data_profile: dict[str, Any]
 ) -> list[dict[str, str]]:
@@ -406,62 +464,13 @@ def build_visualization_prompt(
     recommended_str = ", ".join(recommended_types) if recommended_types else "any"
     goals_str = ", ".join(goals) if goals else "general analysis"
 
-    user_content = f"""Analyze this data and recommend a visualization:
-
-**Query Context:**
-- Name: {query_name}
-- Description: {query_description}
-- Goals: {goals_str}
-- Recommended Chart Types: {recommended_str}
-
-**Data Profile:**
-```json
-{json.dumps(data_profile, indent=2, cls=DateTimeEncoder)}
-```
-
-**Required Output Format:**
-Return a JSON object with exactly these three fields:
-```json
-{{
-  "summary": "Brief description of the data and visualization choice",
-  "chart_recommendation": {{
-    "chart_type": "bar|line|area|scatter|histogram|table",
-    "reasoning": "Explain why this chart type is appropriate",
-    "confidence": 0.0-1.0
-  }},
-  "chart_config": {{
-    "chart_type": "same as above",
-    "title": "Chart title",
-    "description": "Chart description (optional)",
-    "encodings": {{
-      "x": {{"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}},
-      "y": {{"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}}
-    }},
-    "options": {{}}
-  }}
-}}
-```
-
-**For table views (chart_type="table"):**
-```json
-{{
-  "chart_config": {{
-    "chart_type": "table",
-    "title": "Data Table"
-  }}
-}}
-```
-Note: Omit encodings for tables!
-
-**Important:**
-- chart_config is ALWAYS required (never null)
-- For tables: ONLY include chart_type and title (no encodings)
-- For charts: MUST include encodings with x and y
-- Only use columns present in the data profile
-- Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
-- Prefer recommended chart types when provided
-- DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
-"""
+    user_content = _USER_CONTENT_TEMPLATE.format(
+        query_name=query_name,
+        query_description=query_description,
+        goals_str=goals_str,
+        recommended_str=recommended_str,
+        data_profile_json=json.dumps(data_profile, indent=2, cls=DateTimeEncoder),
+    )
 
     user_message = {"role": "user", "content": user_content}
 

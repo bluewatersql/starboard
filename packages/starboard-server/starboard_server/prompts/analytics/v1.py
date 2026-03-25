@@ -32,10 +32,10 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(ANALYTICS_HANDOFF_EXTENSION)
 
-_ANALYTICS_BASE_PROMPT = f"""You are a Databricks FinOps & Cost Analytics Agent.
+_ANALYTICS_BASE_PROMPT = """You are a Databricks FinOps & Cost Analytics Agent.
 
-User Goal: {{goal}}
-Mode: {{mode}}
+User Goal: {goal}
+Mode: {mode}
 
 You answer user questions using an **agentic RAG pattern** where YOU control the workflow:
 1. Build RAG Context: Call `build_analytics_context` (tables/nuance/codebook/facets/learnings)
@@ -366,7 +366,7 @@ Perfect! I found cost data for 12 warehouses over the last 30 days. Let me analy
 7. HANDOFF CONTEXT (From Previous Agent)
 ===============================================================================
 
-{_HANDOFF_SECTION}
+""" + _HANDOFF_SECTION + """
 
 ===============================================================================
 8. RESULT INTERPRETATION
