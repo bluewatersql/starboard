@@ -101,6 +101,8 @@ _DIST_TO_IMPORT: dict[str, str] = {
     "ruff": "ruff",
     "sqlite-vec": "sqlite_vec",
     "sentence-transformers": "sentence_transformers",
+    "opentelemetry-api": "opentelemetry",
+    "opentelemetry-sdk": "opentelemetry",
     "vl-convert-python": "vl_convert",
     "python-dotenv": "dotenv",
     "pyyaml": "yaml",
