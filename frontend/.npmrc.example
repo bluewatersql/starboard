@@ -1,0 +1,28 @@
+# =============================================================================
+# Starboard Frontend — NPM Configuration
+# =============================================================================
+# Copy this file to .npmrc if you need to configure a registry proxy
+# or custom npm settings for your environment.
+#
+# This file is NOT committed to git. Each developer configures their own.
+
+# Registry proxy (uncomment and set if behind a corporate proxy)
+# registry=https://registry.npmjs.org/
+
+# Scoped registry for private packages (if applicable)
+# @starboard:registry=https://your-private-registry.example.com/
+
+# Strict SSL (set to false only if behind a self-signed proxy cert)
+# strict-ssl=true
+
+# Network timeout in milliseconds (increase for slow connections)
+# fetch-timeout=60000
+
+# Engine strictness (enforce Node.js version requirements)
+# engine-strict=true
+
+# Save exact versions (disable caret ranges)
+# save-exact=true
+
+# Audit level for npm audit
+# audit-level=moderate
