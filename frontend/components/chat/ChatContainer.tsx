@@ -18,6 +18,7 @@ import { useSSE } from "@/lib/hooks/useSSE";
 import { useClarification } from "@/lib/hooks/useClarification";
 import { SSEError } from "@/lib/sse/errors";
 import { EventType, type ClarificationRequest } from "@/lib/types/api";
+import type { FileAttachment as ApiFileAttachment } from "@/lib/types/generated-api";
 import type { FileAttachment } from "./FileUploadButton";
 import { api, createConversation } from "@/lib/api/client";
 import { logger } from "@/lib/utils/logger";
@@ -164,7 +165,7 @@ export function ChatContainer({ conversationId, skipSSEValidation = false }: Cha
   const handleNewConversationMessage = React.useCallback(async (content: string, attachments?: FileAttachment[]): Promise<void> => {
     if (conversationId !== "new") {
       // Not a new conversation - use normal send
-      await api.sendMessage(conversationId, { content, attachments: attachments as any });
+      await api.sendMessage(conversationId, { content, attachments: attachments as unknown as ApiFileAttachment[] });
       return;
     }
     
@@ -200,7 +201,7 @@ export function ChatContainer({ conversationId, skipSSEValidation = false }: Cha
       setLocalWasJustCreated(true);
       
       // 5. Send the message to the real conversation (with attachments if any)
-      await api.sendMessage(realConversationId, { content, attachments: attachments as any });
+      await api.sendMessage(realConversationId, { content, attachments: attachments as unknown as ApiFileAttachment[] });
       
       // 6. Navigate to the real conversation page (use replace to avoid flashing)
       // Using query params for static export compatibility
@@ -240,6 +241,16 @@ export function ChatContainer({ conversationId, skipSSEValidation = false }: Cha
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {/* Connection indicator */}
             <Box
+              role="status"
+              aria-label={
+                isNewConversation
+                  ? "Connection status: new conversation"
+                  : sseState === "connected"
+                    ? "Connection status: connected"
+                    : sseState === "connecting"
+                      ? "Connection status: connecting"
+                      : "Connection status: disconnected"
+              }
               sx={{
                 width: 8,
                 height: 8,

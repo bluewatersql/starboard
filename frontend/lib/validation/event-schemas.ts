@@ -116,8 +116,8 @@ export const ToolCallSchema = z.object({
   tool_call_id: z.string().optional(),
   tool_name: z.string().min(1),
   friendly_name: z.string().optional(),
-  arguments: z.object({}).catchall(z.any()),
-  result: z.any().optional(),
+  arguments: z.object({}).catchall(z.unknown()),
+  result: z.unknown().optional(),
   status: ToolCallStatusSchema,
   error: z.string().optional(),
   duration_ms: z.number().nonnegative().optional(),
@@ -137,7 +137,7 @@ export const NextStepOptionSchema = z.object({
 export const ClarificationOptionSchema = z.object({
   option_id: z.string(),
   display_text: z.string(),
-  value: z.any(),
+  value: z.unknown(),
   description: z.string().optional(),
 });
 
@@ -152,7 +152,7 @@ const BaseEventSchema = z.object({
   event_id: z.string(),
   type: EventTypeSchema,
   timestamp: z.string().datetime(),
-  data: z.object({}).catchall(z.any()),
+  data: z.object({}).catchall(z.unknown()),
 });
 
 /**
@@ -220,7 +220,7 @@ const ToolCallRunningSchema = z.object({
   tool_call_id: z.string().optional(),
   tool_name: z.string().min(1),
   friendly_name: z.string().optional(),
-  arguments: z.union([z.string(), z.object({}).catchall(z.any()), z.any()]).optional(),
+  arguments: z.union([z.string(), z.object({}).catchall(z.unknown()), z.unknown()]).optional(),
   status: z.literal("running"),
   error: z.string().optional(),
   duration_ms: z.number().nonnegative().optional(),
@@ -269,8 +269,8 @@ const ToolCallCompletedSchema = z.object({
   tool_call_id: z.string().optional(),
   tool_name: z.string().min(1),
   friendly_name: z.string().optional(),
-  arguments: z.union([z.string(), z.object({}).catchall(z.any()), z.any()]).optional(),
-  result: z.any().optional().nullable(),
+  arguments: z.union([z.string(), z.object({}).catchall(z.unknown()), z.unknown()]).optional(),
+  result: z.unknown().optional().nullable(),
   status: z.enum(["completed", "failed"]),
   success: z.boolean().optional(),
   error: z.string().nullable().optional(),
@@ -293,7 +293,7 @@ export const ToolCallResultEventSchema = BaseEventSchema.extend({
 const OutputObjectSchema = z.object({
   status: z.enum(["success", "error", "budget_exceeded", "max_steps_reached", "unknown"]),
   formatted_report: z.string().nullable().optional(),
-  complete_report: z.union([z.object({}).catchall(z.any()), z.null()]).optional(),
+  complete_report: z.union([z.object({}).catchall(z.unknown()), z.null()]).optional(),
   next_steps: z.array(NextStepOptionSchema).nullable().optional(), // Next steps for user interaction
   tokens_used: z.number().nonnegative().optional(),
   cost_usd: z.number().nonnegative().optional(),
@@ -318,7 +318,7 @@ export const FinalOutputEventSchema = BaseEventSchema.extend({
 const ErrorObjectSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
-  details: z.object({}).catchall(z.any()).optional(),
+  details: z.object({}).catchall(z.unknown()).optional(),
 });
 
 const ErrorDataSchema = z.object({
@@ -377,7 +377,7 @@ const ThinkingStepSchema = z.object({
   end_time: z.number().optional().nullable(),
   progress: z.number().min(0).max(100).optional().nullable(),
   sub_tasks: z.array(ThinkingStepSubTaskSchema).optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const StepStartDataSchema = z.object({
@@ -430,7 +430,7 @@ const AgentTransitionDataSchema = z.object({
   from_agent: z.string(),
   to_agent: z.string(),
   reason: z.string(),
-  context_passed: z.record(z.string(), z.any()).optional(),
+  context_passed: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const AgentTransitionEventSchema = BaseEventSchema.extend({

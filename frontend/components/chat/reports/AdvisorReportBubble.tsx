@@ -274,11 +274,9 @@ export function AdvisorReportBubble({
                   )}
 
                   {/* 1.5 DATA TABLE - for listing/enumeration requests */}
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {(report as any).data_table?.rows?.length > 0 && (
+                  {report.data_table != null && report.data_table.rows?.length > 0 && (
                     <Box sx={{ mb: 3 }}>
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      <DataTableView table={(report as any).data_table as DataTable} />
+                      <DataTableView table={report.data_table as unknown as DataTable} />
                     </Box>
                   )}
 
