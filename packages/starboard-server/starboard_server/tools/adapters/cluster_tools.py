@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.adapters.base import BaseToolAdapter, OutputFormat
 from starboard_server.services.context.transforms import (
     analyze_cluster_metrics,
     analyze_spark_logs,
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class ClusterTools:
+class ClusterTools(BaseToolAdapter):
     """Reasoning interface for cluster operations.
 
     Clean interface optimized for LLM reasoning. Uses SharedContextProvider
@@ -49,43 +50,6 @@ class ClusterTools:
         >>> tools = ClusterTools.from_provider(provider, events=events)
         >>> config = await tools.get_cluster_config("cluster-123")
     """
-
-    def __init__(
-        self,
-        provider: SharedContextProvider,
-        events: EventEmitter | None = None,
-    ) -> None:
-        """Initialize cluster tools.
-
-        Args:
-            provider: SharedContextProvider for data access.
-            events: Optional event emitter for observability.
-        """
-        self.provider = provider
-        self.events = events or EventEmitter()
-
-    @classmethod
-    def from_provider(
-        cls,
-        provider: SharedContextProvider,
-        events: EventEmitter | None = None,
-    ) -> ClusterTools:
-        """Create ClusterTools from SharedContextProvider.
-
-        Factory method for convenient construction.
-
-        Args:
-            provider: SharedContextProvider for data access.
-            events: Optional event emitter for observability.
-
-        Returns:
-            Configured ClusterTools instance.
-
-        Example:
-            >>> provider = SharedContextProvider(client)
-            >>> tools = ClusterTools.from_provider(provider)
-        """
-        return cls(provider=provider, events=events)
 
     # -------------------------------------------------------------------------
     # Cluster Discovery
@@ -434,7 +398,7 @@ class ClusterTools:
         cluster_id: str | None = None,
         job_id: str | None = None,
         max_runs: int = 1,
-        raw: bool = False,
+        fmt: OutputFormat = OutputFormat.FORMATTED,
     ) -> dict[str, Any]:
         """Get Spark application logs for a cluster or job.
 
@@ -446,7 +410,7 @@ class ClusterTools:
             cluster_id: Cluster ID to fetch logs for (direct lookup).
             job_id: Job ID to derive cluster(s) from.
             max_runs: Number of runs to fetch when using job_id (1-5, default: 1).
-            raw: If True, return raw log data; if False, return analyzed results.
+            fmt: Output format selector (RAW or FORMATTED, default: FORMATTED).
 
         Returns:
             On success: {"found": True, "cluster_id": "...", "logs": {...}}
@@ -464,7 +428,7 @@ class ClusterTools:
         # Route to job-based lookup if job_id provided
         if job_id:
             result = await self._get_spark_logs_for_job(
-                job_id, max_runs=max_runs, raw=raw
+                job_id, max_runs=max_runs, fmt=fmt
             )
             if result is None:
                 return {
@@ -490,16 +454,16 @@ class ClusterTools:
                 "reason": "Either cluster_id or job_id must be provided.",
             }
 
-        return await self._get_spark_logs_for_cluster(cluster_id, raw=raw)
+        return await self._get_spark_logs_for_cluster(cluster_id, fmt=fmt)
 
     async def _get_spark_logs_for_cluster(
-        self, cluster_id: str, raw: bool = False
+        self, cluster_id: str, fmt: OutputFormat = OutputFormat.FORMATTED
     ) -> dict[str, Any]:
         """Get Spark logs for a specific cluster (raising version).
 
         Args:
             cluster_id: Cluster ID to fetch logs for.
-            raw: If True, return raw log data.
+            fmt: Output format selector (default: FORMATTED).
 
         Returns:
             On success: {"found": True, "cluster_id": "...", "logs": {...}}
@@ -537,7 +501,7 @@ class ClusterTools:
             ).to_dict()
 
         # Fetch logs
-        logs = analyze_spark_logs(cluster_id, log_destination, raw=raw)
+        logs = analyze_spark_logs(cluster_id, log_destination, raw=fmt == OutputFormat.RAW)
 
         if logs is None:
             logger.debug("Spark logs not found for cluster: {cluster_id}")
@@ -556,7 +520,7 @@ class ClusterTools:
         self,
         job_id: str,
         max_runs: int = 1,
-        raw: bool = False,
+        fmt: OutputFormat = OutputFormat.FORMATTED,
     ) -> dict[str, Any] | None:
         """Get Spark logs by deriving cluster_id from job runs.
 
@@ -565,7 +529,7 @@ class ClusterTools:
         Args:
             job_id: Job ID to derive cluster from.
             max_runs: Number of runs to fetch logs for (1-5).
-            raw: If True, return raw log data.
+            fmt: Output format selector (default: FORMATTED).
 
         Returns:
             - Single run: Logs dict or None
@@ -590,14 +554,14 @@ class ClusterTools:
         # Multi-run mode: fetch logs for multiple clusters
         if max_runs > 1:
             return await self._fetch_spark_logs_multi_run(
-                job_clusters, max_runs, raw=raw
+                job_clusters, max_runs, fmt=fmt
             )
 
         # Single-run mode with expand search: try multiple clusters
         max_clusters_to_try = min(3, len(job_clusters))
         for cluster_entry in job_clusters[:max_clusters_to_try]:
             cluster_id = cluster_entry["cluster_id"]
-            logs = await self._try_fetch_logs_for_cluster(cluster_id, raw=raw)
+            logs = await self._try_fetch_logs_for_cluster(cluster_id, fmt=fmt)
             if logs is not None:
                 logger.debug("Found Spark logs from cluster {cluster_id}")
                 return logs
@@ -609,13 +573,13 @@ class ClusterTools:
         return None
 
     async def _try_fetch_logs_for_cluster(
-        self, cluster_id: str, raw: bool = False
+        self, cluster_id: str, fmt: OutputFormat = OutputFormat.FORMATTED
     ) -> dict[str, Any] | None:
         """Try to fetch Spark logs for a single cluster (non-raising).
 
         Args:
             cluster_id: Cluster ID to fetch logs for.
-            raw: If True, return raw log data.
+            fmt: Output format selector (default: FORMATTED).
 
         Returns:
             Spark logs dict if available, None otherwise.
@@ -638,7 +602,7 @@ class ClusterTools:
             if not log_destination:
                 return None
 
-            return analyze_spark_logs(cluster_id, log_destination, raw=raw)
+            return analyze_spark_logs(cluster_id, log_destination, raw=fmt == OutputFormat.RAW)
         except Exception as e:
             logger.debug("Error fetching logs for cluster {cluster_id}: {e}")
             return None
@@ -647,14 +611,14 @@ class ClusterTools:
         self,
         job_clusters: list[dict[str, Any]],
         max_runs: int,
-        raw: bool = False,
+        fmt: OutputFormat = OutputFormat.FORMATTED,
     ) -> dict[str, Any]:
         """Fetch Spark logs for multiple job runs.
 
         Args:
             job_clusters: List of cluster entries from job runs.
             max_runs: Maximum runs to fetch.
-            raw: If True, return raw log data.
+            fmt: Output format selector (default: FORMATTED).
 
         Returns:
             Dict with runs list and total count.
@@ -664,7 +628,7 @@ class ClusterTools:
             cluster_id = cluster_entry["cluster_id"]
             run_id = cluster_entry.get("run_id")
 
-            logs = await self._try_fetch_logs_for_cluster(cluster_id, raw=raw)
+            logs = await self._try_fetch_logs_for_cluster(cluster_id, fmt=fmt)
             if logs:
                 logs_list.append(
                     {

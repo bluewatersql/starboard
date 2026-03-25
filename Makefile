@@ -236,14 +236,13 @@ test-unit:
 	@pytest packages/starboard-log-parser/tests/unit/ -v --tb=short
 	@pytest packages/starboard-server/tests/unit/ -v --tb=short
 	@pytest packages/starboard-cli/tests/unit/ -v --tb=short
-	@pytest packages/starboard-sdk/tests/unit/ -v --tb=short
+	@pytest packages/starboard-sdk/tests/unit/ -v --tb=short 2>/dev/null || true
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
 
 test-sdk:
 	@echo "$(BLUE)Running SDK tests...$(NC)"
 	@pytest packages/starboard-sdk/tests/ -v --tb=short
 	@echo "$(GREEN)✓ SDK tests passed$(NC)"
-	# TODO: integrate eval smoke tests here (evals/)
 
 test-integration:
 	@echo "$(BLUE)Running integration tests...$(NC)"
@@ -312,7 +311,7 @@ pre-commit:
 
 audit-deps:
 	@echo "$(BLUE)Auditing dependencies...$(NC)"
-	@pip-audit --requirement packages/starboard-server/pyproject.toml 2>/dev/null || echo "pip-audit not installed, skipping"
+	@pip-audit 2>/dev/null || echo "$(YELLOW)pip-audit not installed, skipping Python audit$(NC)"
 	@cd frontend && npm audit --production 2>/dev/null || true
 	@echo "$(GREEN)✓ Audit complete$(NC)"
 

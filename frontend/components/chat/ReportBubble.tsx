@@ -97,27 +97,28 @@ function removeNextStepsSection(formattedReport: string): string {
 export function ReportBubble({ message, onSubmitFeedback }: ReportBubbleProps) {
   // Memoize the report normalization to avoid creating new objects on every render
   // which causes unstable props cascading to child components
-  const report = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawReport = message.metadata?.complete_report as any;
-    
+  /** Normalized report object. Typed as unknown so callers cast to the specific report type. */
+  const report = useMemo((): Record<string, unknown> | null => {
+    const rawReport = message.metadata?.complete_report as Record<string, unknown> | null | undefined;
+
     if (!rawReport) return null;
-    
+
     // BUGFIX: LLM sometimes double-wraps the report under a "report" key
     // E.g., { report_type: "analytics", report: { summary: {...}, cost_summary: {...} } }
     // We need to flatten this so AnalyticsReportBubble receives the correct structure
     if (rawReport.report) {
       const nestedReport = rawReport.report;
       if (typeof nestedReport === 'object' && nestedReport !== null) {
+        const nested = nestedReport as Record<string, unknown>;
         // Merge the nested report fields with the root (preserving report_type)
         return {
-          ...nestedReport,
-          report_type: rawReport.report_type || nestedReport.report_type,
-          next_steps: rawReport.next_steps || nestedReport.next_steps,
+          ...nested,
+          report_type: rawReport.report_type ?? nested.report_type,
+          next_steps: rawReport.next_steps ?? nested.next_steps,
         };
       }
     }
-    
+
     return rawReport;
   }, [message.metadata?.complete_report]);
   
@@ -128,16 +129,16 @@ export function ReportBubble({ message, onSubmitFeedback }: ReportBubbleProps) {
         return (
           <AnalyticsReportBubble
             message={message}
-            report={report as AnalyticsReport}
+            report={report as unknown as AnalyticsReport}
             onSubmitFeedback={onSubmitFeedback}
           />
         );
-      
+
       case "advisor":
         return (
           <AdvisorReportBubble
             message={message}
-            report={report as AdvisorReport}
+            report={report as unknown as AdvisorReport}
             onSubmitFeedback={onSubmitFeedback}
           />
         );
@@ -146,7 +147,7 @@ export function ReportBubble({ message, onSubmitFeedback }: ReportBubbleProps) {
         return (
           <DiagnosticReportBubble
             message={message}
-            report={report as DiagnosticReport}
+            report={report as unknown as DiagnosticReport}
             onSubmitFeedback={onSubmitFeedback}
           />
         );
@@ -155,7 +156,7 @@ export function ReportBubble({ message, onSubmitFeedback }: ReportBubbleProps) {
         return (
           <AdvisorReportBubble
             message={message}
-            report={report as AdvisorReport}
+            report={report as unknown as AdvisorReport}
             onSubmitFeedback={onSubmitFeedback}
           />
         );
@@ -166,7 +167,7 @@ export function ReportBubble({ message, onSubmitFeedback }: ReportBubbleProps) {
         return (
           <WarehouseReportBubble
             message={message}
-            report={report as WarehouseReport}
+            report={report as unknown as WarehouseReport}
             onSubmitFeedback={onSubmitFeedback}
           />
         );

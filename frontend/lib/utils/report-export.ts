@@ -12,11 +12,45 @@
 import type {
   AdvisorReport,
   DiagnosticReport,
+  DiagnosticFingerprint,
   EvidenceWindow,
   Finding,
   ImpactEstimate,
   EffortEstimate,
 } from "@/lib/types/api";
+
+// ============================================================================
+// EXTENDED TYPES FOR EXPORT
+// These interfaces capture optional fields that the LLM may include beyond
+// the strict schema definitions. They are used only in export functions.
+// ============================================================================
+
+/** Fields that query/job agents may include on top of AdvisorReport. */
+interface AdvisorReportExtended extends AdvisorReport {
+  /** Query ID for query-domain reports */
+  entity_id?: string;
+  /** Optimized SQL rewrite suggested by LLM */
+  optimized_query?: string;
+  /** Domain label (e.g. "query", "job") */
+  domain?: string;
+  /** Whether the analysis budget was exhausted */
+  budget_exhausted?: boolean;
+}
+
+/** Query-info block that may appear on Analysis for query-domain reports. */
+interface AnalysisWithQueryInfo {
+  query_info?: {
+    warehouse_id?: string;
+    duration_ms?: number;
+    rows_produced?: number;
+    bytes_read?: number;
+  };
+}
+
+/** DiagnosticFingerprint may include an error_category field. */
+interface DiagnosticFingerprintExtended extends DiagnosticFingerprint {
+  error_category?: string;
+}
 
 // ============================================================================
 // COMMON UTILITIES
@@ -200,7 +234,8 @@ export interface AdvisorExportOptions {
  * Export an Advisor report to comprehensive markdown.
  */
 export function exportAdvisorReportToMarkdown(options: AdvisorExportOptions): string {
-  const { report, timestamp } = options;
+  const { report: reportBase, timestamp } = options;
+  const report = reportBase as AdvisorReportExtended;
   const date = getDateString(timestamp);
   const sections: string[] = [];
 
@@ -216,7 +251,7 @@ export function exportAdvisorReportToMarkdown(options: AdvisorExportOptions): st
     sections.push(`2. [Key Findings](#key-findings)`);
     sections.push(`3. [Recommendations](#recommendations)`);
   }
-  if ((report as any).optimized_query) {
+  if (report.optimized_query) {
     sections.push(`4. [Optimized Query](#optimized-query)`);
   }
   sections.push(`5. [Appendix](#appendix)`);
@@ -233,17 +268,17 @@ export function exportAdvisorReportToMarkdown(options: AdvisorExportOptions): st
   sections.push("");
 
   // Query Info (if available)
-  const reportAny = report as any;
-  if (reportAny.entity_id || (report.analysis as any)?.query_info) {
+  const analysisWithQI = report.analysis as AnalysisWithQueryInfo | undefined;
+  if (report.entity_id || analysisWithQI?.query_info) {
     sections.push(`### Query Information`);
     sections.push("");
     sections.push(`| Property | Value |`);
     sections.push(`|----------|-------|`);
-    if (reportAny.entity_id) {
-      sections.push(`| **Query ID** | \`${escapeTableCell(reportAny.entity_id)}\` |`);
+    if (report.entity_id) {
+      sections.push(`| **Query ID** | \`${escapeTableCell(report.entity_id)}\` |`);
     }
-    if ((report.analysis as any)?.query_info) {
-      const qi = (report.analysis as any).query_info;
+    if (analysisWithQI?.query_info) {
+      const qi = analysisWithQI.query_info;
       if (qi.warehouse_id) {
         sections.push(`| **Warehouse** | \`${escapeTableCell(qi.warehouse_id)}\` |`);
       }
@@ -311,11 +346,11 @@ export function exportAdvisorReportToMarkdown(options: AdvisorExportOptions): st
   }
 
   // Optimized Query
-  if ((report as any).optimized_query) {
+  if (report.optimized_query) {
     sections.push(`## ✨ Optimized Query`);
     sections.push("");
     sections.push("```sql");
-    sections.push((report as any).optimized_query);
+    sections.push(report.optimized_query);
     sections.push("```");
     sections.push("");
   }
@@ -328,8 +363,8 @@ export function exportAdvisorReportToMarkdown(options: AdvisorExportOptions): st
   sections.push(`| Property | Value |`);
   sections.push(`|----------|-------|`);
   sections.push(`| **Report Date** | ${date} |`);
-  sections.push(`| **Domain** | ${(report as any).domain || "query"} |`);
-  if ((report as any).budget_exhausted) {
+  sections.push(`| **Domain** | ${report.domain ?? "query"} |`);
+  if (report.budget_exhausted) {
     sections.push(`| **Budget Status** | ⚠️ Exhausted |`);
   }
   sections.push("");
@@ -576,12 +611,13 @@ export function exportDiagnosticReportToMarkdown(options: DiagnosticExportOption
 
   // Databricks Context
   if (report.fingerprint) {
+    const fingerprint = report.fingerprint as DiagnosticFingerprintExtended;
     sections.push(`### Databricks Context`);
     sections.push("");
     sections.push(`| Property | Value |`);
     sections.push(`|----------|-------|`);
-    if ((report.fingerprint as any).error_category) {
-      sections.push(`| **Error Category** | ${(report.fingerprint as any).error_category} |`);
+    if (fingerprint.error_category) {
+      sections.push(`| **Error Category** | ${fingerprint.error_category} |`);
     }
     if (report.fingerprint.primary_symptom) {
       sections.push(`| **Primary Symptom** | ${report.fingerprint.primary_symptom} |`);

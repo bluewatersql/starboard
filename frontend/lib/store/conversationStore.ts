@@ -18,7 +18,7 @@ interface ConversationState {
   loading: boolean;
   error: string | null;
   // Track newly created conversations (skip validation for 30 seconds)
-  newlyCreatedIds: Set<string>;
+  newlyCreatedIds: string[];
   // Message to send after navigation (fixes race condition)
   pendingMessage: string | null;
   // File attachment to send with pending message (BB-02)
@@ -53,7 +53,7 @@ const initialState = {
   activeConversationId: null,
   loading: false,
   error: null,
-  newlyCreatedIds: new Set<string>(),
+  newlyCreatedIds: [],
   pendingMessage: null,
   pendingAttachment: null,
 };
@@ -83,21 +83,20 @@ export const useConversationStore = create<ConversationState>()(
 
       addConversation: (conversation) =>
         set((state) => {
-          const newIds = new Set(state.newlyCreatedIds);
-          newIds.add(conversation.conversation_id);
-          
           // Auto-remove from tracking after 30 seconds
           setTimeout(() => {
-            set((s) => {
-              const ids = new Set(s.newlyCreatedIds);
-              ids.delete(conversation.conversation_id);
-              return { newlyCreatedIds: ids };
-            });
+            set((s) => ({
+              newlyCreatedIds: s.newlyCreatedIds.filter(
+                (id) => id !== conversation.conversation_id
+              ),
+            }));
           }, 30000);
 
           return {
             conversations: [conversation, ...state.conversations],
-            newlyCreatedIds: newIds,
+            newlyCreatedIds: state.newlyCreatedIds.includes(conversation.conversation_id)
+              ? state.newlyCreatedIds
+              : [...state.newlyCreatedIds, conversation.conversation_id],
           };
         }),
 
@@ -138,7 +137,7 @@ export const useConversationStore = create<ConversationState>()(
 
       isNewlyCreated: (id) => {
         const state = get();
-        return state.newlyCreatedIds.has(id);
+        return state.newlyCreatedIds.includes(id);
       },
 
       setLoading: (loading) => set({ loading }),

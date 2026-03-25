@@ -214,7 +214,7 @@ export function useSSE(options: UseSSEOptions) {
   useEffect(() => {
     // Generate unique client ID for this effect instance
     // This is used to ignore events from stale clients during React StrictMode double-mount
-    const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const clientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     activeClientIdRef.current = clientId;
     
     debug.log("[useSSE] Creating new client", { clientId, conversationId, autoConnect, skipValidation });

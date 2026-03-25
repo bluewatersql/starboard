@@ -15,6 +15,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import os
 import sys
 import time
 from datetime import datetime
@@ -66,7 +67,7 @@ logger = structlog.get_logger("starboard_cli")
 
 def setup_cli_logging(
     log_level: str, log_file: str | None = None, quiet: bool = False
-) -> None:
+) -> Any:
     """
     Configure logging for CLI context.
 
@@ -80,15 +81,21 @@ def setup_cli_logging(
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
         log_file: Path to log file (optional)
         quiet: If True, suppress all output except errors
+
+    Returns:
+        Open log file handle if ``log_file`` was provided (caller must close
+        it), otherwise ``None``.
     """
     # Determine log destination
+    log_file_handle: Any = None
     if quiet:
         # Only errors to stderr
         log_level = "ERROR"
         log_stream = sys.stderr
     elif log_file:
-        # Logs to file
-        log_stream = open(log_file, "a")  # noqa: SIM115
+        # Logs to file — keep handle so caller can close it on exit
+        log_file_handle = open(log_file, "a")  # noqa: SIM115
+        log_stream = log_file_handle
     elif log_level == "DEBUG":
         # Debug mode: logs to stderr (keeps stdout clean for rich)
         log_stream = sys.stderr
@@ -135,6 +142,8 @@ def setup_cli_logging(
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("openai").setLevel(logging.WARNING)
+
+    return log_file_handle
 
 
 # =============================================================================
@@ -941,6 +950,17 @@ Environment Variables:
         action="store_true",
         help="Suppress progress output (only show final results)",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output results as JSON to stdout (implies --quiet)",
+    )
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        default=bool(os.environ.get("NO_COLOR")),
+        help="Disable color output (also respects NO_COLOR env var)",
+    )
 
     # ======================
     # Logging options
@@ -1268,13 +1288,21 @@ async def async_main(args: argparse.Namespace) -> None:
 
     # FIRST: Configure CLI-specific logging
     log_level = "DEBUG" if args.debug else args.log_level
-    setup_cli_logging(
+    _log_file_handle = setup_cli_logging(
         log_level=log_level,
         log_file=args.log_file,
         quiet=args.quiet,
     )
 
-    console = Console()
+    # --json implies quiet (no progress noise on stdout)
+    if getattr(args, "json", False):
+        args.quiet = True
+
+    # Respect --no-color and NO_COLOR env var
+    no_color = getattr(args, "no_color", False) or bool(os.environ.get("NO_COLOR"))
+    console = Console(no_color=no_color)
+    # stderr console for error messages so they don't pollute stdout
+    err_console = Console(stderr=True, no_color=no_color)
 
     # Track resources that must be closed on exit to prevent dangling threads
     _api: AsyncDatabricksClient | None = None
@@ -1290,7 +1318,7 @@ async def async_main(args: argparse.Namespace) -> None:
                 file_config = load_config_file(config_path)
                 logger.debug("config_loaded", path=str(config_path))
             except (FileNotFoundError, ValueError) as e:
-                console.print(f"[bold red]❌ Config error:[/bold red] {e}")
+                err_console.print(f"[bold red]❌ Config error:[/bold red] {e}")
                 sys.exit(1)
 
         # Merge configuration
@@ -1298,7 +1326,7 @@ async def async_main(args: argparse.Namespace) -> None:
 
         # Validate required configuration
         if not config.databricks_host or not config.databricks_token:
-            console.print(
+            err_console.print(
                 "[bold red]❌ Missing Databricks credentials[/bold red]\n"
                 "Set DATABRICKS_HOST and DATABRICKS_TOKEN environment variables,\n"
                 "or provide --databricks-host and --databricks-token arguments,\n"
@@ -1307,7 +1335,7 @@ async def async_main(args: argparse.Namespace) -> None:
             sys.exit(1)
 
         if not config.llm_api_key:
-            console.print(
+            err_console.print(
                 "[bold yellow]⚠️  Warning:[/bold yellow] LLM_API_KEY not set\n"
                 "Some LLM providers may require an API key."
             )
@@ -1327,7 +1355,7 @@ async def async_main(args: argparse.Namespace) -> None:
         user_message = args.goal
         is_chat_mode = getattr(args, "chat", False)
         if not user_message and not is_chat_mode:
-            console.print(
+            err_console.print(
                 "[bold yellow]❌ No goal provided[/bold yellow]\n"
                 "Please provide what you want the agent to do:\n"
                 '  --goal "your goal"\n'
@@ -1341,7 +1369,7 @@ async def async_main(args: argparse.Namespace) -> None:
         if args.input_file:
             input_path = Path(args.input_file)
             if not input_path.exists():
-                console.print(
+                err_console.print(
                     f"[bold red]❌ Input file not found:[/bold red] {input_path}"
                 )
                 sys.exit(1)
@@ -1357,7 +1385,7 @@ async def async_main(args: argparse.Namespace) -> None:
                     "input_file_loaded", path=str(input_path), size=len(file_content)
                 )
             except Exception as e:
-                console.print(f"[bold red]❌ Error reading input file:[/bold red] {e}")
+                err_console.print(f"[bold red]❌ Error reading input file:[/bold red] {e}")
                 sys.exit(1)
 
         # =====================================================================
@@ -1382,7 +1410,7 @@ async def async_main(args: argparse.Namespace) -> None:
                 config, state_manager=session_state_manager
             )
         except Exception as e:
-            console.print(f"[bold red]❌ Failed to initialize agent:[/bold red] {e}")
+            err_console.print(f"[bold red]❌ Failed to initialize agent:[/bold red] {e}")
             logger.exception("agent_initialization_failed")
             sys.exit(1)  # finally block below will still close any partial resources
 
@@ -1474,15 +1502,20 @@ async def async_main(args: argparse.Namespace) -> None:
                 await session_mgr.update_session_activity(session_name, user_message)
 
         except KeyboardInterrupt:
-            console.print("\n[yellow]⚠️  Analysis interrupted by user[/yellow]")
+            err_console.print("\n[yellow]⚠️  Analysis interrupted by user[/yellow]")
             sys.exit(130)
         except Exception as e:
-            console.print(f"\n[bold red]❌ Analysis failed:[/bold red] {e}")
+            err_console.print(f"\n[bold red]❌ Analysis failed:[/bold red] {e}")
             logger.exception("analysis_failed")
             sys.exit(1)
 
         # Display results
         if final_output:
+            # --json: emit the raw output as JSON to stdout, then stop
+            if getattr(args, "json", False):
+                print(json.dumps(final_output, indent=2, default=str))
+                return
+
             if not args.quiet:
                 console.print("\n" + "=" * 70)
                 console.print("[bold green]✅ RESULTS[/bold green]")
@@ -1532,16 +1565,16 @@ async def async_main(args: argparse.Namespace) -> None:
                         console.print(f"   JSON: {json_path}")
                         console.print(f"   Markdown: {markdown_path}")
                 except Exception as e:
-                    console.print(
+                    err_console.print(
                         f"\n[bold yellow]⚠️  Failed to save results:[/bold yellow] {e}"
                     )
                     logger.exception("save_results_failed")
 
         else:
-            console.print("\n[bold yellow]⚠️  No results to display[/bold yellow]")
+            err_console.print("\n[bold yellow]⚠️  No results to display[/bold yellow]")
 
     except Exception as e:
-        console.print(f"\n[bold red]❌ Unexpected error:[/bold red] {e}")
+        err_console.print(f"\n[bold red]❌ Unexpected error:[/bold red] {e}")
         logger.exception("unexpected_error")
         sys.exit(1)
 
@@ -1558,6 +1591,10 @@ async def async_main(args: argparse.Namespace) -> None:
         if _vector_store is not None and hasattr(_vector_store, "close"):
             with contextlib.suppress(Exception):
                 await _vector_store.close()
+        # Close log file handle if one was opened
+        if _log_file_handle is not None:
+            with contextlib.suppress(Exception):
+                _log_file_handle.close()
 
 
 def main(argv: list | None = None) -> None:

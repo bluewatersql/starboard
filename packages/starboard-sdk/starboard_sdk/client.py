@@ -6,8 +6,8 @@ stack as the CLI and server.
 
 Example::
 
-    client = StarboardClient.from_env()
-    session = client.create_session(name="my-analysis")
+    client = await StarboardClient.from_env()
+    session = await client.create_session(name="my-analysis")
 
     r1 = await session.ask("Analyze job 12345")
     r2 = await session.ask("Can we convert it to streaming?")
@@ -19,8 +19,7 @@ import asyncio
 import contextlib
 import time
 from collections.abc import AsyncIterator
-from typing import Any
-from uuid import uuid4
+from typing import TYPE_CHECKING
 
 from starboard_core.domain.models.llm import OptimizationMode
 from starboard_server.agents.events import (
@@ -32,6 +31,12 @@ from starboard_server.agents.events import (
 from starboard_server.infra.observability.logging import get_logger
 
 from starboard_sdk.models import AgentResponse
+
+if TYPE_CHECKING:
+    from starboard_server.agents.conversation import MultiAgentConversationManager
+    from starboard_server.infra.rag.domain.protocols import MultiCollectionStore
+
+    from starboard_cli.sessions.session_manager import SessionInfo, SessionManager
 
 logger = get_logger(__name__)
 
@@ -48,7 +53,7 @@ class ConversationSession:
 
     Example::
 
-        session = client.create_session()
+        session = await client.create_session()
         r1 = await session.ask("Help me tune query abc-123")
         r2 = await session.ask("Would liquid clustering help?")
         print(r2.report)
@@ -57,9 +62,9 @@ class ConversationSession:
     def __init__(
         self,
         conversation_id: str,
-        manager: Any,
+        manager: MultiAgentConversationManager,
         session_name: str | None = None,
-        session_mgr: Any = None,
+        session_mgr: SessionManager | None = None,
         mode: OptimizationMode = OptimizationMode.ONLINE,
     ) -> None:
         self._conversation_id = conversation_id
@@ -103,9 +108,10 @@ class ConversationSession:
 
         Raises:
             TimeoutError: If the agent does not respond within ``timeout`` seconds.
+            RuntimeError: If the agent returns a non-recoverable error.
         """
         effective_mode = mode or self._mode
-        final_output: dict[str, Any] | None = None
+        final_output: dict[str, object] | None = None
         tools_used: list[str] = []
         formatted_report: str | None = None
         agent_error: str | None = None
@@ -179,10 +185,10 @@ class ConversationSession:
             report=formatted_report,
             raw_output=final_output or {},
             tools_used=tools_used,
-            tokens_used=final_output.get("tokens_used") if final_output else None,
-            cost_usd=final_output.get("cost_usd") if final_output else None,
+            tokens_used=final_output.get("tokens_used") if final_output else None,  # type: ignore[arg-type]
+            cost_usd=final_output.get("cost_usd") if final_output else None,  # type: ignore[arg-type]
             duration_seconds=round(elapsed, 2),
-            domain=final_output.get("domain") if final_output else None,
+            domain=final_output.get("domain") if final_output else None,  # type: ignore[arg-type]
             conversation_id=self._conversation_id,
             turn_number=self._turn_count,
             error=agent_error,
@@ -204,20 +210,23 @@ class ConversationSession:
         """
         effective_mode = mode or self._mode
 
-        async for event in self._manager.handle_message_stream(
-            conversation_id=self._conversation_id,
-            user_message=message,
-            mode=effective_mode,
-        ):
-            yield event
+        try:
+            async for event in self._manager.handle_message_stream(
+                conversation_id=self._conversation_id,
+                user_message=message,
+                mode=effective_mode,
+            ):
+                yield event
+        finally:
+            # Always increment turn count and update session activity,
+            # even if the stream exits early due to an exception or break.
+            self._turn_count += 1
 
-        self._turn_count += 1
-
-        if self._session_mgr and self._session_name:
-            with contextlib.suppress(Exception):
-                await self._session_mgr.update_session_activity(
-                    self._session_name, message
-                )
+            if self._session_mgr and self._session_name:
+                with contextlib.suppress(Exception):
+                    await self._session_mgr.update_session_activity(
+                        self._session_name, message
+                    )
 
 
 class StarboardClient:
@@ -229,20 +238,20 @@ class StarboardClient:
     Example::
 
         # From environment variables
-        client = StarboardClient.from_env()
-        session = client.create_session(name="etl-tuning")
+        client = await StarboardClient.from_env()
+        session = await client.create_session(name="etl-tuning")
         response = await session.ask("Analyze job 12345")
 
         # Resume a previous session
-        session = client.resume_session("etl-tuning")
+        session = await client.resume_session("etl-tuning")
         response = await session.ask("Can we run it as streaming?")
     """
 
     def __init__(
         self,
-        manager: Any,
-        session_mgr: Any | None = None,
-        resources: tuple[Any, ...] = (),
+        manager: MultiAgentConversationManager,
+        session_mgr: SessionManager | None = None,
+        resources: tuple[object, ...] = (),
     ) -> None:
         """Initialize client with pre-built components.
 
@@ -261,13 +270,18 @@ class StarboardClient:
         cls,
         session_db: str = "~/.starboard/sessions.db",
     ) -> StarboardClient:
-        """Create a client from environment variables.
+        """Create a client configured from environment variables.
 
-        Reads ``DATABRICKS_HOST``, ``DATABRICKS_TOKEN``, ``LLM_API_KEY``,
-        ``LLM_MODEL``, etc. from the environment (same as CLI).
+        Loads ``.env`` from the current directory (if present) then reads
+        ``DATABRICKS_HOST``, ``DATABRICKS_TOKEN``, ``LLM_API_KEY``,
+        ``LLM_MODEL``, and related variables — the same set used by the CLI
+        and server.  Call ``await client.close()`` (or use ``async with``)
+        when done to release background resources.
 
         Args:
-            session_db: Path to session database for persistent sessions.
+            session_db: Path to the SQLite session database used for
+                persistent multi-turn sessions.  Tilde-expanded.  Defaults
+                to ``~/.starboard/sessions.db``.
 
         Returns:
             Configured StarboardClient ready to create sessions.
@@ -289,7 +303,7 @@ class StarboardClient:
             config, state_manager=session_mgr.conversation_repo
         )
 
-        resources = tuple(
+        resources: tuple[object, ...] = tuple(
             r for r in (api, vector_store) if r is not None
         )
 
@@ -314,6 +328,8 @@ class StarboardClient:
         Returns:
             ConversationSession ready for ``ask()`` calls.
         """
+        from uuid import uuid4
+
         if self._session_mgr and name:
             info = await self._session_mgr.get_or_create(name)
             return ConversationSession(
@@ -360,11 +376,11 @@ class StarboardClient:
             session_mgr=self._session_mgr,
         )
 
-    async def list_sessions(self) -> list[Any]:
+    async def list_sessions(self) -> list[SessionInfo]:
         """List all saved sessions.
 
         Returns:
-            List of SessionInfo objects.
+            List of SessionInfo objects, ordered by most-recently updated.
         """
         if not self._session_mgr:
             return []
@@ -385,6 +401,6 @@ class StarboardClient:
         """Support async context manager usage."""
         return self
 
-    async def __aexit__(self, *exc: Any) -> None:
+    async def __aexit__(self, *exc: object) -> None:
         """Close resources on context manager exit."""
         await self.close()
