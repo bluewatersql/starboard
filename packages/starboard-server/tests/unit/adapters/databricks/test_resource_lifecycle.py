@@ -220,7 +220,7 @@ class TestChatReportFormattingError:
         import ast
         from pathlib import Path
 
-        chat_path = Path(__file__).resolve().parents[5] / "packages" / "starboard-cli" / "starboard_cli" / "cli" / "chat.py"
+        chat_path = Path(__file__).resolve().parents[6] / "packages" / "starboard-cli" / "starboard_cli" / "cli" / "chat.py"
         if not chat_path.exists():
             pytest.skip("chat.py not found")
 
@@ -246,7 +246,7 @@ class TestChatReportFormattingError:
         """The except block must call logger.warning with report_format_failed."""
         from pathlib import Path
 
-        chat_path = Path(__file__).resolve().parents[5] / "packages" / "starboard-cli" / "starboard_cli" / "cli" / "chat.py"
+        chat_path = Path(__file__).resolve().parents[6] / "packages" / "starboard-cli" / "starboard_cli" / "cli" / "chat.py"
         if not chat_path.exists():
             pytest.skip("chat.py not found")
 
