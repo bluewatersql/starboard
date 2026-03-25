@@ -92,6 +92,14 @@ class CacheMetrics:
 class CacheStore(Protocol):
     """Abstract interface for key-value caching with TTL support."""
 
+    async def connect(self) -> None:
+        """Initialize connection to the backing store."""
+        ...
+
+    async def close(self) -> None:
+        """Release resources and close connections."""
+        ...
+
     async def get(
         self,
         key: str,

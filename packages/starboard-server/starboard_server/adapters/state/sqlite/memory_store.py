@@ -615,4 +615,17 @@ class SQLiteMemoryStore:
             created_at=datetime.fromisoformat(created_at_str),
             updated_at=datetime.fromisoformat(updated_at_str),
             metadata=metadata,
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (Protocol compliance)."""
+        return False
+
+    async def get(self, key: str) -> object | None:
+        """Generic key-value get (Protocol compliance)."""
+        return None
+
+    async def set(self, key: str, value: object) -> None:
+        """Generic key-value set (Protocol compliance)."""
+
+
         )

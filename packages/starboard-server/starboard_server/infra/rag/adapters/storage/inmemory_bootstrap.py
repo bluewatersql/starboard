@@ -397,4 +397,23 @@ class InMemoryVectorStoreBootstrap:
             store_stats=store.get_stats(),
         )
 
+
+    async def close(self) -> None:
+        """Release resources (no-op for this store)."""
+
+    async def connect(self) -> None:
+        """Initialize connection (no-op for this store)."""
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (Protocol compliance)."""
+        return False
+
+    async def get(self, key: str) -> object | None:
+        """Generic key-value get (Protocol compliance)."""
+        return None
+
+    async def set(self, key: str, value: object) -> None:
+        """Generic key-value set (Protocol compliance)."""
+
+
         return counts

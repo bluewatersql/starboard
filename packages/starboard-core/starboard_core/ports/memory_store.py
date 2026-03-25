@@ -15,6 +15,26 @@ class MemoryStore(Protocol):
     - Profile: User preferences, context, settings
     """
 
+    async def connect(self) -> None:
+        """Initialize connection to the backing store."""
+        ...
+
+    async def close(self) -> None:
+        """Release resources and close connections."""
+        ...
+
+    async def get(self, key: str) -> Any | None:
+        """Generic key-value get (for Protocol compliance)."""
+        ...
+
+    async def set(self, key: str, value: Any) -> None:
+        """Generic key-value set (for Protocol compliance)."""
+        ...
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (for Protocol compliance)."""
+        ...
+
     # Episodic Memory
     async def store_episode(
         self,
