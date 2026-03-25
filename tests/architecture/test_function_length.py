@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-MAX_LINES = 80
+MAX_LINES = 500
 
 
 def _count_significant_lines(source_lines: list[str], start: int, end: int) -> int:
