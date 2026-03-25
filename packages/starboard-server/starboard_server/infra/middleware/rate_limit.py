@@ -8,9 +8,12 @@ Provides rate limiting functionality using slowapi with support for:
 
 from __future__ import annotations
 
+import structlog
 from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+
+logger = structlog.get_logger(__name__)
 
 
 def get_rate_limit_key(request: Request) -> str:
@@ -47,7 +50,13 @@ def check_rate_limit(request: Request, limit: str) -> None:
         RateLimitExceeded: If rate limit is exceeded
     """
     if not hasattr(request.app.state, "limiter"):
-        # Rate limiting not enabled, skip check
+        # Rate limiting middleware not attached — warn so operators are aware
+        logger.warning(
+            "rate_limiter_not_attached",
+            message="Rate limiter middleware is not attached to the application. "
+            "Rate limiting will not be enforced for this request.",
+            path=request.url.path,
+        )
         return
 
     limiter: Limiter = request.app.state.limiter

@@ -31,10 +31,49 @@ from fastapi.responses import StreamingResponse
 
 from starboard_server.api.dependencies import MultiAgentManagerDep
 from starboard_server.api.models import ChatEvent, EventType
+from starboard_server.infra.core.config import get_config
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.serialization import json_dumps
 
 logger = get_logger(__name__)
+
+
+def _build_error_event_data(
+    exc: Exception,
+    conversation_id: str,
+    production: bool | None = None,
+) -> dict:
+    """Build SSE error event data, sanitizing details in production.
+
+    Args:
+        exc: The exception that occurred.
+        conversation_id: Conversation ID for context.
+        production: If True, return generic message only. If None, reads config.
+
+    Returns:
+        dict with "error" key containing message and code.
+    """
+    if production is None:
+        try:
+            config = get_config()
+            production = config.environment == "production"
+        except Exception:
+            production = True  # Safe default
+
+    if production:
+        return {
+            "error": {
+                "message": "An error occurred. Please try again.",
+                "code": "STREAM_ERROR",
+            }
+        }
+
+    return {
+        "error": {
+            "message": str(exc),
+            "code": type(exc).__name__,
+        }
+    }
 
 router = APIRouter(prefix="/api/chat", tags=["Chat Streaming"])
 
@@ -237,15 +276,12 @@ async def event_stream(
             exc_info=True,
         )
         # Send error event to client (format must match frontend ErrorDataSchema)
+        # Sanitize error details in production to avoid leaking internal state
+        error_data = _build_error_event_data(e, conversation_id)
         error_event = ChatEvent(
             event_id=f"error_{conversation_id}",
             type=EventType.ERROR,
-            data={
-                "error": {
-                    "message": str(e),
-                    "code": type(e).__name__,
-                }
-            },
+            data=error_data,
             timestamp=datetime.now(UTC),
         )
         yield format_sse_event(error_event)
