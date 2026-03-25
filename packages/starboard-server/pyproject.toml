@@ -20,10 +20,9 @@ dependencies = [
     # Data processing
     "pandas>=2.3.3,<3.0.0",
     "polars>=1.17.0,<2.0.0", # Modern DataFrame library (10x faster than Pandas)
-    "pyarrow>=18.0.0,<19.0.0", # Required for Arrow format with Databricks + Polars integration
-    "numpy<2.2.0,>=1.24.0",
+    "pyarrow>=18.0.0,<20.0.0", # Required for Arrow format with Databricks + Polars integration
+    "numpy<3.0.0,>=1.24.0",
     "sqlglot>=27.29.0,<28.0.0",
-    "requests>=2.31.0,<3.0.0", # Required for downloading EXTERNAL_LINKS chunks
     # Data visualization (FinOps charts)
     "altair>=5.0.0,<6.0.0", # Declarative visualization with Vega-Lite
     "vl-convert-python>=1.0.0,<2.0.0", # Convert Vega-Lite to PNG/SVG

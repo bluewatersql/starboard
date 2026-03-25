@@ -30,3 +30,11 @@ repos:
       - id: ruff
         args: ["--fix"]
       - id: ruff-format
+
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.7.3
+    hooks:
+      - id: pip-audit
+        args: ["--require-hashes", "--disable-pip"]
+        # pip-audit scans installed packages; run 'pip-audit' manually for full dependency tree audit
+        # CI: also run 'npm audit --production' in frontend/ for JS dependencies

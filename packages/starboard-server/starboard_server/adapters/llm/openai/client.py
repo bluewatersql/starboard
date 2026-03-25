@@ -21,6 +21,8 @@ from starboard_server.adapters.llm.base import BaseLLMClient
 from starboard_server.adapters.llm.openai.tokens import TokenBudget
 from starboard_server.infra.core.config import EnvConfig
 from starboard_server.infra.observability.logging import get_logger, get_request_id
+from opentelemetry import trace as otel_trace
+
 from starboard_server.infra.observability.tracing import get_tracer
 from starboard_server.infra.reliability.circuit_breaker import (
     CircuitBreaker,
@@ -292,6 +294,68 @@ class OpenAIProvider(BaseLLMClient):
 
         return params
 
+    # Approximate token pricing per model family (USD per 1K tokens).
+    # These are conservative estimates; override via subclass if needed.
+    _INPUT_PRICE_PER_1K: dict[str, float] = {
+        "gpt-4o": 0.0025,
+        "gpt-4o-mini": 0.00015,
+        "gpt-4-turbo": 0.01,
+        "gpt-4": 0.03,
+        "gpt-3.5-turbo": 0.0005,
+        "gpt-5": 0.015,
+        "o1": 0.015,
+        "o3": 0.01,
+    }
+    _OUTPUT_PRICE_PER_1K: dict[str, float] = {
+        "gpt-4o": 0.01,
+        "gpt-4o-mini": 0.0006,
+        "gpt-4-turbo": 0.03,
+        "gpt-4": 0.06,
+        "gpt-3.5-turbo": 0.0015,
+        "gpt-5": 0.06,
+        "o1": 0.06,
+        "o3": 0.04,
+    }
+    _DEFAULT_INPUT_PRICE_PER_1K: float = 0.01
+    _DEFAULT_OUTPUT_PRICE_PER_1K: float = 0.03
+
+    @staticmethod
+    def _get_current_span_id() -> str | None:
+        """Return the current OpenTelemetry span ID as a hex string, or None."""
+        try:
+            span = otel_trace.get_current_span()
+            ctx = span.get_span_context()
+            if ctx and ctx.span_id:
+                return format(ctx.span_id, "016x")
+        except Exception:
+            pass
+        return None
+
+    def _compute_cost_usd(
+        self, model: str, input_tokens: int, output_tokens: int
+    ) -> float:
+        """Estimate cost in USD for an LLM call based on token counts and model.
+
+        Args:
+            model: Model identifier
+            input_tokens: Number of prompt/input tokens
+            output_tokens: Number of completion/output tokens
+
+        Returns:
+            Estimated cost in USD
+        """
+        model_lower = model.lower()
+        input_price = self._DEFAULT_INPUT_PRICE_PER_1K
+        output_price = self._DEFAULT_OUTPUT_PRICE_PER_1K
+        for prefix, price in self._INPUT_PRICE_PER_1K.items():
+            if prefix in model_lower:
+                input_price = price
+                output_price = self._OUTPUT_PRICE_PER_1K.get(
+                    prefix, self._DEFAULT_OUTPUT_PRICE_PER_1K
+                )
+                break
+        return (input_tokens * input_price + output_tokens * output_price) / 1000.0
+
     def _log_llm_call(
         self,
         call_type: str,
@@ -303,6 +367,8 @@ class OpenAIProvider(BaseLLMClient):
         latency_ms: float,
         phase: str | None = None,
         validated: bool = False,
+        span_id: str | None = None,
+        prompt_version: str | None = None,
     ) -> None:
         """
         Log structured data for LLM API calls.
@@ -317,16 +383,24 @@ class OpenAIProvider(BaseLLMClient):
             latency_ms: Call latency in milliseconds
             phase: Optional phase name
             validated: Whether output was Pydantic validated
+            span_id: Optional distributed tracing span ID
+            prompt_version: Optional version string of the prompt template used
         """
-        log_data = {
+        cost_usd = self._compute_cost_usd(model, input_tokens, output_tokens)
+        log_data: dict[str, object] = {
             "trace_id": trace_id,
             "model": model,
             "temperature": temperature,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
             "latency_ms": latency_ms,
+            "cost_usd": cost_usd,
         }
 
+        if span_id is not None:
+            log_data["span_id"] = span_id
+        if prompt_version is not None:
+            log_data["prompt_version"] = prompt_version
         if phase:
             log_data["phase"] = phase
         if validated:
@@ -545,6 +619,7 @@ class OpenAIProvider(BaseLLMClient):
                     input_tokens=normalized_usage["prompt_tokens"],
                     output_tokens=normalized_usage["completion_tokens"],
                     latency_ms=latency_ms,
+                    span_id=self._get_current_span_id(),
                 )
 
                 content = resp.choices[0].message.content
@@ -641,6 +716,7 @@ class OpenAIProvider(BaseLLMClient):
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     latency_ms=latency_ms,
+                    span_id=self._get_current_span_id(),
                 )
             else:
                 raise ValueError("LLM returned empty streaming response")
@@ -1061,6 +1137,7 @@ class OpenAIProvider(BaseLLMClient):
                         latency_ms=latency_ms,
                         phase=phase,
                         validated=is_pydantic,
+                        span_id=self._get_current_span_id(),
                     )
 
                 # Charge budget if provided
@@ -1232,6 +1309,7 @@ class OpenAIProvider(BaseLLMClient):
                     latency_ms=latency_ms,
                     phase=phase,
                     validated=False,  # Validation must be done by caller
+                    span_id=self._get_current_span_id(),
                 )
 
                 # Charge budget if provided (parse accumulated content for result)

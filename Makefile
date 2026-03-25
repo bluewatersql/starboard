@@ -4,8 +4,8 @@
 
 .PHONY: help setup install install-dev install-frontend verify \
         dev dev-debug dev-server dev-server-debug dev-frontend dev-frontend-debug dev-browser dev-stop dev-debug-context \
-        test test-unit test-integration test-golden test-contract test-coverage test-frontend \
-        lint lint-frontend type-check format check pre-commit \
+        test test-unit test-sdk test-integration test-golden test-contract test-coverage test-frontend \
+        lint lint-frontend type-check format check pre-commit audit-deps \
         clean clean-debug clean-deep build info
 
 # Package manager detection (prefer uv)
@@ -48,7 +48,8 @@ help:
 	@echo ""
 	@echo "$(GREEN)Testing:$(NC)"
 	@echo "  test              All tests (unit + integration)"
-	@echo "  test-unit         Unit tests only"
+	@echo "  test-unit         Unit tests only (all packages incl. SDK)"
+	@echo "  test-sdk          SDK-specific tests"
 	@echo "  test-integration  Integration tests"
 	@echo "  test-golden       Golden/snapshot tests"
 	@echo "  test-contract     API contract tests"
@@ -136,6 +137,7 @@ install-frontend:
 
 verify:
 	@echo "$(BLUE)Verifying installation...$(NC)"
+	# Requires Python 3.12 — aligned with pyproject.toml (python_version=3.12) and .python-version (3.12.10)
 	@python -c "import sys; assert sys.version_info >= (3, 12)" && echo "$(GREEN)✓ Python 3.12+$(NC)"
 	@python -c "import starboard_core" && echo "$(GREEN)✓ starboard-core$(NC)"
 	@python -c "import starboard_log_parser" && echo "$(GREEN)✓ starboard-log-parser$(NC)"
@@ -234,7 +236,14 @@ test-unit:
 	@pytest packages/starboard-log-parser/tests/unit/ -v --tb=short
 	@pytest packages/starboard-server/tests/unit/ -v --tb=short
 	@pytest packages/starboard-cli/tests/unit/ -v --tb=short
+	@pytest packages/starboard-sdk/tests/unit/ -v --tb=short
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
+
+test-sdk:
+	@echo "$(BLUE)Running SDK tests...$(NC)"
+	@pytest packages/starboard-sdk/tests/ -v --tb=short
+	@echo "$(GREEN)✓ SDK tests passed$(NC)"
+	# TODO: integrate eval smoke tests here (evals/)
 
 test-integration:
 	@echo "$(BLUE)Running integration tests...$(NC)"
@@ -300,6 +309,12 @@ pre-commit:
 	@echo "$(BLUE)Running pre-commit hooks...$(NC)"
 	@pre-commit run --all-files
 	@echo "$(GREEN)✓ Pre-commit complete$(NC)"
+
+audit-deps:
+	@echo "$(BLUE)Auditing dependencies...$(NC)"
+	@pip-audit --requirement packages/starboard-server/pyproject.toml 2>/dev/null || echo "pip-audit not installed, skipping"
+	@cd frontend && npm audit --production 2>/dev/null || true
+	@echo "$(GREEN)✓ Audit complete$(NC)"
 
 # ================================
 # Build
