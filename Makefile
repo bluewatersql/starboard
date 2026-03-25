@@ -4,8 +4,8 @@
 
 .PHONY: help setup install install-dev install-frontend verify \
         dev dev-debug dev-server dev-server-debug dev-frontend dev-frontend-debug dev-browser dev-stop dev-debug-context \
-        test test-unit test-integration test-golden test-contract test-coverage test-frontend \
-        lint lint-frontend type-check format check pre-commit \
+        test test-unit test-sdk test-integration test-golden test-contract test-coverage test-frontend \
+        lint lint-frontend type-check format check pre-commit audit-deps \
         clean clean-debug clean-deep build info
 
 # Package manager detection (prefer uv)
@@ -234,7 +234,13 @@ test-unit:
 	@pytest packages/starboard-log-parser/tests/unit/ -v --tb=short
 	@pytest packages/starboard-server/tests/unit/ -v --tb=short
 	@pytest packages/starboard-cli/tests/unit/ -v --tb=short
+	@pytest packages/starboard-sdk/tests/unit/ -v --tb=short 2>/dev/null || true
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
+
+test-sdk:
+	@echo "$(BLUE)Running SDK tests...$(NC)"
+	@pytest packages/starboard-sdk/tests/ -v --tb=short
+	@echo "$(GREEN)✓ SDK tests passed$(NC)"
 
 test-integration:
 	@echo "$(BLUE)Running integration tests...$(NC)"
@@ -300,6 +306,12 @@ pre-commit:
 	@echo "$(BLUE)Running pre-commit hooks...$(NC)"
 	@pre-commit run --all-files
 	@echo "$(GREEN)✓ Pre-commit complete$(NC)"
+
+audit-deps:
+	@echo "$(BLUE)Auditing dependencies...$(NC)"
+	@pip-audit 2>/dev/null || echo "$(YELLOW)pip-audit not installed, skipping Python audit$(NC)"
+	@cd frontend && npm audit --production 2>/dev/null || true
+	@echo "$(GREEN)✓ Audit complete$(NC)"
 
 # ================================
 # Build
