@@ -467,14 +467,12 @@ class TestCORSMethodsRestricted:
 
     def test_cors_allow_methods_not_wildcard(self) -> None:
         """main.py CORS must not use ['*'] for allow_methods."""
-        import ast
         import pathlib
 
-        main_path = pathlib.Path(__file__).parents[4] / "starboard_server" / "main.py"
+        # parents[0]=security, [1]=unit, [2]=tests, [3]=starboard-server pkg root
+        main_path = pathlib.Path(__file__).parents[3] / "starboard_server" / "main.py"
         source = main_path.read_text()
 
-        # Check that allow_methods does not have wildcard "*"
-        # Parse and find the CORSMiddleware add_middleware call
         assert 'allow_methods=["*"]' not in source and "allow_methods=['*']" not in source, (
             "CORS allow_methods must not use wildcard '*'"
         )
@@ -483,10 +481,9 @@ class TestCORSMethodsRestricted:
         """CORS must allow GET, POST, OPTIONS."""
         import pathlib
 
-        main_path = pathlib.Path(__file__).parents[4] / "starboard_server" / "main.py"
+        main_path = pathlib.Path(__file__).parents[3] / "starboard_server" / "main.py"
         source = main_path.read_text()
 
-        # These methods must be present in allow_methods
         for method in ("GET", "POST", "OPTIONS"):
             assert method in source, f"CORS must allow {method}"
 
