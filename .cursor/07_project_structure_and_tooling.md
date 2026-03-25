@@ -24,6 +24,14 @@ project/
 
 ---
 
+## Package Boundaries & Dependency Hygiene
+
+**GUIDELINE-005: MUST: CLI and SDK packages may only import from their own package, `starboard_core`, or the public API of `starboard_server`.** They must not import internal server modules (agents, tools, infra, etc.) directly. Use a bootstrap facade or public re-exports. Enforced by `tests/architecture/test_package_boundaries.py`.
+
+**GUIDELINE-010: MUST: All source-code imports must correspond to declared dependencies in `pyproject.toml`.** No undeclared transitive dependencies. No unused declared dependencies. Enforced by `tests/architecture/test_dependency_hygiene.py`.
+
+---
+
 ## Tooling Defaults (Cursor-Friendly)
 
 When generating code in this project, Cursor should:

@@ -15,11 +15,15 @@ Layers (conceptual):
 - infra/       – config, logging, DI/wiring, observability  
 - tools/       – tool implementations with explicit schemas  
 
-MUST: Dependency injection for all external services (LLM clients, stores, clocks).  
-MUST: Pure functions in domain; side effects only in adapters.  
-MUST: Separate prompting from tool calls; schemas live at boundaries.  
-SHOULD: Prefer immutable data (frozen dataclasses, NamedTuple, tuple).  
+MUST: Dependency injection for all external services (LLM clients, stores, clocks).
+MUST: Pure functions in domain; side effects only in adapters.
+MUST: Separate prompting from tool calls; schemas live at boundaries.
+SHOULD: Prefer immutable data (frozen dataclasses, NamedTuple, tuple).
 SHOULD: Use explicit AgentState objects for multi-turn flows.
+
+**GUIDELINE-001: MUST: All state store implementations must conform to the `StateStore` Protocol.** The Protocol defines `connect()`, `close()`, `get()`, `set()`, and `delete()` methods. New stores must implement all Protocol methods. Enforced by `tests/architecture/test_state_store_protocol_compliance.py`.
+
+**GUIDELINE-002: MUST: The domain layer (`domain/`) must never import from the infrastructure layer (`infra/`).** Dependencies flow inward: infra → agents → domain. Domain code must remain pure and free of I/O concerns. Enforced by `tests/architecture/test_layer_violations.py`.
 
 Example shape:
 

@@ -4,10 +4,12 @@
 
 ## Observability & Debugging
 
+**GUIDELINE-004: MUST: Use `structlog` exclusively for all logging in `starboard-server`.** stdlib `logging` module must not be imported directly. All log calls must use keyword arguments (not f-strings). Enforced by `tests/architecture/test_logging_compliance.py`.
+
 MUST: Use structured logging with fields like:
-- trace_id, span_id  
-- user_id, session_id  
-- model, prompt_version  
+- trace_id, span_id
+- user_id, session_id
+- model, prompt_version
 - tokens_used, latency_ms, cost_usd  
 
 MUST: Use distributed tracing for agent workflows:
