@@ -77,8 +77,8 @@ class ChunkingService:
         # Create short summary chunk
         chunks.append(self._build_summary_chunk(table))
 
-        # Create detailed summary chunk
-        chunks.append(self._build_summary_chunk(table))
+        # Create detailed summary chunk (distinct chunk_type: table_detailed_summary)
+        chunks.append(self._build_summary_chunk(table, detailed=True))
 
         # Create use_cases chunk if table has use cases
         if table.common_use_cases:

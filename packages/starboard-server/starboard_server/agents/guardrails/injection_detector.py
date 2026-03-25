@@ -1,8 +1,13 @@
 """Prompt injection detection.
 
 Scans user input for common prompt injection patterns and logs suspicious
-inputs. This is a **log-only** guardrail — it does not block requests to
-avoid false positives during the initial rollout.
+inputs.
+
+Two operation modes:
+- **Log-only** (default): Detects and logs but does not block requests.
+  Used during initial rollout to avoid false positives.
+- **Blocking** (opt-in): Raises ``InjectionBlockedError`` when confidence
+  meets or exceeds a configurable threshold.
 
 Unicode text is NFKC-normalized before matching to defeat homoglyph attacks.
 """
@@ -16,6 +21,11 @@ from dataclasses import dataclass
 import structlog
 
 logger = structlog.get_logger(__name__)
+
+# Default confidence threshold for blocking mode.
+# A value of 0.8 requires ≥3 pattern matches (3/3 = 1.0 → blocked;
+# 2/3 ≈ 0.67 → not blocked at default threshold).
+DEFAULT_BLOCKING_THRESHOLD: float = 0.8
 
 # Compiled patterns for common prompt injection techniques.
 # Each pattern targets a specific injection vector.
@@ -51,8 +61,27 @@ class InjectionScanResult:
     confidence: float
 
 
+class InjectionBlockedError(ValueError):
+    """Raised when blocking mode is enabled and injection confidence exceeds threshold.
+
+    Attributes:
+        scan_result: The ``InjectionScanResult`` that triggered the block.
+
+    Example:
+        >>> try:
+        ...     scan_and_block(user_input, blocking_enabled=True)
+        ... except InjectionBlockedError as e:
+        ...     logger.warning("blocked", confidence=e.scan_result.confidence)
+        ...     return rejection_response()
+    """
+
+    def __init__(self, message: str, *, scan_result: InjectionScanResult) -> None:
+        super().__init__(message)
+        self.scan_result = scan_result
+
+
 def scan_for_injection(text: str) -> InjectionScanResult:
-    """Scan text for prompt injection patterns.
+    """Scan text for prompt injection patterns (log-only, never raises).
 
     Normalizes Unicode (NFKC) before matching to defeat homoglyph
     and invisible-character attacks.
@@ -88,3 +117,65 @@ def scan_for_injection(text: str) -> InjectionScanResult:
         matched_patterns=tuple(matches),
         confidence=confidence,
     )
+
+
+def scan_and_block(
+    text: str,
+    *,
+    blocking_enabled: bool = False,
+    confidence_threshold: float = DEFAULT_BLOCKING_THRESHOLD,
+) -> InjectionScanResult:
+    """Scan text for prompt injection and optionally block high-confidence attacks.
+
+    Performs the same pattern-matching as ``scan_for_injection``, but when
+    ``blocking_enabled=True`` and the result confidence meets or exceeds
+    ``confidence_threshold``, raises ``InjectionBlockedError`` instead of
+    returning.
+
+    Safe rollout path:
+    - Phase 1 (default): ``blocking_enabled=False`` — log only, no blocking.
+    - Phase 2 (opt-in): ``blocking_enabled=True`` — block at threshold.
+
+    Args:
+        text: User input to scan.
+        blocking_enabled: When True, raises on high-confidence detections.
+            Defaults to False for safe initial rollout.
+        confidence_threshold: Minimum confidence score to trigger a block
+            when blocking is enabled. Defaults to 0.8.
+
+    Returns:
+        InjectionScanResult if no block occurs.
+
+    Raises:
+        InjectionBlockedError: When ``blocking_enabled=True`` and
+            ``result.confidence >= confidence_threshold``.
+
+    Example:
+        >>> # Log-only (safe default)
+        >>> result = scan_and_block(user_input)
+        >>>
+        >>> # Blocking enabled (opt-in via feature flag)
+        >>> try:
+        ...     scan_and_block(user_input, blocking_enabled=True, confidence_threshold=0.8)
+        ... except InjectionBlockedError as e:
+        ...     return {"error": "Input rejected due to safety policy"}
+    """
+    result = scan_for_injection(text)
+
+    if blocking_enabled and result.confidence >= confidence_threshold:
+        logger.error(
+            "prompt_injection_blocked",
+            pattern_count=len(result.matched_patterns),
+            matched_patterns=list(result.matched_patterns),
+            confidence=result.confidence,
+            threshold=confidence_threshold,
+            input_length=len(text),
+        )
+        raise InjectionBlockedError(
+            f"Input blocked: injection confidence {result.confidence:.2f} "
+            f"exceeds threshold {confidence_threshold:.2f} "
+            f"(patterns: {', '.join(result.matched_patterns)})",
+            scan_result=result,
+        )
+
+    return result
