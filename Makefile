@@ -48,7 +48,8 @@ help:
 	@echo ""
 	@echo "$(GREEN)Testing:$(NC)"
 	@echo "  test              All tests (unit + integration)"
-	@echo "  test-unit         Unit tests only"
+	@echo "  test-unit         Unit tests only (all packages incl. SDK)"
+	@echo "  test-sdk          SDK-specific tests"
 	@echo "  test-integration  Integration tests"
 	@echo "  test-golden       Golden/snapshot tests"
 	@echo "  test-contract     API contract tests"
@@ -136,6 +137,7 @@ install-frontend:
 
 verify:
 	@echo "$(BLUE)Verifying installation...$(NC)"
+	# Requires Python 3.12 — aligned with pyproject.toml (python_version=3.12) and .python-version (3.12.10)
 	@python -c "import sys; assert sys.version_info >= (3, 12)" && echo "$(GREEN)✓ Python 3.12+$(NC)"
 	@python -c "import starboard_core" && echo "$(GREEN)✓ starboard-core$(NC)"
 	@python -c "import starboard_log_parser" && echo "$(GREEN)✓ starboard-log-parser$(NC)"
