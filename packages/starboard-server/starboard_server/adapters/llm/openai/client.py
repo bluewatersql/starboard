@@ -336,20 +336,6 @@ class OpenAIProvider(BaseLLMClient):
 
         logger.info(f"llm_{call_type}_completed", **log_data)
 
-    def _handle_api_errors(self, trace_id: str, phase: str | None = None) -> None:
-        """
-        Context manager-friendly error handler for API calls.
-
-        This is a helper to be used in try-except blocks for consistent error handling.
-
-        Args:
-            trace_id: Request correlation ID
-            phase: Optional phase name for context
-        """
-        # This is a documentation method - actual error handling is inline
-        # Kept for reference but not called directly
-        pass
-
     def _get_model_for_phase(self, phase: str | None) -> str:
         """
         Get appropriate model based on phase.

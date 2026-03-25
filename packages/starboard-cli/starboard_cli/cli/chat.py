@@ -261,8 +261,12 @@ async def _stream_agent_response(
                     formatted_markdown = format_agent_report(
                         output["complete_report"]
                     )
-                except Exception:
-                    pass
+                except Exception as fmt_err:
+                    logger.warning(
+                        "report_format_failed",
+                        error=str(fmt_err),
+                        error_type=type(fmt_err).__name__,
+                    )
 
         elif isinstance(event, UserInputRequestEvent):
             console.print(

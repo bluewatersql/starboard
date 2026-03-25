@@ -294,6 +294,20 @@ class Container:
         if self._memory_store and hasattr(self._memory_store, "close"):
             await self._memory_store.close()
 
+        # Close foundation components
+        if self._reflexion_store is not None and hasattr(
+            self._reflexion_store, "close"
+        ):
+            await self._reflexion_store.close()  # type: ignore[union-attr]
+
+        if self._vector_store is not None and hasattr(self._vector_store, "close"):
+            await self._vector_store.close()  # type: ignore[union-attr]
+
+        if self._semantic_cache is not None and hasattr(
+            self._semantic_cache, "close"
+        ):
+            await self._semantic_cache.close()  # type: ignore[union-attr]
+
     @property
     def conversation_repo(self) -> ConversationRepository:
         """

@@ -22,8 +22,13 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, TypeVar
 
+import httpx
+
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
+
+# HTTP status codes that indicate permanent (non-retryable) errors.
+_PERMANENT_HTTP_STATUS_CODES: frozenset[int] = frozenset({400, 401, 403, 404, 405, 409, 422})
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +67,23 @@ def _get_databricks_executor(max_workers: int = 8) -> ThreadPoolExecutor:
             extra={"max_workers": max_workers},
         )
     return _databricks_executor
+
+
+def shutdown_databricks_executor(wait: bool = True) -> None:
+    """Shutdown the dedicated Databricks SDK thread pool.
+
+    Should be called during application shutdown to release thread resources.
+    Safe to call even when the pool has never been created.
+
+    Args:
+        wait: If True, wait for all pending futures to complete before
+              returning. Pass False for non-blocking shutdown.
+    """
+    global _databricks_executor
+    if _databricks_executor is not None:
+        _databricks_executor.shutdown(wait=wait)
+        _databricks_executor = None
+        logger.info("databricks_thread_pool_shutdown")
 
 
 async def run_databricks_sync(func: Callable[..., T], *args: object) -> T:  # noqa: UP047
@@ -196,6 +218,13 @@ class BaseService:
             try:
                 return await self._run_sync(func)
             except Exception as e:
+                # Do not retry permanent HTTP errors (400, 401, 403, 404, …)
+                if (
+                    isinstance(e, httpx.HTTPStatusError)
+                    and e.response.status_code in _PERMANENT_HTTP_STATUS_CODES
+                ):
+                    raise
+
                 last_error = e
                 if attempt < max_retries - 1:
                     delay = retry_delay * (2**attempt)
