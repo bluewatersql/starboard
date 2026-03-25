@@ -17,6 +17,7 @@ import { useUIStore } from "@/lib/store/uiStore";
 import { useSlashCommands } from "@/lib/hooks/useSlashCommands";
 import { MessageRole, MessageStatus } from "@/lib/types/api";
 import type { Message } from "@/lib/types/api";
+import type { FileAttachment as ApiFileAttachment } from "@/lib/types/generated-api";
 import { FileUploadButton, FileAttachment } from "./FileUploadButton";
 import { FileAttachmentChip } from "./FileAttachmentChip";
 
@@ -175,7 +176,7 @@ export function MessageInput({
         ? onSendMessage(pendingMessage, attachments)
         : api.sendMessage(conversationId, { 
             content: pendingMessage, 
-            attachments: attachments.length > 0 ? (attachments as any) : undefined
+            attachments: attachments.length > 0 ? (attachments as unknown as ApiFileAttachment[]) : undefined
           });
       
       sendPromise
@@ -228,7 +229,7 @@ export function MessageInput({
       } else {
         await api.sendMessage(conversationId, {
           content: displayContent,
-          attachments: attachments as any,
+          attachments: attachments as unknown as ApiFileAttachment[],
         });
       }
       
@@ -319,6 +320,8 @@ export function MessageInput({
       {/* Command Suggestions Popup */}
       {showCommands && commandSuggestions.length > 0 && (
         <Paper
+          role="listbox"
+          aria-label="Slash command suggestions"
           sx={{
             position: "absolute",
             bottom: "100%",
@@ -334,6 +337,8 @@ export function MessageInput({
             {commandSuggestions.map((cmd) => (
               <ListItemButton
                 key={cmd.name}
+                role="option"
+                aria-selected={message === cmd.name}
                 onClick={() => {
                   setMessage(cmd.name);
                   setShowCommands(false);
@@ -404,6 +409,7 @@ export function MessageInput({
           color="primary"
           onClick={handleSend}
           disabled={isDisabled || (!message.trim() && !attachedFile && !largeFileAttachment)}
+          aria-label="Send message"
           sx={{ mb: 0.5 }}
         >
           {sendMutation.isPending ? (

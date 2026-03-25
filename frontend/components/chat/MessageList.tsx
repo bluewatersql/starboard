@@ -277,6 +277,8 @@ export function MessageList({ conversationId, isNew = false }: MessageListProps)
   if (isLoading) {
     return (
       <Box
+        aria-live="polite"
+        aria-label="Loading messages"
         sx={{
           display: "flex",
           alignItems: "center",
@@ -295,6 +297,8 @@ export function MessageList({ conversationId, isNew = false }: MessageListProps)
   if (shouldShowWelcome) {
     return (
       <Box
+        aria-live="polite"
+        aria-label="Welcome screen"
         sx={{
           display: "flex",
           alignItems: "center",

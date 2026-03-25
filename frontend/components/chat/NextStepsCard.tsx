@@ -87,7 +87,7 @@ export default function NextStepsCard({ options, onSelectOption, disabled = fals
     onSelectOption(option);
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent, option: NextStepOption) => {
+  const handleKeyDown = (event: React.KeyboardEvent, option: NextStepOption) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleOptionClick(option);
@@ -126,7 +126,7 @@ export default function NextStepsCard({ options, onSelectOption, disabled = fals
               <Button
                 key={option.id}
                 onClick={() => handleOptionClick(option)}
-                onKeyPress={(e) => handleKeyPress(e, option)}
+                onKeyDown={(e) => handleKeyDown(e, option)}
                 disabled={disabled}
                 variant={isSelected ? 'contained' : 'outlined'}
                 color={color}

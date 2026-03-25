@@ -235,8 +235,8 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
   updateMessage: (conversationId, messageId, updates) =>
     set((state) => {
-      const timestamp = new Date().toISOString().substr(11, 12); // HH:MM:SS.mmm
-      
+      const timestamp = new Date().toISOString().substring(11, 23); // HH:MM:SS.mmm
+
       // Log when tool_calls or tool_positions are updated
       if (updates.tool_calls || updates.tool_positions) {
         logger.debug(`[${timestamp}] [updateMessage] Updating tools for ${messageId}:`, {
@@ -264,7 +264,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
   appendToMessage: (conversationId, messageId, content) =>
     set((state) => {
-      const timestamp = new Date().toISOString().substr(11, 12); // HH:MM:SS.mmm
+      const timestamp = new Date().toISOString().substring(11, 23); // HH:MM:SS.mmm
       logger.debug(`[${timestamp}] [appendToMessage] Adding content to ${messageId}:`, {
         contentLength: content?.length,
         contentPreview: content?.substring(0, 50),
