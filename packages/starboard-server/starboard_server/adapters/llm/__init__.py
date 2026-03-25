@@ -4,14 +4,14 @@ LLM client services.
 This package provides LLM clients for various providers (OpenAI, etc.).
 """
 
-from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING
 
 from starboard_server.adapters.llm.base import BaseLLMClient
 from starboard_server.adapters.llm.openai.client import OpenAIProvider
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
-    from starboard_server.infra.core.config import EnvConfig, get_config
+    from starboard_server.infra.core.config import EnvConfig
 
 logger = get_logger(__name__)
 
@@ -50,7 +50,7 @@ def create_llm_client(cfg: "EnvConfig | None" = None) -> BaseLLMClient:
         2. Ensure consistent initialization across the codebase
         3. Validate provider configuration before instantiation
     """
-    from starboard_server.infra.core.config import EnvConfig, get_config
+    from starboard_server.infra.core.config import get_config
 
     if cfg is None:
         cfg = get_config()

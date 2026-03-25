@@ -7,8 +7,9 @@ for all LLM-facing tool adapter classes.
 from __future__ import annotations
 
 import inspect
+from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
@@ -270,7 +271,7 @@ def _extract_param_doc(docstring: str, param_name: str) -> str | None:
     """
     lines = docstring.splitlines()
     in_args = False
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         stripped = line.strip()
         if stripped in ("Args:", "Arguments:"):
             in_args = True

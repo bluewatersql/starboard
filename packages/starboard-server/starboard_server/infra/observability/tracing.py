@@ -26,6 +26,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+
 def init_tracing(
     service_name: str = "starboard-server",
     otlp_endpoint: str | None = None,

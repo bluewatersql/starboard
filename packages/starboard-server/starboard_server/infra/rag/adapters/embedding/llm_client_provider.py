@@ -16,7 +16,7 @@ from starboard_server.adapters.llm import BaseLLMClient, create_llm_client
 from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
-    from starboard_server.infra.core.config import EnvConfig, get_config
+    from starboard_server.infra.core.config import EnvConfig
 
 logger = get_logger(__name__)
 

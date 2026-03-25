@@ -15,7 +15,6 @@ Usage:
 
 from __future__ import annotations
 
-from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -31,6 +30,7 @@ from starboard_server.adapters.databricks.services.users import UsersService
 from starboard_server.adapters.databricks.services.warehouses import WarehouseService
 from starboard_server.adapters.databricks.services.workspace import WorkspaceService
 from starboard_server.infra.core.config import EnvConfig, get_config
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import ConfigurationError
 
 if TYPE_CHECKING:
@@ -105,7 +105,7 @@ class AsyncDatabricksClient:
         self._sdk_client: WorkspaceClient | None = None
         self._cache: CacheManager | None = None
         self._http_client: httpx.AsyncClient | None = None
-        self._rest_client_instance = None  # Cached HTTPClient for REST API calls
+        self._rest_client_instance: Any = None
 
         # Services (lazy)
         self._sql_service: SQLService | None = None

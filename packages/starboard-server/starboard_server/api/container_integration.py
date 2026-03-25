@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 
-from starboard_server.infra import EnvConfig
+from starboard_server.infra.core.config import get_config
 from starboard_server.infra.core.container import Container
 from starboard_server.infra.observability.logging import get_logger
 

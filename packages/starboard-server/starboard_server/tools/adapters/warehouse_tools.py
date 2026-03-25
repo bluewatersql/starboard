@@ -14,13 +14,13 @@ from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability import ObservabilityContext
 from starboard_server.infra.observability.logging import get_logger
-from starboard_server.tools.adapters.base import tool_schema
 from starboard_server.services.context.transforms import (
     analyze_warehouse_queries,
     get_transformed,
     transform_query_history,
     transform_warehouse_configuration,
 )
+from starboard_server.tools.adapters.base import tool_schema
 
 if TYPE_CHECKING:
     from starboard_server.infra.observability.events import EventEmitter

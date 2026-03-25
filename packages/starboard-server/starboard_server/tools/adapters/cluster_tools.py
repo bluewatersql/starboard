@@ -9,9 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
-from starboard_server.tools.adapters.base import BaseToolAdapter, OutputFormat
 from starboard_server.services.context.transforms import (
     analyze_cluster_metrics,
     analyze_spark_logs,
@@ -20,6 +18,7 @@ from starboard_server.services.context.transforms import (
     transform_cluster_config,
     transform_cluster_events,
 )
+from starboard_server.tools.adapters.base import BaseToolAdapter, OutputFormat
 from starboard_server.tools.domain.cluster import ComputeResolver
 from starboard_server.tools.domain.cluster.fingerprint_builder import (
     build_cluster_fingerprint,
@@ -32,7 +31,7 @@ from starboard_server.tools.exceptions import (
 from starboard_server.tools.utils import extract_job_clusters
 
 if TYPE_CHECKING:
-    from starboard_server.services.context.provider import SharedContextProvider
+    pass
 
 logger = get_logger(__name__)
 
@@ -348,7 +347,7 @@ class ClusterTools(BaseToolAdapter):
             metrics_list = await analyze_cluster_metrics(self.provider, [cluster_id])
             if metrics_list:
                 metrics = metrics_list[0]
-        except Exception as e:
+        except Exception:
             logger.debug("Metrics unavailable for cluster {cluster_id}: {e}")
 
         # Build fingerprint from config and metrics
@@ -603,7 +602,7 @@ class ClusterTools(BaseToolAdapter):
                 return None
 
             return analyze_spark_logs(cluster_id, log_destination, raw=fmt == OutputFormat.RAW)
-        except Exception as e:
+        except Exception:
             logger.debug("Error fetching logs for cluster {cluster_id}: {e}")
             return None
 

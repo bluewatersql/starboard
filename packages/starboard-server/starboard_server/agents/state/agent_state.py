@@ -8,9 +8,10 @@ existing ones.
 
 from __future__ import annotations
 
-from starboard_server.infra.observability.logging import get_logger
 from dataclasses import dataclass, field, replace
 from typing import Any, Literal
+
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

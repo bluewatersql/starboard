@@ -7,10 +7,11 @@ The client uses a persistent async connection pool to improve performance
 by reusing TCP connections across multiple requests.
 """
 
-from starboard_server.infra.observability.logging import get_logger
 from typing import Any
 
 import httpx
+
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

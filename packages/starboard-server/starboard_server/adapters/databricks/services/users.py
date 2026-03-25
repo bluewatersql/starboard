@@ -5,10 +5,10 @@ This module provides async user operations for Databricks authentication.
 
 from __future__ import annotations
 
-from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 from starboard_server.adapters.databricks.services.base import BaseService
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
@@ -57,6 +57,6 @@ class UsersService(BaseService):
                 return None
 
             return await self._run_sync(_get_user)
-        except Exception as e:
+        except Exception:
             logger.error("Error getting current user: {e}")
             return None

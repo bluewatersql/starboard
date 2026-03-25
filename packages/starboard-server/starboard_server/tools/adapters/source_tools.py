@@ -325,10 +325,10 @@ class SourceTools:
         try:
             job_id_int = int(job_id)
             job_config = await self.databricks_api.jobs.get_job(job_id_int)
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError):
             logger.error("Invalid job_id format: {job_id}, error: {e}")
             return []
-        except Exception as e:
+        except Exception:
             logger.error("Failed to fetch job config for job_id={job_id}: {e}")
             return []
 
@@ -368,7 +368,7 @@ class SourceTools:
                     "source": source,
                 }
             logger.warning("Notebook {notebook_path} returned empty content")
-        except Exception as e:
+        except Exception:
             logger.warning("Failed to fetch notebook {notebook_path}: {e}")
 
         return None

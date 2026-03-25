@@ -9,12 +9,12 @@ This module provides async Unity Catalog operations for:
 
 from __future__ import annotations
 
-from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 import httpx
 
 from starboard_server.adapters.databricks.services.base import BaseService
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import DatabricksAPIError
 
 if TYPE_CHECKING:

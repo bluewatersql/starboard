@@ -9,7 +9,6 @@ Tests cover:
 """
 
 import structlog.testing
-
 from starboard_server.adapters.llm.openai.tokens import TokenBudget
 from starboard_server.agents.config.agent_config import (
     DEFAULT_TOKEN_BUDGETS,

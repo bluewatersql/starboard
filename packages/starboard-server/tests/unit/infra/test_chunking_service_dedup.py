@@ -5,8 +5,6 @@ TDD: Written before implementation.
 
 from __future__ import annotations
 
-import pytest
-
 from starboard_server.infra.rag.services.chunking_service import ChunkingService
 
 

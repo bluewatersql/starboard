@@ -78,7 +78,7 @@ class DatabricksSQLProvider(SQLQueryProvider):
             df = await self.api.sql.execute_polars(query)
             # Convert to list of dicts for protocol compatibility
             return df.to_dicts()
-        except Exception as e:
+        except Exception:
             logger.error("SQL execution failed: {e}", extra={"query": query[:200]})
             raise
 
@@ -99,7 +99,7 @@ class DatabricksSQLProvider(SQLQueryProvider):
         """
         try:
             return await self.api.sql.execute_polars(query)
-        except Exception as e:
+        except Exception:
             logger.error("SQL execution failed: {e}", extra={"query": query[:200]})
             raise
 

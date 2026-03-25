@@ -16,7 +16,7 @@ from starboard_core.repositories import (
 )
 
 from starboard_server.infra.core.cache_factory import CacheFactory
-from starboard_server.infra.core.config import EnvConfig, get_config
+from starboard_server.infra.core.config import EnvConfig
 from starboard_server.infra.core.namespaced_cache import NamespacedCache
 from starboard_server.infra.core.state_factory import (
     create_cache_store,

@@ -52,9 +52,20 @@ Usage::
 from __future__ import annotations
 
 # ---------------------------------------------------------------------------
-# Application factory
+# Adapters — Databricks
 # ---------------------------------------------------------------------------
-from starboard_server.main import create_app
+from starboard_server.adapters.databricks import AsyncDatabricksClient
+from starboard_server.adapters.databricks.async_sql_executor import AsyncSQLExecutor
+
+# ---------------------------------------------------------------------------
+# Adapters — LLM
+# ---------------------------------------------------------------------------
+from starboard_server.adapters.llm import create_llm_client
+
+# ---------------------------------------------------------------------------
+# Adapters — State / SQLite
+# ---------------------------------------------------------------------------
+from starboard_server.adapters.state.sqlite.state_store import SQLiteStateStore
 
 # ---------------------------------------------------------------------------
 # Agents / conversation
@@ -62,8 +73,6 @@ from starboard_server.main import create_app
 from starboard_server.agents.agent_factory import AgentFactory
 from starboard_server.agents.config.agent_config import AgentConfig
 from starboard_server.agents.conversation import MultiAgentConversationManager
-from starboard_server.agents.routing.intent_router import IntentRouter
-from starboard_server.agents.tools.tool_factory import create_tool_registry
 
 # ---------------------------------------------------------------------------
 # Streaming events
@@ -83,22 +92,8 @@ from starboard_server.agents.events import (
 # Report formatting
 # ---------------------------------------------------------------------------
 from starboard_server.agents.report_formatters import format_agent_report
-
-# ---------------------------------------------------------------------------
-# Adapters — Databricks
-# ---------------------------------------------------------------------------
-from starboard_server.adapters.databricks import AsyncDatabricksClient
-from starboard_server.adapters.databricks.async_sql_executor import AsyncSQLExecutor
-
-# ---------------------------------------------------------------------------
-# Adapters — LLM
-# ---------------------------------------------------------------------------
-from starboard_server.adapters.llm import create_llm_client
-
-# ---------------------------------------------------------------------------
-# Adapters — State / SQLite
-# ---------------------------------------------------------------------------
-from starboard_server.adapters.state.sqlite.state_store import SQLiteStateStore
+from starboard_server.agents.routing.intent_router import IntentRouter
+from starboard_server.agents.tools.tool_factory import create_tool_registry
 
 # ---------------------------------------------------------------------------
 # API utilities
@@ -106,6 +101,11 @@ from starboard_server.adapters.state.sqlite.state_store import SQLiteStateStore
 from starboard_server.api.conversation_state_manager import (
     InMemoryConversationStateManager,
 )
+
+# ---------------------------------------------------------------------------
+# Discovery
+# ---------------------------------------------------------------------------
+from starboard_server.discovery.engine import DiscoveryEngine, EngineConfig
 
 # ---------------------------------------------------------------------------
 # Config & logging
@@ -123,14 +123,14 @@ from starboard_server.infra.rag.domain.protocols import MultiCollectionStore
 from starboard_server.infra.rag.services.vector_store_factory import create_vector_store
 
 # ---------------------------------------------------------------------------
+# Application factory
+# ---------------------------------------------------------------------------
+from starboard_server.main import create_app
+
+# ---------------------------------------------------------------------------
 # Shared context
 # ---------------------------------------------------------------------------
 from starboard_server.services.context.provider import SharedContextProvider
-
-# ---------------------------------------------------------------------------
-# Discovery
-# ---------------------------------------------------------------------------
-from starboard_server.discovery.engine import DiscoveryEngine, EngineConfig
 
 
 def create_application(**kwargs):

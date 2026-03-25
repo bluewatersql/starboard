@@ -119,7 +119,7 @@ class LLMSQLGenerator:
         try:
             # Build prompt with RAG context
             prompt = self._build_prompt(
-                user_query=user_query,
+                _user_query=user_query,
                 intent_context=intent_context,
                 rag_context=rag_context,
                 previous_errors=previous_errors,
@@ -306,7 +306,7 @@ class LLMSQLGenerator:
 
     def _build_prompt(
         self,
-        user_query: str,
+        _user_query: str,
         intent_context: QueryIntentContext,
         rag_context: RAGContext,
         previous_errors: list[str] | None = None,
@@ -314,7 +314,7 @@ class LLMSQLGenerator:
         """Build prompt for LLM SQL generation (POC-style).
 
         Args:
-            user_query: Original user query
+            _user_query: Original user query (included in API for callers; sent as separate user message)
             intent_context: Classified intent and parameters
             rag_context: RAG context with tables, nuance, codebook, facets, learnings
             previous_errors: Validation errors from previous attempt (for reflexion)

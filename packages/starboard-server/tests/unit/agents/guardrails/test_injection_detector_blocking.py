@@ -6,12 +6,11 @@ TDD: These tests are written BEFORE the blocking mode implementation.
 from __future__ import annotations
 
 import pytest
-
 from starboard_server.agents.guardrails.injection_detector import (
     InjectionBlockedError,
     InjectionScanResult,
-    scan_for_injection,
     scan_and_block,
+    scan_for_injection,
 )
 
 

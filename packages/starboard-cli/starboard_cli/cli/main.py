@@ -33,24 +33,24 @@ from starboard_server.bootstrap import (
     AgentFactory,
     AsyncDatabricksClient,
     EnvConfig,
+    # Events
+    ErrorEvent,
+    FinalOutputEvent,
     InMemoryConversationStateManager,
     IntentRouter,
     LLMClientEmbeddingProvider,
     MultiAgentConversationManager,
     MultiCollectionStore,
     SharedContextProvider,
-    create_llm_client,
-    create_tool_registry,
-    create_vector_store,
-    get_config,
-    # Events
-    ErrorEvent,
-    FinalOutputEvent,
     StepCompleteEvent,
     ThinkingEvent,
     ToolEndEvent,
     ToolStartEvent,
     UserInputRequestEvent,
+    create_llm_client,
+    create_tool_registry,
+    create_vector_store,
+    get_config,
 )
 
 from starboard_cli.sessions.session_manager import SessionManager
@@ -1059,7 +1059,11 @@ async def run_discovery_mode(
         console: Rich console for output.
     """
     from rich.table import Table
-    from starboard_server.bootstrap import AsyncSQLExecutor, DiscoveryEngine, EngineConfig
+    from starboard_server.bootstrap import (
+        AsyncSQLExecutor,
+        DiscoveryEngine,
+        EngineConfig,
+    )
 
     console.print(
         "\n[bold blue]Starboard Workspace Discovery[/bold blue]\n"

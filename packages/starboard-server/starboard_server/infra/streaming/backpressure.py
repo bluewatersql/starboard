@@ -17,9 +17,10 @@ call ``put_nowait`` directly to avoid any blocking.
 from __future__ import annotations
 
 import asyncio
-from starboard_server.infra.observability.logging import get_logger
 from collections import deque
 from dataclasses import dataclass, field
+
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

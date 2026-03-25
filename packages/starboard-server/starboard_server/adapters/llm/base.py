@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from starboard_server.infra.observability.logging import get_logger
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
+
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from starboard_server.adapters.llm.openai.tokens import TokenBudget

@@ -6,13 +6,13 @@ This module provides async workspace and DBFS operations for Databricks.
 from __future__ import annotations
 
 import base64
-from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 from databricks.sdk.errors import NotFound
 from databricks.sdk.service.workspace import ExportFormat
 
 from starboard_server.adapters.databricks.services.base import BaseService
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import DatabricksAPIError
 
 if TYPE_CHECKING:

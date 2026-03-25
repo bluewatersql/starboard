@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
-from starboard_server.infra.observability.logging import get_logger
 from typing import Any
+
+from starboard_server.infra.observability.logging import get_logger
 
 # Try to import tiktoken for accurate token counting
 
@@ -161,7 +162,7 @@ class TokenBudget:
 
             # Fall back to cl100k_base (used by gpt-4, gpt-3.5-turbo, etc.)
             return tiktoken.get_encoding("cl100k_base")
-        except Exception as e:
+        except Exception:
             logger.debug("Failed to get tiktoken encoding: {e}")
             return None
 

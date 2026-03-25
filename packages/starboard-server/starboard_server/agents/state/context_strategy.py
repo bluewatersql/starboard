@@ -296,11 +296,7 @@ def _extract_working_memory_snapshot(wm: Any) -> dict[str, Any]:
     if metrics.get("user_constraints"):
         snapshot["user_constraints"] = metrics["user_constraints"]
 
-    facts = None
-    if isinstance(wm, dict):
-        facts = wm.get("facts")
-    else:
-        facts = getattr(wm, "facts", None)
+    facts = wm.get("facts") if isinstance(wm, dict) else getattr(wm, "facts", None)
 
     if facts:
         fact_list = list(facts) if not isinstance(facts, list) else facts

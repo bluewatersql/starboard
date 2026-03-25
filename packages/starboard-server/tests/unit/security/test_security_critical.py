@@ -19,14 +19,11 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import UTC, datetime
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 
 # =============================================================================
 # 1-3: SQL Injection — _format_value and _build_where_conditions
@@ -38,11 +35,11 @@ class TestFormatValueSQLInjection:
 
     @pytest.fixture
     def adapter(self):
+        from starboard_server.infra.storage.table_registry import TableRegistry
         from starboard_server.infra.storage.uc_adapter import (
             UCStorageAdapter,
             UCStorageConfig,
         )
-        from starboard_server.infra.storage.table_registry import TableRegistry
 
         config = UCStorageConfig(catalog="cat", schema="sch", warehouse_id="wh")
         registry = TableRegistry()
@@ -127,11 +124,11 @@ class TestBuildWhereConditionsInjection:
 
     @pytest.fixture
     def adapter(self):
+        from starboard_server.infra.storage.table_registry import TableRegistry
         from starboard_server.infra.storage.uc_adapter import (
             UCStorageAdapter,
             UCStorageConfig,
         )
-        from starboard_server.infra.storage.table_registry import TableRegistry
 
         config = UCStorageConfig(catalog="cat", schema="sch", warehouse_id="wh")
         registry = TableRegistry()
@@ -181,9 +178,9 @@ class TestAuthMiddleware401NoLeak:
     def _make_app_with_auth_error(self, error_message: str) -> FastAPI:
         """Build a minimal FastAPI app where auth raises AuthenticationError."""
         from fastapi import FastAPI
+        from starboard_server.domain.auth.exceptions import AuthenticationError
         from starboard_server.infra.auth.middleware import AuthMiddleware
         from starboard_server.infra.auth.service import AuthenticationService
-        from starboard_server.domain.auth.exceptions import AuthenticationError
 
         class FailingAuthService(AuthenticationService):
             async def get_current_user(self, request):
@@ -241,7 +238,7 @@ class TestDataEndpoint500NoLeak:
     def test_500_does_not_expose_error_str(self) -> None:
         """When QueryResultCache raises an unexpected error, 500 body must not include str(e)."""
         from fastapi import FastAPI
-        from starboard_server.api.data import router, get_cached_data
+        from starboard_server.api.data import router
         from starboard_server.api.dependencies import get_state_container
 
         app = FastAPI()
@@ -279,8 +276,6 @@ class TestSSEErrorSanitization:
 
     def test_sse_error_event_sanitized_in_production(self) -> None:
         """In production, SSE error event data.error.message must be generic."""
-        import asyncio
-        from unittest.mock import patch
 
         # Simulate what event_stream does in the except block
         # We call the internal error formatting logic with production flag
@@ -350,6 +345,7 @@ class TestConversationOwnershipVerification:
         # when the conversation does not belong to the requester.
         # This test checks that the service layer enforces ownership.
         import asyncio
+
         from starboard_server.services.feedback.feedback_service import FeedbackService
 
         mock_feedback_repo = AsyncMock()
@@ -385,8 +381,8 @@ class TestAuthMiddlewarePathMatching:
 
     def test_exclude_path_prefix_match(self) -> None:
         """Paths like /health/live/extra should also be excluded if /health/live is in list."""
-        from starboard_server.infra.auth.middleware import AuthMiddleware
         from fastapi import FastAPI
+        from starboard_server.infra.auth.middleware import AuthMiddleware
 
         call_count = {"n": 0}
 
@@ -430,9 +426,9 @@ class TestAuthMiddlewarePathMatching:
 
     def test_non_excluded_path_calls_auth(self) -> None:
         """Non-excluded paths must go through auth."""
-        from starboard_server.infra.auth.middleware import AuthMiddleware
-        from starboard_server.domain.auth.exceptions import AuthenticationError
         from fastapi import FastAPI
+        from starboard_server.domain.auth.exceptions import AuthenticationError
+        from starboard_server.infra.auth.middleware import AuthMiddleware
 
         class AlwaysFailAuth:
             async def get_current_user(self, request):
@@ -534,12 +530,12 @@ class TestDataEndpointRateLimiting:
 
     def test_rate_limit_decorator_applied(self) -> None:
         """get_cached_data must have a rate limit applied."""
-        from starboard_server.api.data import get_cached_data
-
         # Check the endpoint function has rate limit metadata or decorator
         # slowapi decorators add __wrapped__ or the function has _rate_limit attribute
         # We verify by checking either the decorator chain or module-level limit config
         import inspect
+
+        from starboard_server.api.data import get_cached_data
         source = inspect.getsource(get_cached_data)
         # The function should either use @limiter.limit or call check_rate_limit
         has_rate_limiting = (
@@ -563,6 +559,7 @@ class TestSyncToEnvAtexitCleanup:
     def test_atexit_registered_on_sync(self) -> None:
         """Calling sync_to_env must register an atexit handler."""
         import atexit
+
         from starboard_server.infra.core.config import EnvConfig
 
         config = EnvConfig(
@@ -586,6 +583,7 @@ class TestSyncToEnvAtexitCleanup:
     def test_atexit_cleanup_removes_sensitive_vars(self) -> None:
         """The atexit handler must remove sensitive env vars from os.environ."""
         import atexit
+
         from starboard_server.infra.core.config import EnvConfig
 
         config = EnvConfig(
@@ -627,6 +625,7 @@ class TestDetectSecretsPreCommitHook:
     def test_detect_secrets_hook_present(self) -> None:
         """pre-commit config must include detect-secrets hook."""
         import pathlib
+
         import yaml
 
         root = pathlib.Path(__file__).parents[5]  # repo root

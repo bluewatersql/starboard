@@ -19,8 +19,8 @@ from starboard_core.domain.models.query import (
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import MissingDataError
-from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.services.context.transforms import get_explain_plan
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.query.analyzer import QueryAnalyzer
 from starboard_server.tools.domain.query.resolver import QueryResolver
 from starboard_server.tools.domain.query.transformers import (
@@ -65,7 +65,7 @@ class QueryTools(BaseToolAdapter):
         self.api = api
 
     @classmethod
-    def from_provider(
+    def from_provider(  # type: ignore[override]
         cls,
         api: AsyncDatabricksClient,
         provider: SharedContextProvider,

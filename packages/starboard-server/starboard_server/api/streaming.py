@@ -40,7 +40,7 @@ logger = get_logger(__name__)
 
 def _build_error_event_data(
     exc: Exception,
-    conversation_id: str,
+    _conversation_id: str,
     production: bool | None = None,
 ) -> dict:
     """Build SSE error event data, sanitizing details in production.

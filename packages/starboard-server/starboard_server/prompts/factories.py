@@ -68,9 +68,10 @@ def get_system_prompt(
 
     if domain not in prompts:
         raise ValueError(
-            "Unknown domain: {domain}. Must be one of: {keys}".format(
-                domain=domain, keys=list(prompts.keys())
-            )
+            "Unknown domain: "
+            + domain
+            + ". Must be one of: "
+            + str(list(prompts.keys()))
         )
 
     base_prompt = prompts[domain]
@@ -247,13 +248,15 @@ def format_available_artifacts(artifacts: list[dict] | None) -> str:
         attachment_id = artifact.get("attachment_id", "")
 
         lines.append(
-            "- **{filename}** ({detected_type}, {size_bytes:,} bytes)\n"
-            "  - attachment_id: `{attachment_id}`".format(
-                filename=filename,
-                detected_type=detected_type,
-                size_bytes=size_bytes,
-                attachment_id=attachment_id,
-            )
+            "- **"
+            + filename
+            + "** ("
+            + detected_type
+            + ", "
+            + str(size_bytes)
+            + " bytes)\n  - attachment_id: `"
+            + attachment_id
+            + "`"
         )
     return "\n".join(lines)
 
@@ -406,9 +409,10 @@ def get_prompt_builder_for_domain(
 
     if domain not in builders:
         raise ValueError(
-            "Unknown domain: {domain}. Must be one of: {keys}".format(
-                domain=domain, keys=list(builders.keys())
-            )
+            "Unknown domain: "
+            + domain
+            + ". Must be one of: "
+            + str(list(builders.keys()))
         )
 
     return builders[domain]

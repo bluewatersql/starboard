@@ -59,7 +59,6 @@ from starboard_server.mcp.tool_bridge import (
     PHASE_A_TOOLS,
     SAFE_MODE_ALLOWED_TOOLS,
     get_mcp_tools,
-    tool_metadata_to_mcp_schema,
 )
 
 if TYPE_CHECKING:

@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from starboard_server.tools.adapters.base import (
     BaseToolAdapter,
     OutputFormat,
@@ -21,7 +19,6 @@ from starboard_server.tools.adapters.base import (
     collect_tool_schemas,
     tool_schema,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures / helpers

@@ -89,6 +89,7 @@ class InMemoryStateStore:
             if hasattr(conv, key):
                 setattr(conv, key, value)
 
+        conv.updated_at = datetime.now(UTC)
 
     async def close(self) -> None:
         """Release resources (no-op for this store)."""
@@ -96,16 +97,13 @@ class InMemoryStateStore:
     async def connect(self) -> None:
         """Initialize connection (no-op for this store)."""
 
-    async def delete(self, key: str) -> bool:
+    async def delete(self, _key: str) -> bool:
         """Generic key-value delete (Protocol compliance)."""
         return False
 
-    async def get(self, key: str) -> object | None:
+    async def get(self, _key: str) -> object | None:
         """Generic key-value get (Protocol compliance)."""
         return None
 
-    async def set(self, key: str, value: object) -> None:
+    async def set(self, _key: str, _value: object) -> None:
         """Generic key-value set (Protocol compliance)."""
-
-
-        conv.updated_at = datetime.now(UTC)

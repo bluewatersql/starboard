@@ -9,10 +9,8 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
-
-from fastapi import Request
 
 from starboard_server.api.dependencies import ContainerDep
 from starboard_server.api.models import ErrorResponse

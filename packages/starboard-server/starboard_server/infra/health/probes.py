@@ -7,10 +7,11 @@ Each probe checks a specific dependency and returns a generic name
 from __future__ import annotations
 
 import asyncio
-from starboard_server.infra.observability.logging import get_logger
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
+
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -17,12 +17,13 @@ executor used by the rest of the application.
 from __future__ import annotations
 
 import asyncio
-from starboard_server.infra.observability.logging import get_logger
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, TypeVar
 
 import httpx
+
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient

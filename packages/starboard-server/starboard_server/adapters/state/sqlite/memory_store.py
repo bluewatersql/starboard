@@ -617,13 +617,13 @@ class SQLiteMemoryStore:
             metadata=metadata,
         )
 
-    async def delete(self, key: str) -> bool:
+    async def delete(self, _key: str) -> bool:
         """Generic key-value delete (Protocol compliance)."""
         return False
 
-    async def get(self, key: str) -> object | None:
+    async def get(self, _key: str) -> object | None:
         """Generic key-value get (Protocol compliance)."""
         return None
 
-    async def set(self, key: str, value: object) -> None:
+    async def set(self, _key: str, _value: object) -> None:
         """Generic key-value set (Protocol compliance)."""

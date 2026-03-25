@@ -39,7 +39,6 @@ from __future__ import annotations
 
 from typing import Any, TypedDict
 
-
 # ---------------------------------------------------------------------------
 # ToolErrorResponse — standard return shape for all error dicts
 # ---------------------------------------------------------------------------

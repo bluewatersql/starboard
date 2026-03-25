@@ -15,14 +15,13 @@ from openai import (
     AsyncOpenAI,
     RateLimitError,
 )
+from opentelemetry import trace as otel_trace
 from pydantic import BaseModel, ValidationError
 
 from starboard_server.adapters.llm.base import BaseLLMClient
 from starboard_server.adapters.llm.openai.tokens import TokenBudget
 from starboard_server.infra.core.config import EnvConfig
 from starboard_server.infra.observability.logging import get_logger, get_request_id
-from opentelemetry import trace as otel_trace
-
 from starboard_server.infra.observability.tracing import get_tracer
 from starboard_server.infra.reliability.circuit_breaker import (
     CircuitBreaker,

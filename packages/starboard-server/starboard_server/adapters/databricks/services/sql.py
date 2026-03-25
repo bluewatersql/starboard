@@ -11,7 +11,6 @@ Supports two execution modes:
 from __future__ import annotations
 
 import asyncio
-from starboard_server.infra.observability.logging import get_logger
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -21,6 +20,7 @@ import polars as pl
 import pyarrow as pa
 
 from starboard_server.adapters.databricks.services.base import BaseService
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import DatabricksAPIError
 
 if TYPE_CHECKING:

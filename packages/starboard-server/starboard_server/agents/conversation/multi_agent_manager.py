@@ -502,7 +502,9 @@ class MultiAgentConversationManager:
             tool_calls = []
             if "tool_calls" in api_metadata:
                 # Import ToolCall model
-                from starboard_server.domain.conversation.api_types import ToolCall as APIToolCall
+                from starboard_server.domain.conversation.api_types import (
+                    ToolCall as APIToolCall,
+                )
 
                 raw_tool_calls = api_metadata["tool_calls"]
                 for tc in raw_tool_calls:

@@ -740,9 +740,9 @@ class SQLiteVectorStore:
     async def connect(self) -> None:
         """Initialize connection (no-op for this store)."""
 
-    async def get(self, key: str) -> object | None:
+    async def get(self, _key: str) -> object | None:
         """Generic key-value get (Protocol compliance)."""
         return None
 
-    async def set(self, key: str, value: object) -> None:
+    async def set(self, _key: str, _value: object) -> None:
         """Generic key-value set (Protocol compliance)."""

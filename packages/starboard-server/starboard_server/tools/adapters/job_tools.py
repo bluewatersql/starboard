@@ -16,19 +16,18 @@ from starboard_core.domain.models.job import (
     TaskDependencyResult,
 )
 
-from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
-from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.services.context.transforms import (
     get_job_metadata,
     search_jobs_by_name,
 )
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.job.analyzer import JobAnalyzer
 from starboard_server.tools.domain.job.resolver import JobResolver
 from starboard_server.tools.utils import extract_job_clusters
 
 if TYPE_CHECKING:
-    from starboard_server.services.context.provider import SharedContextProvider
+    pass
 
 logger = get_logger(__name__)
 

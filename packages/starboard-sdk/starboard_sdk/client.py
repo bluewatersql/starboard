@@ -19,7 +19,7 @@ import asyncio
 import contextlib
 import time
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from starboard_core.domain.models.llm import OptimizationMode
 from starboard_server.bootstrap import (
@@ -33,9 +33,10 @@ from starboard_server.bootstrap import (
 from starboard_sdk.models import AgentResponse
 
 if TYPE_CHECKING:
-    from starboard_server.bootstrap import MultiAgentConversationManager, MultiCollectionStore
-
     from starboard_cli.sessions.session_manager import SessionInfo, SessionManager
+    from starboard_server.bootstrap import (
+        MultiAgentConversationManager,
+    )
 
 logger = get_logger(__name__)
 
@@ -145,7 +146,8 @@ class ConversationSession:
                         )
             finally:
                 with contextlib.suppress(Exception):
-                    await stream.aclose()
+                    if hasattr(stream, "aclose"):
+                        await stream.aclose()
 
         if timeout is not None:
             try:
@@ -167,7 +169,9 @@ class ConversationSession:
         ):
             with contextlib.suppress(Exception):
                 from starboard_server.bootstrap import format_agent_report
-                formatted_report = format_agent_report(final_output["complete_report"])
+                formatted_report = format_agent_report(
+                    cast(dict[str, Any], final_output["complete_report"])
+                )
 
         self._turn_count += 1
 

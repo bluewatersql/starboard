@@ -6,13 +6,13 @@ This module provides async cluster operations for Databricks compute clusters.
 from __future__ import annotations
 
 import datetime
-from starboard_server.infra.observability.logging import get_logger
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Any
 
 from databricks.sdk.errors import NotFound
 
 from starboard_server.adapters.databricks.services.base import BaseService
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import DatabricksAPIError
 
 if TYPE_CHECKING:

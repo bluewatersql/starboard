@@ -13,11 +13,9 @@ Covers:
 
 from __future__ import annotations
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Item 1: _rest_client caching
@@ -95,7 +93,6 @@ class TestThreadPoolExecutorShutdown:
 
         # After shutdown the global reference must be cleared so a fresh pool
         # is created on next use.
-        from starboard_server.adapters.databricks import services as svc_pkg
         from starboard_server.adapters.databricks.services import base as base_mod
 
         assert base_mod._databricks_executor is None
@@ -267,8 +264,8 @@ class TestCacheKeyConsistency:
     @pytest.mark.asyncio
     async def test_execute_sql_cache_key_includes_warehouse(self) -> None:
         """execute_sql cache key must include the warehouse_id."""
-        from starboard_server.adapters.databricks.client import AsyncDatabricksClient
         from starboard_server.adapters.databricks.cache.manager import CacheManager
+        from starboard_server.adapters.databricks.client import AsyncDatabricksClient
 
         client = AsyncDatabricksClient.__new__(AsyncDatabricksClient)
         client._cache = MagicMock(spec=CacheManager)
@@ -310,7 +307,6 @@ class TestRetryClassification:
     async def test_no_retry_on_404(self) -> None:
         """404 errors must not be retried — fail immediately."""
         import httpx
-
         from starboard_server.adapters.databricks.services.base import BaseService
 
         service = BaseService(MagicMock())
@@ -336,7 +332,6 @@ class TestRetryClassification:
     async def test_no_retry_on_403(self) -> None:
         """403 errors must not be retried."""
         import httpx
-
         from starboard_server.adapters.databricks.services.base import BaseService
 
         service = BaseService(MagicMock())
@@ -362,7 +357,6 @@ class TestRetryClassification:
     async def test_retry_on_429(self) -> None:
         """429 rate-limit errors must be retried (transient)."""
         import httpx
-
         from starboard_server.adapters.databricks.services.base import BaseService
 
         service = BaseService(MagicMock())
@@ -389,7 +383,6 @@ class TestRetryClassification:
     async def test_retry_on_503(self) -> None:
         """503 service unavailable must be retried (transient)."""
         import httpx
-
         from starboard_server.adapters.databricks.services.base import BaseService
 
         service = BaseService(MagicMock())
@@ -415,7 +408,6 @@ class TestRetryClassification:
     async def test_retry_on_network_error(self) -> None:
         """Network errors (ConnectError, TimeoutException) must be retried."""
         import httpx
-
         from starboard_server.adapters.databricks.services.base import BaseService
 
         service = BaseService(MagicMock())
@@ -469,6 +461,6 @@ class TestHTTPConnectionPooling:
         client._rest_client_instance = None
 
         instances = [client._rest_client for _ in range(5)]
-        assert len(set(id(i) for i in instances)) == 1, (
+        assert len({id(i) for i in instances}) == 1, (
             "All _rest_client accesses must return the same instance"
         )

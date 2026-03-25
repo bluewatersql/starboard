@@ -19,13 +19,14 @@ from __future__ import annotations
 import asyncio
 import fnmatch
 import hashlib
-from starboard_server.infra.observability.logging import get_logger
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any
 
 import polars as pl
+
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
