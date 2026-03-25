@@ -23,6 +23,13 @@ from starboard_server.mcp.agent_bridge import (
     MCPAgentExecutor,
 )
 from starboard_server.mcp.circuit_breaker_registry import MCPCircuitBreakerRegistry
+from starboard_server.mcp.composite_tools import (
+    COMPOSITE_TOOL_METADATA,
+    get_job_summary,
+    get_query_analysis,
+    get_table_profile,
+    get_workspace_overview,
+)
 from starboard_server.mcp.config import MCPServerConfig
 from starboard_server.mcp.exceptions import (
     AuthenticationError,
@@ -45,12 +52,14 @@ from starboard_server.mcp.observability import (
 from starboard_server.mcp.prompt_bridge import PROMPT_METADATA, build_prompt_messages
 from starboard_server.mcp.protocols import MCPAuthProvider, WorkspaceResolver
 from starboard_server.mcp.rate_limiter import MCPRateLimiter
+from starboard_server.mcp.resource_providers import StarboardResourceProvider
 from starboard_server.mcp.result_formatter import format_tool_result
 from starboard_server.mcp.sanitizer import MCPSanitizer
 from starboard_server.mcp.tool_bridge import (
     PHASE_A_TOOLS,
     SAFE_MODE_ALLOWED_TOOLS,
     get_mcp_tools,
+    tool_metadata_to_mcp_schema,
 )
 
 if TYPE_CHECKING:
@@ -90,6 +99,7 @@ class StarboardMCPServer:
         token_budget_tracker: TokenBudgetTracker | None = None,
         agent_factory: AgentFactory | None = None,
         intent_router: IntentRouter | None = None,
+        api_key: str | None = None,
     ) -> None:
         self._config = config
         self._workspace_resolver = workspace_resolver
@@ -103,6 +113,7 @@ class StarboardMCPServer:
         )
         self._agent_factory = agent_factory
         self._intent_router = intent_router
+        self._api_key = api_key
         self._agent_executor: MCPAgentExecutor | None = None
         if agent_factory is not None:
             self._agent_executor = MCPAgentExecutor(
@@ -111,6 +122,10 @@ class StarboardMCPServer:
                 token_budget_tracker=self._token_budget_tracker,
                 default_timeout=config.agent_timeout,
             )
+        self._resource_provider = StarboardResourceProvider(
+            config=config,
+            circuit_breakers=circuit_breakers,
+        )
         self._mcp = FastMCP(
             name="starboard-mcp",
             instructions=(
@@ -120,7 +135,9 @@ class StarboardMCPServer:
         )
         self._register_ping()
         self._register_tools()
+        self._register_composite_tools()
         self._register_agent_tools()
+        self._register_resources()
         self._register_prompts()
         logger.info(
             "mcp_server_initialized",
@@ -222,6 +239,86 @@ class StarboardMCPServer:
             name=tool_name,
             description=tool_def.get("description", ""),
         )
+
+    def _register_composite_tools(self) -> None:
+        """Register composite tools that chain multiple quick-lookup tools."""
+        _composite_fns = {
+            "get_job_summary": get_job_summary,
+            "get_query_analysis": get_query_analysis,
+            "get_table_profile": get_table_profile,
+            "get_workspace_overview": get_workspace_overview,
+        }
+        for tool_def in COMPOSITE_TOOL_METADATA:
+            self._register_single_composite_tool(tool_def, _composite_fns[tool_def["name"]])
+        logger.info("mcp_composite_tools_registered", count=len(COMPOSITE_TOOL_METADATA))
+
+    def _register_single_composite_tool(
+        self, tool_def: dict[str, Any], composite_fn: Any
+    ) -> None:
+        """Register one composite tool with its chained execution function."""
+        tool_name = tool_def["name"]
+
+        async def _handler(**kwargs: Any) -> str:
+            workspace_id = kwargs.pop("workspace_id", None) or self._config.default_workspace_id
+
+            async def _executor(inner_tool_name: str, **inner_kwargs: Any) -> dict[str, Any]:
+                """Adapter that routes composite sub-calls through _execute_tool."""
+                result_json = await self._execute_tool(
+                    inner_tool_name, {"workspace_id": workspace_id, **inner_kwargs}
+                )
+                parsed = json.loads(result_json)
+                if parsed.get("isError"):
+                    raise ExecutionError(
+                        parsed.get("message", "sub-tool failed"),
+                        code=parsed.get("code", "EXEC_FAILED"),
+                    )
+                return parsed.get("data", parsed)
+
+            try:
+                result = await composite_fn(_executor, **kwargs)
+                return json.dumps({"status": result.status, "data": result.data, "errors": result.errors})
+            except Exception as exc:
+                return json.dumps({"isError": True, "code": "EXEC_COMPOSITE_FAILED", "message": str(exc)})
+
+        _handler.__name__ = tool_name
+        _handler.__qualname__ = f"StarboardMCPServer._composite_handler.{tool_name}"
+        _handler.__doc__ = tool_def.get("description", "")
+
+        self._mcp.add_tool(
+            _handler,
+            name=tool_name,
+            description=tool_def.get("description", ""),
+        )
+
+    def _register_resources(self) -> None:
+        """Register MCP resources for catalog and health introspection."""
+        provider = self._resource_provider
+
+        for resource_meta in provider.list_resources():
+            uri = resource_meta["uri"]
+            name = resource_meta["name"]
+            description = resource_meta["description"]
+
+            # Capture uri in closure via factory function
+            def _make_handler(resource_uri: str) -> Any:
+                async def _handler() -> str:
+                    data = provider.read_resource(resource_uri)
+                    return json.dumps(data)
+
+                fn_name = resource_uri.replace("://", "_").replace("/", "_")
+                _handler.__name__ = fn_name
+                _handler.__qualname__ = f"StarboardMCPServer._resource_handler.{fn_name}"
+                return _handler
+
+            handler = _make_handler(uri)
+            self._mcp.resource(
+                uri,
+                name=name,
+                description=description,
+                mime_type="application/json",
+            )(handler)
+
+        logger.info("mcp_resources_registered", count=len(provider.list_resources()))
 
     def _register_agent_tools(self) -> None:
         """Register 8 domain agent tools from agent_bridge metadata."""
@@ -338,15 +435,20 @@ class StarboardMCPServer:
     ) -> str:
         """Execute the full tool pipeline with observability.
 
-        Flow: span-create → rate-limit → validate → resolve workspace → auth →
-              circuit-breaker(execute) → format → sanitize → log → return JSON.
+        Flow: span-create → rate-limit → validate-name → validate-inputs →
+              resolve-workspace → auth → circuit-breaker(execute) → format →
+              sanitize → log → return JSON.
+
+        Any exception is caught and returned as ``{"isError": true, ...}``
+        JSON so that MCP protocol framing is never broken.
 
         Args:
             tool_name: MCP tool name.
             arguments: Caller-supplied arguments (may include ``workspace_id``).
 
         Returns:
-            JSON string of the sanitised ``MCPToolResponse``.
+            JSON string of the sanitised ``MCPToolResponse`` or an error dict
+            with ``isError=true`` on failure.
         """
         session_id = str(arguments.pop("_session_id", "default"))
         workspace_id_arg: str | None = arguments.pop("workspace_id", None)
@@ -392,16 +494,39 @@ class StarboardMCPServer:
                 )
                 raise ExecutionError(f"Tool {tool_name!r} is not available.", code=code)
 
-            # 3. Resolve workspace
+            # 3. Validate tool inputs against inputSchema
+            validation_error = self._validate_tool_inputs(tool_name, arguments)
+            if validation_error is not None:
+                root_span.close(status="error", error_code="EXEC_INVALID_INPUT")
+                return json.dumps({
+                    "isError": True,
+                    "code": "EXEC_INVALID_INPUT",
+                    "message": validation_error,
+                })
+
+            # 4. Resolve workspace
             profile = None
             if self._workspace_resolver is not None:
                 resolve_span = root_span.child("mcp.workspace.resolve")
                 profile = self._workspace_resolver.resolve(workspace_id_arg)
                 resolve_span.close()
 
-            # 4. Authenticate
+            # 5. Authenticate — fail explicitly if workspace resolver is set
+            #    but auth provider is absent (misconfiguration, not silent pass-through)
             credentials = None
-            if self._auth_provider is not None and profile is not None:
+            if profile is not None:
+                if self._auth_provider is None:
+                    log_auth_failed(
+                        root_span,
+                        session_id=session_id,
+                        workspace_id=workspace_id_used,
+                    )
+                    raise AuthenticationError(
+                        "Workspace resolved but no auth_provider is configured. "
+                        "Cannot obtain credentials for workspace "
+                        f"{workspace_id_used!r}.",
+                        code="AUTH_NO_PROVIDER",
+                    )
                 auth_span = root_span.child("mcp.auth.credentials")
                 try:
                     credentials = self._auth_provider.get_credentials(profile)
@@ -415,7 +540,7 @@ class StarboardMCPServer:
                     )
                     raise
 
-            # 5. Execute via ToolRegistry through circuit breaker
+            # 6. Execute via ToolRegistry through circuit breaker
             if self._tool_registry is None:
                 raise ExecutionError(
                     "Tool registry not configured.", code="EXEC_NO_REGISTRY"
@@ -457,7 +582,7 @@ class StarboardMCPServer:
                     )
                 raise
 
-            # 6. Format result
+            # 7. Format result
             format_span = root_span.child("mcp.format.response")
             mcp_response = format_tool_result(
                 result,
@@ -476,7 +601,7 @@ class StarboardMCPServer:
                     workspace_id=workspace_id_used,
                 )
 
-            # 7. Sanitize
+            # 8. Sanitize
             sanitize_span = root_span.child("mcp.sanitize.output")
             response_dict = mcp_response.model_dump()
             if self._sanitizer is not None:
@@ -496,21 +621,57 @@ class StarboardMCPServer:
 
             return json.dumps(response_dict)
 
+        except (RateLimitError, ExecutionError):
+            # Let validation/rate-limit errors propagate — callers expect them.
+            raise
         except Exception as exc:
-            root_span.close(
-                status="error",
-                error_code=getattr(exc, "code", "UNKNOWN"),
-            )
+            error_code = getattr(exc, "code", "UNKNOWN")
+            root_span.close(status="error", error_code=error_code)
             log_tool_error(
                 root_span,
                 tool_name,
-                error_code=getattr(exc, "code", "UNKNOWN"),
+                error_code=error_code,
                 error_message=str(exc),
                 session_id=session_id,
                 workspace_id=workspace_id_used,
                 duration_ms=root_span.duration_ms,
             )
-            raise
+            # Return structured error JSON for unexpected exceptions.
+            # This preserves MCP protocol framing for runtime errors.
+            return json.dumps({
+                "isError": True,
+                "code": error_code,
+                "message": str(exc),
+            })
+
+    def _validate_tool_inputs(
+        self, tool_name: str, arguments: dict[str, Any]
+    ) -> str | None:
+        """Validate tool arguments against the tool's inputSchema.
+
+        Args:
+            tool_name: Registered MCP tool name.
+            arguments: Caller-supplied arguments (``workspace_id`` already popped).
+
+        Returns:
+            Human-readable error string if validation fails, ``None`` if valid.
+        """
+        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+
+        meta = ALL_TOOL_METADATA.get(tool_name)
+        if meta is None:
+            # Unknown tool — validation skipped, handled by name check upstream
+            return None
+
+        params = meta.get("parameters", {})
+        required_fields: list[str] = params.get("required", [])
+        missing = [f for f in required_fields if f not in arguments]
+        if missing:
+            return (
+                f"Tool {tool_name!r} missing required parameter(s): "
+                + ", ".join(repr(f) for f in missing)
+            )
+        return None
 
     # ------------------------------------------------------------------
     # Public helpers
