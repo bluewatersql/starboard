@@ -22,19 +22,18 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.agents.events import (
+from starboard_server.bootstrap import (
     ErrorEvent,
     FinalOutputEvent,
     StreamingEvent,
     ToolEndEvent,
+    get_logger,
 )
-from starboard_server.infra.observability.logging import get_logger
 
 from starboard_sdk.models import AgentResponse
 
 if TYPE_CHECKING:
-    from starboard_server.agents.conversation import MultiAgentConversationManager
-    from starboard_server.infra.rag.domain.protocols import MultiCollectionStore
+    from starboard_server.bootstrap import MultiAgentConversationManager, MultiCollectionStore
 
     from starboard_cli.sessions.session_manager import SessionInfo, SessionManager
 
@@ -167,9 +166,7 @@ class ConversationSession:
             and final_output["complete_report"]
         ):
             with contextlib.suppress(Exception):
-                from starboard_server.agents.report_formatters import (
-                    format_agent_report,
-                )
+                from starboard_server.bootstrap import format_agent_report
                 formatted_report = format_agent_report(final_output["complete_report"])
 
         self._turn_count += 1
@@ -292,7 +289,7 @@ class StarboardClient:
 
         from starboard_cli.cli.main import create_agent_manager
         from starboard_cli.sessions.session_manager import SessionManager
-        from starboard_server.infra.core.config import get_config
+        from starboard_server.bootstrap import get_config
 
         config = get_config()
 

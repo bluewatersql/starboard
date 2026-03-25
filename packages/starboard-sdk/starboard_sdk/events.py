@@ -23,7 +23,7 @@ Example::
 
 from __future__ import annotations
 
-from starboard_server.agents.events import (
+from starboard_server.bootstrap import (
     ErrorEvent,
     FinalOutputEvent,
     StreamingEvent,

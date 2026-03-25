@@ -28,12 +28,22 @@ import yaml
 from dotenv import load_dotenv
 from rich.console import Console
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.adapters.databricks import AsyncDatabricksClient
-from starboard_server.adapters.llm import create_llm_client
-from starboard_server.agents.agent_factory import AgentFactory
-from starboard_server.agents.config.agent_config import AgentConfig
-from starboard_server.agents.conversation import MultiAgentConversationManager
-from starboard_server.agents.events import (
+from starboard_server.bootstrap import (
+    AgentConfig,
+    AgentFactory,
+    AsyncDatabricksClient,
+    EnvConfig,
+    InMemoryConversationStateManager,
+    IntentRouter,
+    LLMClientEmbeddingProvider,
+    MultiAgentConversationManager,
+    MultiCollectionStore,
+    SharedContextProvider,
+    create_llm_client,
+    create_tool_registry,
+    create_vector_store,
+    get_config,
+    # Events
     ErrorEvent,
     FinalOutputEvent,
     StepCompleteEvent,
@@ -42,18 +52,6 @@ from starboard_server.agents.events import (
     ToolStartEvent,
     UserInputRequestEvent,
 )
-from starboard_server.agents.routing.intent_router import IntentRouter
-from starboard_server.agents.tools.tool_factory import create_tool_registry
-from starboard_server.api.conversation_state_manager import (
-    InMemoryConversationStateManager,
-)
-from starboard_server.infra.core.config import EnvConfig, get_config
-from starboard_server.infra.rag.adapters.embedding.llm_client_provider import (
-    LLMClientEmbeddingProvider,
-)
-from starboard_server.infra.rag.domain.protocols import MultiCollectionStore
-from starboard_server.infra.rag.services.vector_store_factory import create_vector_store
-from starboard_server.services.context.provider import SharedContextProvider
 
 from starboard_cli.sessions.session_manager import SessionManager
 
@@ -467,7 +465,7 @@ def _generate_markdown_report(output: dict[str, Any]) -> str:
     # If we have a complete_report (structured), use the formatter
     if "complete_report" in output and isinstance(output["complete_report"], dict):
         try:
-            from starboard_server.agents.report_formatters import format_agent_report
+            from starboard_server.bootstrap import format_agent_report
 
             formatted = format_agent_report(output["complete_report"])
             if formatted:
@@ -760,7 +758,7 @@ async def handle_streaming_events(
         and final_output["complete_report"]
     ):
         try:
-            from starboard_server.agents.report_formatters import format_agent_report
+            from starboard_server.bootstrap import format_agent_report
 
             formatted_markdown = format_agent_report(final_output["complete_report"])
         except Exception as e:
@@ -1061,8 +1059,7 @@ async def run_discovery_mode(
         console: Rich console for output.
     """
     from rich.table import Table
-    from starboard_server.adapters.databricks.async_sql_executor import AsyncSQLExecutor
-    from starboard_server.discovery.engine import DiscoveryEngine, EngineConfig
+    from starboard_server.bootstrap import AsyncSQLExecutor, DiscoveryEngine, EngineConfig
 
     console.print(
         "\n[bold blue]Starboard Workspace Discovery[/bold blue]\n"
