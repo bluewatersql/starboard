@@ -41,7 +41,7 @@ class TaskModel:
         Raises:
             KeyError: If required fields are missing from the data dict
         """
-        self.logger = logging.getLogger("Task")
+        self.logger = logging.getLogger(__name__)
 
         if is_json:
             self.initialize_from_json(data)

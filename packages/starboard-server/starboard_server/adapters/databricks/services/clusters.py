@@ -6,7 +6,7 @@ This module provides async cluster operations for Databricks compute clusters.
 from __future__ import annotations
 
 import datetime
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Any
 
@@ -18,8 +18,7 @@ from starboard_server.infra.reliability.exceptions import DatabricksAPIError
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class ClusterService(BaseService):
     """Async service for Databricks cluster operations.

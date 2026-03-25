@@ -2,7 +2,8 @@
 
 This module provides domain-specific exceptions for tool operations,
 designed to be caught at the adapter layer and converted to dicts
-for LLM responses.
+for LLM responses.  It also contains adapter-level exceptions that
+wrap Databricks SDK errors.
 
 Exception Hierarchy:
     ToolError (base)
@@ -14,6 +15,13 @@ Exception Hierarchy:
     ├── DataUnavailableError
     │   └── SparkLogsUnavailableError
     └── AccessDeniedError
+
+    AdapterError (base for adapter-level errors)
+    ├── DatabricksAPIError
+    ├── AdapterResourceNotFoundError
+    ├── PermissionDeniedError
+    ├── QueryExecutionError
+    └── ValidationError
 
 Usage:
     Service layer raises exceptions:
@@ -29,7 +37,30 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
+
+
+# ---------------------------------------------------------------------------
+# ToolErrorResponse — standard return shape for all error dicts
+# ---------------------------------------------------------------------------
+
+
+class ToolErrorResponse(TypedDict, total=False):
+    """Standard error response shape for tool adapter returns.
+
+    All tool adapters that return an error dict must use this shape.
+    Required keys: ``error``, ``error_code``.
+    Optional key: ``details``.
+    """
+
+    error: str
+    error_code: str
+    details: dict[str, Any] | None
+
+
+# ---------------------------------------------------------------------------
+# ToolError hierarchy
+# ---------------------------------------------------------------------------
 
 
 class ToolError(Exception):
@@ -45,7 +76,7 @@ class ToolError(Exception):
     Example:
         >>> error = ToolError("Something failed", details={"key": "value"})
         >>> error.to_dict()
-        {'found': False, 'error': 'Something failed', 'error_type': 'tool_error', ...}
+        {'found': False, 'error': 'Something failed', 'error_code': 'tool_error', ...}
     """
 
     def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
@@ -72,6 +103,7 @@ class ToolError(Exception):
         return {
             "found": False,
             "error": self.message,
+            "error_code": "tool_error",
             "error_type": "tool_error",
             "details": self.details,
         }
@@ -108,6 +140,7 @@ class ResourceNotFoundError(ToolError):
         return {
             "found": False,
             "error": self.message,
+            "error_code": f"{self.resource_type.lower()}_not_found",
             "error_type": f"{self.resource_type.lower()}_not_found",
             "resource_type": self.resource_type,
             "resource_id": self.resource_id,
@@ -136,6 +169,7 @@ class ClusterNotFoundError(ResourceNotFoundError):
         return {
             "found": False,
             "error": self.message,
+            "error_code": "cluster_not_found",
             "error_type": "cluster_not_found",
             "cluster_id": self.cluster_id,
         }
@@ -163,6 +197,7 @@ class WarehouseNotFoundError(ResourceNotFoundError):
         return {
             "found": False,
             "error": self.message,
+            "error_code": "warehouse_not_found",
             "error_type": "warehouse_not_found",
             "warehouse_id": self.warehouse_id,
         }
@@ -190,6 +225,7 @@ class JobNotFoundError(ResourceNotFoundError):
         return {
             "found": False,
             "error": self.message,
+            "error_code": "job_not_found",
             "error_type": "job_not_found",
             "job_id": self.job_id,
         }
@@ -217,6 +253,7 @@ class TableNotFoundError(ResourceNotFoundError):
         return {
             "found": False,
             "error": self.message,
+            "error_code": "table_not_found",
             "error_type": "table_not_found",
             "table_name": self.table_name,
         }
@@ -256,6 +293,7 @@ class DataUnavailableError(ToolError):
         return {
             "found": False,
             "error": self.message,
+            "error_code": "data_unavailable",
             "error_type": "data_unavailable",
             "reason": self.reason,
         }
@@ -295,6 +333,7 @@ class SparkLogsUnavailableError(DataUnavailableError):
         return {
             "found": False,
             "error": self.message,
+            "error_code": "spark_logs_unavailable",
             "error_type": "spark_logs_unavailable",
             "cluster_id": self.cluster_id,
             "reason": self.reason,
@@ -337,9 +376,10 @@ class AccessDeniedError(ToolError):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dict with access info."""
-        result = {
+        result: dict[str, Any] = {
             "found": False,
             "error": self.message,
+            "error_code": "access_denied",
             "error_type": "access_denied",
             "resource_type": self.resource_type,
             "resource_id": self.resource_id,
@@ -347,3 +387,122 @@ class AccessDeniedError(ToolError):
         if self.required_permission:
             result["required_permission"] = self.required_permission
         return result
+
+
+# ---------------------------------------------------------------------------
+# AdapterError hierarchy (formerly in tools/adapters/exceptions.py)
+# ---------------------------------------------------------------------------
+
+
+class AdapterError(Exception):
+    """Base exception for adapter-level errors."""
+
+    def __init__(self, message: str, *, details: dict[str, Any] | None = None) -> None:
+        """Initialize adapter error.
+
+        Args:
+            message: Error message.
+            details: Additional error context.
+        """
+        super().__init__(message)
+        self.details: dict[str, Any] = details or {}
+
+
+class DatabricksAPIError(AdapterError):
+    """Error communicating with Databricks API.
+
+    Covers:
+    - Network errors
+    - Authentication failures
+    - Rate limiting (429)
+    - Server errors (5xx)
+    """
+
+    pass
+
+
+class AdapterResourceNotFoundError(AdapterError):
+    """Requested resource does not exist (adapter-level).
+
+    Covers:
+    - Table not found
+    - Warehouse not found
+    - Job not found
+    - Cluster not found
+    """
+
+    pass
+
+
+class PermissionDeniedError(AdapterError):
+    """Insufficient permissions for requested operation.
+
+    Covers:
+    - Table access denied
+    - Warehouse access denied
+    - Admin-only operations
+    """
+
+    pass
+
+
+class QueryExecutionError(AdapterError):
+    """SQL query execution failed.
+
+    Covers:
+    - Syntax errors
+    - Schema mismatches
+    - Timeout errors
+    """
+
+    pass
+
+
+class ValidationError(AdapterError):
+    """Input validation failed.
+
+    This should be raised for invalid inputs that should fail fast.
+    Do NOT catch this - let it propagate.
+    """
+
+    pass
+
+
+def wrap_databricks_error(e: Exception) -> AdapterError:
+    """Wrap a Databricks SDK exception in an appropriate adapter error.
+
+    This function inspects the exception and wraps it in the most
+    specific error type available.
+
+    Args:
+        e: Original exception from Databricks SDK.
+
+    Returns:
+        Wrapped AdapterError subclass.
+    """
+    error_str = str(e).lower()
+
+    if "not found" in error_str or "does not exist" in error_str:
+        return AdapterResourceNotFoundError(
+            str(e), details={"original_type": type(e).__name__}
+        )
+
+    if "permission" in error_str or "access denied" in error_str or "403" in error_str:
+        return PermissionDeniedError(
+            str(e), details={"original_type": type(e).__name__}
+        )
+
+    if "rate limit" in error_str or "429" in error_str:
+        return DatabricksAPIError(
+            str(e), details={"original_type": type(e).__name__, "retryable": True}
+        )
+
+    if "timeout" in error_str or "504" in error_str:
+        return DatabricksAPIError(
+            str(e), details={"original_type": type(e).__name__, "retryable": True}
+        )
+
+    if "syntax error" in error_str or "parse error" in error_str:
+        return QueryExecutionError(str(e), details={"original_type": type(e).__name__})
+
+    return DatabricksAPIError(str(e), details={"original_type": type(e).__name__})

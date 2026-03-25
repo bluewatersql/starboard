@@ -34,7 +34,7 @@ from starboard_server.agents.tools.tool_registry import (
     ToolMetadata,
     ToolRegistry,
 )
-from starboard_server.infra.core.config import EnvConfig
+from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.services.context.provider import SharedContextProvider
@@ -143,7 +143,7 @@ def create_tool_registry(
 
     # Create analytics tools (FinOps, system queries)
     logger.debug("Instantiating analytics SQL tools")
-    env_config = EnvConfig.from_env()
+    env_config = get_config()
     llm_client = _ensure_llm_client(llm_client, env_config)
 
     # Create SQL executor and result cache
@@ -328,13 +328,13 @@ def create_tool_registry(
     )
 
     # Register each tool with its metadata and adapter
-    logger.debug(f"Registering {len(tool_mapping)} tools")
+    logger.debug("Registering {len(tool_mapping)} tools")
     registered_count = 0
 
     for tool_name, (tool_instance, method_name) in tool_mapping.items():
         try:
             if tool_name not in ALL_TOOL_METADATA:
-                logger.warning(f"No metadata found for tool: {tool_name}, skipping")
+                logger.warning("No metadata found for tool: {tool_name}, skipping")
                 continue
 
             metadata_dict = ALL_TOOL_METADATA[tool_name]

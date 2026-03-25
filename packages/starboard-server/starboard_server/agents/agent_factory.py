@@ -175,10 +175,10 @@ class AgentFactory:
 
         # Otherwise, use cached agent
         if domain not in self._agents:
-            logger.debug(f"Creating new {domain} agent (cache miss)")
+            logger.debug("Creating new {domain} agent (cache miss)")
             self._agents[domain] = self._create_agent(domain)
         else:
-            logger.debug(f"Reusing cached {domain} agent")
+            logger.debug("Reusing cached {domain} agent")
 
         return self._agents[domain]
 
@@ -208,7 +208,7 @@ class AgentFactory:
         Raises:
             ValueError: If domain is not recognized
         """
-        logger.debug(f"Creating {domain} agent", extra={"domain": domain})
+        logger.debug("Creating {domain} agent", extra={"domain": domain})
 
         # Step 0: Check for offline mode (disables Databricks API tools)
         offline_mode = (

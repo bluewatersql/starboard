@@ -6,17 +6,16 @@ for each instrumented connection pool (database, HTTP, Redis).
 
 from __future__ import annotations
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from collections.abc import Iterable
 from typing import Any
 
 from opentelemetry import metrics
 from opentelemetry.metrics import CallbackOptions, Observation
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 meter = metrics.get_meter("starboard.pools")
-
 
 class PoolMetricsCollector:
     """Collects and exports connection pool metrics via OpenTelemetry.

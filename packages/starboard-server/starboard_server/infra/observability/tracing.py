@@ -26,7 +26,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-
 def init_tracing(
     service_name: str = "starboard-server",
     otlp_endpoint: str | None = None,
@@ -51,7 +50,6 @@ def init_tracing(
 
     trace.set_tracer_provider(provider)
 
-
 def get_tracer(name: str) -> trace.Tracer:
     """Get a named tracer from the global TracerProvider.
 
@@ -62,7 +60,6 @@ def get_tracer(name: str) -> trace.Tracer:
         A Tracer instance for creating spans.
     """
     return trace.get_tracer(name)
-
 
 class TraceContextFilter(logging.Filter):
     """Logging filter that injects trace_id and span_id into log records.

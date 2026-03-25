@@ -6,7 +6,7 @@ from starboard_log_parser.parsing_models.exceptions import (
     ConfigurationException,
 )
 
-logger = logging.getLogger("ConfigValidation")
+logger = logging.getLogger(__name__)
 
 
 class ConfigValidation:

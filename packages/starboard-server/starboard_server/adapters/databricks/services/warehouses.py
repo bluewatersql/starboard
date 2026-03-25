@@ -6,7 +6,7 @@ This module provides async SQL warehouse operations for Databricks.
 from __future__ import annotations
 
 import datetime
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 from databricks.sdk.errors import NotFound
@@ -17,8 +17,7 @@ from starboard_server.infra.reliability.exceptions import DatabricksAPIError
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class WarehouseService(BaseService):
     """Async service for Databricks SQL warehouse operations.

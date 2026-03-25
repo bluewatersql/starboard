@@ -40,7 +40,7 @@ from starboard_log_parser.parsing_models.validation_event_data import (
 if TYPE_CHECKING:
     from starboard_log_parser.parsing_models.computers.registry import ComputerRegistry
 
-logger = logging.getLogger("SparkApplication")
+logger = logging.getLogger(__name__)
 
 
 class UnparsedLogSparkApplicationLoader(

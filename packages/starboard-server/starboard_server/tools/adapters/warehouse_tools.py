@@ -585,7 +585,7 @@ class WarehouseTools:
         )
 
         if config is None:
-            logger.debug(f"Warehouse not found: {warehouse_id}")
+            logger.debug("Warehouse not found: {warehouse_id}")
             return {
                 "found": False,
                 "warehouse_id": warehouse_id,
@@ -633,7 +633,7 @@ class WarehouseTools:
         metrics = await analyze_warehouse_queries(self.provider, warehouse_id)
 
         if metrics is None:
-            logger.debug(f"Warehouse metrics unavailable: {warehouse_id}")
+            logger.debug("Warehouse metrics unavailable: {warehouse_id}")
             return {
                 "found": False,
                 "warehouse_id": warehouse_id,
@@ -686,7 +686,7 @@ class WarehouseTools:
         )
 
         if metrics is None:
-            logger.debug(f"Query metrics unavailable: {statement_id}")
+            logger.debug("Query metrics unavailable: {statement_id}")
             return {
                 "found": False,
                 "statement_id": statement_id,

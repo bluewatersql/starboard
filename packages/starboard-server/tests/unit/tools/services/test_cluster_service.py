@@ -57,7 +57,7 @@ class TestClusterNotFoundError:
         """Test error message format."""
         error = ClusterNotFoundError("cluster-123")
         assert error.cluster_id == "cluster-123"
-        assert str(error) == "Cluster not found: cluster-123"
+        assert str(error) == "Cluster 'cluster-123' not found"
 
 
 class TestClusterServiceInit:

@@ -269,7 +269,7 @@ class SemanticCache:
         Example:
             >>> # Run periodic cleanup
             >>> removed = await cache.cleanup_expired()
-            >>> logger.info(f"Cleaned up {removed} expired entries")
+            >>> logger.info("Cleaned up {removed} expired entries")
         """
         # This would require scanning all entries
         # For now, we clean up expired entries lazily during get()

@@ -148,7 +148,7 @@ class QueryTools:
 
         # Validate we got SQL text
         if not result.sql_text:
-            logger.error(f"No valid SQL text found: {input_data.target}")
+            logger.error("No valid SQL text found: {input_data.target}")
             raise MissingDataError(
                 data_key="sql_text",
                 source="resolve_query",

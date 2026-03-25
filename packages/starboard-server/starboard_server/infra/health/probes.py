@@ -7,15 +7,14 @@ Each probe checks a specific dependency and returns a generic name
 from __future__ import annotations
 
 import asyncio
-import logging
+from starboard_server.infra.observability.logging import get_logger
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 PROBE_TIMEOUT_SECONDS = 5.0
-
 
 @dataclass(frozen=True)
 class ProbeResult:
@@ -26,7 +25,6 @@ class ProbeResult:
     latency_ms: float
     error: str | None = None
 
-
 @runtime_checkable
 class HealthProbe(Protocol):
     """Protocol for health check probes."""
@@ -35,7 +33,6 @@ class HealthProbe(Protocol):
     def name(self) -> str: ...
 
     async def check(self) -> ProbeResult: ...
-
 
 class DatabaseProbe:
     """Probes database connectivity via connection pool."""
@@ -68,7 +65,6 @@ class DatabaseProbe:
                 error=str(e),
             )
 
-
 class RedisProbe:
     """Probes Redis/cache connectivity."""
 
@@ -95,7 +91,6 @@ class RedisProbe:
                 latency_ms=(time.monotonic() - start) * 1000,
                 error=str(e),
             )
-
 
 class DatabricksProbe:
     """Probes Databricks compute connectivity."""
@@ -124,7 +119,6 @@ class DatabricksProbe:
                 error=str(e),
             )
 
-
 class LLMProviderProbe:
     """Probes LLM provider connectivity."""
 
@@ -151,7 +145,6 @@ class LLMProviderProbe:
                 latency_ms=(time.monotonic() - start) * 1000,
                 error=str(e),
             )
-
 
 class BackpressureProbe:
     """Probes internal queue / backpressure health.
@@ -194,7 +187,6 @@ class BackpressureProbe:
                 error=str(e),
             )
 
-
 async def check_with_timeout(
     probe: HealthProbe, timeout_seconds: float = PROBE_TIMEOUT_SECONDS
 ) -> ProbeResult:
@@ -208,7 +200,6 @@ async def check_with_timeout(
             latency_ms=timeout_seconds * 1000,
             error="timeout",
         )
-
 
 class HealthCheckRunner:
     """Runs all health probes concurrently and aggregates results."""

@@ -476,7 +476,7 @@ class OpenAIProvider(BaseLLMClient):
             return
 
         normalized = self._normalize_usage(usage)
-        logger.debug(f"LLM USAGE: {normalized}")
+        logger.debug("LLM USAGE: {normalized}")
         self.__aggregate_token_usage(normalized)
 
     def __aggregate_token_usage(self, usage: dict[str, Any]) -> None:

@@ -8,7 +8,7 @@ Tests cover:
 - Exhaustion log at 100% budget
 """
 
-import logging
+import structlog.testing
 
 from starboard_server.adapters.llm.openai.tokens import TokenBudget
 from starboard_server.agents.config.agent_config import (
@@ -65,40 +65,40 @@ class TestTokenBudgetEnforcement:
 class TestTokenBudgetWarningThresholds:
     """Tests for 80% warning and 100% exhaustion logging."""
 
-    def test_warning_at_80_percent(self, caplog):
+    def test_warning_at_80_percent(self):
         budget = TokenBudget(session_cap_tokens=1000, enforced=True)
 
-        with caplog.at_level(logging.WARNING):
+        with structlog.testing.capture_logs() as logs:
             # Charge 800 tokens (80%)
             budget.charge(
                 "analysis", "x" * 3200, "", prompt_tokens=800, completion_tokens=0
             )
 
-        assert any("budget_warning" in record.message for record in caplog.records)
+        assert any("budget_warning" in log.get("event", "") for log in logs)
 
-    def test_exhaustion_at_100_percent(self, caplog):
+    def test_exhaustion_at_100_percent(self):
         budget = TokenBudget(session_cap_tokens=1000, enforced=True)
 
-        with caplog.at_level(logging.WARNING):
+        with structlog.testing.capture_logs() as logs:
             # Charge 1000 tokens (100%)
             budget.charge(
                 "analysis", "x" * 4000, "", prompt_tokens=1000, completion_tokens=0
             )
 
-        assert any("budget_exhausted" in record.message for record in caplog.records)
+        assert any("budget_exhausted" in log.get("event", "") for log in logs)
 
-    def test_no_warning_below_80_percent(self, caplog):
+    def test_no_warning_below_80_percent(self):
         budget = TokenBudget(session_cap_tokens=1000, enforced=True)
 
-        with caplog.at_level(logging.WARNING):
+        with structlog.testing.capture_logs() as logs:
             # Charge 700 tokens (70%)
             budget.charge(
                 "analysis", "x" * 2800, "", prompt_tokens=700, completion_tokens=0
             )
 
         budget_warnings = [
-            r
-            for r in caplog.records
-            if "budget_warning" in r.message or "budget_exhausted" in r.message
+            log
+            for log in logs
+            if "budget_warning" in log.get("event", "") or "budget_exhausted" in log.get("event", "")
         ]
         assert len(budget_warnings) == 0

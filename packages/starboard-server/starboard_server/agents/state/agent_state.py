@@ -8,12 +8,11 @@ existing ones.
 
 from __future__ import annotations
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 @dataclass(frozen=True)
 class Message:
@@ -103,7 +102,6 @@ class Message:
             tool_call_id=data.get("tool_call_id"),
             metadata=data.get("metadata", {}),
         )
-
 
 @dataclass(frozen=True)
 class WorkingMemory:
@@ -355,7 +353,6 @@ class WorkingMemory:
             user_context=tuple(data.get("user_context", [])),
             clarifications=clarifications,
         )
-
 
 @dataclass(frozen=True)
 class AgentState:
@@ -648,7 +645,6 @@ class AgentState:
         # Get the last 'window' failures
         recent = self.failed_tool_calls[-window:] if self.failed_tool_calls else ()
         return sum(1 for name, _ in recent if name == tool_name)
-
 
 @dataclass(frozen=True)
 class AgentOutput:

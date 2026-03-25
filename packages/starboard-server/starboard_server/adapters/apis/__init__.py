@@ -8,10 +8,10 @@ Note:
     Use `AsyncDatabricksClient` for all new code.
 """
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.adapters.apis.http_client import HTTPClient
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 __all__ = ["HTTPClient"]

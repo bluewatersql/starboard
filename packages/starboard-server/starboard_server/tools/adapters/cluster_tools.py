@@ -250,7 +250,7 @@ class ClusterTools:
             >>> if config["found"]:
             ...     print(config["config"]["name"])
         """
-        logger.debug(f"Fetching configuration for cluster: {cluster_id}")
+        logger.debug("Fetching configuration for cluster: {cluster_id}")
 
         config = await get_transformed(
             self.provider,
@@ -260,7 +260,7 @@ class ClusterTools:
         )
 
         if not config:
-            logger.debug(f"Cluster not found: {cluster_id}")
+            logger.debug("Cluster not found: {cluster_id}")
             return ClusterNotFoundError(cluster_id).to_dict()
 
         return {
@@ -284,7 +284,7 @@ class ClusterTools:
             >>> if events["found"]:
             ...     print(f"Found {len(events['events']['events'])} events")
         """
-        logger.debug(f"Fetching events for cluster: {cluster_id}")
+        logger.debug("Fetching events for cluster: {cluster_id}")
 
         events = await get_transformed(
             self.provider,
@@ -294,7 +294,7 @@ class ClusterTools:
         )
 
         if not events:
-            logger.debug(f"Cluster events not found: {cluster_id}")
+            logger.debug("Cluster events not found: {cluster_id}")
             return ClusterNotFoundError(cluster_id).to_dict()
 
         return {
@@ -321,12 +321,12 @@ class ClusterTools:
             >>> if metrics["found"]:
             ...     print(f"CPU: {metrics['metrics']['cpu_utilization']}%")
         """
-        logger.debug(f"Fetching metrics for cluster: {cluster_id}")
+        logger.debug("Fetching metrics for cluster: {cluster_id}")
 
         metrics_list = await analyze_cluster_metrics(self.provider, [cluster_id])
 
         if not metrics_list:
-            logger.debug(f"Cluster metrics unavailable: {cluster_id}")
+            logger.debug("Cluster metrics unavailable: {cluster_id}")
             return {
                 "found": False,
                 "cluster_id": cluster_id,
@@ -364,7 +364,7 @@ class ClusterTools:
             ...     for risk in health['health']['risks']:
             ...         print(f"  - {risk['title']}")
         """
-        logger.debug(f"Analyzing health for cluster: {cluster_id}")
+        logger.debug("Analyzing health for cluster: {cluster_id}")
 
         # Get cluster configuration (required)
         config = await get_transformed(
@@ -375,7 +375,7 @@ class ClusterTools:
         )
 
         if not config:
-            logger.debug(f"Cluster not found: {cluster_id}")
+            logger.debug("Cluster not found: {cluster_id}")
             return ClusterNotFoundError(cluster_id).to_dict()
 
         # Get metrics (optional - may not be available for terminated clusters)
@@ -385,7 +385,7 @@ class ClusterTools:
             if metrics_list:
                 metrics = metrics_list[0]
         except Exception as e:
-            logger.debug(f"Metrics unavailable for cluster {cluster_id}: {e}")
+            logger.debug("Metrics unavailable for cluster {cluster_id}: {e}")
 
         # Build fingerprint from config and metrics
         fingerprint = build_cluster_fingerprint(config, metrics=metrics)
@@ -505,7 +505,7 @@ class ClusterTools:
             On success: {"found": True, "cluster_id": "...", "logs": {...}}
             On failure: {"found": False, ...}
         """
-        logger.debug(f"Fetching Spark logs for cluster: {cluster_id}")
+        logger.debug("Fetching Spark logs for cluster: {cluster_id}")
 
         # Get cluster config to find log destination
         config = await get_transformed(
@@ -516,12 +516,12 @@ class ClusterTools:
         )
 
         if not config:
-            logger.debug(f"Cluster not found: {cluster_id}")
+            logger.debug("Cluster not found: {cluster_id}")
             return ClusterNotFoundError(cluster_id).to_dict()
 
         # Check if logging is configured
         if not ComputeResolver.is_logging_configured(config):
-            logger.debug(f"Logging not configured for cluster: {cluster_id}")
+            logger.debug("Logging not configured for cluster: {cluster_id}")
             return SparkLogsUnavailableError(
                 cluster_id=cluster_id,
                 reason="Cluster logging is not configured",
@@ -530,7 +530,7 @@ class ClusterTools:
         # Extract log destination
         log_destination = ComputeResolver.extract_log_destination(config)
         if not log_destination:
-            logger.debug(f"No log destination found for cluster: {cluster_id}")
+            logger.debug("No log destination found for cluster: {cluster_id}")
             return SparkLogsUnavailableError(
                 cluster_id=cluster_id,
                 reason="No log destination configured",
@@ -540,7 +540,7 @@ class ClusterTools:
         logs = analyze_spark_logs(cluster_id, log_destination, raw=raw)
 
         if logs is None:
-            logger.debug(f"Spark logs not found for cluster: {cluster_id}")
+            logger.debug("Spark logs not found for cluster: {cluster_id}")
             return SparkLogsUnavailableError(
                 cluster_id=cluster_id,
                 reason="Logs not found at configured destination",
@@ -579,12 +579,12 @@ class ClusterTools:
         )
 
         if not job_metadata:
-            logger.debug(f"No job metadata found for job: {job_id}")
+            logger.debug("No job metadata found for job: {job_id}")
             return None
 
         job_clusters = extract_job_clusters(job_metadata.get("runs", []))
         if not job_clusters:
-            logger.debug(f"No clusters found in job runs for job: {job_id}")
+            logger.debug("No clusters found in job runs for job: {job_id}")
             return None
 
         # Multi-run mode: fetch logs for multiple clusters
@@ -599,7 +599,7 @@ class ClusterTools:
             cluster_id = cluster_entry["cluster_id"]
             logs = await self._try_fetch_logs_for_cluster(cluster_id, raw=raw)
             if logs is not None:
-                logger.debug(f"Found Spark logs from cluster {cluster_id}")
+                logger.debug("Found Spark logs from cluster {cluster_id}")
                 return logs
 
         logger.debug(
@@ -640,7 +640,7 @@ class ClusterTools:
 
             return analyze_spark_logs(cluster_id, log_destination, raw=raw)
         except Exception as e:
-            logger.debug(f"Error fetching logs for cluster {cluster_id}: {e}")
+            logger.debug("Error fetching logs for cluster {cluster_id}: {e}")
             return None
 
     async def _fetch_spark_logs_multi_run(
@@ -674,6 +674,6 @@ class ClusterTools:
                         "logs": logs,
                     }
                 )
-                logger.debug(f"Fetched Spark logs for cluster: {cluster_id}")
+                logger.debug("Fetched Spark logs for cluster: {cluster_id}")
 
         return {"runs": logs_list, "total_runs": len(logs_list)}

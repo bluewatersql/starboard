@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
@@ -12,8 +12,7 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from starboard_server.adapters.llm.openai.tokens import TokenBudget
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class BaseLLMClient(ABC):
     """Abstract base class for LLM client implementations."""

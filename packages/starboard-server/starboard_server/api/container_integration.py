@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     try:
         # Startup
         logger.debug("initializing_container")
-        config = EnvConfig.from_env()
+        config = get_config()
         config.validate_config()
 
         _container = Container(config)

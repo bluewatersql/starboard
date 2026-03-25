@@ -18,7 +18,7 @@ from starboard_log_parser.parsing_models.exceptions import (
     LogSubmissionException,
 )
 
-logger = logging.getLogger("Loaders")
+logger = logging.getLogger(__name__)
 
 FILE_SKIP_PATTERNS = [".DS_Store".lower(), "__MACOSX".lower(), "/."]
 

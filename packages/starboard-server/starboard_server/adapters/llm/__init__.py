@@ -4,19 +4,18 @@ LLM client services.
 This package provides LLM clients for various providers (OpenAI, etc.).
 """
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING
 
 from starboard_server.adapters.llm.base import BaseLLMClient
 from starboard_server.adapters.llm.openai.client import OpenAIProvider
 
 if TYPE_CHECKING:
-    from starboard_server.infra.core.config import EnvConfig
+    from starboard_server.infra.core.config import EnvConfig, get_config
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 __all__ = ["BaseLLMClient", "OpenAIProvider", "create_llm_client"]
-
 
 def create_llm_client(cfg: "EnvConfig | None" = None) -> BaseLLMClient:
     """
@@ -35,7 +34,7 @@ def create_llm_client(cfg: "EnvConfig | None" = None) -> BaseLLMClient:
         ValueError: If the provider is not supported or configuration is invalid.
 
     Example:
-        >>> from starboard_server.infra.core.config import EnvConfig
+        >>> from starboard_server.infra.core.config import EnvConfig, get_config
         >>> config = EnvConfig.from_env()
         >>> client = create_llm_client(config)
         >>> # Use client for LLM operations
@@ -51,10 +50,10 @@ def create_llm_client(cfg: "EnvConfig | None" = None) -> BaseLLMClient:
         2. Ensure consistent initialization across the codebase
         3. Validate provider configuration before instantiation
     """
-    from starboard_server.infra.core.config import EnvConfig
+    from starboard_server.infra.core.config import EnvConfig, get_config
 
     if cfg is None:
-        cfg = EnvConfig.from_env()
+        cfg = get_config()
 
     provider = cfg.llm_provider.lower() if cfg.llm_provider else "openai"
 

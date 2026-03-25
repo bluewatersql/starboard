@@ -373,7 +373,7 @@ class ToolResult:
 
         # Warn if both content and error are empty
         if not self.content and not self.error:
-            logger.warning(f"ToolResult for {self.tool_name} has no content or error")
+            logger.warning("ToolResult for {self.tool_name} has no content or error")
 
     def is_error(self) -> bool:
         """

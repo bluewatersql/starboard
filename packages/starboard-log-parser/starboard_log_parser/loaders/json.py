@@ -23,7 +23,7 @@ RawJSONBlobDataLoader = TypeVar(
     HTTPFileBlobDataLoader,
 )
 
-logger = logging.getLogger("JSONLoaders")
+logger = logging.getLogger(__name__)
 
 
 class JSONBlobDataLoader(BaseDataLoader):
