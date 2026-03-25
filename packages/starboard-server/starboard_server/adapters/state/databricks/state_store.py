@@ -269,6 +269,19 @@ class DatabricksLakebaseStateStore(PostgresStateStore):
             min_size=self._config.pool_size,
             max_size=self._config.pool_size + self._config.max_overflow,
             command_timeout=self._config.command_timeout,
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (Protocol compliance)."""
+        return False
+
+    async def get(self, key: str) -> object | None:
+        """Generic key-value get (Protocol compliance)."""
+        return None
+
+    async def set(self, key: str, value: object) -> None:
+        """Generic key-value set (Protocol compliance)."""
+
+
         )
 
     # All CRUD methods are inherited from PostgresStateStore

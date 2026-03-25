@@ -125,3 +125,4 @@ packages/starboard-server/experiment/
 
 # Git hooks (local only)
 .githooks/
+.claude/worktrees/

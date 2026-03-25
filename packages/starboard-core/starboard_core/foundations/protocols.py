@@ -32,6 +32,22 @@ class VectorStore(Protocol):
         >>> results = await store.search(query_embedding, top_k=5)
     """
 
+    async def connect(self) -> None:
+        """Initialize connection to the backing store."""
+        ...
+
+    async def close(self) -> None:
+        """Release resources and close connections."""
+        ...
+
+    async def get(self, key: str) -> Any | None:
+        """Generic key-value get (for Protocol compliance)."""
+        ...
+
+    async def set(self, key: str, value: Any) -> None:
+        """Generic key-value set (for Protocol compliance)."""
+        ...
+
     async def initialize(self) -> None:
         """Initialize the vector store (create tables, load extensions, etc.).
 
@@ -121,6 +137,26 @@ class ReflexionStore(Protocol):
         >>> await store.save_learning(learning)
         >>> relevant = await store.search_learnings("how to optimize queries", top_k=5)
     """
+
+    async def connect(self) -> None:
+        """Initialize connection to the backing store."""
+        ...
+
+    async def close(self) -> None:
+        """Release resources and close connections."""
+        ...
+
+    async def get(self, key: str) -> Any | None:
+        """Generic key-value get (for Protocol compliance)."""
+        ...
+
+    async def set(self, key: str, value: Any) -> None:
+        """Generic key-value set (for Protocol compliance)."""
+        ...
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (for Protocol compliance)."""
+        ...
 
     async def initialize(self) -> None:
         """Initialize the reflexion store (create tables, indexes, etc.).

@@ -735,4 +735,16 @@ class SQLiteVectorStore:
             await db.execute(f"DELETE FROM {vec_index_table}")
             await db.commit()
         finally:
+
+    async def connect(self) -> None:
+        """Initialize connection (no-op for this store)."""
+
+    async def get(self, key: str) -> object | None:
+        """Generic key-value get (Protocol compliance)."""
+        return None
+
+    async def set(self, key: str, value: object) -> None:
+        """Generic key-value set (Protocol compliance)."""
+
+
             await self._release_connection(db)

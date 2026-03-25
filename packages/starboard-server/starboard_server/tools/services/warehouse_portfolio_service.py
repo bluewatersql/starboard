@@ -63,6 +63,28 @@ class SLOConfigStore(Protocol):
 
     async def save_slo_config(self, config: SLOConfig) -> None:
         """Save SLO configuration for a warehouse."""
+
+    async def close(self) -> None:
+        """Release resources and close connections."""
+        ...
+
+    async def connect(self) -> None:
+        """Initialize connection to the backing store."""
+        ...
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (Protocol compliance)."""
+        ...
+
+    async def get(self, key: str) -> object | None:
+        """Generic key-value get (Protocol compliance)."""
+        ...
+
+    async def set(self, key: str, value: object) -> None:
+        """Generic key-value set (Protocol compliance)."""
+        ...
+
+
         ...
 
 

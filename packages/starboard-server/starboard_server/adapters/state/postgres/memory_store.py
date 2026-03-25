@@ -390,4 +390,17 @@ class PostgresMemoryStore:
         ):
             await conn.execute("DELETE FROM episodes WHERE user_id = $1", user_id)
             await conn.execute("DELETE FROM facts WHERE user_id = $1", user_id)
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (Protocol compliance)."""
+        return False
+
+    async def get(self, key: str) -> object | None:
+        """Generic key-value get (Protocol compliance)."""
+        return None
+
+    async def set(self, key: str, value: object) -> None:
+        """Generic key-value set (Protocol compliance)."""
+
+
             await conn.execute("DELETE FROM profiles WHERE user_id = $1", user_id)

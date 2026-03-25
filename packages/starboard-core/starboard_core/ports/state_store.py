@@ -13,6 +13,26 @@ class StateStore(Protocol):
     All methods are async to support I/O-bound operations.
     """
 
+    async def connect(self) -> None:
+        """Initialize connection to the backing store."""
+        ...
+
+    async def close(self) -> None:
+        """Release resources and close connections."""
+        ...
+
+    async def get(self, key: str) -> Any | None:
+        """Generic key-value get (for Protocol compliance)."""
+        ...
+
+    async def set(self, key: str, value: Any) -> None:
+        """Generic key-value set (for Protocol compliance)."""
+        ...
+
+    async def delete(self, key: str) -> bool:
+        """Generic key-value delete (for Protocol compliance)."""
+        ...
+
     async def get_conversation(
         self,
         conversation_id: str,
