@@ -140,13 +140,20 @@ class LLMSQLGenerator:
                 },
             )
 
-            # Generate SQL with LLM
+            # Generate SQL with LLM.
+            # The system message contains only role framing and SQL rules — never user
+            # input.  The user's natural-language query is placed in a separate
+            # user-role message so that prompt injection payloads embedded in the
+            # query cannot escape into the system prompt.
             messages = [
                 {
                     "role": "system",
-                    "content": "You are a SQL expert. Return only SQL code, no markdown formatting.",
+                    "content": prompt,
                 },
-                {"role": "user", "content": prompt},
+                {
+                    "role": "user",
+                    "content": user_query,
+                },
             ]
 
             # JSON schema for structured SQL output
@@ -323,10 +330,8 @@ class LLMSQLGenerator:
             "domain": intent_context.domain.value,
         }
 
-        # Base prompt
+        # Base prompt (system message only — user_query is sent as a separate user message)
         prompt = f"""You are a Databricks SQL expert working with the Databricks system tables.
-
-User Question: {user_query}
 
 CONTEXT:
 {json.dumps(metadata, indent=2)}
