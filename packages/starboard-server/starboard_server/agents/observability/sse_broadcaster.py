@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 import structlog
 
 if TYPE_CHECKING:
-    from starboard_server.api.models import ChatEvent
+    from starboard_server.domain.conversation.api_types import ChatEvent
 
 logger = structlog.get_logger(__name__)
 

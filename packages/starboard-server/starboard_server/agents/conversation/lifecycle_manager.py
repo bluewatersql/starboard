@@ -45,7 +45,7 @@ from uuid import uuid4
 
 from starboard_server.agents.state.agent_state import WorkingMemory
 from starboard_server.agents.state.shared_context import SharedAgentContext
-from starboard_server.api.models import (
+from starboard_server.domain.conversation.api_types import (
     ConversationConfig,
     ConversationResponse,
     DomainModelConfig,

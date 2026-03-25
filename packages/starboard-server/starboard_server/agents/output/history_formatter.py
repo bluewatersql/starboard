@@ -22,9 +22,9 @@ import structlog
 
 if TYPE_CHECKING:
     from starboard_server.agents.state.shared_context import SharedAgentContext
-    from starboard_server.api.models import ConversationConfig
+    from starboard_server.domain.conversation.api_types import ConversationConfig
 
-from starboard_server.api.models import (
+from starboard_server.domain.conversation.api_types import (
     ConversationHistory,
     ConversationMetadata,
     DomainModelConfig,
@@ -310,7 +310,7 @@ class HistoryFormatter:
         """
         # Try to get config from context metadata if not provided
         if not conversation_config:
-            from starboard_server.api.models import ConversationConfig as CC
+            from starboard_server.domain.conversation.api_types import ConversationConfig as CC
 
             conv_config_dict = context.metadata.get("conversation_config", {})
             conversation_config = CC(**conv_config_dict) if conv_config_dict else CC()

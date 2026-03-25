@@ -45,8 +45,8 @@ from starboard_core.domain.models.llm import OptimizationMode
 from starboard_server.agents.events import (
     UserInputRequestEvent,
 )
-from starboard_server.api.event_converter import convert_streaming_event_to_chat_event
-from starboard_server.api.models import (
+from starboard_server.domain.conversation.api_types import convert_streaming_event_to_chat_event
+from starboard_server.domain.conversation.api_types import (
     ChatEvent,
     EventType,
     MessageResponse,

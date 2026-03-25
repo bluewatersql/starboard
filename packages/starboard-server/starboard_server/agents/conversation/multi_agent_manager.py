@@ -61,7 +61,7 @@ from starboard_server.agents.state.agent_state import Message
 from starboard_server.agents.state.context_manager import ContextManager
 from starboard_server.agents.state.event_context_updater import EventContextUpdater
 from starboard_server.agents.utils.position_tracker import PositionTracker
-from starboard_server.api.models import (
+from starboard_server.domain.conversation.api_types import (
     ChatEvent,
     ConversationConfig,
     ConversationHistory,
@@ -439,7 +439,7 @@ class MultiAgentConversationManager:
         # Convert messages to API format
         from hashlib import md5
 
-        from starboard_server.api.models import Message as APIMessage
+        from starboard_server.domain.conversation.api_types import Message as APIMessage
 
         messages = []
         for idx, msg in enumerate(context.conversation_history):
@@ -502,7 +502,7 @@ class MultiAgentConversationManager:
             tool_calls = []
             if "tool_calls" in api_metadata:
                 # Import ToolCall model
-                from starboard_server.api.models import ToolCall as APIToolCall
+                from starboard_server.domain.conversation.api_types import ToolCall as APIToolCall
 
                 raw_tool_calls = api_metadata["tool_calls"]
                 for tc in raw_tool_calls:
@@ -540,7 +540,7 @@ class MultiAgentConversationManager:
             )
 
         # Build metadata
-        from starboard_server.api.models import ConversationMetadata
+        from starboard_server.domain.conversation.api_types import ConversationMetadata
 
         now = datetime.now(UTC)
         metadata = ConversationMetadata(
@@ -810,7 +810,7 @@ class MultiAgentConversationManager:
                     attachment["detected_type"] = detected_type
 
                     # Emit metadata event (not full processing)
-                    from starboard_server.api.event_converter import (
+                    from starboard_server.domain.conversation.api_types import (
                         convert_streaming_event_to_chat_event,
                     )
 

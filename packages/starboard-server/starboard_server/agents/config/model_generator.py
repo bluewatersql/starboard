@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from starboard_server.agents.agent_factory import AgentFactory
-    from starboard_server.api.models.config import ConversationConfig
+    from starboard_server.domain.conversation.api_types import ConversationConfig
 
 
 class DomainModelConfigGenerator:
