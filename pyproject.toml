@@ -76,12 +76,9 @@ check_untyped_defs = true
 module = [
     "databricks.*",
     "sqlglot.*",
-    "sqlparse.*",
-    "rapidfuzz.*",
     "asyncpg.*",
     "pandas.*",
     "requests.*",
-    "yaml.*",
     "psycopg2.*",
     "pyarrow.*",
     "sqlite_vec.*",
@@ -104,7 +101,6 @@ module = [
     "matplotlib.*",
     "prophet.*",
     "sklearn.*",
-    "tabulate.*",
     "playwright.*",
 ]
 ignore_missing_imports = true

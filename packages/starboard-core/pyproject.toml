@@ -8,8 +8,6 @@ license = {text = "MIT"}
 dependencies = [
     "pydantic>=2.12.3",
     "typing-extensions>=4.14.1",
-    "orjson>=3.11.4",
-    "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]
