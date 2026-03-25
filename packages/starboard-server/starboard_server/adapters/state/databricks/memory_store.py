@@ -273,6 +273,7 @@ class DatabricksLakebaseMemoryStore(PostgresMemoryStore):
             min_size=self._config.pool_size,
             max_size=self._config.pool_size + self._config.max_overflow,
             command_timeout=self._config.command_timeout,
+        )
 
     async def delete(self, key: str) -> bool:
         """Generic key-value delete (Protocol compliance)."""
@@ -284,9 +285,6 @@ class DatabricksLakebaseMemoryStore(PostgresMemoryStore):
 
     async def set(self, key: str, value: object) -> None:
         """Generic key-value set (Protocol compliance)."""
-
-
-        )
 
     # All CRUD methods are inherited from PostgresMemoryStore
     # No need to override - they use self._pool which is managed above

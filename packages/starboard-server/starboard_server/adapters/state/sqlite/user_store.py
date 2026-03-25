@@ -396,6 +396,7 @@ class SQLiteUserStore:
             last_login=last_login,
             login_count=login_count,
             metadata=metadata,
+        )
 
     async def close(self) -> None:
         """Release resources (no-op for this store)."""
@@ -413,6 +414,3 @@ class SQLiteUserStore:
 
     async def set(self, key: str, value: object) -> None:
         """Generic key-value set (Protocol compliance)."""
-
-
-        )

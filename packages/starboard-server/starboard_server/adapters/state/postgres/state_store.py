@@ -216,6 +216,7 @@ class PostgresStateStore:
         """
 
         async with self.pool.acquire() as conn:
+            await conn.execute(query, *params)
 
     async def delete(self, key: str) -> bool:
         """Generic key-value delete (Protocol compliance)."""
@@ -227,6 +228,3 @@ class PostgresStateStore:
 
     async def set(self, key: str, value: object) -> None:
         """Generic key-value set (Protocol compliance)."""
-
-
-            await conn.execute(query, *params)

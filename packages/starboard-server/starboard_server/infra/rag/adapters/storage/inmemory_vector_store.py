@@ -722,6 +722,7 @@ class InMemoryMultiCollectionStore:
             / (1024 * 1024),
             "initialized": self._initialized,
             "uptime_seconds": time.time() - self._creation_time,
+        }
 
     async def close(self) -> None:
         """Release resources (no-op for this store)."""
@@ -739,6 +740,3 @@ class InMemoryMultiCollectionStore:
 
     async def set(self, key: str, value: object) -> None:
         """Generic key-value set (Protocol compliance)."""
-
-
-        }

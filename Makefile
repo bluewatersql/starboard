@@ -4,7 +4,7 @@
 
 .PHONY: help setup install install-dev install-frontend verify \
         dev dev-debug dev-server dev-server-debug dev-frontend dev-frontend-debug dev-browser dev-stop dev-debug-context \
-        test test-unit test-sdk test-integration test-golden test-contract test-coverage test-frontend \
+        test test-unit test-sdk test-integration test-golden test-contract test-coverage test-frontend test-architecture \
         lint lint-frontend type-check format check pre-commit audit-deps \
         clean clean-debug clean-deep build info
 
@@ -55,6 +55,7 @@ help:
 	@echo "  test-contract     API contract tests"
 	@echo "  test-coverage     With coverage report"
 	@echo "  test-frontend     Frontend tests (Jest)"
+	@echo "  test-architecture Architecture fitness tests (GUIDELINE-001–010)"
 	@echo ""
 	@echo "$(GREEN)Code Quality:$(NC)"
 	@echo "  lint              Python linting (ruff)"
@@ -274,6 +275,11 @@ test-frontend:
 	@cd frontend && npm test
 	@echo "$(GREEN)✓ Frontend tests passed$(NC)"
 
+test-architecture:
+	@echo "$(BLUE)Running architecture fitness tests...$(NC)"
+	@pytest tests/architecture/ -v --tb=short
+	@echo "$(GREEN)Architecture tests complete.$(NC)"
+
 # ================================
 # Code Quality
 # ================================
@@ -301,7 +307,7 @@ format:
 	@ruff check --fix $(PY_PACKAGES) $(PY_TESTS)
 	@echo "$(GREEN)✓ Code formatted$(NC)"
 
-check: lint type-check test-unit
+check: lint type-check test-unit test-architecture
 	@echo "$(GREEN)✓ All checks passed$(NC)"
 
 pre-commit:

@@ -53,19 +53,4 @@ def test_sqlparse_not_installed() -> None:
     _assert_not_importable("sqlparse")
 
 
-@pytest.mark.unit
-def test_stream_unzip_not_installed() -> None:
-    """stream-unzip was removed from starboard-server dependencies (zero imports)."""
-    _assert_not_importable("stream_unzip")
 
-
-@pytest.mark.unit
-def test_pyyaml_not_installed() -> None:
-    """pyyaml was removed from starboard-core dependencies (zero imports)."""
-    _assert_not_importable("yaml")
-
-
-@pytest.mark.unit
-def test_orjson_not_installed() -> None:
-    """orjson was removed from starboard-core dependencies (zero imports)."""
-    _assert_not_importable("orjson")

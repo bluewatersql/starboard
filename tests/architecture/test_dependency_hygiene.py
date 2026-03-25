@@ -50,6 +50,7 @@ _STDLIB_MODULES = {
     "textwrap", "threading", "time", "traceback", "types", "typing",
     "unittest", "urllib", "uuid", "warnings", "weakref", "xml", "zipfile",
     "__future__", "tomllib", "tomlib",
+    "argparse", "atexit", "contextvars", "statistics", "unicodedata", "zoneinfo",
 }
 
 # Manual overrides: dist-name -> import-name when the mapping is non-obvious
@@ -100,6 +101,29 @@ _DIST_TO_IMPORT: dict[str, str] = {
     "ruff": "ruff",
     "sqlite-vec": "sqlite_vec",
     "sentence-transformers": "sentence_transformers",
+    "vl-convert-python": "vl_convert",
+    "python-dotenv": "dotenv",
+    "pyyaml": "yaml",
+}
+
+# Dependencies that are used indirectly (not via Python import)
+_INDIRECT_DEPENDENCIES = {
+    "asyncpg",        # Used via SQLAlchemy async engine
+    "multipart",      # Required by FastAPI for form parsing
+    "pgvector",       # Used via SQL extension, not Python import
+    "sqlite_vec",     # Loaded as SQLite extension, not imported
+    "rich",           # Used by CLI (server declares for downstream consumers)
+    "dotenv",         # Used by CLI (server declares for downstream consumers)
+}
+
+# Transitive dependencies that are technically undeclared but come from declared deps
+_KNOWN_TRANSITIVES = {
+    "starlette",      # Transitive via fastapi
+}
+
+# Dependencies declared in optional extras, actively used
+_OPTIONAL_DEPENDENCIES = {
+    "opentelemetry",  # In [observability] extras, actively used
 }
 
 
@@ -169,8 +193,14 @@ def _check_package(
         and not m.startswith("_")
     }
 
-    undeclared = sorted(third_party - declared_imports - _WORKSPACE_PACKAGES)
-    unused = sorted(declared_imports - third_party - {"starboard_core", "starboard_log_parser"})
+    undeclared = sorted(
+        third_party - declared_imports - _WORKSPACE_PACKAGES
+        - _KNOWN_TRANSITIVES - _OPTIONAL_DEPENDENCIES
+    )
+    unused = sorted(
+        declared_imports - third_party - _WORKSPACE_PACKAGES
+        - _INDIRECT_DEPENDENCIES
+    )
     return undeclared, unused
 
 

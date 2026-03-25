@@ -149,6 +149,7 @@ class InMemoryMemoryStore:
 
         # Delete profile
         if user_id in self._profiles:
+            del self._profiles[user_id]
 
     async def close(self) -> None:
         """Release resources (no-op for this store)."""
@@ -166,6 +167,3 @@ class InMemoryMemoryStore:
 
     async def set(self, key: str, value: object) -> None:
         """Generic key-value set (Protocol compliance)."""
-
-
-            del self._profiles[user_id]
