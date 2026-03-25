@@ -67,17 +67,32 @@ class TokenBucket:
         return max(1, math.ceil(deficit / self._refill_rate))
 
 
+_DEFAULT_MAX_SESSIONS = 1000
+
+
 class MCPRateLimiter:
     """Per-session and global rate limiter for MCP calls.
+
+    Session buckets are evicted LRU-style once ``max_sessions`` is reached,
+    preventing unbounded memory growth in long-running servers.
 
     Args:
         per_session_limit: Maximum calls per minute per session.
         global_limit: Maximum calls per minute across all sessions.
+        max_sessions: Maximum number of concurrent session buckets to retain.
+            Oldest sessions are evicted once this limit is reached.
     """
 
-    def __init__(self, per_session_limit: int = 60, global_limit: int = 300) -> None:
+    def __init__(
+        self,
+        per_session_limit: int = 60,
+        global_limit: int = 300,
+        max_sessions: int = _DEFAULT_MAX_SESSIONS,
+    ) -> None:
         self._per_session_limit = per_session_limit
         self._global_limit = global_limit
+        self._max_sessions = max_sessions
+        # Use insertion-ordered dict for simple LRU eviction
         self._session_buckets: dict[str, TokenBucket] = {}
         self._global_bucket = TokenBucket(
             capacity=global_limit,
@@ -85,13 +100,30 @@ class MCPRateLimiter:
         )
 
     def _get_session_bucket(self, session_id: str) -> TokenBucket:
-        """Get or create a token bucket for a session."""
-        if session_id not in self._session_buckets:
-            self._session_buckets[session_id] = TokenBucket(
-                capacity=self._per_session_limit,
-                refill_rate=self._per_session_limit / 60.0,
+        """Get or create a token bucket for a session.
+
+        Evicts the oldest entry when ``max_sessions`` is exceeded.
+        """
+        if session_id in self._session_buckets:
+            # Move to end (most recently used) by re-inserting
+            bucket = self._session_buckets.pop(session_id)
+            self._session_buckets[session_id] = bucket
+            return bucket
+        # Evict oldest entry if at capacity
+        if len(self._session_buckets) >= self._max_sessions:
+            oldest_key = next(iter(self._session_buckets))
+            del self._session_buckets[oldest_key]
+            logger.debug(
+                "rate_limiter_session_evicted",
+                evicted_session=oldest_key,
+                max_sessions=self._max_sessions,
             )
-        return self._session_buckets[session_id]
+        bucket = TokenBucket(
+            capacity=self._per_session_limit,
+            refill_rate=self._per_session_limit / 60.0,
+        )
+        self._session_buckets[session_id] = bucket
+        return bucket
 
     def check(self, session_id: str) -> None:
         """Check rate limits and consume a token.

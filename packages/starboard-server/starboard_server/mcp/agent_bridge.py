@@ -416,11 +416,15 @@ class MCPAgentExecutor:
         if conversation_id is not None:
             agent_context["conversation_id"] = conversation_id
 
+        # Derive a session-scoped user_id from the conversation context so
+        # that per-user observability and rate-limiting work correctly.
+        user_id = f"mcp:{conversation_id}" if conversation_id else "mcp:anonymous"
+
         try:
             async for event in agent.run_stream(
                 user_input=message,
                 mode="optimize",
-                user_id="mcp",
+                user_id=user_id,
                 context=agent_context,
             ):
                 if isinstance(event, FinalOutputEvent):
