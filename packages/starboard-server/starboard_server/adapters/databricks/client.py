@@ -106,6 +106,7 @@ class AsyncDatabricksClient:
         self._sdk_client: WorkspaceClient | None = None
         self._cache: CacheManager | None = None
         self._http_client: httpx.AsyncClient | None = None
+        self._rest_client_instance = None  # Cached HTTPClient for REST API calls
 
         # Services (lazy)
         self._sql_service: SQLService | None = None
@@ -196,6 +197,10 @@ class AsyncDatabricksClient:
             await self._http_client.aclose()
             self._http_client = None
 
+        if self._rest_client_instance is not None:
+            await self._rest_client_instance.close()
+            self._rest_client_instance = None
+
         if self._cache:
             await self._cache.clear()
             self._cache = None
@@ -277,14 +282,17 @@ class AsyncDatabricksClient:
         """Get HTTP client for REST API calls.
 
         Used by UCCatalogService for lineage queries.
+        Cached after first creation to enable connection pooling.
         """
-        from starboard_server.adapters.apis.http_client import HTTPClient
+        if self._rest_client_instance is None:
+            from starboard_server.adapters.apis.http_client import HTTPClient
 
-        return HTTPClient(
-            base_url=self._host or "",
-            auth_header={"Authorization": f"Bearer {self._token}"},
-            timeout=30.0,
-        )
+            self._rest_client_instance = HTTPClient(
+                base_url=self._host or "",
+                auth_header={"Authorization": f"Bearer {self._token}"},
+                timeout=30.0,
+            )
+        return self._rest_client_instance
 
     def require_warehouse_id(self) -> str:
         """Get warehouse ID, raising error if not available."""
