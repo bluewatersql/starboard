@@ -209,8 +209,15 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=allowed_origins,
         allow_credentials=True,  # Required for auth passthrough
-        allow_methods=["*"],  # Allow all methods
-        allow_headers=["*"],  # Allow all headers
+        allow_methods=["GET", "POST", "OPTIONS"],  # Only required methods
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "X-Request-ID",
+            "X-Conversation-ID",
+            "Accept",
+            "Cache-Control",
+        ],
         expose_headers=[
             "Content-Length",
             "Content-Type",

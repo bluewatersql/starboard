@@ -7,6 +7,7 @@ is also supported. Field names map to uppercase env var names (e.g.,
 
 from __future__ import annotations
 
+import atexit
 import json
 import os
 from typing import Any, Literal
@@ -149,7 +150,7 @@ class EnvConfig(BaseSettings):
     mock_llm: bool = False
     enable_caching: bool = True
     enable_observability: bool = True
-    enable_pii_redaction: bool = False
+    enable_pii_redaction: bool = True
     enable_reflexion: bool = False
     enable_semantic_cache: bool = True
 
@@ -541,6 +542,20 @@ class EnvConfig(BaseSettings):
         if self.discovery_llm_model is not None:
             os.environ["DISCOVERY_LLM_MODEL"] = self.discovery_llm_model
         os.environ["DISCOVERY_LLM_TEMPERATURE"] = str(self.discovery_llm_temperature)
+
+        # Register cleanup handler to remove sensitive env vars on process exit.
+        # This limits the window in which secrets are exposed in the process environment.
+        _sensitive_env_keys = [
+            "DATABRICKS_TOKEN",
+            "LLM_API_KEY",
+            "OPENAI_API_KEY",
+        ]
+
+        def _cleanup_sensitive_env_vars() -> None:
+            for key in _sensitive_env_keys:
+                os.environ.pop(key, None)
+
+        atexit.register(_cleanup_sensitive_env_vars)
 
 
 # Global singleton instance

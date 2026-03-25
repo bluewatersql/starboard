@@ -12,8 +12,11 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException, Path, status
 from pydantic import BaseModel, Field
 
+from fastapi import Request
+
 from starboard_server.api.dependencies import ContainerDep
 from starboard_server.api.models import ErrorResponse
+from starboard_server.infra.middleware.rate_limit import check_rate_limit
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.services.query_result_cache import QueryResultCache
 
@@ -71,6 +74,7 @@ class CachedDataResponse(BaseModel):
     },
 )
 async def get_cached_data(
+    request: Request,
     data_reference: str = Path(
         ...,
         description="Unique data reference from query execution",
@@ -106,6 +110,9 @@ async def get_cached_data(
         "get_cached_data_request",
         data_reference=data_reference,
     )
+
+    # Enforce rate limiting on this endpoint
+    check_rate_limit(request, "60/minute")
 
     try:
         # QueryResultCache wraps the store with NamespacedCache(namespace="data")
@@ -167,5 +174,5 @@ async def get_cached_data(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve cached data: {str(e)}",
+            detail="Internal server error",
         ) from e

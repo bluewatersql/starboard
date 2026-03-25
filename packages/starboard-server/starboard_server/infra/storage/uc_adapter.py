@@ -485,7 +485,8 @@ class UCStorageAdapter:
             if val is None:
                 conditions.append(f"{col} IS NULL")
             elif isinstance(val, str):
-                conditions.append(f"{col} = '{val}'")
+                escaped = val.replace("'", "''")
+                conditions.append(f"{col} = '{escaped}'")
             else:
                 conditions.append(f"{col} = {val}")
         return conditions
@@ -646,6 +647,12 @@ class UCStorageAdapter:
         elif isinstance(value, datetime):
             return f"TIMESTAMP'{value.isoformat()}'"
         elif isinstance(value, dict):
-            return f"'{json.dumps(value)}'"
+            escaped = json.dumps(value).replace("'", "''")
+            return f"'{escaped}'"
         else:
-            return str(value)
+            # Escape single quotes in the string representation to prevent injection
+            str_val = str(value)
+            if "'" in str_val:
+                escaped = str_val.replace("'", "''")
+                return f"'{escaped}'"
+            return str_val

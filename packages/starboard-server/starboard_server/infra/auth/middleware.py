@@ -94,11 +94,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
         Returns:
             HTTP response from endpoint or error response
         """
-        # Skip authentication for excluded paths
-        if request.url.path in self.exclude_paths:
+        # Skip authentication for excluded paths — use prefix match so that
+        # sub-paths (e.g. /health/live/detail) are also excluded.
+        path = request.url.path
+        if any(path == excluded or path.startswith(excluded + "/") for excluded in self.exclude_paths):
             logger.debug(
                 "auth_skipped_excluded_path",
-                path=request.url.path,
+                path=path,
             )
             return await call_next(request)
 
@@ -137,7 +139,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 content={
                     "error": "Unauthorized",
                     "message": "Authentication failed",
-                    "details": str(e),
                 },
             )
 
