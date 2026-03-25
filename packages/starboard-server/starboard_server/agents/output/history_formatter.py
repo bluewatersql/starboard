@@ -182,8 +182,6 @@ class HistoryFormatter:
         # Get base message dict
         if hasattr(msg, "model_dump"):
             msg_dict = msg.model_dump()
-        elif hasattr(msg, "dict"):
-            msg_dict = msg.dict()
         elif isinstance(msg, dict):
             msg_dict = msg.copy()
         else:

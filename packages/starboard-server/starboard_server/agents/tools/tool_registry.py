@@ -225,19 +225,18 @@ class NativeToolAdapter:
         self.method_name = method_name
         self.metadata = metadata
 
-        # Verify method exists
-        if not hasattr(tool_instance, method_name):
+        # Verify method exists and is callable in a single lookup
+        method = getattr(tool_instance, method_name, None)
+        if method is None:
             raise ValueError(
                 f"Method '{method_name}' not found on {type(tool_instance).__name__}"
             )
-
-        self.method = getattr(tool_instance, method_name)
-
-        # Verify method is callable
-        if not callable(self.method):
+        if not callable(method):
             raise ValueError(
                 f"'{method_name}' on {type(tool_instance).__name__} is not callable"
             )
+
+        self.method = method
 
     async def execute(self, **kwargs) -> dict[str, Any]:
         """

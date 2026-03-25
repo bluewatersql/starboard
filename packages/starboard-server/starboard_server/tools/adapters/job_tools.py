@@ -18,6 +18,7 @@ from starboard_core.domain.models.job import (
 
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.services.context.transforms import (
     get_job_metadata,
     search_jobs_by_name,
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class JobTools:
+class JobTools(BaseToolAdapter):
     """Reasoning interface for job operations.
 
     Clean interface optimized for LLM reasoning. Uses SharedContextProvider
@@ -45,39 +46,6 @@ class JobTools:
         >>> tools = JobTools.from_provider(provider, events=events)
         >>> result = await tools.resolve_job("my-job")
     """
-
-    def __init__(
-        self,
-        provider: SharedContextProvider,
-        events: EventEmitter | None = None,
-    ) -> None:
-        """Initialize job tools.
-
-        Args:
-            provider: SharedContextProvider for data access.
-            events: Optional event emitter.
-        """
-        self.provider = provider
-        self.events = events or EventEmitter()
-
-    @classmethod
-    def from_provider(
-        cls,
-        provider: SharedContextProvider,
-        events: EventEmitter | None = None,
-    ) -> JobTools:
-        """Create JobTools from a SharedContextProvider.
-
-        Factory method for convenient construction.
-
-        Args:
-            provider: SharedContextProvider for data access.
-            events: Optional event emitter for observability.
-
-        Returns:
-            Configured JobTools instance.
-        """
-        return cls(provider=provider, events=events)
 
     async def _get_job_by_name(self, job_name: str) -> tuple[str | None, list[dict]]:
         """Get job ID by name using efficient search.

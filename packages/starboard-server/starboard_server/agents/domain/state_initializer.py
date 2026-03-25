@@ -105,13 +105,13 @@ class StateInitializer:
         discovered_entities: dict[str, list[str]] = {}
         if context and "working_memory" in context:
             wm = context["working_memory"]
-            if isinstance(wm, dict) and "metrics" in wm:
+            if isinstance(wm, dict):
                 metrics = wm.get("metrics", {})
                 user_constraints = metrics.get("user_constraints", {})
                 discovered_entities = metrics.get("discovered_entities", {})
-            elif hasattr(wm, "metrics"):
-                user_constraints = wm.metrics.get("user_constraints", {})
-                discovered_entities = wm.metrics.get("discovered_entities", {})
+            elif isinstance(getattr(wm, "metrics", None), dict):
+                user_constraints = wm.metrics.get("user_constraints", {})  # type: ignore[union-attr]
+                discovered_entities = wm.metrics.get("discovered_entities", {})  # type: ignore[union-attr]
 
         # Enrich user_input with context from previous agent if this is a handoff
         # This ensures the LLM knows about job_id, cluster_id, etc. from the previous step

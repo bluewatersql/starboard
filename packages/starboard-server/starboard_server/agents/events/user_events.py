@@ -187,8 +187,6 @@ class FinalOutputEvent(BaseModel):
             if not isinstance(complete_report, dict):
                 if hasattr(complete_report, "model_dump"):
                     complete_report = complete_report.model_dump()
-                elif hasattr(complete_report, "dict"):
-                    complete_report = complete_report.dict()
                 else:
                     complete_report = {"summary": {"overview": str(complete_report)}}
 

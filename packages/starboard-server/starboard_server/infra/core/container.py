@@ -132,14 +132,9 @@ class Container:
         )  # Large file attachments (1hr TTL)
 
         # Connect providers that need initialization
-        if hasattr(self._state_store, "connect"):
-            await self._state_store.connect()
-
-        if hasattr(self._cache_store, "connect"):
-            await self._cache_store.connect()
-
-        if hasattr(self._memory_store, "connect"):
-            await self._memory_store.connect()
+        for store in (self._state_store, self._cache_store, self._memory_store):
+            if store is not None and hasattr(store, "connect"):
+                await store.connect()
 
         # Initialize foundation components
         # Only initialize if not in test environment (skip if using in-memory backends)
