@@ -19,6 +19,7 @@ from starboard_core.domain.models.query import (
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import MissingDataError
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.services.context.transforms import get_explain_plan
 from starboard_server.tools.domain.query.analyzer import QueryAnalyzer
 from starboard_server.tools.domain.query.resolver import QueryResolver
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class QueryTools:
+class QueryTools(BaseToolAdapter):
     """Reasoning interface for query operations.
 
     Clean interface optimized for LLM reasoning. Uses SharedContextProvider
@@ -60,9 +61,8 @@ class QueryTools:
             provider: SharedContextProvider for EXPLAIN plans.
             events: Optional event emitter.
         """
+        super().__init__(provider=provider, events=events)
         self.api = api
-        self.provider = provider
-        self.events = events or EventEmitter()
 
     @classmethod
     def from_provider(

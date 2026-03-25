@@ -604,6 +604,62 @@ def generate_sub_task(
     }
 
 
+def _extract_resolve_query_value(content: str) -> str | None:
+    lines = len(content.strip().split("\n"))
+    return f"{lines} lines of SQL"
+
+
+def _extract_analyze_query_plan_value(content: str) -> str | None:
+    if "nodes" in content.lower():
+        match = re.search(r"(\d+)\s*nodes?", content.lower())
+        if match:
+            return f"{match.group(1)} nodes"
+    return "Plan analyzed"
+
+
+def _extract_fetch_table_metadata_value(content: str) -> str | None:
+    if "columns" in content.lower():
+        match = re.search(r"(\d+)\s*columns?", content.lower())
+        if match:
+            return f"{match.group(1)} columns"
+    return "Metadata loaded"
+
+
+def _extract_discover_tables_value(content: str) -> str | None:
+    match = re.search(r"(\d+)\s*tables?", content.lower())
+    return f"{match.group(1)} tables found" if match else None
+
+
+def _extract_analyze_code_quality_value(content: str) -> str | None:
+    if "issues" in content.lower() or "violations" in content.lower():
+        match = re.search(r"(\d+)\s*(issues?|violations?)", content.lower())
+        if match:
+            return f"{match.group(1)} issues"
+    return "Analysis complete"
+
+
+def _extract_get_warehouse_portfolio_value(content: str) -> str | None:
+    match = re.search(r"(\d+)\s*warehouses?", content.lower())
+    return f"{match.group(1)} warehouses" if match else None
+
+
+def _extract_enumerate_uc_assets_value(content: str) -> str | None:
+    match = re.search(r"(\d+)\s*(assets?|tables?|schemas?)", content.lower())
+    return f"{match.group(1)} {match.group(2)}" if match else None
+
+
+# Dispatch table mapping tool name → content extractor
+_RESULT_VALUE_EXTRACTORS: dict[str, Any] = {
+    "resolve_query": _extract_resolve_query_value,
+    "analyze_query_plan": _extract_analyze_query_plan_value,
+    "fetch_table_metadata": _extract_fetch_table_metadata_value,
+    "discover_tables": _extract_discover_tables_value,
+    "analyze_code_quality": _extract_analyze_code_quality_value,
+    "get_warehouse_portfolio": _extract_get_warehouse_portfolio_value,
+    "enumerate_uc_assets": _extract_enumerate_uc_assets_value,
+}
+
+
 def _extract_result_value(tool_name: str, result: Any) -> str | None:
     """
     Extract a display value from tool result.
@@ -620,52 +676,12 @@ def _extract_result_value(tool_name: str, result: Any) -> str | None:
     if not content:
         return None
 
-    # Tool-specific value extraction
-    if tool_name == "resolve_query":
-        if isinstance(content, str):
-            lines = len(content.strip().split("\n"))
-            return f"{lines} lines of SQL"
-
-    elif tool_name == "analyze_query_plan":
-        if isinstance(content, str):
-            if "nodes" in content.lower():
-                match = re.search(r"(\d+)\s*nodes?", content.lower())
-                if match:
-                    return f"{match.group(1)} nodes"
-            return "Plan analyzed"
-
-    elif tool_name == "fetch_table_metadata":
-        if isinstance(content, str):
-            if "columns" in content.lower():
-                match = re.search(r"(\d+)\s*columns?", content.lower())
-                if match:
-                    return f"{match.group(1)} columns"
-            return "Metadata loaded"
-
-    elif tool_name == "discover_tables":
-        if isinstance(content, str):
-            match = re.search(r"(\d+)\s*tables?", content.lower())
-            if match:
-                return f"{match.group(1)} tables found"
-
-    elif tool_name == "analyze_code_quality":
-        if isinstance(content, str):
-            if "issues" in content.lower() or "violations" in content.lower():
-                match = re.search(r"(\d+)\s*(issues?|violations?)", content.lower())
-                if match:
-                    return f"{match.group(1)} issues"
-            return "Analysis complete"
-
-    elif tool_name == "get_warehouse_portfolio":
-        if isinstance(content, str):
-            match = re.search(r"(\d+)\s*warehouses?", content.lower())
-            if match:
-                return f"{match.group(1)} warehouses"
-
-    elif tool_name == "enumerate_uc_assets" and isinstance(content, str):
-        match = re.search(r"(\d+)\s*(assets?|tables?|schemas?)", content.lower())
-        if match:
-            return f"{match.group(1)} {match.group(2)}"
+    # Dispatch to tool-specific extractor
+    extractor = _RESULT_VALUE_EXTRACTORS.get(tool_name)
+    if extractor is not None and isinstance(content, str):
+        extracted = extractor(content)
+        if extracted is not None:
+            return extracted
 
     # Default: truncate content
     if isinstance(content, str) and content:

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability import ObservabilityContext
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.adapters.base import tool_schema
 from starboard_server.services.context.transforms import (
     analyze_warehouse_queries,
     get_transformed,
@@ -65,6 +66,16 @@ class WarehouseTools:
         self.events = events
         self.provider = provider
 
+    @tool_schema(
+        description=(
+            "Get portfolio view of all SQL warehouses with health scores, "
+            "performance metrics, and summary statistics. Use this for fleet-wide "
+            "visibility and to identify warehouses needing attention."
+        ),
+        properties_override={
+            "window_days": {"enum": [7, 30, 90]},
+        },
+    )
     async def get_warehouse_portfolio(
         self,
         window_days: int = 7,
@@ -103,6 +114,22 @@ class WarehouseTools:
             include_inactive=include_inactive,
         )
 
+    @tool_schema(
+        description=(
+            "Generate detailed fingerprint for a specific warehouse including "
+            "performance percentiles, workload patterns, time distribution, and "
+            "query type breakdown. Use for deep analysis of a single warehouse."
+        ),
+        properties_override={
+            "warehouse_id": {
+                "description": (
+                    "The warehouse ID OR warehouse name. Both formats are accepted - "
+                    "the system will resolve names to IDs automatically."
+                )
+            },
+            "window_days": {"enum": [7, 30, 90]},
+        },
+    )
     async def get_warehouse_fingerprint(
         self,
         warehouse_id: str,

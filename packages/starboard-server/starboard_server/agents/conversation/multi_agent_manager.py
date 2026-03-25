@@ -980,8 +980,6 @@ class MultiAgentConversationManager:
                     if not isinstance(complete_report, dict):
                         if hasattr(complete_report, "model_dump"):
                             complete_report_data = complete_report.model_dump()
-                        elif hasattr(complete_report, "dict"):
-                            complete_report_data = complete_report.dict()
                     else:
                         complete_report_data = complete_report
 

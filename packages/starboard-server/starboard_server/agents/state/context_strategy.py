@@ -283,8 +283,8 @@ def _extract_working_memory_snapshot(wm: Any) -> dict[str, Any]:
 
     if isinstance(wm, dict):
         metrics = wm.get("metrics", {})
-    elif hasattr(wm, "metrics"):
-        metrics = wm.metrics
+    elif isinstance(getattr(wm, "metrics", None), dict):
+        metrics = wm.metrics  # type: ignore[union-attr]
     else:
         return {}
 
@@ -299,8 +299,8 @@ def _extract_working_memory_snapshot(wm: Any) -> dict[str, Any]:
     facts = None
     if isinstance(wm, dict):
         facts = wm.get("facts")
-    elif hasattr(wm, "facts"):
-        facts = wm.facts
+    else:
+        facts = getattr(wm, "facts", None)
 
     if facts:
         fact_list = list(facts) if not isinstance(facts, list) else facts
