@@ -60,7 +60,7 @@ from starboard_server.agents.routing.routing_models import (
 )
 from starboard_server.agents.state.agent_state import Message
 from starboard_server.agents.state.shared_context import SharedAgentContext
-from starboard_server.api.models import ChatEvent, EventType
+from starboard_server.domain.conversation.api_types import ChatEvent, EventType
 from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)

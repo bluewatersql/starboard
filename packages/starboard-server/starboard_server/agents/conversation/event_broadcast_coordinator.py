@@ -31,7 +31,7 @@ import asyncio
 from typing import Any
 
 from starboard_server.agents.observability.sse_broadcaster import SSEBroadcaster
-from starboard_server.api.models import ChatEvent
+from starboard_server.domain.conversation.api_types import ChatEvent
 from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
