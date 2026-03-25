@@ -330,6 +330,7 @@ class TestLoggingSetup:
             mock_config.assert_called_once()
             args = mock_config.call_args[1]
             assert args["level"] == 10  # logging.DEBUG
+            assert args["force"] is True
 
     def test_setup_cli_logging_quiet_mode(self):
         """Test logging setup in quiet mode."""
@@ -339,6 +340,7 @@ class TestLoggingSetup:
             mock_config.assert_called_once()
             args = mock_config.call_args[1]
             assert args["level"] == 40  # logging.ERROR
+            assert args["force"] is True
 
     def test_setup_cli_logging_with_log_file(self, tmp_path):
         """Test logging setup with log file."""
@@ -361,11 +363,12 @@ class TestLoggingSetup:
             with patch("starboard_cli.cli.main.logging.basicConfig"):
                 setup_cli_logging(log_level="INFO")
 
-            # Check that httpx logger is suppressed
-            assert any(
-                call[0][0] in ["httpx", "httpcore", "openai"]
-                for call in mock_get_logger.call_args_list
-            )
+            suppressed = {
+                call[0][0] for call in mock_get_logger.call_args_list
+            }
+            for name in ("httpx", "httpcore", "openai", "opentelemetry",
+                         "urllib3", "asyncio", "databricks.sdk", "aiosqlite"):
+                assert name in suppressed, f"{name} not suppressed"
 
 
 class TestMainEntryPoint:

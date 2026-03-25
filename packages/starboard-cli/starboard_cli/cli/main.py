@@ -98,22 +98,19 @@ def setup_cli_logging(
         # Debug mode: logs to stderr (keeps stdout clean for rich)
         log_stream = sys.stderr
     else:
-        # Normal mode: suppress logs (or minimal to stderr)
-        log_stream = None  # Will configure to suppress
+        # Normal mode: warnings+ to stderr, suppress info/debug
+        log_stream = sys.stderr
 
-    # Configure structlog
-    if log_stream is None:
-        # Suppress logs entirely (or only critical errors)
-        logging.basicConfig(
-            level=logging.ERROR,
-            stream=sys.stderr,
-        )
-    else:
-        logging.basicConfig(
-            level=getattr(logging, log_level.upper()),
-            stream=log_stream,
-            format="%(message)s",
-        )
+    numeric_level = getattr(logging, log_level.upper())
+
+    # force=True ensures this takes effect even if server-side imports
+    # have already called basicConfig during module loading.
+    logging.basicConfig(
+        level=numeric_level,
+        stream=log_stream,
+        format="%(message)s",
+        force=True,
+    )
 
     # Configure structlog
     processors = [
@@ -128,18 +125,24 @@ def setup_cli_logging(
 
     structlog.configure(
         processors=processors,  # type: ignore[arg-type]
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(logging, log_level.upper())
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger(numeric_level),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(file=log_stream or sys.stderr),
-        cache_logger_on_first_use=True,
+        logger_factory=structlog.PrintLoggerFactory(file=log_stream),
+        cache_logger_on_first_use=False,
     )
 
-    # Suppress httpx and other noisy loggers
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("httpcore").setLevel(logging.WARNING)
-    logging.getLogger("openai").setLevel(logging.WARNING)
+    # Suppress noisy third-party loggers regardless of chosen level
+    for noisy_logger in (
+        "httpx",
+        "httpcore",
+        "openai",
+        "opentelemetry",
+        "urllib3",
+        "asyncio",
+        "databricks.sdk",
+        "aiosqlite",
+    ):
+        logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 
     return log_file_handle
 
@@ -966,8 +969,8 @@ Environment Variables:
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        default="ERROR",
-        help="Logging level (default: ERROR for clean console output)",
+        default="WARNING",
+        help="Logging level (default: WARNING — suppresses info/debug noise)",
     )
     parser.add_argument(
         "--log-file",
