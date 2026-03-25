@@ -6,13 +6,15 @@ These rules apply broadly to all Python code across the project.
 
 ## Functions & Methods
 
-SHOULD: Typical size 20-30 lines; refactor if larger.  
+SHOULD: Typical size 20-30 lines; refactor if larger.
 
-MUST: 4 parameters or fewer; else group via dataclass/TypedDict.  
+**GUIDELINE-008: MUST: No function or method may exceed 80 lines** (counting non-blank, non-comment lines). Functions exceeding this limit must be decomposed into smaller, focused units. Enforced by `tests/architecture/test_function_length.py`.
 
-MUST: Avoid boolean flags; prefer enums or separate functions.  
+MUST: 4 parameters or fewer; else group via dataclass/TypedDict.
 
-SHOULD: Return early; 3 levels of nesting or fewer.  
+MUST: Avoid boolean flags; prefer enums or separate functions.
+
+SHOULD: Return early; 3 levels of nesting or fewer.
 
 MUST: No hidden I/O in domain functions.
 
@@ -40,9 +42,19 @@ MUST: Use tuple for immutable sequences; list only for mutable collections.
 
 ---
 
+## Tool Error Format
+
+**GUIDELINE-003: MUST: All tool error returns must use a standardized `ToolErrorResponse` format** with fields: `error` (str), `error_code` (str), `details` (dict | None). No ad-hoc error dicts. Enforced by `tests/architecture/test_tool_error_format.py`.
+
+## SDK Public API Hygiene
+
+**GUIDELINE-007: MUST: No `Any` type in SDK public API exports.** All public functions, classes, and type aliases in `starboard-sdk` must use concrete types. Enforced by `tests/architecture/test_sdk_public_api.py`.
+
+---
+
 ## Error Handling
 
-MUST: Fail fast on invalid inputs/config; raise specific exceptions (never generic Exception).  
+MUST: Fail fast on invalid inputs/config; raise specific exceptions (never generic Exception).
 MUST: No bare except:; catch expected types with explicit handling.  
 MUST: Use context managers for resources (files, DB connections, HTTP sessions).  
 MUST: Log context + correlation IDs; include request_id/trace_id for LLM/tool calls.  
