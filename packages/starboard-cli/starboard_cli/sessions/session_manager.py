@@ -9,8 +9,7 @@ from uuid import uuid4
 
 import aiosqlite
 from starboard_core.repositories.conversation import ConversationRepository
-from starboard_server.adapters.state.sqlite.state_store import SQLiteStateStore
-from starboard_server.infra.observability.logging import get_logger
+from starboard_server.bootstrap import SQLiteStateStore, get_logger
 
 logger = get_logger(__name__)
 

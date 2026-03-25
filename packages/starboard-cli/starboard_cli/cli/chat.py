@@ -9,20 +9,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from rich.console import Console
-from starboard_server.agents.events import (
+from starboard_server.bootstrap import (
     ErrorEvent,
     FinalOutputEvent,
     ToolEndEvent,
     ToolStartEvent,
     UserInputRequestEvent,
+    get_logger,
 )
-from starboard_server.infra.observability.logging import get_logger
 
 from starboard_cli.sessions.session_manager import SessionManager
 
 if TYPE_CHECKING:
     from starboard_core.domain.models.llm import OptimizationMode
-    from starboard_server.agents.conversation import MultiAgentConversationManager
+    from starboard_server.bootstrap import MultiAgentConversationManager
 
 logger = get_logger(__name__)
 
@@ -254,9 +254,7 @@ async def _stream_agent_response(
                 and output["complete_report"]
             ):
                 try:
-                    from starboard_server.agents.report_formatters import (
-                        format_agent_report,
-                    )
+                    from starboard_server.bootstrap import format_agent_report
 
                     formatted_markdown = format_agent_report(
                         output["complete_report"]
