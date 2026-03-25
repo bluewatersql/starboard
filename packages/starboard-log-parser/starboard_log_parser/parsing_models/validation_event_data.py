@@ -8,7 +8,7 @@ from starboard_log_parser.parsing_models.exceptions import (
     ParserErrorMessages as MSGS,
 )
 
-logger = logging.getLogger("EventDataValidation")
+logger = logging.getLogger(__name__)
 
 
 class EventDataValidation:

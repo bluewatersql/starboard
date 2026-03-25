@@ -16,7 +16,7 @@ from starboard_server.adapters.llm import BaseLLMClient, create_llm_client
 from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
-    from starboard_server.infra.core.config import EnvConfig
+    from starboard_server.infra.core.config import EnvConfig, get_config
 
 logger = get_logger(__name__)
 
@@ -34,13 +34,13 @@ class LLMClientEmbeddingProvider:
 
     Example:
         from starboard_server.infra.rag import LLMClientEmbeddingProvider, SQLiteMultiCollectionStore
-        from starboard_server.infra.core.config import EnvConfig
+        from starboard_server.infra.core.config import EnvConfig, get_config
 
         # Use default LLM client from config
         provider = LLMClientEmbeddingProvider()
 
         # Or provide explicit config
-        config = EnvConfig.from_env()
+        config = get_config()
         provider = LLMClientEmbeddingProvider(cfg=config)
 
         # Or provide existing LLM client

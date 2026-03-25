@@ -9,7 +9,7 @@ from starboard_log_parser.parsing_models.errors import (
     ParserErrorTypes,
 )
 
-logger = logging.getLogger("ParserExceptionLogger")
+logger = logging.getLogger(__name__)
 
 
 class SyncParserException(Exception):

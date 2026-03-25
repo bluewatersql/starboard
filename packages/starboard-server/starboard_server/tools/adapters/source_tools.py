@@ -320,20 +320,20 @@ class SourceTools:
         Returns:
             List of task definition dictionaries
         """
-        logger.debug(f"Fetching task definitions for job_id={job_id}")
+        logger.debug("Fetching task definitions for job_id={job_id}")
 
         try:
             job_id_int = int(job_id)
             job_config = await self.databricks_api.jobs.get_job(job_id_int)
         except (ValueError, TypeError) as e:
-            logger.error(f"Invalid job_id format: {job_id}, error: {e}")
+            logger.error("Invalid job_id format: {job_id}, error: {e}")
             return []
         except Exception as e:
-            logger.error(f"Failed to fetch job config for job_id={job_id}: {e}")
+            logger.error("Failed to fetch job config for job_id={job_id}: {e}")
             return []
 
         if not job_config:
-            logger.warning(f"Could not fetch job config for job_id={job_id}")
+            logger.warning("Could not fetch job config for job_id={job_id}")
             return []
 
         # Extract task definitions from job settings
@@ -344,7 +344,7 @@ class SourceTools:
         if task_key:
             filtered = [t for t in tasks if t.get("task_key") == task_key]
             if not filtered:
-                logger.warning(f"Task key '{task_key}' not found in job {job_id}")
+                logger.warning("Task key '{task_key}' not found in job {job_id}")
             return filtered
 
         return tasks
@@ -367,9 +367,9 @@ class SourceTools:
                     "path": notebook_path,
                     "source": source,
                 }
-            logger.warning(f"Notebook {notebook_path} returned empty content")
+            logger.warning("Notebook {notebook_path} returned empty content")
         except Exception as e:
-            logger.warning(f"Failed to fetch notebook {notebook_path}: {e}")
+            logger.warning("Failed to fetch notebook {notebook_path}: {e}")
 
         return None
 
@@ -492,7 +492,7 @@ class SourceTools:
         else:
             issues, notes = await self._analyze_individual_parallel(code_artifacts)
 
-        logger.debug(f"LLM identified {len(issues)} code quality issues")
+        logger.debug("LLM identified {len(issues)} code quality issues")
 
         return SourceTransformer.build_analysis_result(issues, notes)
 
@@ -563,12 +563,12 @@ Return optimizations in json format."""
         self, code_artifacts: dict[str, dict[str, Any]]
     ) -> tuple[list[CodeQualityIssue], list[str]]:
         """Analyze all code snippets in a single LLM call."""
-        logger.debug(f"Batch analyzing {len(code_artifacts)} code artifacts")
+        logger.debug("Batch analyzing {len(code_artifacts)} code artifacts")
 
         try:
             return await self._call_llm_for_analysis(code_artifacts)
         except Exception as e:
-            logger.error(f"Batch code analysis failed: {e}")
+            logger.error("Batch code analysis failed: {e}")
             return [], [f"Analysis failed: {str(e)}"]
 
     async def _analyze_individual_parallel(
@@ -592,7 +592,7 @@ Return optimizations in json format."""
         for i, result in enumerate(results):
             if isinstance(result, BaseException):
                 context = list(code_artifacts.keys())[i]
-                logger.error(f"Analysis failed for {context}: {result}")
+                logger.error("Analysis failed for {context}: {result}")
                 all_notes.append(f"Failed to analyze {context}: {str(result)}")
             elif isinstance(result, tuple):
                 issues, notes = result
@@ -610,5 +610,5 @@ Return optimizations in json format."""
                 {context: source_info}, default_context=context
             )
         except Exception as e:
-            logger.error(f"Single code analysis failed for {context}: {e}")
+            logger.error("Single code analysis failed for {context}: {e}")
             return [], [f"Analysis failed for {context}: {str(e)}"]

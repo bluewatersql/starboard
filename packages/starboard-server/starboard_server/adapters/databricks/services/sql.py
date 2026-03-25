@@ -11,7 +11,7 @@ Supports two execution modes:
 from __future__ import annotations
 
 import asyncio
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -30,12 +30,10 @@ if TYPE_CHECKING:
         StatementResponse,
     )
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 # Default safety limit for non-streaming queries
 DEFAULT_MAX_ROWS: int = 100_000
-
 
 class RowLimitExceededError(Exception):
     """Raised when query results exceed the specified max_rows limit."""
@@ -48,7 +46,6 @@ class RowLimitExceededError(Exception):
             f"Use execute_polars_streaming() for large results or increase max_rows."
         )
 
-
 @dataclass
 class StreamingResult:
     """Metadata about a streaming SQL execution."""
@@ -57,7 +54,6 @@ class StreamingResult:
     total_batches: int
     total_rows: int
     columns: list[str]
-
 
 class SQLService(BaseService):
     """Async service for Databricks SQL Warehouse operations.

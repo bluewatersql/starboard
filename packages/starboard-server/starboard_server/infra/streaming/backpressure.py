@@ -17,11 +17,11 @@ call ``put_nowait`` directly to avoid any blocking.
 from __future__ import annotations
 
 import asyncio
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from collections import deque
 from dataclasses import dataclass, field
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Event types that are safe to drop under backpressure
 _DEFAULT_DROPPABLE_TYPES = frozenset({"progress", "heartbeat", "debug", "status"})
@@ -29,7 +29,6 @@ _DEFAULT_DROPPABLE_TYPES = frozenset({"progress", "heartbeat", "debug", "status"
 # Timeout for droppable events waiting on a full buffer (unused — they are
 # dropped immediately, but kept for future reference).
 _CRITICAL_PUT_TIMEOUT = 5.0
-
 
 @dataclass
 class BackpressureConfig:
@@ -41,7 +40,6 @@ class BackpressureConfig:
     droppable_types: frozenset[str] = field(
         default_factory=lambda: _DEFAULT_DROPPABLE_TYPES
     )
-
 
 class BackpressuredEventStream:
     """SSE event stream with backpressure handling.

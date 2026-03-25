@@ -29,7 +29,7 @@ class JobModel:
     """
 
     def __init__(self) -> None:
-        self.logger: logging.Logger = logging.getLogger("Job")
+        self.logger: logging.Logger = logging.getLogger(__name__)
         # Map of stage IDs to Stages.
         self.stages: dict[int, StageModel] = collections.defaultdict(StageModel)
         self.overlap: float = 0.0

@@ -7,7 +7,7 @@ including job configuration retrieval, run listing, and job execution.
 from __future__ import annotations
 
 import datetime
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 from starboard_server.adapters.databricks.services.base import BaseService
@@ -15,8 +15,7 @@ from starboard_server.adapters.databricks.services.base import BaseService
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class JobService(BaseService):
     """Async service for Databricks job operations.
@@ -235,7 +234,7 @@ class JobService(BaseService):
                     break
 
                 if results:
-                    logger.debug(f"Exact match found for job name: {job_name}")
+                    logger.debug("Exact match found for job name: {job_name}")
                     return results
 
             # Partial match: iterate and filter
@@ -252,7 +251,7 @@ class JobService(BaseService):
                     if len(results) >= limit:
                         break
 
-            logger.debug(f"Partial match found {len(results)} jobs for: {job_name}")
+            logger.debug("Partial match found {len(results)} jobs for: {job_name}")
             return results
 
         return await self._run_sync(_search)

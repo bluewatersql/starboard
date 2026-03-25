@@ -101,13 +101,13 @@ class JobTools:
         )
 
         if result is None:
-            logger.debug(f"Error searching for job name: {job_name}")
+            logger.debug("Error searching for job name: {job_name}")
             return None, []
 
         # Check for exact match
         if result.get("exact_match") and result.get("job_id"):
             job_id = result["job_id"]
-            logger.debug(f"Exact match found for job_name '{job_name}': {job_id}")
+            logger.debug("Exact match found for job_name '{job_name}': {job_id}")
             return job_id, []
 
         # Multiple partial matches found
@@ -118,7 +118,7 @@ class JobTools:
             )
             return None, matches
 
-        logger.debug(f"No job found with name: {job_name}")
+        logger.debug("No job found with name: {job_name}")
         return None, []
 
     async def resolve_job(
@@ -306,7 +306,7 @@ class JobTools:
             >>> result = await tools.get_job_config("123456")
             >>> # Returns: {"job_config": {...}, "task_definitions": [...], "job_clusters": {...}}
         """
-        logger.debug(f"Fetching job configuration for job: {job_id}")
+        logger.debug("Fetching job configuration for job: {job_id}")
 
         # Fetch job metadata using transforms helper
         job_metadata = await get_job_metadata(self.provider, job_id, max_runs=1)
@@ -320,7 +320,7 @@ class JobTools:
         # Extract cluster information
         job_clusters = extract_job_clusters(job_metadata.get("runs", []))
 
-        logger.debug(f"Fetched config for job_id {job_id}: {len(tasks)} tasks")
+        logger.debug("Fetched config for job_id {job_id}: {len(tasks)} tasks")
 
         return {
             "job_config": job_metadata,
@@ -404,7 +404,7 @@ class JobTools:
             "state_message": state_message,
             "start_time": run_output.get("start_time"),
             "end_time": run_output.get("end_time"),
-            "error": run_output.get("error"),
+            "error": run_output.get("error"), "error_code": "tool_error",
             "summary": run_output.get("summary"),  # Aggregated task errors
             "tasks": tasks,  # Full task outputs with logs/notebook_output
             "failed_tasks": failed_tasks,  # Quick reference to failed tasks
@@ -477,7 +477,7 @@ class JobTools:
             "state": result_state,
             "state_message": state_message,
             "logs": task_logs.get("logs"),
-            "error": task_logs.get("error"),
+            "error": task_logs.get("error"), "error_code": "tool_error",
             "notebook_output": task_logs.get("notebook_output"),
             "sql_output": task_logs.get("sql_output"),
             "dbt_output": task_logs.get("dbt_output"),

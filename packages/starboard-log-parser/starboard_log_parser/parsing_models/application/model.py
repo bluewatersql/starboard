@@ -18,7 +18,7 @@ from starboard_log_parser.parsing_models.application.types import (
     SparkApplicationMetadata,
 )
 
-logger = logging.getLogger("SparkApplication")
+logger = logging.getLogger(__name__)
 
 
 class SparkApplication:

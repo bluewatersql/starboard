@@ -110,4 +110,5 @@ class DiagnosticTools:
                 "has_more": False,
                 "suggested_followups": [],
                 "error": str(e),
+                "error_code": "tool_error",
             }

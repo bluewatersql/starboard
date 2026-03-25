@@ -79,7 +79,7 @@ class DatabricksSQLProvider(SQLQueryProvider):
             # Convert to list of dicts for protocol compatibility
             return df.to_dicts()
         except Exception as e:
-            logger.error(f"SQL execution failed: {e}", extra={"query": query[:200]})
+            logger.error("SQL execution failed: {e}", extra={"query": query[:200]})
             raise
 
     async def execute_query_polars(self, query: str) -> pl.DataFrame:
@@ -100,7 +100,7 @@ class DatabricksSQLProvider(SQLQueryProvider):
         try:
             return await self.api.sql.execute_polars(query)
         except Exception as e:
-            logger.error(f"SQL execution failed: {e}", extra={"query": query[:200]})
+            logger.error("SQL execution failed: {e}", extra={"query": query[:200]})
             raise
 
 
@@ -244,11 +244,12 @@ class UCTools:
                 "asset_type": result.asset_type,
             }
         except ValueError as e:
-            return {"error": str(e), "assets": [], "total_count": 0}
+            return {"error": str(e), "error_code": "tool_error", "assets": [], "total_count": 0}
         except Exception as e:
-            logger.error(f"Error enumerating UC assets: {e}")
+            logger.error("Error enumerating UC assets: {e}")
             return {
                 "error": f"Failed to enumerate assets: {e}",
+                "error_code": "tool_error",
                 "assets": [],
                 "total_count": 0,
             }
@@ -283,7 +284,7 @@ class UCTools:
         try:
             result = await self.service.fetch_table_metadata(table_name)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False}
+                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
 
             return {
                 "found": True,
@@ -330,8 +331,8 @@ class UCTools:
                 "created_by": result.created_by,
             }
         except Exception as e:
-            logger.error(f"Error fetching table metadata for {table_name}: {e}")
-            return {"error": f"Failed to fetch metadata: {e}", "found": False}
+            logger.error("Error fetching table metadata for {table_name}: {e}")
+            return {"error": f"Failed to fetch metadata: {e}", "found": False, "error_code": "tool_error"}
 
     @staticmethod
     def _serialize_lineage_nodes(nodes: Sequence[Any]) -> list[dict[str, Any]]:
@@ -400,9 +401,10 @@ class UCTools:
                 "truncated": result.truncated,
             }
         except Exception as e:
-            logger.error(f"Error fetching lineage for {table_name}: {e}")
+            logger.error("Error fetching lineage for {table_name}: {e}")
             return {
                 "error": f"Failed to fetch lineage: {e}",
+                "error_code": "tool_error",
                 "table_name": table_name,
                 "upstream": [],
                 "downstream": [],
@@ -439,7 +441,7 @@ class UCTools:
                 return {
                     "table_name": table_name,
                     "can_access_grants": False,
-                    "error": "Permission denied or table not found",
+                    "error": "Permission denied or table not found", "error_code": "tool_error",
                 }
 
             return {
@@ -473,11 +475,12 @@ class UCTools:
                 ],
             }
         except Exception as e:
-            logger.error(f"Error fetching grants for {table_name}: {e}")
+            logger.error("Error fetching grants for {table_name}: {e}")
             return {
                 "table_name": table_name,
                 "can_access_grants": False,
                 "error": f"Failed to fetch grants: {e}",
+                "error_code": "tool_error",
             }
 
     async def analyze_table_schema(
@@ -509,7 +512,7 @@ class UCTools:
         try:
             result = await self.service.analyze_table_schema(table_name)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False}
+                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
 
             return {
                 "found": True,
@@ -537,8 +540,8 @@ class UCTools:
                 "health_score": result.health_score,
             }
         except Exception as e:
-            logger.error(f"Error analyzing schema for {table_name}: {e}")
-            return {"error": f"Failed to analyze schema: {e}", "found": False}
+            logger.error("Error analyzing schema for {table_name}: {e}")
+            return {"error": f"Failed to analyze schema: {e}", "found": False, "error_code": "tool_error"}
 
     async def fetch_delta_history(
         self,
@@ -572,7 +575,7 @@ class UCTools:
             result = await self.service.fetch_delta_history(table_name, limit)
             if not result:
                 return {
-                    "error": "Unable to fetch history (table not found or not a Delta table)",
+                    "error": "Unable to fetch history (table not found or not a Delta table)", "error_code": "tool_error",
                     "table_name": table_name,
                     "found": False,
                 }
@@ -602,9 +605,10 @@ class UCTools:
                 "schema_changes_count": result.schema_changes_count,
             }
         except Exception as e:
-            logger.error(f"Error fetching history for {table_name}: {e}")
+            logger.error("Error fetching history for {table_name}: {e}")
             return {
                 "error": f"Failed to fetch history: {e}",
+                "error_code": "tool_error",
                 "table_name": table_name,
                 "found": False,
             }
@@ -640,7 +644,7 @@ class UCTools:
             result = await self.service.analyze_access_patterns(table_name, window_days)
             if not result:
                 return {
-                    "error": "Unable to analyze access patterns (system tables unavailable)",
+                    "error": "Unable to analyze access patterns (system tables unavailable)", "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -674,9 +678,10 @@ class UCTools:
                 ],
             }
         except Exception as e:
-            logger.error(f"Error analyzing access patterns for {table_name}: {e}")
+            logger.error("Error analyzing access patterns for {table_name}: {e}")
             return {
                 "error": f"Failed to analyze access patterns: {e}",
+                "error_code": "tool_error",
                 "table_name": table_name,
             }
 
@@ -712,7 +717,7 @@ class UCTools:
             )
             if not result:
                 return {
-                    "error": "Unable to detect schema drift (history unavailable)",
+                    "error": "Unable to detect schema drift (history unavailable)", "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -744,9 +749,10 @@ class UCTools:
                 else None,
             }
         except Exception as e:
-            logger.error(f"Error detecting schema drift for {table_name}: {e}")
+            logger.error("Error detecting schema drift for {table_name}: {e}")
             return {
                 "error": f"Failed to detect schema drift: {e}",
+                "error_code": "tool_error",
                 "table_name": table_name,
             }
 
@@ -780,7 +786,7 @@ class UCTools:
         try:
             result = await self.service.recommend_storage_optimization(table_name)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False}
+                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
 
             return {
                 "found": True,
@@ -827,7 +833,7 @@ class UCTools:
             logger.error(
                 f"Error generating storage recommendations for {table_name}: {e}"
             )
-            return {"error": f"Failed to generate recommendations: {e}", "found": False}
+            return {"error": f"Failed to generate recommendations: {e}", "found": False, "error_code": "tool_error"}
 
     async def analyze_query_impact(
         self,
@@ -862,7 +868,7 @@ class UCTools:
             result = await self.service.analyze_query_impact(table_names, query_pattern)
             if not result:
                 return {
-                    "error": "Unable to analyze query impact",
+                    "error": "Unable to analyze query impact", "error_code": "tool_error",
                     "tables": table_names,
                 }
 
@@ -895,9 +901,10 @@ class UCTools:
                 },
             }
         except Exception as e:
-            logger.error(f"Error analyzing query impact: {e}")
+            logger.error("Error analyzing query impact: {e}")
             return {
                 "error": f"Failed to analyze query impact: {e}",
+                "error_code": "tool_error",
                 "tables": table_names,
             }
 
@@ -939,7 +946,7 @@ class UCTools:
         try:
             result = await self.service.fetch_table_fingerprint(table_name, window_days)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False}
+                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
 
             # Build response with new comprehensive structure
             response: dict[str, Any] = {
@@ -1014,8 +1021,8 @@ class UCTools:
             return response
 
         except Exception as e:
-            logger.error(f"Error generating fingerprint for {table_name}: {e}")
-            return {"error": f"Failed to generate fingerprint: {e}", "found": False}
+            logger.error("Error generating fingerprint for {table_name}: {e}")
+            return {"error": f"Failed to generate fingerprint: {e}", "found": False, "error_code": "tool_error"}
 
     async def attribute_table_costs(
         self,
@@ -1047,7 +1054,7 @@ class UCTools:
             result = await self.service.attribute_table_costs(table_name, window_days)
             if not result:
                 return {
-                    "error": "Unable to attribute costs (system tables unavailable)",
+                    "error": "Unable to attribute costs (system tables unavailable)", "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -1078,9 +1085,10 @@ class UCTools:
                 },
             }
         except Exception as e:
-            logger.error(f"Error attributing costs for {table_name}: {e}")
+            logger.error("Error attributing costs for {table_name}: {e}")
             return {
                 "error": f"Failed to attribute costs: {e}",
+                "error_code": "tool_error",
                 "table_name": table_name,
             }
 
@@ -1120,7 +1128,7 @@ class UCTools:
             )
             if not result:
                 return {
-                    "error": "Unable to generate schema diff",
+                    "error": "Unable to generate schema diff", "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -1165,9 +1173,10 @@ class UCTools:
                 "migration_sql": result.migration_sql,
             }
         except Exception as e:
-            logger.error(f"Error generating schema diff for {table_name}: {e}")
+            logger.error("Error generating schema diff for {table_name}: {e}")
             return {
                 "error": f"Failed to generate schema diff: {e}",
+                "error_code": "tool_error",
                 "table_name": table_name,
             }
 
@@ -1204,7 +1213,7 @@ class UCTools:
         try:
             result = await self.service.analyze_policy_coverage(scope, catalog, schema)
             if not result:
-                return {"error": "Invalid scope or missing parameters", "scope": scope}
+                return {"error": "Invalid scope or missing parameters", "error_code": "tool_error", "scope": scope}
 
             return {
                 "scope": result.scope,
@@ -1232,8 +1241,8 @@ class UCTools:
                 "security_score": result.overall_security_score,
             }
         except Exception as e:
-            logger.error(f"Error analyzing policy coverage: {e}")
-            return {"error": f"Failed to analyze policy coverage: {e}", "scope": scope}
+            logger.error("Error analyzing policy coverage: {e}")
+            return {"error": f"Failed to analyze policy coverage: {e}", "scope": scope, "error_code": "tool_error"}
 
     # =========================================================================
     # Table Discovery (LLM-based)
@@ -1282,7 +1291,7 @@ class UCTools:
         """
         if not source_text:
             return {
-                "error": "No source_text provided",
+                "error": "No source_text provided", "error_code": "tool_error",
                 "all_tables": [],
                 "source_tables": [],
                 "target_tables": [],
@@ -1306,15 +1315,16 @@ class UCTools:
         except RuntimeError as e:
             # Discovery provider not configured
             return {
-                "error": str(e),
+                "error": str(e), "error_code": "tool_error",
                 "all_tables": [],
                 "source_tables": [],
                 "target_tables": [],
             }
         except Exception as e:
-            logger.error(f"Error discovering tables from source: {e}")
+            logger.error("Error discovering tables from source: {e}")
             return {
                 "error": f"Failed to discover tables: {e}",
+                "error_code": "tool_error",
                 "all_tables": [],
                 "source_tables": [],
                 "target_tables": [],
@@ -1354,9 +1364,10 @@ class UCTools:
                 "table_metadata": table_metadata,
             }
         except Exception as e:
-            logger.error(f"Error enriching table references: {e}")
+            logger.error("Error enriching table references: {e}")
             return {
                 "error": f"Failed to enrich tables: {e}",
+                "error_code": "tool_error",
                 "enriched_tables": [],
                 "table_metadata": {},
             }

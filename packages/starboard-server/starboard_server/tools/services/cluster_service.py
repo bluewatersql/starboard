@@ -20,21 +20,13 @@ from starboard_server.tools.domain.cluster import (
     analyze_cluster_health,
     build_cluster_fingerprint,
 )
+from starboard_server.tools.exceptions import ClusterNotFoundError
 
 if TYPE_CHECKING:
     from starboard_server.infra.observability.events import EventEmitter
     from starboard_server.services.context.provider import SharedContextProvider
 
 logger = get_logger(__name__)
-
-
-class ClusterNotFoundError(Exception):
-    """Raised when a cluster cannot be found."""
-
-    def __init__(self, cluster_id: str) -> None:
-        """Initialize with cluster ID."""
-        self.cluster_id = cluster_id
-        super().__init__(f"Cluster not found: {cluster_id}")
 
 
 class ClusterService:

@@ -7,13 +7,12 @@ The client uses a persistent async connection pool to improve performance
 by reusing TCP connections across multiple requests.
 """
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from typing import Any
 
 import httpx
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class HTTPClient:
     """Generic async HTTP REST client.

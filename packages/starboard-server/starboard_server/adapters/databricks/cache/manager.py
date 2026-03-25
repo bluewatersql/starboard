@@ -19,7 +19,7 @@ from __future__ import annotations
 import asyncio
 import fnmatch
 import hashlib
-import logging
+from starboard_server.infra.observability.logging import get_logger
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -27,8 +27,7 @@ from typing import Any
 
 import polars as pl
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 @dataclass
 class CacheEntry:
@@ -45,7 +44,6 @@ class CacheEntry:
     expires_at: float | None
     ttl: int | None = None
     created_at: float = field(default_factory=time.time)
-
 
 class CacheManager:
     """Unified cache manager with LRU eviction and per-key locking.

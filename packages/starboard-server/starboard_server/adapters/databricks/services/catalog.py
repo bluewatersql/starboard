@@ -9,7 +9,7 @@ This module provides async Unity Catalog operations for:
 
 from __future__ import annotations
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -22,8 +22,7 @@ if TYPE_CHECKING:
     from databricks.sdk.errors import NotFound, PermissionDenied
     from databricks.sdk.service.catalog import SecurableType
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class CatalogService(BaseService):
     """Async service for Unity Catalog operations.

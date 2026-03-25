@@ -7,7 +7,6 @@ Starboard Server - FastAPI Application.
 Main entry point for the Starboard AI Agent FastAPI backend.
 """
 
-import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -126,6 +125,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info("server_shutdown_complete")
 
 
+
+def _get_log_level(level_name: str) -> int:
+    """Convert log level name string to integer level.
+
+    Maps level name strings to their integer values without importing
+    the stdlib logging module (which is replaced by structlog project-wide).
+    """
+    _level_map: dict[str, int] = {
+        "CRITICAL": 50,
+        "FATAL": 50,
+        "ERROR": 40,
+        "WARNING": 30,
+        "WARN": 30,
+        "INFO": 20,
+        "DEBUG": 10,
+        "NOTSET": 0,
+    }
+    return _level_map.get(level_name.upper(), 20)  # default INFO
+
 def get_container() -> Container:
     """
     Get the global Container instance.
@@ -170,7 +188,7 @@ def create_app() -> FastAPI:
     # Setup logging
     config = get_config()
     setup_structured_logging(
-        level=getattr(logging, config.log_level.upper()),
+        level=_get_log_level(config.log_level),
         json_output=config.log_json,
         enable_pii_redaction=config.enable_pii_redaction,
     )

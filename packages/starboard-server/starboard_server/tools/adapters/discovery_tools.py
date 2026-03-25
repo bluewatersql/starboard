@@ -32,7 +32,7 @@ from starboard_server.discovery.output.formatters import OutputFormatter
 from starboard_server.discovery.prompts.domain_analysis import PromptBuilder
 from starboard_server.discovery.query_packs.registry import create_default_registry
 from starboard_server.discovery.synthesizer import ReportAssembler
-from starboard_server.infra.core.config import EnvConfig
+from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
@@ -138,7 +138,7 @@ class DiscoveryTools:
     ) -> None:
         self._sql_executor = sql_executor
         self._llm_client = llm_client
-        self._env_config = env_config or EnvConfig.from_env()
+        self._env_config = env_config or get_config()
 
         self._query_registry = create_default_registry()
         self._heuristic_registry = create_default_heuristic_registry()
@@ -201,7 +201,7 @@ class DiscoveryTools:
         if not audit_packs:
             return {
                 "status": "error",
-                "error": "No audit pack registered",
+                "error": "No audit pack registered", "error_code": "tool_error",
                 "active_products": [],
             }
 
@@ -279,7 +279,7 @@ class DiscoveryTools:
         if self._active_products is None:
             return {
                 "status": "error",
-                "error": "Call discover_active_products first to detect active products.",
+                "error": "Call discover_active_products first to detect active products.", "error_code": "tool_error",
             }
 
         start = time.monotonic()
@@ -367,7 +367,7 @@ class DiscoveryTools:
         if self._pack_results is None:
             return {
                 "status": "error",
-                "error": "Call run_discovery_queries first to gather data.",
+                "error": "Call run_discovery_queries first to gather data.", "error_code": "tool_error",
             }
 
         # Resolve which domains to analyze
@@ -404,7 +404,7 @@ class DiscoveryTools:
         if self._llm_client is None:
             return {
                 "status": "error",
-                "error": "LLM client is required for domain analysis but was not configured.",
+                "error": "LLM client is required for domain analysis but was not configured.", "error_code": "tool_error",
             }
 
         analyzer = DomainAnalyzer(
@@ -458,7 +458,7 @@ class DiscoveryTools:
             return {
                 "status": "error",
                 "domains": target_domains,
-                "error": "Analysis produced no results for any domain.",
+                "error": "Analysis produced no results for any domain.", "error_code": "tool_error",
                 "failed_domains": failed_domains,
             }
 
@@ -542,6 +542,7 @@ class DiscoveryTools:
             return {
                 "status": "error",
                 "error": "Provide either 'domain' (single) or 'domains' (batch), not both.",
+                "error_code": "tool_error",
             }
         if domains:
             return domains
@@ -550,6 +551,7 @@ class DiscoveryTools:
         return {
             "status": "error",
             "error": "Provide 'domain' (single) or 'domains' (batch of all domains from Phase 2).",
+            "error_code": "tool_error",
         }
 
     # ------------------------------------------------------------------
@@ -571,7 +573,7 @@ class DiscoveryTools:
         if not self._domain_analyses:
             return {
                 "status": "error",
-                "error": "No domain analyses available. Call analyze_discovery_domain first.",
+                "error": "No domain analyses available. Call analyze_discovery_domain first.", "error_code": "tool_error",
             }
 
         start = time.monotonic()

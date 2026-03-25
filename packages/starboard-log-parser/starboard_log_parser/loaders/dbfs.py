@@ -27,7 +27,7 @@ from starboard_log_parser.loaders import (
 from starboard_log_parser.loaders.dbfs_adapter import DatabricksSDKAdapter
 from starboard_log_parser.loaders.protocols import DBFSClient
 
-logger = logging.getLogger("DBFSLoader")
+logger = logging.getLogger(__name__)
 
 
 class ChunkStreamReader:

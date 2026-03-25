@@ -34,7 +34,7 @@ from starboard_log_parser.parsing_models.event_log_parser import (
     ApplicationModel,
 )
 
-logger = logging.getLogger("SparkApplication")
+logger = logging.getLogger(__name__)
 
 
 class BaseAmbiguousLogFormatSparkApplicationLoader(

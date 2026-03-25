@@ -15,7 +15,7 @@ Usage:
 
 from __future__ import annotations
 
-import logging
+from starboard_server.infra.observability.logging import get_logger
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -30,15 +30,14 @@ from starboard_server.adapters.databricks.services.sql import SQLService
 from starboard_server.adapters.databricks.services.users import UsersService
 from starboard_server.adapters.databricks.services.warehouses import WarehouseService
 from starboard_server.adapters.databricks.services.workspace import WorkspaceService
-from starboard_server.infra.core.config import EnvConfig
+from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.reliability.exceptions import ConfigurationError
 
 if TYPE_CHECKING:
     import polars as pl
     from databricks.sdk.service.catalog import SecurableType
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class AsyncDatabricksClient:
     """Unified async Databricks client with integrated caching.
@@ -96,7 +95,7 @@ class AsyncDatabricksClient:
             cache_enabled: Enable caching (default: True)
             cache_max_size: Maximum cache entries (default: 500)
         """
-        self._cfg = cfg or EnvConfig.from_env()
+        self._cfg = cfg or get_config()
         self._host = host or self._cfg.databricks_host
         self._token = token or self._cfg.databricks_token
         self._cache_enabled = cache_enabled
