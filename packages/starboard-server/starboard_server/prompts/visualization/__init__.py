@@ -12,3 +12,7 @@ Usage:
     >>> from starboard_server.prompts.visualization import v1
     >>> messages = v1.build_visualization_prompt(query_metadata, data_profile)
 """
+
+from .v1 import PROMPT_VERSION
+
+__all__ = ["PROMPT_VERSION"]

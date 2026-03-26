@@ -126,6 +126,7 @@ nav:
       - System Architecture: architecture/SYSTEM_ARCHITECTURE.md
       - Multi-Agent Reasoning: INTERRUPTIBLE_REASONING.md
       - Tool System: TOOL_ARCHITECTURE.md
+      - Token Budget: TOKEN_BUDGET.md
       - Frontend Architecture: FRONTEND_ARCHITECTURE.md
       - Output Contracts: contracts/AGENT_OUTPUT_CONSUMERS.md
 

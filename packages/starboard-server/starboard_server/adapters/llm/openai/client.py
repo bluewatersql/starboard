@@ -304,6 +304,7 @@ class OpenAIProvider(BaseLLMClient):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> str:
         """Get a text response from the LLM.
 
@@ -350,6 +351,7 @@ class OpenAIProvider(BaseLLMClient):
                     output_tokens=normalized_usage["completion_tokens"],
                     latency_ms=latency_ms,
                     span_id=get_current_span_id(),
+                    prompt_version=prompt_version,
                 )
 
                 content = resp.choices[0].message.content
@@ -382,6 +384,7 @@ class OpenAIProvider(BaseLLMClient):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> AsyncIterator[str]:
         """Get a streaming text response from the LLM.
 
@@ -436,6 +439,7 @@ class OpenAIProvider(BaseLLMClient):
                     output_tokens=output_tokens,
                     latency_ms=latency_ms,
                     span_id=get_current_span_id(),
+                    prompt_version=prompt_version,
                 )
             else:
                 raise ValueError("LLM returned empty streaming response")
@@ -466,6 +470,7 @@ class OpenAIProvider(BaseLLMClient):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> dict[str, Any]:
         """Get JSON response with validation and error handling.
 
@@ -639,6 +644,7 @@ class OpenAIProvider(BaseLLMClient):
                         phase=phase,
                         validated=is_pydantic,
                         span_id=get_current_span_id(),
+                        prompt_version=prompt_version,
                     )
 
                 if budget and normalized_usage and phase:
@@ -697,6 +703,7 @@ class OpenAIProvider(BaseLLMClient):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> AsyncIterator[str]:
         """Get a streaming JSON response from the LLM.
 
@@ -793,6 +800,7 @@ class OpenAIProvider(BaseLLMClient):
                     phase=phase,
                     validated=False,
                     span_id=get_current_span_id(),
+                    prompt_version=prompt_version,
                 )
 
                 if budget and normalized_usage and phase:
@@ -863,6 +871,7 @@ class OpenAIProvider(BaseLLMClient):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> Any:  # Returns LLMResponse
         """Call LLM with tool/function calling support.
 
@@ -929,6 +938,8 @@ class OpenAIProvider(BaseLLMClient):
                     input_tokens=normalized["prompt_tokens"],
                     output_tokens=normalized["completion_tokens"],
                     latency_ms=latency_ms,
+                    span_id=get_current_span_id(),
+                    prompt_version=prompt_version,
                 )
 
                 response = LLMResponse(
@@ -974,6 +985,7 @@ class OpenAIProvider(BaseLLMClient):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """Call LLM with tool/function calling support (streaming mode).
 
@@ -1102,6 +1114,8 @@ class OpenAIProvider(BaseLLMClient):
                     input_tokens=usage_data["prompt_tokens"],
                     output_tokens=usage_data["completion_tokens"],
                     latency_ms=latency_ms,
+                    span_id=get_current_span_id(),
+                    prompt_version=prompt_version,
                 )
 
                 logger.debug(

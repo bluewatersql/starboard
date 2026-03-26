@@ -237,7 +237,7 @@ test-unit:
 	@pytest packages/starboard-log-parser/tests/unit/ -v --tb=short
 	@pytest packages/starboard-server/tests/unit/ -v --tb=short
 	@pytest packages/starboard-cli/tests/unit/ -v --tb=short
-	@pytest packages/starboard-sdk/tests/unit/ -v --tb=short 2>/dev/null || true
+	@pytest packages/starboard-sdk/tests/unit/ -v --tb=short
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
 
 test-sdk:
@@ -265,8 +265,17 @@ test-contract:
 
 test-coverage:
 	@echo "$(BLUE)Running tests with coverage...$(NC)"
-	@pytest packages/starboard-server/tests/unit/ \
-		--cov=starboard_server --cov-report=term-missing --cov-report=html:htmlcov
+	@pytest packages/starboard-core/tests/unit/ \
+		packages/starboard-log-parser/tests/unit/ \
+		packages/starboard-server/tests/unit/ \
+		packages/starboard-cli/tests/unit/ \
+		packages/starboard-sdk/tests/unit/ \
+		--cov=starboard_core \
+		--cov=starboard_log_parser \
+		--cov=starboard_server \
+		--cov=starboard_cli \
+		--cov=starboard_sdk \
+		--cov-report=term-missing --cov-report=html:htmlcov
 	@echo "$(GREEN)✓ Coverage report: htmlcov/index.html$(NC)"
 
 test-frontend:
@@ -299,6 +308,7 @@ lint-frontend:
 type-check:
 	@echo "$(BLUE)Running type checker...$(NC)"
 	@mypy packages/starboard-server/starboard_server/ --config-file pyproject.toml
+	@mypy packages/starboard-sdk/starboard_sdk/ --config-file pyproject.toml
 	@echo "$(GREEN)✓ Type check passed$(NC)"
 
 format:
@@ -317,8 +327,8 @@ pre-commit:
 
 audit-deps:
 	@echo "$(BLUE)Auditing dependencies...$(NC)"
-	@pip-audit 2>/dev/null || echo "$(YELLOW)pip-audit not installed, skipping Python audit$(NC)"
-	@cd frontend && npm audit --production 2>/dev/null || true
+	pip-audit --strict
+	cd frontend && npm audit --audit-level=high
 	@echo "$(GREEN)✓ Audit complete$(NC)"
 
 # ================================

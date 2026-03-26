@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 
-import pandas as pd
+import polars as pl
 import sqlglot
 import structlog
 from sqlglot import exp
@@ -990,28 +990,27 @@ class _PredicateAggregator:
     def add(self, pred: PredicateRecord):
         self.rows.append(pred.model_dump())
 
-    def get_summary(self) -> pd.DataFrame:
+    def get_summary(self) -> pl.DataFrame:
         if not self.rows:
-            return pd.DataFrame(
-                columns=[
-                    "scope",
-                    "op",
-                    "lhs",
-                    "rhs_kind",
-                    "rhs",
-                    "negated",
-                    "values",
-                    "frequency",
-                ]
+            return pl.DataFrame(
+                schema={
+                    "scope": pl.Utf8,
+                    "op": pl.Utf8,
+                    "lhs": pl.Utf8,
+                    "rhs_kind": pl.Utf8,
+                    "rhs": pl.Utf8,
+                    "negated": pl.Boolean,
+                    "values": pl.Utf8,
+                    "frequency": pl.Int64,
+                }
             )
 
-        df = pd.DataFrame(self.rows)
-        df["frequency"] = 1
-        df = df.groupby(
-            ["scope", "op", "lhs", "rhs_kind", "rhs", "negated", "values"],
-            as_index=False,
-        )["frequency"].sum()
-        df = df.sort_values("frequency", ascending=False)
+        df = pl.DataFrame(self.rows)
+        df = (
+            df.group_by(["scope", "op", "lhs", "rhs_kind", "rhs", "negated", "values"])
+            .agg(pl.len().alias("frequency"))
+            .sort("frequency", descending=True)
+        )
         return df
 
 
@@ -1032,18 +1031,24 @@ class _AggregationAggregator:
             }
         )
 
-    def get_summary(self) -> pd.DataFrame:
+    def get_summary(self) -> pl.DataFrame:
         if not self.rows:
-            return pd.DataFrame(
-                columns=["agg", "arg_kind", "arg", "distinct", "frequency"]
+            return pl.DataFrame(
+                schema={
+                    "agg": pl.Utf8,
+                    "arg_kind": pl.Utf8,
+                    "arg": pl.Utf8,
+                    "distinct": pl.Boolean,
+                    "frequency": pl.Int64,
+                }
             )
 
-        df = pd.DataFrame(self.rows)
-        df["frequency"] = 1
-        df = df.groupby(["agg", "arg_kind", "arg", "distinct"], as_index=False)[
-            "frequency"
-        ].sum()
-        df = df.sort_values("frequency", ascending=False)
+        df = pl.DataFrame(self.rows)
+        df = (
+            df.group_by(["agg", "arg_kind", "arg", "distinct"])
+            .agg(pl.len().alias("frequency"))
+            .sort("frequency", descending=True)
+        )
         return df
 
 
@@ -1051,7 +1056,7 @@ class _AggregationAggregator:
 # Single-pass public API
 # ----------------------------
 def analyze_dataframe(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     statement_column: str = "statement_text",
     dialect: str = "databricks",
     table_prefix: str | None = None,
@@ -1059,10 +1064,10 @@ def analyze_dataframe(
     default_schema: str = "default",
 ) -> AnalysisResult:
     """
-    Single-pass analysis of SQL statements in a DataFrame.
+    Single-pass analysis of SQL statements in a Polars DataFrame.
 
     Args:
-        df: DataFrame containing SQL statements
+        df: Polars DataFrame containing SQL statements
         statement_column: Column name with SQL statements
         dialect: SQL dialect for parsing
         table_prefix: Optional filter - only include joins where to_table starts with this
@@ -1070,7 +1075,7 @@ def analyze_dataframe(
     if statement_column not in df.columns:
         raise ValueError(f"Column '{statement_column}' not found in DataFrame")
 
-    statements = df[statement_column].dropna().astype(str).tolist()
+    statements = df.select(pl.col(statement_column)).to_series().drop_nulls().cast(pl.Utf8).to_list()
     if not statements:
         return AnalysisResult(
             success_count=0,

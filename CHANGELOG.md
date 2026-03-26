@@ -1,37 +1,39 @@
 # Changelog
 
-All notable changes to Starboard AI Agent are documented here.
+All notable changes to this project will be documented in this file.
 
-## [Unreleased] — 2026-03-25
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Slot 1: Foundation (Phase 0)
-- Added 10 architecture fitness tests (GUIDELINE-001 through 010)
-- Removed 9 unused Python dependencies and 2 unused frontend dependencies
-- Generated `examples/env.example` from all EnvConfig fields
-- Updated 6 engineering guideline documents
+## [Unreleased]
 
-### Slot 2: Security, MCP, AI Safety, Resource Leaks
-- Fixed SQL injection in UC adapter `_format_value`
-- Removed info disclosure from error responses
-- Defaulted `enable_pii_redaction=True`, tightened CORS
-- Implemented MCP resources, composite tools, error handling
-- Added injection detector blocking mode
-- Moved user input to separate user-role messages
-- Cached `_rest_client`, fixed resource lifecycle cleanup
+### Added
+- Architecture fitness tests (GUIDELINE-001 through GUIDELINE-010)
+- Token budget documentation
+- Operations runbook with triage flowchart
+- AGENTS.md files across all key directories
+- docker-compose.yml for local dev (Postgres, Redis)
+- Runbook templates for rollback and capacity planning
 
-### Slot 3: Architecture, Error Handling, Config
-- Implemented StateStore Protocol across 24 store classes
-- Fixed 15 layer violations: agents no longer import from api layer
-- Merged exception hierarchy, migrated 34 modules to structlog
-- Created `bootstrap.py` public facade
+### Changed
+- SDK fully integrated into Makefile (test, coverage, type-check)
+- Pre-commit config extended with mypy and check-toml hooks
+- pip-audit hook args fixed for environment-based scanning
+- test-coverage now spans all packages (core, log-parser, server, cli, sdk)
+- TOKEN_BUDGET.md added to mkdocs nav
 
-### Slot 4: AI Hardening, SDK/CLI, Frontend
-- Created `BaseToolAdapter`, `OutputFormat` enum, `@tool_schema` decorator
-- SDK: Exception hierarchy, removed Any types, events facade
-- CLI: `--json`, `--no-color` flags, stderr for errors
-- Frontend: Removed 14 `as any` casts, added ARIA attributes
+### Fixed
+- SDK test failures no longer swallowed in `make test-unit`
 
-### Slot 5: Observability & DX, Archive
-- Added `make audit-deps`, `make test-sdk` targets
-- Relaxed numpy/pyarrow upper bounds
-- Created AGENTS.md, CHANGELOG.md, runbook templates
+## [0.1.0] - 2026-03-26
+
+### Added
+- Initial multi-agent conversation system
+- 8 domain agents (Query, Job, UC, Cluster, Analytics, Warehouse, Discovery, Diagnostic)
+- 45+ tools across 6 categories
+- FastAPI backend with SSE streaming
+- Next.js 16 frontend with Material UI v7
+- MCP server integration
+- CLI with interactive analysis
+- SDK for programmatic use
+- SQLite, Postgres, and Redis state backends

@@ -18,8 +18,7 @@ dependencies = [
     "openai>=2.6.0,<3.0.0",
     "tiktoken>=0.12.0",
     # Data processing
-    "pandas>=2.3.3,<3.0.0",
-    "polars>=1.17.0,<2.0.0", # Modern DataFrame library (10x faster than Pandas)
+    "polars>=1.17.0,<2.0.0",
     "pyarrow>=18.0.0,<20.0.0", # Required for Arrow format with Databricks + Polars integration
     "numpy>=1.24.0,<3.0.0",
     "sqlglot>=27.29.0,<28.0.0",

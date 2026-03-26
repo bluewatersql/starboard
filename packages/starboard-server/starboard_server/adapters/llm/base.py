@@ -29,6 +29,7 @@ class BaseLLMClient(ABC):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> str:
         """
         Get a text response from the LLM.
@@ -54,6 +55,7 @@ class BaseLLMClient(ABC):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> AsyncIterator[str]:
         """
         Get a streaming text response from the LLM.
@@ -84,6 +86,7 @@ class BaseLLMClient(ABC):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> dict[str, Any]:
         """
         Get a JSON response from the LLM.
@@ -112,6 +115,7 @@ class BaseLLMClient(ABC):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> AsyncIterator[str]:
         """
         Get a streaming JSON response from the LLM.
@@ -158,6 +162,7 @@ class BaseLLMClient(ABC):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> Any:  # Returns LLMResponse (avoiding circular import)
         """
         Call LLM with tool/function calling support.
@@ -223,6 +228,7 @@ class BaseLLMClient(ABC):
         max_tokens: int | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        prompt_version: str | None = None,
     ) -> AsyncIterator[dict[str, Any]]:  # Yields streaming event data
         """
         Call LLM with tool/function calling support (streaming mode).
