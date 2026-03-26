@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import (
+    AdapterError,
     DatabricksAPIError,
     ResourceNotFoundError,
     wrap_databricks_error,

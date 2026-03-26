@@ -127,7 +127,7 @@ class TestGenerateMarkdownReport:
         }
 
         with patch(
-            "starboard_server.agents.report_formatters.format_agent_report"
+            "starboard_server.bootstrap.format_agent_report"
         ) as mock_format:
             mock_format.return_value = "## Formatted Report Content"
 
@@ -147,7 +147,7 @@ class TestGenerateMarkdownReport:
         }
 
         with patch(
-            "starboard_server.agents.report_formatters.format_agent_report"
+            "starboard_server.bootstrap.format_agent_report"
         ) as mock_format:
             mock_format.side_effect = Exception("Formatter error")
 
@@ -166,7 +166,7 @@ class TestGenerateMarkdownReport:
         }
 
         with patch(
-            "starboard_server.agents.report_formatters.format_agent_report"
+            "starboard_server.bootstrap.format_agent_report"
         ) as mock_format:
             mock_format.return_value = None
 
@@ -185,7 +185,7 @@ class TestGenerateMarkdownReport:
         }
 
         with patch(
-            "starboard_server.agents.report_formatters.format_agent_report"
+            "starboard_server.bootstrap.format_agent_report"
         ) as mock_format:
             mock_format.return_value = "## Report"
 
@@ -203,7 +203,7 @@ class TestGenerateMarkdownReport:
         }
 
         with patch(
-            "starboard_server.agents.report_formatters.format_agent_report"
+            "starboard_server.bootstrap.format_agent_report"
         ) as mock_format:
             mock_format.return_value = "## Report"
 

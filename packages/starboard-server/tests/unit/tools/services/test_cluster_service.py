@@ -204,9 +204,11 @@ class TestGetFingerprint:
         sample_cluster_config: dict,
     ) -> None:
         """Test graceful handling when metrics fetch fails."""
+        from starboard_server.exceptions import DatabricksAPIError
+
         mock_provider.get.side_effect = [
             sample_cluster_config,  # cluster_config succeeds
-            Exception("Metrics API error"),  # cluster_metrics fails
+            DatabricksAPIError("Metrics API error"),  # cluster_metrics fails
         ]
 
         result = await cluster_service.get_fingerprint(

@@ -11,7 +11,7 @@ Comprehensive testing for:
 Follows Python AI Agent Engineering Standards.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starboard_server.agents.routing.intent_router import IntentRouter
@@ -21,8 +21,8 @@ from starboard_server.agents.routing.intent_router import IntentRouter
 def mock_llm_client():
     """Mock LLM client for testing."""
     client = MagicMock()
-    # json_response is synchronous in the actual implementation, not async
-    client.json_response = MagicMock()
+    # json_response is async in the actual implementation
+    client.json_response = AsyncMock()
     return client
 
 

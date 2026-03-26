@@ -285,7 +285,7 @@ class TestSSEErrorSanitization:
         exc = RuntimeError(secret_message)
 
         # production=True must sanitize
-        data = _build_error_event_data(exc, conversation_id="conv_1", production=True)
+        data = _build_error_event_data(exc, _conversation_id="conv_1", production=True)
         assert secret_message not in json.dumps(data), (
             f"Secret leaked in SSE error data: {data}"
         )
@@ -299,7 +299,7 @@ class TestSSEErrorSanitization:
         secret_message = "dev_debug_error_detail"
         exc = RuntimeError(secret_message)
 
-        data = _build_error_event_data(exc, conversation_id="conv_1", production=False)
+        data = _build_error_event_data(exc, _conversation_id="conv_1", production=False)
         # In dev we expect full detail
         assert secret_message in json.dumps(data)
 

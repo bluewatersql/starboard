@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 from databricks.sdk.errors import NotFound
 
 from starboard_server.adapters.databricks.services.base import BaseService
+from starboard_server.exceptions import AdapterError
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import DatabricksAPIError
 

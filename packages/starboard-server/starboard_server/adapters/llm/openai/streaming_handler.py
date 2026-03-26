@@ -47,8 +47,6 @@ async def iter_text_stream(
     Yields:
         Content string chunks as they arrive
     """
-    input_tokens = 0
-    output_tokens = 0
     chunk_count = 0
 
     async for chunk in stream:
@@ -62,9 +60,7 @@ async def iter_text_stream(
         usage = get_chunk_usage(chunk)
         if usage:
             collect_token_usage(usage)
-            normalized_usage = normalize_usage(usage)
-            input_tokens = normalized_usage["prompt_tokens"]
-            output_tokens = normalized_usage["completion_tokens"]
+            normalize_usage(usage)
 
 
 async def iter_json_stream(

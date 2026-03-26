@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from starboard_core.models.conversation import Conversation
 from starboard_core.models.memory import Episode, Fact
 
+from starboard_server.exceptions import AdapterError
 from starboard_server.infra.core.container import Container
 from starboard_server.infra.observability.logging import get_logger
 

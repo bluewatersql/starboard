@@ -50,14 +50,9 @@ class TestBuildAnalyticsContextGracefulDegradation:
 
     @pytest.mark.asyncio
     async def test_returns_empty_context_on_endpoint_not_found(self):
-        import httpx
-        from openai import NotFoundError
+        from starboard_server.exceptions import AdapterError
 
-        error = NotFoundError(
-            message="ENDPOINT_NOT_FOUND",
-            response=httpx.Response(404, request=httpx.Request("POST", "http://test")),
-            body={"error_code": "ENDPOINT_NOT_FOUND"},
-        )
+        error = AdapterError("ENDPOINT_NOT_FOUND")
         tools = _make_tools(search_side_effect=error)
 
         result = await tools.build_analytics_context(
@@ -71,8 +66,10 @@ class TestBuildAnalyticsContextGracefulDegradation:
 
     @pytest.mark.asyncio
     async def test_returns_empty_context_on_connection_error(self):
+        from starboard_server.exceptions import AdapterError
+
         tools = _make_tools(
-            search_side_effect=ConnectionError("Connection refused")
+            search_side_effect=AdapterError("Connection refused")
         )
 
         result = await tools.build_analytics_context(
@@ -83,9 +80,10 @@ class TestBuildAnalyticsContextGracefulDegradation:
 
     @pytest.mark.asyncio
     async def test_returns_empty_context_on_timeout(self):
+        from starboard_server.exceptions import AdapterError
 
         tools = _make_tools(
-            search_side_effect=TimeoutError("Embedding timed out")
+            search_side_effect=AdapterError("Embedding timed out")
         )
 
         result = await tools.build_analytics_context(
@@ -123,14 +121,9 @@ class TestBuildAnalyticsContextGracefulDegradation:
     @pytest.mark.asyncio
     async def test_with_analytics_sql_tools_returns_handle_on_error(self):
         """When analytics_sql_tools is set but embeddings fail, still returns."""
-        import httpx
-        from openai import NotFoundError
+        from starboard_server.exceptions import AdapterError
 
-        error = NotFoundError(
-            message="ENDPOINT_NOT_FOUND",
-            response=httpx.Response(404, request=httpx.Request("POST", "http://test")),
-            body={"error_code": "ENDPOINT_NOT_FOUND"},
-        )
+        error = AdapterError("ENDPOINT_NOT_FOUND")
 
         vector_store = MagicMock()
         vector_store.search_multi_collection = AsyncMock(side_effect=error)
