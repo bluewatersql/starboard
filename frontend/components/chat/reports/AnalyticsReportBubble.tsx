@@ -172,7 +172,7 @@ export function AnalyticsReportBubble({
             {/* Visualization Section - only render if has_visualization is true */}
             {report.visualization && (() => {
               // Cast to extended type that includes chart rendering fields
-              const viz = report.visualization as ExtendedVisualization;
+              const viz = report.visualization as unknown as ExtendedVisualization;
               
               // Only show visualization section if has_visualization is true and we have data
               if (!viz.has_visualization || !viz.data_reference) {

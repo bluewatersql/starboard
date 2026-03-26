@@ -63,11 +63,11 @@ export type AgentType =
  */
 export interface ToolPosition {
   /** ID of the tool call to display */
-  tool_call_id: string;
+  readonly tool_call_id: string;
   /** Character position in content where tool should appear */
-  position: number;
+  readonly position: number;
   /** Display mode for this tool */
-  display: "inline" | "group" | "hidden";
+  readonly display: "inline" | "group" | "hidden";
 }
 
 /**
@@ -76,21 +76,21 @@ export interface ToolPosition {
  */
 export interface ToolCall {
   /** Unique tool call identifier */
-  tool_call_id?: string;
+  readonly tool_call_id?: string;
   /** Tool name (e.g., "fetch_table_metadata") */
-  tool_name: string;
+  readonly tool_name: string;
   /** Human-readable tool name (e.g., "Fetch Table Metadata") */
-  friendly_name?: string;
+  readonly friendly_name?: string;
   /** Tool execution status */
-  status?: ToolCallStatus;
-  /** Tool arguments/parameters */
+  readonly status?: ToolCallStatus;
+  /** Tool arguments/parameters - mutable during streaming */
   arguments?: Record<string, unknown>;
-  /** Tool execution result */
+  /** Tool execution result - mutable during streaming */
   result?: unknown;
   /** Error message if tool failed */
-  error?: string;
+  readonly error?: string;
   /** Execution duration in milliseconds */
-  duration_ms?: number;
+  readonly duration_ms?: number;
 }
 
 /**

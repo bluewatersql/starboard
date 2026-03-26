@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * AUTO-GENERATED FILE - DO NOT EDIT
  * 
@@ -235,7 +234,7 @@ export interface Message {
   content: string;
   timestamp?: string;
   status?: MessageStatus;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   /** Tool calls executed in this message */
   tool_calls?: Array<ToolCall>;
   /** Next step options for interactive conversation flow */
@@ -297,7 +296,7 @@ export interface ChatEvent {
   /** Type of event */
   type: EventType;
   /** Event payload */
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   /** UTC timestamp when event was emitted */
   timestamp: string;
 }
@@ -333,13 +332,13 @@ export interface ChatEvent {
  */
 export interface CreateConversationRequest {
   /** Initial context for the conversation */
-  context?: Record<string, any> | null;
+  context?: Record<string, unknown> | null;
   /** Conversation configuration */
   config?: ConversationConfig | null;
   /** Optional initial message to send immediately after creation (UX vNext Phase 1) */
   initial_message?: string | null;
   /** Optional metadata for the conversation */
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 /**
@@ -354,7 +353,7 @@ export interface SendMessageRequest {
   /** Optional file attachments */
   attachments?: Array<FileAttachment> | null;
   /** Optional metadata */
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 /**
@@ -427,7 +426,7 @@ export interface RespondToClarificationRequest {
   /** Free-form text response (required if response_type=custom_text) */
   custom_text?: string | null;
   /** Optional additional context */
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 /**
@@ -490,7 +489,7 @@ export interface RespondToSolicitationRequest {
   /** User's response/answer */
   content: string;
   /** Additional context */
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 /**
@@ -660,7 +659,7 @@ export interface NextStepAction {
   /** Tool name for tool calls */
   tool_name?: string | null;
   /** Action parameters */
-  parameters?: Record<string, any> | null;
+  parameters?: Record<string, unknown> | null;
 }
 
 /**
@@ -914,7 +913,7 @@ export interface VisualizationRecommendation {
   /** Additional metrics to plot */
   secondary_metrics?: Array<string>;
   /** Chart-specific configuration for rendering (null for table views) */
-  chart_config: Record<string, any> | null;
+  chart_config: Record<string, unknown> | null;
   /** Visualization guidance notes */
   notes?: string;
   /** Cache key for query results (required for frontend data fetching) */

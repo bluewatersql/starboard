@@ -97,7 +97,7 @@ export function useSlashCommands(conversationId: string) {
       const trimmed = input.trim();
       if (!trimmed.startsWith("/")) return null;
 
-      const commandName = trimmed.split(" ")[0].toLowerCase();
+      const commandName = (trimmed.split(" ")[0] ?? "").toLowerCase();
       return commands.find((cmd) => cmd.name === commandName) || null;
     },
     [commands]

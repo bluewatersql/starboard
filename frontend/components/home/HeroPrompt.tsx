@@ -49,6 +49,7 @@ export function HeroPrompt({ initialValue = "" }: HeroPromptProps) {
   const setPendingMessage = useConversationStore((s) => s.setPendingMessage);
   const setPendingAttachment = useConversationStore((s) => s.setPendingAttachment);
   const addConversation = useConversationStore((s) => s.addConversation);
+  const removeNewlyCreated = useConversationStore((s) => s.removeNewlyCreated);
   const setActiveConversation = useConversationStore((s) => s.setActiveConversation);
   const toConversationConfig = useConfigStore((s) => s.toConversationConfig);
   
@@ -138,6 +139,8 @@ export function HeroPrompt({ initialValue = "" }: HeroPromptProps) {
         ...conversation,
         user_id: conversation.user_id || "anonymous",
       });
+      // Schedule cleanup of newly-created tracking after 30 seconds
+      setTimeout(() => removeNewlyCreated(conversation.conversation_id), 30000);
       setActiveConversation(conversation.conversation_id);
 
       // 3. Set pending message to be sent by ChatContainer

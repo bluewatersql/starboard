@@ -69,7 +69,7 @@ function formatTimestamp(timestamp?: string): string {
  */
 function getDateString(timestamp?: string): string {
   const date = timestamp ? new Date(timestamp) : new Date();
-  return date.toISOString().split("T")[0];
+  return date.toISOString().split("T")[0] ?? "";
 }
 
 /**

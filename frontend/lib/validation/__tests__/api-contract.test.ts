@@ -23,10 +23,10 @@ import { FeedbackRatingEnum } from '@/lib/types/api';
 // ============================================================================
 
 const ConversationCreateRequestSchema = z.object({
-  context: z.record(z.string(), z.any()).nullable().optional(),
-  config: z.any().nullable().optional(),
+  context: z.record(z.string(), z.unknown()).nullable().optional(),
+  config: z.unknown().nullable().optional(),
   initial_message: z.string().nullable().optional(),
-  metadata: z.record(z.string(), z.any()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 
 const ConversationResponseSchema = z.object({
@@ -34,7 +34,7 @@ const ConversationResponseSchema = z.object({
   user_id: z.string().nullable().optional(),
   friendly_name: z.string(),
   created_at: z.string(),
-  config: z.any(),
+  config: z.unknown(),
 });
 
 const MessageRequestSchema = z.object({

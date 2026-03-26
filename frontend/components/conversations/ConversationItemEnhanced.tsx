@@ -23,7 +23,7 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
@@ -308,15 +308,15 @@ export function ConversationItemEnhanced({
         transition: "all 0.2s ease",
         bgcolor: isActive
           ? isDark
-            ? "rgba(33, 150, 243, 0.08)"
-            : "rgba(33, 150, 243, 0.04)"
+            ? alpha(theme.palette.primary.main, 0.08)
+            : alpha(theme.palette.primary.main, 0.04)
           : "background.paper",
         "&:hover": {
           bgcolor: isActive
             ? undefined
             : isDark
-              ? "rgba(255,255,255,0.02)"
-              : "rgba(0,0,0,0.01)",
+              ? alpha(theme.palette.common.white, 0.02)
+              : alpha(theme.palette.common.black, 0.01),
         },
       }}
       role="button"
@@ -401,7 +401,7 @@ export function ConversationItemEnhanced({
             sx={{
               height: 4,
               borderRadius: 2,
-              bgcolor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+              bgcolor: isDark ? alpha(theme.palette.common.white, 0.1) : alpha(theme.palette.common.black, 0.05),
             }}
           />
         </Box>

@@ -27,6 +27,7 @@ interface ConversationState {
   // Actions
   setConversations: (conversations: Conversation[]) => void;
   addConversation: (conversation: Conversation) => void;
+  removeNewlyCreated: (id: string) => void;
   updateConversation: (id: string, updates: Partial<Conversation>) => void;
   removeConversation: (id: string) => void;
   setActiveConversation: (id: string | null) => void;
@@ -82,23 +83,17 @@ export const useConversationStore = create<ConversationState>()(
       setConversations: (conversations) => set({ conversations }),
 
       addConversation: (conversation) =>
-        set((state) => {
-          // Auto-remove from tracking after 30 seconds
-          setTimeout(() => {
-            set((s) => ({
-              newlyCreatedIds: s.newlyCreatedIds.filter(
-                (id) => id !== conversation.conversation_id
-              ),
-            }));
-          }, 30000);
+        set((state) => ({
+          conversations: [conversation, ...state.conversations],
+          newlyCreatedIds: state.newlyCreatedIds.includes(conversation.conversation_id)
+            ? state.newlyCreatedIds
+            : [...state.newlyCreatedIds, conversation.conversation_id],
+        })),
 
-          return {
-            conversations: [conversation, ...state.conversations],
-            newlyCreatedIds: state.newlyCreatedIds.includes(conversation.conversation_id)
-              ? state.newlyCreatedIds
-              : [...state.newlyCreatedIds, conversation.conversation_id],
-          };
-        }),
+      removeNewlyCreated: (id) =>
+        set((state) => ({
+          newlyCreatedIds: state.newlyCreatedIds.filter((nid) => nid !== id),
+        })),
 
       updateConversation: (id, updates) =>
         set((state) => ({
@@ -196,6 +191,11 @@ export const useConversationStore = create<ConversationState>()(
             user_id: conversation.user_id || "anonymous",
           });
 
+          // Schedule cleanup of newly-created tracking after 30 seconds
+          setTimeout(() => {
+            get().removeNewlyCreated(conversation.conversation_id);
+          }, 30000);
+
           // Set as active
           get().setActiveConversation(conversation.conversation_id);
 
@@ -230,39 +230,44 @@ export const useConversationStore = create<ConversationState>()(
         pendingAttachment: state.pendingAttachment,
       }),
       // Handle rehydration - clear stale data if conversation doesn't exist
+      // Uses setState() after rehydration instead of direct mutation
       onRehydrateStorage: () => (state) => {
-        if (state?.activeConversationId && state.activeConversationId !== "new") {
-          // Validate conversation still exists by checking if it's in the list
-          // If not in list, it was likely from a previous session with stale data
+        if (!state) return;
+
+        const corrections: Partial<ConversationState> = {};
+
+        if (state.activeConversationId && state.activeConversationId !== "new") {
           const conversationExists = state.conversations.some(
             (c) => c.conversation_id === state.activeConversationId
           );
-          
+
           if (!conversationExists) {
-            // Clear stale active conversation ID
             console.warn(
               `[ConversationStore] Clearing stale activeConversationId: ${state.activeConversationId}`
             );
-            state.activeConversationId = null;
+            corrections.activeConversationId = null;
           }
         }
-        
+
         // Clear any persisted conversations that may be stale (backend is in-memory)
-        // Keep only recent ones (from current session) - conversations older than 1 hour
-        // are likely stale after server restart
         const oneHourAgo = Date.now() - 60 * 60 * 1000;
-        if (state?.conversations) {
+        if (state.conversations) {
           const freshConversations = state.conversations.filter((c) => {
             const createdAt = new Date(c.created_at).getTime();
             return createdAt > oneHourAgo;
           });
-          
+
           if (freshConversations.length !== state.conversations.length) {
             console.warn(
               `[ConversationStore] Cleared ${state.conversations.length - freshConversations.length} stale conversations`
             );
-            state.conversations = freshConversations;
+            corrections.conversations = freshConversations;
           }
+        }
+
+        // Apply corrections immutably via setState if any were needed
+        if (Object.keys(corrections).length > 0) {
+          useConversationStore.setState(corrections);
         }
       },
     }

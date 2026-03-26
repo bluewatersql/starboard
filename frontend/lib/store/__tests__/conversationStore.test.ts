@@ -133,7 +133,7 @@ describe("conversationStore", () => {
         });
       });
 
-      expect(result.current.conversations[0].friendly_name).toBe("Updated Conversation");
+      expect(result.current.conversations[0]!.friendly_name).toBe("Updated Conversation");
     });
   });
 
@@ -180,7 +180,7 @@ describe("conversationStore", () => {
 
       // Verify conversation was added to store
       expect(result.current.conversations).toHaveLength(1);
-      expect(result.current.conversations[0].conversation_id).toBe("conv_new_123");
+      expect(result.current.conversations[0]!.conversation_id).toBe("conv_new_123");
 
       // Verify conversation was set as active
       expect(result.current.activeConversationId).toBe("conv_new_123");

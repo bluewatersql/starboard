@@ -160,7 +160,7 @@ export function ConfigErrorAlert({ errorMessage, onDismiss }: ConfigErrorAlertPr
               </Typography>
               <Box
                 sx={{
-                  bgcolor: 'rgba(0, 0, 0, 0.05)',
+                  bgcolor: 'action.hover',
                   borderRadius: 1,
                   p: 1,
                   fontFamily: 'monospace',

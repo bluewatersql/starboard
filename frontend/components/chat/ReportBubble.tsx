@@ -17,7 +17,7 @@ import React, { useMemo } from "react";
 import { Box, Paper, Typography, IconButton, Tooltip, Divider } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import CodeIcon from "@mui/icons-material/Code";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MessageStatus, FeedbackRating } from "@/lib/types/api";
@@ -277,9 +277,9 @@ function MarkdownReportBubble({ message, onSubmitFeedback }: Omit<ReportBubblePr
             elevation={2}
             sx={{
               p: 2,
-              bgcolor: theme.palette.mode === "dark" 
-                ? "rgba(33, 150, 243, 0.08)" 
-                : "rgba(33, 150, 243, 0.04)",
+              bgcolor: theme.palette.mode === "dark"
+                ? alpha(theme.palette.primary.main, 0.08)
+                : alpha(theme.palette.primary.main, 0.04),
               borderRadius: 2,
               borderLeft: `4px solid ${theme.palette.primary.main}`,
             }}
@@ -308,6 +308,7 @@ function MarkdownReportBubble({ message, onSubmitFeedback }: Omit<ReportBubblePr
                 <Tooltip title="Download as Markdown">
                   <IconButton
                     size="small"
+                    aria-label="Download as Markdown"
                     onClick={handleDownloadMarkdown}
                     sx={{
                       "&:hover": {
@@ -318,11 +319,12 @@ function MarkdownReportBubble({ message, onSubmitFeedback }: Omit<ReportBubblePr
                     <DownloadIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-                
-                {message.metadata?.complete_report && (
+
+                {!!message.metadata?.complete_report && (
                   <Tooltip title="Download as JSON">
                     <IconButton
                       size="small"
+                      aria-label="Download as JSON"
                       onClick={handleDownloadJSON}
                       sx={{
                         "&:hover": {
@@ -384,18 +386,18 @@ function MarkdownReportBubble({ message, onSubmitFeedback }: Omit<ReportBubblePr
                   color: theme.palette.mode === "dark" ? "primary.light" : "primary.dark",
                 },
                 "& code": {
-                  bgcolor: theme.palette.mode === "dark" 
-                    ? "rgba(255, 255, 255, 0.1)" 
-                    : "rgba(0, 0, 0, 0.05)",
+                  bgcolor: theme.palette.mode === "dark"
+                    ? alpha(theme.palette.common.white, 0.1)
+                    : alpha(theme.palette.common.black, 0.05),
                   padding: "2px 6px",
                   borderRadius: 1,
                   fontSize: "0.9em",
                   fontFamily: "monospace",
                 },
                 "& pre": {
-                  bgcolor: theme.palette.mode === "dark" 
-                    ? "rgba(0, 0, 0, 0.3)" 
-                    : "rgba(0, 0, 0, 0.05)",
+                  bgcolor: theme.palette.mode === "dark"
+                    ? alpha(theme.palette.common.black, 0.3)
+                    : alpha(theme.palette.common.black, 0.05),
                   padding: 2,
                   borderRadius: 1,
                   overflow: "auto",

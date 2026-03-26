@@ -54,6 +54,7 @@ export function MessageInput({
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
   const [showCommands, setShowCommands] = useState(false);
+  const [activeCommandIndex, setActiveCommandIndex] = useState(-1);
   const [attachedFile, setAttachedFile] = useState<{ content: string; filename: string } | null>(null);
   const [largeFileAttachment, setLargeFileAttachment] = useState<FileAttachment | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -299,12 +300,49 @@ export function MessageInput({
     if (value.startsWith("/")) {
       const suggestions = getCommandSuggestions(value);
       setShowCommands(suggestions.length > 0);
+      setActiveCommandIndex(-1);
     } else {
       setShowCommands(false);
+      setActiveCommandIndex(-1);
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    // Handle slash-command popup keyboard navigation
+    if (showCommands && commandSuggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveCommandIndex((prev) =>
+          prev < commandSuggestions.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveCommandIndex((prev) =>
+          prev > 0 ? prev - 1 : commandSuggestions.length - 1
+        );
+        return;
+      }
+      if (e.key === "Enter" && activeCommandIndex >= 0) {
+        e.preventDefault();
+        const selectedCmd = commandSuggestions[activeCommandIndex];
+        if (selectedCmd) {
+          setMessage(selectedCmd.name);
+          setShowCommands(false);
+          setActiveCommandIndex(-1);
+          inputRef.current?.focus();
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setShowCommands(false);
+        setActiveCommandIndex(-1);
+        return;
+      }
+    }
+
     // Enter without Shift sends message
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -317,9 +355,10 @@ export function MessageInput({
 
   return (
     <Box sx={{ position: "relative" }}>
-      {/* Command Suggestions Popup */}
+      {/* Command Suggestions Popup (WAI-ARIA Combobox Pattern) */}
       {showCommands && commandSuggestions.length > 0 && (
         <Paper
+          id="slash-command-listbox"
           role="listbox"
           aria-label="Slash command suggestions"
           sx={{
@@ -334,14 +373,17 @@ export function MessageInput({
           }}
         >
           <List dense>
-            {commandSuggestions.map((cmd) => (
+            {commandSuggestions.map((cmd, index) => (
               <ListItemButton
                 key={cmd.name}
+                id={`slash-cmd-${cmd.name.replace("/", "")}`}
                 role="option"
-                aria-selected={message === cmd.name}
+                aria-selected={activeCommandIndex === index}
+                selected={activeCommandIndex === index}
                 onClick={() => {
                   setMessage(cmd.name);
                   setShowCommands(false);
+                  setActiveCommandIndex(-1);
                   inputRef.current?.focus();
                 }}
               >
@@ -388,6 +430,15 @@ export function MessageInput({
           multiline
           maxRows={6}
           fullWidth
+          role="combobox"
+          aria-expanded={showCommands && commandSuggestions.length > 0}
+          aria-haspopup="listbox"
+          aria-owns={showCommands && commandSuggestions.length > 0 ? "slash-command-listbox" : undefined}
+          aria-activedescendant={
+            activeCommandIndex >= 0 && commandSuggestions[activeCommandIndex]
+              ? `slash-cmd-${commandSuggestions[activeCommandIndex]!.name.replace("/", "")}`
+              : undefined
+          }
           placeholder={
             (attachedFile || largeFileAttachment)
               ? "Add a message (optional)..."

@@ -13,7 +13,7 @@
 
 import React from "react";
 import { Box } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 
 export interface InlineToolCallProps {
   /** Tool name identifier */
@@ -71,8 +71,8 @@ export function InlineToolCall({
         display: "block",
         // De-emphasized styling - similar to Cursor's thinking text
         color: isDark
-          ? "rgba(255, 255, 255, 0.45)"
-          : "rgba(0, 0, 0, 0.4)",
+          ? alpha(theme.palette.common.white, 0.45)
+          : alpha(theme.palette.common.black, 0.4),
         fontSize: "0.85rem",
         fontStyle: "italic",
         lineHeight: 1.4,

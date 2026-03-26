@@ -423,9 +423,10 @@ export function MessageList({ conversationId, isNew = false }: MessageListProps)
       )}
 
       {/* Virtual scroll container: height drives the scrollbar */}
-      <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
+      <div role="log" aria-label="Conversation messages" aria-live="polite" style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const message = filteredMessages[virtualRow.index];
+          if (!message) return null;
           return (
             <div
               key={message.message_id || `msg-${virtualRow.index}`}
@@ -466,13 +467,16 @@ export function MessageList({ conversationId, isNew = false }: MessageListProps)
               )}
 
               {/* Render report bubble if message has a complete_report */}
-              {message.metadata?.complete_report && (
+              {!!message.metadata?.complete_report && (
                 <ErrorBoundary
-                  fallbackRender={({ error }) => (
+                  fallbackRender={({ error: errorVal }) => (
                     <ReportErrorFallback
-                      error={error}
+                      error={errorVal}
                       reportType={
-                        message.metadata?.complete_report?.report_type === "analytics"
+                        typeof message.metadata?.complete_report === "object" &&
+                        message.metadata.complete_report !== null &&
+                        "report_type" in message.metadata.complete_report &&
+                        (message.metadata.complete_report as Record<string, unknown>).report_type === "analytics"
                           ? "analytics"
                           : "advisor"
                       }
@@ -487,7 +491,7 @@ export function MessageList({ conversationId, isNew = false }: MessageListProps)
                 </ErrorBoundary>
               )}
               {/* Visual divider between report and next steps for better separation */}
-              {message.metadata?.complete_report && message.next_steps && message.next_steps.length > 0 && (
+              {!!message.metadata?.complete_report && message.next_steps && message.next_steps.length > 0 && (
                 <Box
                   sx={{
                     display: "flex",

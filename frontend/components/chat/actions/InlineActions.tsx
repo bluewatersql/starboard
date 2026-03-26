@@ -110,7 +110,8 @@ function getVariantProps(
     danger: { color: "error", variant: "outlined" },
   };
 
-  return variants[variant] || variants.secondary;
+  const defaultVariant = { color: "inherit" as const, variant: "outlined" as const };
+  return variants[variant] ?? defaultVariant;
 }
 
 /**

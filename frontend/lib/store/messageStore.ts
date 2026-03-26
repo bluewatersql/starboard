@@ -22,7 +22,7 @@ function cleanMessageContent(content: string): string {
   if (parts.length > 1) {
     // Has both thinking and markdown sections
     // Clean only the thinking part (before ---), preserve markdown formatting after
-    const thinkingPart = addThinkingLineBreaks(parts[0])
+    const thinkingPart = addThinkingLineBreaks(parts[0] ?? "")
       // Remove [Calling...] patterns
       .replace(/\[Calling[^\]]*\]/g, ' ')
       // Collapse multiple spaces
@@ -187,13 +187,16 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           ...state.messagesByConversation,
           [conversationId]: uniqueMessages.map((msg) => {
             // Promote complete_report from metadata to top level if present
-            const complete_report = msg.complete_report || msg.metadata?.complete_report || null;
-            
+            const metaReport = msg.metadata?.complete_report;
+            const complete_report = msg.complete_report || (typeof metaReport === "object" && metaReport !== null ? metaReport : null);
+
             // Phase 2: Promote tool_positions from metadata to top level
-            const tool_positions = msg.tool_positions || msg.metadata?.tool_positions || [];
-            
+            const metaToolPositions = msg.metadata?.tool_positions;
+            const tool_positions = msg.tool_positions || (Array.isArray(metaToolPositions) ? metaToolPositions : []);
+
             // B2 fix: Promote thinking_steps from metadata for history reload
-            const thinking_steps = msg.thinking_steps || msg.metadata?.thinking_steps || [];
+            const metaThinkingSteps = msg.metadata?.thinking_steps;
+            const thinking_steps = msg.thinking_steps || (Array.isArray(metaThinkingSteps) ? metaThinkingSteps : []);
             
             return {
               ...msg,
@@ -254,7 +257,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           ).map((msg) => {
             if (msg.message_id === messageId) {
               // Phase 2: Simple update without marker manipulation
-              return { ...msg, ...updates };
+              // Performance: clean content once at MESSAGE_END instead of every delta
+              const cleanedContent = updates.status === "completed" && msg.content
+                ? cleanMessageContent(msg.content)
+                : undefined;
+              return {
+                ...msg,
+                ...updates,
+                ...(cleanedContent !== undefined ? { content: cleanedContent } : {}),
+              };
             }
             return msg;
           }),
@@ -310,7 +321,9 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             }
             
             const contentToAppend = content;
-            const newContent = cleanMessageContent(msg.content + separator + contentToAppend);
+            // Performance: skip cleanMessageContent during streaming deltas
+            // Content is cleaned once at MESSAGE_END via updateMessage
+            const newContent = msg.content + separator + contentToAppend;
             
             logger.debug(`[${timestamp}] [appendToMessage] Content updated:`, {
               oldLength: msg.content?.length || 0,
@@ -438,7 +451,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       // Check if this is actually a change - prevents infinite update loops
       if (existingIndex >= 0) {
-        const existingStep = existingSteps[existingIndex];
+        const existingStep = existingSteps[existingIndex]!;
         // Check if status is the same (most common update trigger)
         if (
           existingStep.status === step.status &&
@@ -461,13 +474,14 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             if (existingIndex >= 0) {
               // Update existing step
               updatedSteps = [...existingSteps];
+              const prevStep = existingSteps[existingIndex]!;
               updatedSteps[existingIndex] = {
-                ...existingSteps[existingIndex],
+                ...prevStep,
                 ...step,
                 // Merge sub-tasks if both exist
-                subTasks: step.subTasks || existingSteps[existingIndex].subTasks,
+                subTasks: step.subTasks || prevStep.subTasks,
                 // Merge call details if provided (U3 - 3-level thinking steps)
-                callDetails: step.callDetails || existingSteps[existingIndex].callDetails,
+                callDetails: step.callDetails || prevStep.callDetails,
               };
             } else {
               // Add new step

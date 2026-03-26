@@ -97,6 +97,12 @@ export function useSSE(options: UseSSEOptions) {
   const errorNotifiedRef = useRef<boolean>(false); // Track if error notification already shown
   const activeClientIdRef = useRef<string | null>(null); // Track active client to ignore stale events
 
+  // Stable refs for callbacks to prevent stale closures in event handlers
+  const onEventRef = useRef(onEvent);
+  onEventRef.current = onEvent;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
   // Handle SSE events (created in useEffect with clientId closure)
   // NOTE: We use getState() instead of useMessageStore() to avoid subscribing
   // the hook to store changes, which would cause re-renders on every update
@@ -206,8 +212,8 @@ export function useSSE(options: UseSSEOptions) {
         break;
     }
 
-    // Call custom handler if provided
-    onEvent?.(event);
+    // Call custom handler if provided (via ref to avoid stale closure)
+    onEventRef.current?.(event);
   };
 
   // Create and setup client
@@ -234,7 +240,7 @@ export function useSSE(options: UseSSEOptions) {
           return;
         }
         console.error("SSE error:", error);
-        onError?.(error);
+        onErrorRef.current?.(error);
       },
       onStateChange: (newState) => {
         // Only update state from active client
@@ -281,9 +287,9 @@ export function useSSE(options: UseSSEOptions) {
               );
               
               // Notify parent component with structured error (only once)
-              if (!errorNotifiedRef.current && onError) {
+              if (!errorNotifiedRef.current && onErrorRef.current) {
                 errorNotifiedRef.current = true;
-                onError(SSEErrors.conversationNotFound(conversationId));
+                onErrorRef.current(SSEErrors.conversationNotFound(conversationId));
               }
               
               setState(ConnectionState.DISCONNECTED);
@@ -294,9 +300,9 @@ export function useSSE(options: UseSSEOptions) {
               );
               
               // Treat 500 as "not found" for conversations
-              if (!errorNotifiedRef.current && onError) {
+              if (!errorNotifiedRef.current && onErrorRef.current) {
                 errorNotifiedRef.current = true;
-                onError(SSEErrors.conversationNotFound(conversationId));
+                onErrorRef.current(SSEErrors.conversationNotFound(conversationId));
               }
               
               setState(ConnectionState.DISCONNECTED);

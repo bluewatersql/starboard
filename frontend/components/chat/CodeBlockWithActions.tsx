@@ -37,10 +37,10 @@ export interface CodeBlockWithActionsProps {
 }
 
 // Shiki highlighter instance (lazily loaded)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let shikiHighlighter: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let shikiLoadPromise: Promise<any> | null = null;
+import type { Highlighter } from "shiki";
+
+let shikiHighlighter: Highlighter | null = null;
+let shikiLoadPromise: Promise<Highlighter | null> | null = null;
 
 /**
  * Load Shiki highlighter lazily.

@@ -51,7 +51,7 @@ export function NotificationSnackbar() {
     if (notifications.length > 0 && !currentNotification) {
       // Use setTimeout to defer state update and avoid cascading renders
       const timer = setTimeout(() => {
-        setCurrentNotification(notifications[0]);
+        setCurrentNotification(notifications[0] ?? null);
       }, 0);
       return () => clearTimeout(timer);
     }

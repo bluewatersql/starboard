@@ -343,9 +343,9 @@ describe("mapFindingsToRecommendations", () => {
 
     const recommendations = mapFindingsToRecommendations(findings);
     expect(recommendations).toHaveLength(2);
-    expect(recommendations[1].id).toBe("finding_2");
-    expect(recommendations[1].impact).toBe("medium");
-    expect(recommendations[1].sql_suggestion).toBeUndefined();
+    expect(recommendations[1]!.id).toBe("finding_2");
+    expect(recommendations[1]!.impact).toBe("medium");
+    expect(recommendations[1]!.sql_suggestion).toBeUndefined();
   });
 
   it("should handle findings without fixes", () => {
@@ -355,7 +355,7 @@ describe("mapFindingsToRecommendations", () => {
     };
 
     const recommendations = mapFindingsToRecommendations([finding]);
-    expect(recommendations[0].sql_suggestion).toBeUndefined();
+    expect(recommendations[0]!.sql_suggestion).toBeUndefined();
   });
 
   it("should handle findings without estimate_hours", () => {
@@ -365,7 +365,7 @@ describe("mapFindingsToRecommendations", () => {
     };
 
     const recommendations = mapFindingsToRecommendations([finding]);
-    expect(recommendations[0].estimated_time).toBeUndefined();
+    expect(recommendations[0]!.estimated_time).toBeUndefined();
   });
 
   it("should return empty array for null input", () => {
@@ -444,7 +444,7 @@ describe("extractFindings", () => {
 
     const findings = extractFindings(report);
     expect(findings).toHaveLength(1);
-    expect(findings[0].id).toBe("1");
+    expect(findings[0]!.id).toBe("1");
   });
 
   it("should extract findings from flat structure", () => {
@@ -454,7 +454,7 @@ describe("extractFindings", () => {
 
     const findings = extractFindings(report);
     expect(findings).toHaveLength(1);
-    expect(findings[0].id).toBe("1");
+    expect(findings[0]!.id).toBe("1");
   });
 
   it("should prioritize nested structure over flat", () => {
@@ -466,7 +466,7 @@ describe("extractFindings", () => {
     };
 
     const findings = extractFindings(report);
-    expect(findings[0].id).toBe("nested");
+    expect(findings[0]!.id).toBe("nested");
   });
 
   it("should return empty array for report without findings", () => {

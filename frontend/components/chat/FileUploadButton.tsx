@@ -26,7 +26,7 @@ import {
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import CloseIcon from "@mui/icons-material/Close";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 
 /**
  * Threshold for treating files as "large" and sending as attachments.
@@ -289,8 +289,8 @@ export function FileUploadButton({
                     sx={{
                       p: 1.5,
                       bgcolor: theme.palette.mode === "dark"
-                        ? "rgba(0, 0, 0, 0.3)"
-                        : "rgba(0, 0, 0, 0.03)",
+                        ? alpha(theme.palette.common.black, 0.3)
+                        : alpha(theme.palette.common.black, 0.03),
                       maxHeight: 300,
                       overflow: "auto",
                     }}

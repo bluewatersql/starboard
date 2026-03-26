@@ -54,6 +54,7 @@ interface ChatContainerProps {
 export function ChatContainer({ conversationId, skipSSEValidation = false }: ChatContainerProps) {
   const router = useRouter();
   const addConversation = useConversationStore((s) => s.addConversation);
+  const removeNewlyCreated = useConversationStore((s) => s.removeNewlyCreated);
   const removeConversation = useConversationStore((s) => s.removeConversation);
   const setActiveConversation = useConversationStore((s) => s.setActiveConversation);
   const pendingMessage = useConversationStore((s) => s.pendingMessage);
@@ -117,7 +118,7 @@ export function ChatContainer({ conversationId, skipSSEValidation = false }: Cha
     onEvent: (event) => {
       // Handle clarification request events (Phase 7)
       if (event.type === EventType.CLARIFICATION_REQUEST) {
-        setActiveClarification(event.data as ClarificationRequest);
+        setActiveClarification(event.data as unknown as ClarificationRequest);
       }
     },
     onError: (error: SSEError | Error) => {
@@ -184,6 +185,8 @@ export function ChatContainer({ conversationId, skipSSEValidation = false }: Cha
         ...conversation,
         user_id: conversation.user_id || "unknown",
       });
+      // Schedule cleanup of newly-created tracking after 30 seconds
+      setTimeout(() => removeNewlyCreated(realConversationId), 30000);
       setActiveConversation(realConversationId);
       
       // 3. Copy messages from "new" to the real conversation ID

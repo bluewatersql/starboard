@@ -206,7 +206,7 @@ describe("ConversationItemEnhanced", () => {
     it("renders conversation name", () => {
       renderWithProviders(
         <ConversationItemEnhanced
-          conversation={mockConversations[0]}
+          conversation={mockConversations[0]!}
           isActive={false}
         />
       );
@@ -294,7 +294,7 @@ describe("ConversationItemEnhanced", () => {
     it("shows metadata chips for completed conversations", () => {
       renderWithProviders(
         <ConversationItemEnhanced
-          conversation={mockConversations[0]}
+          conversation={mockConversations[0]!}
           isActive={false}
         />
       );
@@ -306,7 +306,7 @@ describe("ConversationItemEnhanced", () => {
     it("shows cost reduction chip", () => {
       renderWithProviders(
         <ConversationItemEnhanced
-          conversation={mockConversations[1]}
+          conversation={mockConversations[1]!}
           isActive={false}
         />
       );
@@ -317,7 +317,7 @@ describe("ConversationItemEnhanced", () => {
     it("shows progress bar for active conversations", () => {
       renderWithProviders(
         <ConversationItemEnhanced
-          conversation={mockConversations[2]}
+          conversation={mockConversations[2]!}
           isActive={false}
         />
       );
@@ -328,7 +328,7 @@ describe("ConversationItemEnhanced", () => {
     it("highlights active conversation", () => {
       const { container } = renderWithProviders(
         <ConversationItemEnhanced
-          conversation={mockConversations[0]}
+          conversation={mockConversations[0]!}
           isActive={true}
         />
       );
@@ -343,7 +343,7 @@ describe("ConversationItemEnhanced", () => {
     it("shows delete button on hover", async () => {
       renderWithProviders(
         <ConversationItemEnhanced
-          conversation={mockConversations[0]}
+          conversation={mockConversations[0]!}
           isActive={false}
         />
       );

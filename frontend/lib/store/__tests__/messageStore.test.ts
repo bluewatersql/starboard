@@ -58,7 +58,7 @@ describe("messageStore", () => {
       });
 
       expect(result.current.messagesByConversation["conv_123"]).toHaveLength(2);
-      expect(result.current.messagesByConversation["conv_123"][0].content).toBe(
+      expect(result.current.messagesByConversation["conv_123"]![0]!.content).toBe(
         "Hello"
       );
     });
@@ -92,7 +92,7 @@ describe("messageStore", () => {
       });
 
       expect(result.current.messagesByConversation["conv_123"]).toHaveLength(1);
-      expect(result.current.messagesByConversation["conv_123"][0].content).toBe(
+      expect(result.current.messagesByConversation["conv_123"]![0]!.content).toBe(
         "Hello"
       );
     });
@@ -120,7 +120,7 @@ describe("messageStore", () => {
       });
 
       expect(
-        result.current.messagesByConversation["conv_123"][0].complete_report
+        result.current.messagesByConversation["conv_123"]![0]!.complete_report
       ).toEqual({ findings: ["test"] });
     });
 
@@ -147,7 +147,7 @@ describe("messageStore", () => {
       });
 
       expect(
-        result.current.messagesByConversation["conv_123"][0].tool_positions
+        result.current.messagesByConversation["conv_123"]![0]!.tool_positions
       ).toEqual([{ index: 0, tool_call_id: "call_1" }]);
     });
   });
@@ -171,7 +171,7 @@ describe("messageStore", () => {
       });
 
       expect(result.current.messagesByConversation["conv_123"]).toHaveLength(1);
-      expect(result.current.messagesByConversation["conv_123"][0]).toEqual(
+      expect(result.current.messagesByConversation["conv_123"]![0]).toEqual(
         message
       );
     });
@@ -252,9 +252,9 @@ describe("messageStore", () => {
       });
 
       expect(
-        result.current.messagesByConversation["conv_123"][0].content
+        result.current.messagesByConversation["conv_123"]![0]!.content
       ).toBe("Done!");
-      expect(result.current.messagesByConversation["conv_123"][0].status).toBe(
+      expect(result.current.messagesByConversation["conv_123"]![0]!.status).toBe(
         MessageStatus.COMPLETED
       );
     });
@@ -291,10 +291,10 @@ describe("messageStore", () => {
       });
 
       expect(
-        result.current.messagesByConversation["conv_123"][0].content
+        result.current.messagesByConversation["conv_123"]![0]!.content
       ).toBe("Hello");
       expect(
-        result.current.messagesByConversation["conv_123"][1].content
+        result.current.messagesByConversation["conv_123"]![1]!.content
       ).toBe("Updated");
     });
   });
@@ -319,7 +319,7 @@ describe("messageStore", () => {
       });
 
       expect(
-        result.current.messagesByConversation["conv_123"][0].content
+        result.current.messagesByConversation["conv_123"]![0]!.content
       ).toBe("Hello world!");
     });
 
@@ -342,7 +342,7 @@ describe("messageStore", () => {
       });
 
       expect(
-        result.current.messagesByConversation["conv_123"][0].content
+        result.current.messagesByConversation["conv_123"]![0]!.content
       ).toBe("First sentence. Second sentence.");
     });
 
@@ -365,7 +365,7 @@ describe("messageStore", () => {
       });
 
       expect(
-        result.current.messagesByConversation["conv_123"][0].content
+        result.current.messagesByConversation["conv_123"]![0]!.content
       ).toBe("Content");
     });
   });
@@ -415,7 +415,7 @@ describe("messageStore", () => {
 
       const retrievedMessages = result.current.getMessages("conv_123");
       expect(retrievedMessages).toHaveLength(1);
-      expect(retrievedMessages[0].content).toBe("Hello");
+      expect(retrievedMessages[0]!.content).toBe("Hello");
     });
 
     it("returns empty array for unknown conversation", () => {
@@ -598,7 +598,7 @@ describe("messageStore", () => {
 
       expect(result.current.getMessages("temp_conv")).toEqual([]);
       expect(result.current.getMessages("real_conv")).toHaveLength(1);
-      expect(result.current.getMessages("real_conv")[0].conversation_id).toBe(
+      expect(result.current.getMessages("real_conv")[0]!.conversation_id).toBe(
         "real_conv"
       );
     });
@@ -671,9 +671,9 @@ describe("messageStore", () => {
       });
 
       const thinkingSteps =
-        result.current.messagesByConversation["conv_123"][0].thinking_steps;
+        result.current.messagesByConversation["conv_123"]![0]!.thinking_steps;
       expect(thinkingSteps).toHaveLength(1);
-      expect(thinkingSteps?.[0].title).toBe("Analyzing query");
+      expect(thinkingSteps?.[0]!.title).toBe("Analyzing query");
     });
 
     it("updates existing thinking step", () => {
@@ -707,9 +707,9 @@ describe("messageStore", () => {
       });
 
       const thinkingSteps =
-        result.current.messagesByConversation["conv_123"][0].thinking_steps;
+        result.current.messagesByConversation["conv_123"]![0]!.thinking_steps;
       expect(thinkingSteps).toHaveLength(1);
-      expect(thinkingSteps?.[0].status).toBe("completed");
+      expect(thinkingSteps?.[0]!.status).toBe("completed");
     });
 
     it("uses streaming message when messageId is 'current'", () => {
@@ -736,9 +736,9 @@ describe("messageStore", () => {
       });
 
       const thinkingSteps =
-        result.current.messagesByConversation["conv_123"][0].thinking_steps;
+        result.current.messagesByConversation["conv_123"]![0]!.thinking_steps;
       expect(thinkingSteps).toHaveLength(1);
-      expect(thinkingSteps?.[0].title).toBe("Analysis step");
+      expect(thinkingSteps?.[0]!.title).toBe("Analysis step");
     });
   });
 

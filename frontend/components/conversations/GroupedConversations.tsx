@@ -11,7 +11,7 @@ import React, { useMemo, useState } from "react";
 import { Box, Typography, Collapse, IconButton } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import { ConversationItemEnhanced } from "./ConversationItemEnhanced";
 import type { Conversation } from "@/lib/types/api";
 
@@ -198,8 +198,8 @@ function ConversationGroup({
           borderRadius: 1,
           "&:hover": {
             bgcolor: isDark
-              ? "rgba(255,255,255,0.03)"
-              : "rgba(0,0,0,0.02)",
+              ? alpha(theme.palette.common.white, 0.03)
+              : alpha(theme.palette.common.black, 0.02),
           },
         }}
         role="button"

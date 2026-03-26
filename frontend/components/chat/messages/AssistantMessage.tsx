@@ -12,6 +12,7 @@
 
 import React, { useMemo } from "react";
 import { Box, Paper, Typography, Slide } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import sbd from "sbd";
@@ -407,7 +408,7 @@ export function AssistantMessage({
               color: "text.primary",
             }}
           >
-            {renderStyledContent(parts[0])}
+            {renderStyledContent(parts[0] ?? "")}
           </Typography>
 
           {/* Separator */}
@@ -518,7 +519,7 @@ export function AssistantMessage({
                 )}
 
                 {/* User Input Request - at the very bottom of message content */}
-                {message.metadata?.user_input_request && (() => {
+                {!!message.metadata?.user_input_request && (() => {
                   const inputRequest = message.metadata.user_input_request as {
                     question?: string;
                     response?: string | null;
@@ -534,8 +535,8 @@ export function AssistantMessage({
                         p: 2,
                         bgcolor: (theme) =>
                           theme.palette.mode === "dark"
-                            ? "rgba(255, 152, 0, 0.15)"
-                            : "rgba(255, 152, 0, 0.08)",
+                            ? alpha(theme.palette.warning.main, 0.15)
+                            : alpha(theme.palette.warning.main, 0.08),
                         borderRadius: 2,
                         borderLeft: "4px solid",
                         borderColor: "warning.main",

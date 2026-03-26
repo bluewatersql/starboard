@@ -146,11 +146,11 @@ export const MessageSchema = z.object({
   content: z.string(),
   timestamp: z.string().datetime(),
   status: z.enum(["pending", "processing", "completed", "failed"]),
-  metadata: z.record(z.string(), z.any()),
+  metadata: z.record(z.string(), z.unknown()),
   /** Tool calls executed in this message */
   tool_calls: z.array(ToolCallSchema),
   /** Next step options for interactive conversation flow */
-  next_steps: z.array(z.any()).nullable().optional(),
+  next_steps: z.array(z.unknown()).nullable().optional(),
 });
 export type Message = z.infer<typeof MessageSchema>;
 
@@ -210,7 +210,7 @@ export const ChatEventSchema = z.object({
   /** Type of event */
   type: z.enum(["thinking", "step.complete", "error", "tool_start", "tool.call.start", "tool.progress", "tool_end", "tool.call.result", "user_input_request", "user_input_response", "final_output", "next_steps", "clarification.request", "handoff", "routing.decision", "friendly_name.update", "agent.transition", "checkpoint", "interrupt.received", "replan", "solicitation", "message.start", "message.delta", "message.end", "step.start"]),
   /** Event payload */
-  data: z.record(z.string(), z.any()),
+  data: z.record(z.string(), z.unknown()),
   /** UTC timestamp when event was emitted */
   timestamp: z.string().datetime(),
 });
@@ -247,13 +247,13 @@ export type ChatEvent = z.infer<typeof ChatEventSchema>;
  */
 export const CreateConversationRequestSchema = z.object({
   /** Initial context for the conversation */
-  context: z.record(z.string(), z.any()).nullable().optional(),
+  context: z.record(z.string(), z.unknown()).nullable().optional(),
   /** Conversation configuration */
   config: ConversationConfigSchema.nullable().optional(),
   /** Optional initial message to send immediately after creation (UX vNext Phase 1) */
   initial_message: z.string().nullable().optional(),
   /** Optional metadata for the conversation */
-  metadata: z.record(z.string(), z.any()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 export type CreateConversationRequest = z.infer<typeof CreateConversationRequestSchema>;
 
@@ -269,7 +269,7 @@ export const SendMessageRequestSchema = z.object({
   /** Optional file attachments */
   attachments: z.array(FileAttachmentSchema).nullable().optional(),
   /** Optional metadata */
-  metadata: z.record(z.string(), z.any()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 export type SendMessageRequest = z.infer<typeof SendMessageRequestSchema>;
 
@@ -344,7 +344,7 @@ export const RespondToClarificationRequestSchema = z.object({
   /** Free-form text response (required if response_type=custom_text) */
   custom_text: z.string().nullable().optional(),
   /** Optional additional context */
-  metadata: z.record(z.string(), z.any()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 export type RespondToClarificationRequest = z.infer<typeof RespondToClarificationRequestSchema>;
 
@@ -409,7 +409,7 @@ export const RespondToSolicitationRequestSchema = z.object({
   /** User's response/answer */
   content: z.string(),
   /** Additional context */
-  metadata: z.record(z.string(), z.any()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 export type RespondToSolicitationRequest = z.infer<typeof RespondToSolicitationRequestSchema>;
 
@@ -586,7 +586,7 @@ export const NextStepActionSchema = z.object({
   /** Tool name for tool calls */
   tool_name: z.string().nullable().optional(),
   /** Action parameters */
-  parameters: z.record(z.string(), z.any()).nullable().optional(),
+  parameters: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 export type NextStepAction = z.infer<typeof NextStepActionSchema>;
 
@@ -851,7 +851,7 @@ export const VisualizationRecommendationSchema = z.object({
   /** Additional metrics to plot */
   secondary_metrics: z.array(z.string()),
   /** Chart-specific configuration for rendering (null for table views) */
-  chart_config: z.record(z.string(), z.any()).nullable().optional(),
+  chart_config: z.record(z.string(), z.unknown()).nullable().optional(),
   /** Visualization guidance notes */
   notes: z.string(),
   /** Cache key for query results (required for frontend data fetching) */

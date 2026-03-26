@@ -66,24 +66,24 @@ describe("ExampleQueries", () => {
       render(<ExampleQueries onSelect={mockOnSelect} />);
 
       const buttons = screen.getAllByRole("button");
-      fireEvent.click(buttons[0]);
+      fireEvent.click(buttons[0]!);
 
       expect(mockOnSelect).toHaveBeenCalledTimes(1);
       expect(mockOnSelect).toHaveBeenCalledWith(expect.any(String));
-      expect(mockOnSelect.mock.calls[0][0].length).toBeGreaterThan(10);
+      expect(mockOnSelect.mock.calls[0]![0].length).toBeGreaterThan(10);
     });
 
     it("passes correct query text to onSelect", () => {
       render(<ExampleQueries onSelect={mockOnSelect} />);
 
       const buttons = screen.getAllByRole("button");
-      const firstButton = buttons[0];
+      const firstButton = buttons[0]!;
 
       fireEvent.click(firstButton);
 
       // Should be called with a string matching one of the example queries
       expect(mockOnSelect).toHaveBeenCalledWith(expect.any(String));
-      const calledWith = mockOnSelect.mock.calls[0][0];
+      const calledWith = mockOnSelect.mock.calls[0]![0];
       expect(calledWith.length).toBeGreaterThan(20);
     });
 
@@ -93,12 +93,12 @@ describe("ExampleQueries", () => {
       const buttons = screen.getAllByRole("button");
       
       // Click first query
-      fireEvent.click(buttons[0]);
-      const firstQuery = mockOnSelect.mock.calls[0][0];
+      fireEvent.click(buttons[0]!);
+      const firstQuery = mockOnSelect.mock.calls[0]![0];
 
       // Click second query
-      fireEvent.click(buttons[1]);
-      const secondQuery = mockOnSelect.mock.calls[1][0];
+      fireEvent.click(buttons[1]!);
+      const secondQuery = mockOnSelect.mock.calls[1]![0];
 
       // Queries should be different
       expect(firstQuery).not.toBe(secondQuery);
@@ -110,7 +110,7 @@ describe("ExampleQueries", () => {
       const buttons = screen.getAllByRole("button");
       
       // Should not throw when clicked without onSelect
-      expect(() => fireEvent.click(buttons[0])).not.toThrow();
+      expect(() => fireEvent.click(buttons[0]!)).not.toThrow();
     });
   });
 
