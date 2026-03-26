@@ -111,12 +111,15 @@ def make_schema_strict(schema: dict[str, Any]) -> dict[str, Any]:
             ref_name = ref_path.rsplit("/", 1)[-1]
             if ref_name in defs:
                 resolved = _patch(defs[ref_name].copy(), defs)
-                extra = {k: v for k, v in node.items() if k != "$ref"}
+                extra = {k: v for k, v in node.items() if k not in ("$ref", "default")}
                 resolved.update(extra)
                 return resolved
             return node
 
         result = dict(node)
+
+        # OpenAI strict mode does not support "default" values.
+        result.pop("default", None)
 
         if result.get("type") == "object" or "properties" in result:
             result.setdefault("additionalProperties", False)

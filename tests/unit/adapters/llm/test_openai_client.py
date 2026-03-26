@@ -898,3 +898,158 @@ class TestErrorHandling:
 
         with pytest.raises(ValueError, match="missing 'role' or 'content'"):
             await openai_provider.json_response([{"role": "user"}])  # Missing content
+
+
+# ============================================================================
+# SCHEMA STRICT-MODE TESTS
+# ============================================================================
+
+
+class TestMakeSchemaStrict:
+    """Tests for make_schema_strict default stripping and strict patching.
+
+    OpenAI strict-mode JSON schemas reject ``"default"`` values.  The
+    ``make_schema_strict`` helper must strip them, add
+    ``additionalProperties: false``, and inline ``$ref`` / ``$defs``.
+    """
+
+    def _find_defaults(self, obj: object, path: str = "") -> list[tuple[str, object]]:
+        """Recursively find all ``"default"`` keys in a schema tree."""
+        found: list[tuple[str, object]] = []
+        if isinstance(obj, dict):
+            if "default" in obj:
+                found.append((path, obj["default"]))
+            for k, v in obj.items():
+                found.extend(self._find_defaults(v, f"{path}.{k}"))
+        elif isinstance(obj, list):
+            for i, v in enumerate(obj):
+                found.extend(self._find_defaults(v, f"{path}[{i}]"))
+        return found
+
+    def test_strips_default_from_top_level_properties(self) -> None:
+        """Defaults on simple top-level properties are removed."""
+        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+
+        schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "priority": {"type": "string", "default": "MEDIUM"},
+                "count": {"type": "integer", "default": 0},
+            },
+        }
+        result = make_schema_strict(schema)
+
+        assert self._find_defaults(result) == []
+        assert result["properties"]["name"]["type"] == "string"
+        assert result["properties"]["priority"]["type"] == "string"
+        assert result["additionalProperties"] is False
+        assert set(result["required"]) == {"name", "priority", "count"}
+
+    def test_strips_default_from_nested_refs(self) -> None:
+        """Defaults inside ``$defs`` that get inlined are also removed."""
+        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+
+        schema = {
+            "type": "object",
+            "$defs": {
+                "Inner": {
+                    "type": "object",
+                    "properties": {
+                        "level": {"type": "string", "default": "LOW"},
+                    },
+                }
+            },
+            "properties": {
+                "child": {"$ref": "#/$defs/Inner"},
+            },
+        }
+        result = make_schema_strict(schema)
+
+        assert self._find_defaults(result) == []
+        assert "$defs" not in result
+        assert result["properties"]["child"]["properties"]["level"]["type"] == "string"
+
+    def test_strips_default_from_list_items(self) -> None:
+        """Defaults inside array item schemas are removed."""
+        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+
+        schema = {
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "type": "array",
+                    "default": [],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {"type": "string", "default": "unknown"},
+                        },
+                    },
+                },
+            },
+        }
+        result = make_schema_strict(schema)
+        assert self._find_defaults(result) == []
+
+    def test_strips_default_from_anyof(self) -> None:
+        """Defaults inside anyOf branches are removed."""
+        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+
+        schema = {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "anyOf": [
+                        {"type": "string", "default": "hello"},
+                        {"type": "integer", "default": 0},
+                    ],
+                },
+            },
+        }
+        result = make_schema_strict(schema)
+        assert self._find_defaults(result) == []
+
+    def test_pydantic_model_with_defaults_stripped(self) -> None:
+        """End-to-end: Pydantic model with defaults passes through
+        prepare_json_schema with all defaults removed."""
+        from enum import StrEnum
+
+        from starboard_server.adapters.llm.openai.schema_adapter import prepare_json_schema
+
+        class Severity(StrEnum):
+            LOW = "LOW"
+            MEDIUM = "MEDIUM"
+            HIGH = "HIGH"
+
+        class Finding(BaseModel):
+            title: str
+            severity: Severity = Severity.MEDIUM
+            tags: list[str] = []
+
+        class Report(BaseModel):
+            findings: list[Finding] = []
+            summary: str = ""
+
+        json_schema_def, _, is_pydantic = prepare_json_schema(Report, "test")
+
+        assert is_pydantic is True
+        assert json_schema_def is not None
+        assert json_schema_def["strict"] is True
+        assert self._find_defaults(json_schema_def["schema"]) == []
+
+    def test_real_discovery_models_no_defaults(self) -> None:
+        """Regression: the actual DomainAnalysis and ExecutiveSummaryLLMOutput
+        models used in the discovery pipeline emit no defaults after strict
+        patching."""
+        from starboard_server.adapters.llm.openai.schema_adapter import prepare_json_schema
+
+        from starboard_core.domain.models.discovery.analysis import DomainAnalysis
+        from starboard_server.discovery.synthesizer import ExecutiveSummaryLLMOutput
+
+        for model_cls in (DomainAnalysis, ExecutiveSummaryLLMOutput):
+            json_schema_def, _, _ = prepare_json_schema(model_cls, "test")
+            defaults = self._find_defaults(json_schema_def["schema"])
+            assert defaults == [], (
+                f"{model_cls.__name__} has defaults after strict patching: {defaults}"
+            )

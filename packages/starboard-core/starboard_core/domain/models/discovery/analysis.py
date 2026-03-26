@@ -101,11 +101,11 @@ class DiscoveryFinding(BaseModel):
 
     finding_id: str
     title: str
-    priority: Priority
-    impact: ImpactLevel
-    effort: ImpactLevel
-    confidence: ImpactLevel
-    finding_type: FindingType
+    priority: Priority = "MEDIUM"
+    impact: ImpactLevel = "MEDIUM"
+    effort: ImpactLevel = "MEDIUM"
+    confidence: ImpactLevel = "MEDIUM"
+    finding_type: FindingType = "CONFIGURATION"
     domain: str
     description: str
     evidence: list[Evidence] = Field(default_factory=list)
