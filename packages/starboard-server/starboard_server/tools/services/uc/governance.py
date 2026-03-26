@@ -19,8 +19,8 @@ from starboard_core.domain.models.uc import (
     UserAccess,
 )
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, QueryExecutionError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.services.uc.base import (
     UCServiceBase,
     detect_principal_type,

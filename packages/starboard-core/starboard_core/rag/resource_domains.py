@@ -15,10 +15,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class RagResourceDomain(str, Enum):
+class RagResourceDomain(StrEnum):
     """Databricks resource-model domains used for RAG filtering."""
 
     WORKSPACE_ADMIN = "workspace_admin"

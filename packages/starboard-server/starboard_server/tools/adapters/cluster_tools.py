@@ -9,8 +9,8 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, ToolError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.services.context.transforms import (
     analyze_cluster_metrics,
     analyze_spark_logs,

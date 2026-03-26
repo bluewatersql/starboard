@@ -13,7 +13,6 @@ import math
 import time
 
 from starboard_server.infra.observability.logging import get_logger
-
 from starboard_server.mcp.exceptions import RateLimitError
 
 logger = get_logger(__name__)

@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -41,7 +41,7 @@ from starboard_server.infra.observability.logging import get_logger
 logger = get_logger(__name__)
 
 
-class HandoffStatus(str, Enum):
+class HandoffStatus(StrEnum):
     """Status of agent handoff.
 
     Attributes:

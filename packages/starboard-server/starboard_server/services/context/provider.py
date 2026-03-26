@@ -14,8 +14,8 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, DatabricksAPIError
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from starboard_server.adapters.databricks import AsyncDatabricksClient

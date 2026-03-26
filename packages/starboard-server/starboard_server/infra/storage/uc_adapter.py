@@ -15,8 +15,8 @@ from functools import partial
 from typing import Any
 
 from starboard_server.adapters.databricks.services.base import run_databricks_sync
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import DatabricksAPIError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.storage.table_registry import TableDef, TableRegistry
 
 logger = get_logger(__name__)

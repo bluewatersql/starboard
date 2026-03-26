@@ -15,13 +15,13 @@ from starboard_core.domain.models.cluster import (
     FingerprintScope,
 )
 
+from starboard_server.exceptions import AdapterError, DatabricksAPIError
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.domain.cluster import (
     analyze_cluster_health,
     build_cluster_fingerprint,
 )
 from starboard_server.tools.exceptions import ClusterNotFoundError
-from starboard_server.exceptions import AdapterError, DatabricksAPIError
 
 if TYPE_CHECKING:
     from starboard_server.infra.observability.events import EventEmitter

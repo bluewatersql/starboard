@@ -23,22 +23,21 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from starboard_cli.cli.exit_codes import (
-    AUTH_ERROR,
-    CONFIG_ERROR,
-    CONNECTION_ERROR,
-    GENERAL_ERROR,
-    INTERRUPTED,
-    SUCCESS,
-    TIMEOUT_ERROR,
+import structlog
+
+# Pre-configure structlog to suppress DEBUG/INFO during module imports.
+# This prevents module-level initialization in starboard_server from
+# dumping debug logs to the console before CLI args are parsed.
+structlog.configure(
+    wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING),
+    cache_logger_on_first_use=False,
 )
 
-import structlog
-import yaml
-from dotenv import load_dotenv
-from rich.console import Console
-from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.bootstrap import (
+import yaml  # noqa: E402
+from dotenv import load_dotenv  # noqa: E402
+from rich.console import Console  # noqa: E402
+from starboard_core.domain.models.llm import OptimizationMode  # noqa: E402
+from starboard_server.bootstrap import (  # noqa: E402
     AgentConfig,
     AgentFactory,
     AsyncDatabricksClient,
@@ -63,7 +62,14 @@ from starboard_server.bootstrap import (
     get_config,
 )
 
-from starboard_cli.sessions.session_manager import SessionManager
+from starboard_cli.cli.exit_codes import (  # noqa: E402
+    AUTH_ERROR,
+    CONFIG_ERROR,
+    CONNECTION_ERROR,
+    GENERAL_ERROR,
+    INTERRUPTED,
+)
+from starboard_cli.sessions.session_manager import SessionManager  # noqa: E402
 
 logger = structlog.get_logger("starboard_cli")
 
@@ -75,7 +81,7 @@ logger = structlog.get_logger("starboard_cli")
 
 def setup_cli_logging(
     log_level: str, log_file: str | None = None, quiet: bool = False
-) -> object:
+) -> Any:
     """
     Configure logging for CLI context.
 

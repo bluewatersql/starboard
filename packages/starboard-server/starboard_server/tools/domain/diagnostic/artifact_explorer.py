@@ -18,7 +18,7 @@ Design reference:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     )
 
 
-class ExplorationStrategy(str, Enum):
+class ExplorationStrategy(StrEnum):
     """Available exploration strategies.
 
     Phase 1 strategies (MVP - OFFLINE):

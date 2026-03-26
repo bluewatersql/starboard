@@ -29,10 +29,10 @@ from starboard_server.adapters.databricks.services.sql import SQLService
 from starboard_server.adapters.databricks.services.users import UsersService
 from starboard_server.adapters.databricks.services.warehouses import WarehouseService
 from starboard_server.adapters.databricks.services.workspace import WorkspaceService
+from starboard_server.exceptions import DatabricksAPIError
 from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import ConfigurationError
-from starboard_server.exceptions import DatabricksAPIError
 
 if TYPE_CHECKING:
     import polars as pl

@@ -14,9 +14,9 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability.logging import get_logger
 from mcp.server.fastmcp import FastMCP
 
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.mcp.agent_bridge import (
     AGENT_TOOL_METADATA,
     TOOL_NAME_TO_DOMAIN,

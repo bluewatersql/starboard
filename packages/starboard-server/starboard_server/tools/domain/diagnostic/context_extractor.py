@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class ContextMode(str, Enum):
+class ContextMode(StrEnum):
     """Operational mode based on available context."""
 
     ONLINE = "online"
@@ -33,7 +33,7 @@ class ContextMode(str, Enum):
     """Some IDs detected - can partially fetch context."""
 
 
-class IdType(str, Enum):
+class IdType(StrEnum):
     """Types of Databricks IDs that can be extracted."""
 
     CLUSTER_ID = "cluster_id"

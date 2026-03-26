@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import QueryExecutionError
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from starboard_server.adapters.databricks import AsyncDatabricksClient

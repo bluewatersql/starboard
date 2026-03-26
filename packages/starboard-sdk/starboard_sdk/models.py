@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 
 class RawAgentOutput(TypedDict, total=False):

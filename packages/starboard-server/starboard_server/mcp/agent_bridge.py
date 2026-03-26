@@ -15,8 +15,6 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability.logging import get_logger
-
 from starboard_server.agents.output.envelope import (
     AgentMetrics,
     AgentResultEnvelope,
@@ -28,6 +26,7 @@ from starboard_server.infra.observability.events import (
     EventType,
     StatusEvent,
 )
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.mcp.models import MCPAgentResponse, MCPResponseMetadata
 from starboard_server.mcp.observability import (
     TokenBudgetTracker,

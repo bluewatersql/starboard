@@ -13,8 +13,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, DatabricksAPIError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.services.validation import (
     QualifiedTableName,
     validate_limit,

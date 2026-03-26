@@ -28,7 +28,7 @@ Examples:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from starboard_core.models.conversation import Message  # Phase 2
@@ -50,7 +50,7 @@ from starboard_server.services.intent.intent_classifier import (
 logger = get_logger(__name__)
 
 
-class ProcessingType(str, Enum):
+class ProcessingType(StrEnum):
     """Types of message processing results."""
 
     OPTION_SELECTED = "option_selected"

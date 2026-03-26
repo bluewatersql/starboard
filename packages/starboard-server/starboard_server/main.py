@@ -540,9 +540,9 @@ def run() -> None:
     )
 
 
-# Create app instance for direct import
-app = create_app()
-
+# We do not create a global app instance to avoid side-effects on import.
+# Use uvicorn with --factory:
+# uvicorn "starboard_server.main:create_app" --factory
 
 if __name__ == "__main__":
     run()

@@ -6,13 +6,13 @@ These models flow through the query building pipeline.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 from starboard_core.rag.models import RAGContext
 
 
-class QueryIntent(str, Enum):
+class QueryIntent(StrEnum):
     """Classification of user's analytical intent.
 
     Attributes:
@@ -36,7 +36,7 @@ class QueryIntent(str, Enum):
     UNKNOWN = "unknown"
 
 
-class QueryDomain(str, Enum):
+class QueryDomain(StrEnum):
     """Databricks domain for the query.
 
     Attributes:
@@ -59,7 +59,7 @@ class QueryDomain(str, Enum):
     UNKNOWN = "unknown"
 
 
-class AggregationType(str, Enum):
+class AggregationType(StrEnum):
     """Type of aggregation requested.
 
     Attributes:
@@ -85,7 +85,7 @@ class AggregationType(str, Enum):
     NONE = "none"
 
 
-class TimeGranularity(str, Enum):
+class TimeGranularity(StrEnum):
     """Time granularity for grouping.
 
     Attributes:

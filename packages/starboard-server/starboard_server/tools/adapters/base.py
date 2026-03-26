@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability.events import EventEmitter
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class OutputFormat(str, Enum):
+class OutputFormat(StrEnum):
     """Output format selector for tool methods that return variable detail levels.
 
     Use ``OutputFormat.RAW`` to receive unprocessed source data, and

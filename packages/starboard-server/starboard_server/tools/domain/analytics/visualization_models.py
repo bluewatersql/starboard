@@ -20,14 +20,14 @@ Design Principles:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from starboard_core.domain.models.analytics import QueryMetadata
 
 
-class EncodingType(str, Enum):
+class EncodingType(StrEnum):
     """Vega-Lite encoding types.
 
     Maps semantic data types to visual encoding types:
@@ -43,7 +43,7 @@ class EncodingType(str, Enum):
     TEMPORAL = "temporal"
 
 
-class ChartType(str, Enum):
+class ChartType(StrEnum):
     """Supported chart types.
 
     Aligned with Vega-Lite mark types and query catalog chart_metadata.

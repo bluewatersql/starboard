@@ -18,10 +18,10 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class EvidenceType(str, Enum):
+class EvidenceType(StrEnum):
     """Types of evidence windows that can be extracted."""
 
     FATAL_EXCEPTION = "fatal_exception"

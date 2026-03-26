@@ -164,14 +164,14 @@ dev-debug:
 
 dev-server:
 	@echo "$(BLUE)Starting backend server...$(NC)"
-	@cd packages/starboard-server && STARBOARD_LOG_LEVEL=DEBUG uvicorn starboard_server.main:app --reload --host 0.0.0.0 --port 8000
+	@cd packages/starboard-server && STARBOARD_LOG_LEVEL=DEBUG uvicorn "starboard_server.main:create_app" --factory --reload --host 0.0.0.0 --port 8000
 
 dev-server-debug:
 	@mkdir -p $(DEBUG_DIR)
 	@echo "$(BLUE)Starting backend (debug)...$(NC)"
 	@cd packages/starboard-server && \
 		STARBOARD_LOG_LEVEL=DEBUG STARBOARD_DEBUG=true \
-		uvicorn starboard_server.main:app --reload --host 0.0.0.0 --port 8000 \
+		uvicorn "starboard_server.main:create_app" --factory --reload --host 0.0.0.0 --port 8000 \
 		--log-level debug 2>&1 | tee ../../$(DEBUG_DIR)/server.log
 
 dev-frontend:

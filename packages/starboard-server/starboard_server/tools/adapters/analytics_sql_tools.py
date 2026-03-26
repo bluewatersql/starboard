@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, Any
 import polars as pl
 from starboard_core.rag.models import RAGContext
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, ToolError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.analytics.dataframe_profiler import profile_dataframe
 from starboard_server.tools.domain.analytics_sql.llm_sql_generator import (

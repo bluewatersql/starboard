@@ -21,7 +21,6 @@ import argparse
 import sys
 
 from starboard_server.infra.observability.logging import get_logger
-
 from starboard_server.mcp.config import load_mcp_config
 from starboard_server.mcp.exceptions import ConfigurationError
 

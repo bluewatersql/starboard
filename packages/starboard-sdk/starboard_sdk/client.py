@@ -24,15 +24,22 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from starboard_core.domain.models.llm import OptimizationMode
 from starboard_server.bootstrap import (
     ErrorEvent as _ServerErrorEvent,
+)
+from starboard_server.bootstrap import (
     FinalOutputEvent as _ServerFinalOutputEvent,
+)
+from starboard_server.bootstrap import (
     ToolEndEvent as _ServerToolEndEvent,
+)
+from starboard_server.bootstrap import (
     get_logger,
 )
 
 from starboard_sdk._event_mapper import map_event
-from starboard_sdk.event_types import AgentEvent, ErrorEvent, FinalOutputEvent, ToolEndEvent
+from starboard_sdk.event_types import (
+    AgentEvent,
+)
 from starboard_sdk.exceptions import (
-    AgentError,
     AuthenticationError,
     ConfigError,
     ConnectionError,

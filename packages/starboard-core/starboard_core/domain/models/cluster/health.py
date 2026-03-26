@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 
-class RiskSeverity(str, Enum):
+class RiskSeverity(StrEnum):
     """Risk severity levels.
 
     Attributes:
@@ -26,7 +26,7 @@ class RiskSeverity(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class RiskCategory(str, Enum):
+class RiskCategory(StrEnum):
     """Risk category classification.
 
     Attributes:

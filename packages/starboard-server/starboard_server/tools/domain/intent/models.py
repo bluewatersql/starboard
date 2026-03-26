@@ -1,10 +1,10 @@
 """Pure domain models for intent resolution."""
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class IntentType(str, Enum):
+class IntentType(StrEnum):
     """Primary optimization intent types."""
 
     UNKNOWN = "unknown"
@@ -14,7 +14,7 @@ class IntentType(str, Enum):
     GENERAL_INQUIRY = "general_inquiry"
 
 
-class ContextKeyword(str, Enum):
+class ContextKeyword(StrEnum):
     """Context keywords detected in user input."""
 
     JOB = "job"

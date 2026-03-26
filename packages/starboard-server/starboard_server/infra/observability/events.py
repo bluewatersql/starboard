@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from starboard_server.infra.observability.logging import get_logger
@@ -17,7 +17,7 @@ from starboard_server.infra.observability.logging import get_logger
 logger = get_logger(__name__)
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Event types for status messages."""
 
     INFO = "info"  # General information messages

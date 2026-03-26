@@ -25,7 +25,6 @@ from starboard_core.domain.models.discovery.query import PackResult
 from starboard_core.domain.models.discovery.report import AnalysisContext
 
 from starboard_server.discovery.analyzer import DomainAnalyzer, build_fallback_analysis
-from starboard_server.exceptions import AdapterError
 from starboard_server.discovery.engine import DiscoveryEngine, EngineConfig
 from starboard_server.discovery.executor import QueryPackExecutor, SQLExecutor
 from starboard_server.discovery.heuristics import create_default_heuristic_registry
@@ -33,6 +32,7 @@ from starboard_server.discovery.output.formatters import OutputFormatter
 from starboard_server.discovery.prompts.domain_analysis import PromptBuilder
 from starboard_server.discovery.query_packs.registry import create_default_registry
 from starboard_server.discovery.synthesizer import ReportAssembler
+from starboard_server.exceptions import AdapterError
 from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.adapters.base import BaseToolAdapter
@@ -204,7 +204,8 @@ class DiscoveryTools(BaseToolAdapter):
         if not audit_packs:
             return {
                 "status": "error",
-                "error": "No audit pack registered", "error_code": "tool_error",
+                "error": "No audit pack registered",
+                "error_code": "tool_error",
                 "active_products": [],
             }
 
@@ -282,7 +283,8 @@ class DiscoveryTools(BaseToolAdapter):
         if self._active_products is None:
             return {
                 "status": "error",
-                "error": "Call discover_active_products first to detect active products.", "error_code": "tool_error",
+                "error": "Call discover_active_products first to detect active products.",
+                "error_code": "tool_error",
             }
 
         start = time.monotonic()
@@ -370,7 +372,8 @@ class DiscoveryTools(BaseToolAdapter):
         if self._pack_results is None:
             return {
                 "status": "error",
-                "error": "Call run_discovery_queries first to gather data.", "error_code": "tool_error",
+                "error": "Call run_discovery_queries first to gather data.",
+                "error_code": "tool_error",
             }
 
         # Resolve which domains to analyze
@@ -407,7 +410,8 @@ class DiscoveryTools(BaseToolAdapter):
         if self._llm_client is None:
             return {
                 "status": "error",
-                "error": "LLM client is required for domain analysis but was not configured.", "error_code": "tool_error",
+                "error": "LLM client is required for domain analysis but was not configured.",
+                "error_code": "tool_error",
             }
 
         analyzer = DomainAnalyzer(
@@ -425,7 +429,9 @@ class DiscoveryTools(BaseToolAdapter):
         async def _analyze_one(d: str, packs: list[PackResult]) -> None:
             """Analyze a single domain, letting the analyzer handle its own LLM timeout."""
             try:
-                result = await analyzer.analyze_domain(d, packs, trace_id=self._trace_id)
+                result = await analyzer.analyze_domain(
+                    d, packs, trace_id=self._trace_id
+                )
                 analyses.append(result)
                 self._domain_analyses.append(result)
             except (AdapterError, ValueError, TimeoutError) as exc:
@@ -444,24 +450,30 @@ class DiscoveryTools(BaseToolAdapter):
                 fallback = build_fallback_analysis(d, query_results, heuristic_findings)
                 analyses.append(fallback)
                 self._domain_analyses.append(fallback)
-                failed_domains.append({
-                    "domain": d,
-                    "error": str(exc),
-                    "fallback": "heuristic_analysis",
-                    "grade": fallback.grade,
-                })
+                failed_domains.append(
+                    {
+                        "domain": d,
+                        "error": str(exc),
+                        "fallback": "heuristic_analysis",
+                        "grade": fallback.grade,
+                    }
+                )
 
-        # Run all domains concurrently; the analyzer's semaphore bounds
-        # actual LLM parallelism to max_parallelism (default 4).
-        async with asyncio.TaskGroup() as tg:
-            for d, packs in domain_results.items():
-                tg.create_task(_analyze_one(d, packs))
+        # Handle TaskGroup exceptions gracefully so they don't break the agent
+        try:
+            async with asyncio.TaskGroup() as tg:
+                for d, packs in domain_results.items():
+                    tg.create_task(_analyze_one(d, packs))
+        except ExceptionGroup as eg:
+            for exc in eg.exceptions:
+                logger.error("domain_analysis_taskgroup_error", error=str(exc))
 
         if not analyses:
             return {
                 "status": "error",
                 "domains": target_domains,
-                "error": "Analysis produced no results for any domain.", "error_code": "tool_error",
+                "error": "Analysis produced no results for any domain.",
+                "error_code": "tool_error",
                 "failed_domains": failed_domains,
             }
 
@@ -576,7 +588,8 @@ class DiscoveryTools(BaseToolAdapter):
         if not self._domain_analyses:
             return {
                 "status": "error",
-                "error": "No domain analyses available. Call analyze_discovery_domain first.", "error_code": "tool_error",
+                "error": "No domain analyses available. Call analyze_discovery_domain first.",
+                "error_code": "tool_error",
             }
 
         start = time.monotonic()

@@ -15,13 +15,13 @@ Design reference:
 from __future__ import annotations
 
 import re
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     """Pattern severity level for triage prioritization.
 
     Values guide the urgency of remediation:
@@ -37,7 +37,7 @@ class Severity(str, Enum):
     LOW = "low"
 
 
-class Category(str, Enum):
+class Category(StrEnum):
     """Pattern category for taxonomy grouping.
 
     Categories match the diagnostic domain taxonomy from merged.md.
@@ -80,7 +80,7 @@ class Category(str, Enum):
     """Skew, spill storms, driver bottlenecks (signal-based)."""
 
 
-class ResponsibilityScope(str, Enum):
+class ResponsibilityScope(StrEnum):
     """Who is responsible for remediation.
 
     Tags each pattern to steer remediation towards the right owner.

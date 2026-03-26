@@ -25,8 +25,8 @@ from starboard_core.domain.models.warehouse import (
     WarehouseFingerprint,
 )
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.domain.warehouse.chargeback import (
     ChargebackCalculator,
     WarehouseChargeback,

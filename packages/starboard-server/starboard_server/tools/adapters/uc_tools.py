@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     from starboard_server.adapters.llm.base import BaseLLMClient
     from starboard_server.infra.observability.events import EventEmitter
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, ToolError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.services.query_workload_service import (
     QueryWorkloadService,
@@ -248,7 +248,7 @@ class UCTools(BaseToolAdapter):
             }
         except ValueError as e:
             return {"error": str(e), "error_code": "tool_error", "assets": [], "total_count": 0}
-        except (ToolError, AdapterError, ValueError) as e:
+        except (ToolError, AdapterError) as e:
             logger.error("Error enumerating UC assets: {e}")
             return {
                 "error": f"Failed to enumerate assets: {e}",

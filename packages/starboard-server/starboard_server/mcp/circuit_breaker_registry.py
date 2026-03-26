@@ -10,7 +10,6 @@ workspace, allowing independent failure isolation.
 from __future__ import annotations
 
 from starboard_server.infra.observability.logging import get_logger
-
 from starboard_server.infra.reliability.circuit_breaker import (
     AsyncCircuitBreaker,
     CircuitBreakerConfig,

@@ -16,10 +16,10 @@ Design reference:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class HypothesisType(str, Enum):
+class HypothesisType(StrEnum):
     """Type of exit code hypothesis."""
 
     OOM = "oom"

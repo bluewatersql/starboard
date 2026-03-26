@@ -10,11 +10,11 @@ Following Python AI Agent Engineering Standards:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
     """User account status."""
 
     ACTIVE = "active"

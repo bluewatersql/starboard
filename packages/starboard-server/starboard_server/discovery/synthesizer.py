@@ -26,8 +26,8 @@ from starboard_core.domain.models.discovery.report import (
 )
 
 from starboard_server.adapters.llm.base import BaseLLMClient
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

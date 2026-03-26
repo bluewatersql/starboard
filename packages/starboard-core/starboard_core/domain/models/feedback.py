@@ -9,12 +9,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
 
-class FeedbackRating(str, Enum):
+class FeedbackRating(StrEnum):
     """
     User rating for agent response.
 
@@ -27,7 +27,7 @@ class FeedbackRating(str, Enum):
     NEGATIVE = "negative"
 
 
-class FeedbackCategory(str, Enum):
+class FeedbackCategory(StrEnum):
     """
     Categories for negative feedback.
 

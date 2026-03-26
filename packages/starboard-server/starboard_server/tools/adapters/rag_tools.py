@@ -18,8 +18,8 @@ from typing import TYPE_CHECKING, Any
 
 from starboard_core.rag.models import RAGContext
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.adapters.base import BaseToolAdapter
 
 if TYPE_CHECKING:

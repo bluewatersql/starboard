@@ -56,8 +56,8 @@ from starboard_core.domain.transformers.job_transformers import (
 )
 from starboard_log_parser import SparkLogPathNotFoundError, create_spark_application
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import DataProcessingError
+from starboard_server.infra.observability.logging import get_logger
 
 # Cluster transforms
 from starboard_server.tools.domain.cluster.cluster_metrics_analyzer import (

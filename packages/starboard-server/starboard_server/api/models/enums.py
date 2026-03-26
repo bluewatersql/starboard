@@ -1,9 +1,9 @@
 """API enums for message and event models."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class MessageRole(str, Enum):
+class MessageRole(StrEnum):
     """Role of message sender."""
 
     USER = "user"
@@ -12,7 +12,7 @@ class MessageRole(str, Enum):
     TOOL = "tool"
 
 
-class MessageStatus(str, Enum):
+class MessageStatus(StrEnum):
     """Status of message processing."""
 
     PENDING = "pending"
@@ -21,7 +21,7 @@ class MessageStatus(str, Enum):
     FAILED = "failed"
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Event types for server-sent events (SSE)."""
 
     # Agent events
@@ -62,14 +62,14 @@ class EventType(str, Enum):
     STEP_START = "step.start"
 
 
-class FeedbackRatingEnum(str, Enum):
+class FeedbackRatingEnum(StrEnum):
     """User feedback rating for agent responses."""
 
     POSITIVE = "positive"
     NEGATIVE = "negative"
 
 
-class FeedbackCategoryEnum(str, Enum):
+class FeedbackCategoryEnum(StrEnum):
     """Categories for negative feedback."""
 
     INACCURATE = "inaccurate"

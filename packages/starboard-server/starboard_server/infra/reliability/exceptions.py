@@ -12,8 +12,8 @@ from __future__ import annotations
 
 # Re-export everything from the canonical module for backward compatibility
 from starboard_server.exceptions import (
-    APIRateLimitError,
     AdapterError,
+    APIRateLimitError,
     ApprovalRequiredError,
     ConfigurationError,
     DatabricksAPIError,

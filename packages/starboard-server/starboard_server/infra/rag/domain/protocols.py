@@ -12,7 +12,7 @@ These protocols enable dependency inversion and flexible implementations.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from starboard_core.foundations.models import (
@@ -97,7 +97,7 @@ class EmbeddingProvider(Protocol):
 # ============================================================================
 
 
-class CollectionType(str, Enum):
+class CollectionType(StrEnum):
     """Collection types for multi-collection vector store."""
 
     TABLES = "tables"

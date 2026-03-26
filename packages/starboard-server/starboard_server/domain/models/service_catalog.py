@@ -24,11 +24,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class ServiceType(str, Enum):
+class ServiceType(StrEnum):
     """Type of service in the catalog.
 
     Attributes:
@@ -42,7 +42,7 @@ class ServiceType(str, Enum):
     CAPABILITY = "capability"
 
 
-class ServiceStatus(str, Enum):
+class ServiceStatus(StrEnum):
     """Status of a service in the catalog.
 
     Attributes:

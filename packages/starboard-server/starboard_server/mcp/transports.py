@@ -15,9 +15,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from starboard_server.infra.observability.logging import get_logger
-
 from starboard_server.infra.core.config import get_config
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.mcp.auth_context import EnvTokenAuthProvider
 from starboard_server.mcp.circuit_breaker_registry import MCPCircuitBreakerRegistry
 from starboard_server.mcp.config import MCPServerConfig

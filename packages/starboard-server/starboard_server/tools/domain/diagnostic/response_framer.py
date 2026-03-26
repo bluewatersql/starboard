@@ -14,10 +14,10 @@ Applies appropriate language and structure based on confidence:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class ConfidenceLevel(str, Enum):
+class ConfidenceLevel(StrEnum):
     """Confidence levels for diagnostic findings."""
 
     DEFINITIVE = "definitive"  # ≥90%

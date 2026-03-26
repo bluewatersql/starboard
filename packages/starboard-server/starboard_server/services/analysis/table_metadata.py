@@ -10,9 +10,9 @@ from starboard_core.domain.transformers import resolve_3part
 
 from starboard_server.adapters.llm import create_llm_client
 from starboard_server.adapters.llm.base import BaseLLMClient
+from starboard_server.exceptions import AdapterError
 from starboard_server.infra.core.config import EnvConfig
 from starboard_server.infra.observability.logging import get_logger
-from starboard_server.exceptions import AdapterError
 from starboard_server.services.context.provider import SharedContextProvider
 from starboard_server.services.context.transforms import (
     get_transformed,

@@ -18,11 +18,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 
-class PythonAntiPatternType(str, Enum):
+class PythonAntiPatternType(StrEnum):
     """Types of Python/PySpark anti-patterns."""
 
     COLLECT_LARGE_DF = "collect_large_df"

@@ -10,8 +10,8 @@ import datetime
 from typing import TYPE_CHECKING, Any
 
 from starboard_server.adapters.databricks.services.base import BaseService
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import DatabricksAPIError
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient

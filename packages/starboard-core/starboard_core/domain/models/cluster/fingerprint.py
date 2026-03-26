@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 
-class ClusterType(str, Enum):
+class ClusterType(StrEnum):
     """Databricks cluster type classification.
 
     Attributes:
@@ -26,7 +26,7 @@ class ClusterType(str, Enum):
     SINGLE_NODE = "SINGLE_NODE"
 
 
-class ClusterMode(str, Enum):
+class ClusterMode(StrEnum):
     """Databricks cluster mode.
 
     Attributes:
@@ -40,7 +40,7 @@ class ClusterMode(str, Enum):
     SINGLE_NODE = "SINGLE_NODE"
 
 
-class AccessMode(str, Enum):
+class AccessMode(StrEnum):
     """Databricks cluster access mode (Unity Catalog integration).
 
     Attributes:
@@ -60,7 +60,7 @@ class AccessMode(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
-class FingerprintScope(str, Enum):
+class FingerprintScope(StrEnum):
     """Scope of fingerprint data to include.
 
     Use this to control what data is fetched for fingerprinting,

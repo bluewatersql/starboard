@@ -20,7 +20,7 @@ import random
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from statistics import mean
 from typing import Any
 
@@ -49,7 +49,7 @@ ROUNDING_PRECISION = 2
 # =============================================================================
 
 
-class QueryOperation(str, Enum):
+class QueryOperation(StrEnum):
     """Classified query operation type."""
 
     SELECT = "select"

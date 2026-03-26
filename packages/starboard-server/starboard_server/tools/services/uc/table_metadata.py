@@ -18,8 +18,8 @@ from starboard_core.domain.models.uc import (
 )
 from starboard_core.domain.transformers import TableFingerprintTransformer
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, QueryExecutionError
+from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.services.uc.base import (
     UCServiceBase,
     parse_timestamp,

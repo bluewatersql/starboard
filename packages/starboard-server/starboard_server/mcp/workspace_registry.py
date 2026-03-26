@@ -12,7 +12,6 @@ from __future__ import annotations
 import os
 
 from starboard_server.infra.observability.logging import get_logger
-
 from starboard_server.mcp.config import MCPServerConfig, WorkspaceProfile
 from starboard_server.mcp.exceptions import ConfigurationError
 

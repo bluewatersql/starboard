@@ -18,13 +18,13 @@ Examples:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from functools import total_ordering
 from typing import Any
 
 
 @total_ordering
-class HandoffConfidence(str, Enum):
+class HandoffConfidence(StrEnum):
     """Confidence level for handoff recommendations.
 
     Used to prioritize recommendations when multiple handoffs are suggested.

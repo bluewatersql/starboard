@@ -15,10 +15,8 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
-from starboard_server.infra.observability.logging import get_logger
-
 from starboard_server.infra.observability.context import ObservabilityContext
-from starboard_server.infra.observability.logging import set_request_id
+from starboard_server.infra.observability.logging import get_logger, set_request_id
 
 logger = get_logger(__name__)
 

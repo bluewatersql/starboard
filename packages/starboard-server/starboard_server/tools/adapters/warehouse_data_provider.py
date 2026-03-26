@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import (
     AdapterError,
     DatabricksAPIError,
     ResourceNotFoundError,
     wrap_databricks_error,
 )
+from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from starboard_server.adapters.databricks.client import AsyncDatabricksClient
@@ -71,7 +71,7 @@ class WarehouseDataAdapter:
                 },
             )
             return []
-        except (AdapterError, DatabricksAPIError) as e:
+        except AdapterError as e:
             # Wrap and log unknown errors with context
             wrapped = wrap_databricks_error(e)
             logger.error(
@@ -122,7 +122,7 @@ class WarehouseDataAdapter:
                 },
             )
             return None
-        except (AdapterError, DatabricksAPIError) as e:
+        except AdapterError as e:
             # Wrap and log unknown errors with context
             wrapped = wrap_databricks_error(e)
             logger.error(

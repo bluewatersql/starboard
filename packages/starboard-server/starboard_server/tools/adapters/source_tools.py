@@ -12,13 +12,13 @@ Architecture:
 from __future__ import annotations
 
 import asyncio
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from starboard_core.domain.transformers.job_transformers import transform_task_sources
 
-from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.exceptions import AdapterError, ToolError
+from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.source import SourceTransformer
@@ -120,7 +120,7 @@ CODE_PASS_SCHEMA = {
 # =============================================================================
 
 
-class AnalysisMode(str, Enum):
+class AnalysisMode(StrEnum):
     """Analysis strategy for code quality.
 
     Use ``BATCH`` (default) to analyze all code in a single LLM call, or
@@ -346,7 +346,7 @@ class SourceTools(BaseToolAdapter):
         except (ValueError, TypeError):
             logger.error("Invalid job_id format: {job_id}, error: {e}")
             return []
-        except (ToolError, AdapterError, ValueError):
+        except (ToolError, AdapterError):
             logger.error("Failed to fetch job config for job_id={job_id}: {e}")
             return []
 

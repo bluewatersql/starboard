@@ -11,8 +11,8 @@ from typing import Any, Protocol
 
 import polars as pl
 
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, QueryExecutionError
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

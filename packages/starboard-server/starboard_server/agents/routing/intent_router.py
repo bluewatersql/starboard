@@ -28,8 +28,8 @@ from starboard_server.agents.routing.domain_intents import (
     route_by_scoring,
 )
 from starboard_server.agents.routing.routing_models import AgentDomain, RouteDecision
-from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError
+from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
