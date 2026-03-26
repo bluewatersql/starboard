@@ -595,7 +595,7 @@ def summarize_physical(raw_lines: list[str], norm_lines: list[str]) -> dict[str,
         if len(set(shuffle_partition_counts)) >= 2:
             try:
                 width_variance = stats.pvariance(shuffle_partition_counts)
-            except Exception:
+            except (TypeError, ValueError):
                 width_variance = None
 
     single_partition_bottleneck = (single_partition_ct > 0) and (len(joins) > 0)

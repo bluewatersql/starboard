@@ -23,6 +23,7 @@ from starboard_core.domain.models.uc import (
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.services.uc.base import UCServiceBase, parse_timestamp
+from starboard_server.exceptions import AdapterError, QueryExecutionError
 from starboard_server.tools.services.validation import (
     QualifiedTableName,
     validate_limit,
@@ -61,7 +62,7 @@ class StorageAnalysisService(UCServiceBase):
         query = f"DESCRIBE HISTORY {validated_name.to_sql_identifier()} LIMIT {validated_limit}"
         try:
             rows = await self.sql_provider.execute_query(query)
-        except Exception as e:
+        except (QueryExecutionError, AdapterError) as e:
             logger.error("error_fetching_history", table_name=table_name, error=str(e))
             return None
 
@@ -264,7 +265,7 @@ class StorageAnalysisService(UCServiceBase):
                         (fc.column_name, fc.table_name)
                         for fc in analysis.top_filter_columns
                     ]
-            except Exception as e:
+            except (QueryExecutionError, AdapterError) as e:
                 logger.warning("could_not_analyze_query_history", error=str(e))
 
         # Predict joins (pairwise analysis + historical data)

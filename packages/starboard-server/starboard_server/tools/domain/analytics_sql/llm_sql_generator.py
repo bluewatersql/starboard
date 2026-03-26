@@ -15,6 +15,7 @@ import json
 from typing import Any, Protocol
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError
 from starboard_server.tools.domain.analytics_sql.models import (
     QueryIntentContext,
     RAGContext,
@@ -294,7 +295,7 @@ class LLMSQLGenerator:
                 "visualization_hints": llm_response.get("visualization_hints", {}),
             }
 
-        except Exception as e:
+        except (AdapterError, ValueError, TimeoutError) as e:
             logger.error(
                 "llm_sql_generation_error",
                 extra={

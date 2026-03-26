@@ -21,6 +21,7 @@ from starboard_server.tools.domain.cluster import (
     build_cluster_fingerprint,
 )
 from starboard_server.tools.exceptions import ClusterNotFoundError
+from starboard_server.exceptions import AdapterError, DatabricksAPIError
 
 if TYPE_CHECKING:
     from starboard_server.infra.observability.events import EventEmitter
@@ -210,7 +211,7 @@ class ClusterService:
                 except ClusterNotFoundError:
                     logger.warning("cluster_not_found_in_fleet", cluster_id=cid)
                     return None
-                except Exception as e:
+                except (DatabricksAPIError, AdapterError) as e:
                     logger.error(
                         "cluster_analysis_failed",
                         cluster_id=cid,
@@ -236,7 +237,7 @@ class ClusterService:
         """
         try:
             return await self.provider.get("cluster_metrics", cluster_id)
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError) as e:
             logger.debug(
                 "metrics_fetch_failed",
                 cluster_id=cluster_id,
@@ -255,7 +256,7 @@ class ClusterService:
         """
         try:
             return await self.provider.get("cluster_cost", cluster_id)
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError) as e:
             logger.debug(
                 "cost_fetch_failed",
                 cluster_id=cluster_id,

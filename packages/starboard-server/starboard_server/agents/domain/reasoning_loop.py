@@ -424,7 +424,7 @@ async def reasoning_loop_stream(
             # Track if this step had tool calls for next iteration's "Generating Analysis"
             previous_step_had_tools = has_tools
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - step-level error boundary
             # Intentional: step-level error boundary — log and emit error
             # event to client, then break the reasoning loop gracefully.
             logger.error(

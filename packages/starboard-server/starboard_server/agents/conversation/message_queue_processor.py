@@ -521,7 +521,7 @@ class MessageQueueProcessor:
                     event_count=event_count,
                 )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - message handler boundary
             logger.error(
                 "message_processing_failed",
                 conversation_id=conversation_id,
@@ -575,7 +575,7 @@ class MessageQueueProcessor:
                     conversation_id=conversation_id,
                     error=str(exception),
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - queue handler boundary
             logger.error(
                 "task_completion_callback_failed",
                 conversation_id=conversation_id,

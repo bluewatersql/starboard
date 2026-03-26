@@ -94,7 +94,7 @@ class WorkspaceService(BaseService):
                     return base64.b64decode(content_b64).decode(
                         "utf-8", errors="replace"
                     )
-                except Exception:
+                except (DatabricksAPIError, OSError):
                     if isinstance(content_b64, str):
                         return content_b64
                     raise
@@ -170,7 +170,7 @@ class WorkspaceService(BaseService):
                 return True
             except NotFound:
                 return False
-            except Exception as e:
+            except (DatabricksAPIError, OSError) as e:
                 logger.debug(
                     "dbfs_path_check_failed",
                     extra={"dbfs_path": dbfs_path, "error": str(e)},
@@ -212,7 +212,7 @@ class WorkspaceService(BaseService):
                 if content_b64 is None:
                     return None
                 return base64.b64decode(content_b64).decode("utf-8", errors="replace")
-            except Exception as e:
+            except (DatabricksAPIError, OSError) as e:
                 logger.warning(
                     "read_dbfs_file_failed",
                     extra={"dbfs_path": dbfs_path, "error": str(e)},
@@ -259,7 +259,7 @@ class WorkspaceService(BaseService):
             return await self._run_sync(_list)
         except NotFound:
             return []
-        except Exception as e:
+        except (DatabricksAPIError, OSError) as e:
             logger.error(
                 "list_dbfs_files_failed",
                 extra={"dbfs_path": dbfs_path, "error": str(e)},
@@ -310,7 +310,7 @@ class WorkspaceService(BaseService):
                 if content_b64 is None:
                     return None
                 return base64.b64decode(content_b64)
-            except Exception as e:
+            except (DatabricksAPIError, OSError) as e:
                 logger.error(
                     "read_dbfs_chunk_failed",
                     extra={"dbfs_path": dbfs_path, "offset": offset, "error": str(e)},

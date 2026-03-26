@@ -229,7 +229,7 @@ class DatabricksLakebaseStateStore(PostgresStateStore):
                     instance=self._config.instance_name,
                 )
                 break
-            except Exception as e:
+            except (asyncpg.PostgresError, OSError) as e:
                 logger.error(
                     "databricks_token_background_refresh_error",
                     instance=self._config.instance_name,

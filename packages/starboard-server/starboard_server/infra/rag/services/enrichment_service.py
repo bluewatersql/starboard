@@ -263,7 +263,7 @@ JOIN COLUMNS:
                 response=response_preview,
             )
             raise
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
             logger.error(
                 "enrichment_failed",
                 table=table.full_name,

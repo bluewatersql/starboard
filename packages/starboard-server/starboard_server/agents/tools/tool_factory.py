@@ -353,7 +353,7 @@ def create_tool_registry(
             registry.register(tool_name, adapter)
             registered_count += 1
 
-        except Exception as e:
+        except (ImportError, AttributeError, TypeError) as e:
             logger.error("Failed to register tool", tool_name=tool_name, error=str(e))
             continue
 
@@ -427,7 +427,7 @@ def validate_tool_metadata() -> dict[str, list[str]]:
             # All checks passed
             valid.append(tool_name)
 
-        except Exception as e:
+        except (TypeError, ValueError, KeyError) as e:
             errors.append(f"{tool_name}: validation error: {str(e)}")
             invalid.append(tool_name)
 

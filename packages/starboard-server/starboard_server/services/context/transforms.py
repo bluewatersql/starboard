@@ -57,6 +57,7 @@ from starboard_core.domain.transformers.job_transformers import (
 from starboard_log_parser import SparkLogPathNotFoundError, create_spark_application
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import DataProcessingError
 
 # Cluster transforms
 from starboard_server.tools.domain.cluster.cluster_metrics_analyzer import (
@@ -262,7 +263,7 @@ def analyze_spark_logs(
     except SparkLogPathNotFoundError:
         # Path not found is NOT a failure - just means logs don't exist yet
         return None
-    except Exception as e:
+    except (ValueError, KeyError, DataProcessingError) as e:
         # Parse errors, corrupt files, etc. ARE failures - re-raise
         logger.error(
             "spark_log_parse_error",

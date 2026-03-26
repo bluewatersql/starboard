@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from starboard_server.infra.observability.events import EventEmitter
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, ToolError
 from starboard_server.tools.services.query_workload_service import (
     QueryWorkloadService,
 )
@@ -78,7 +79,7 @@ class DatabricksSQLProvider(SQLQueryProvider):
             df = await self.api.sql.execute_polars(query)
             # Convert to list of dicts for protocol compatibility
             return df.to_dicts()
-        except Exception:
+        except (ToolError, AdapterError, ValueError):
             logger.error("SQL execution failed: {e}", extra={"query": query[:200]})
             raise
 
@@ -99,7 +100,7 @@ class DatabricksSQLProvider(SQLQueryProvider):
         """
         try:
             return await self.api.sql.execute_polars(query)
-        except Exception:
+        except (ToolError, AdapterError, ValueError):
             logger.error("SQL execution failed: {e}", extra={"query": query[:200]})
             raise
 
@@ -245,7 +246,7 @@ class UCTools:
             }
         except ValueError as e:
             return {"error": str(e), "error_code": "tool_error", "assets": [], "total_count": 0}
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error enumerating UC assets: {e}")
             return {
                 "error": f"Failed to enumerate assets: {e}",
@@ -330,7 +331,7 @@ class UCTools:
                 else None,
                 "created_by": result.created_by,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error fetching table metadata for {table_name}: {e}")
             return {"error": f"Failed to fetch metadata: {e}", "found": False, "error_code": "tool_error"}
 
@@ -400,7 +401,7 @@ class UCTools:
                 "downstream_count": len(result.downstream),
                 "truncated": result.truncated,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error fetching lineage for {table_name}: {e}")
             return {
                 "error": f"Failed to fetch lineage: {e}",
@@ -474,7 +475,7 @@ class UCTools:
                     for p in result.effective_permissions
                 ],
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error fetching grants for {table_name}: {e}")
             return {
                 "table_name": table_name,
@@ -539,7 +540,7 @@ class UCTools:
                 ],
                 "health_score": result.health_score,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error analyzing schema for {table_name}: {e}")
             return {"error": f"Failed to analyze schema: {e}", "found": False, "error_code": "tool_error"}
 
@@ -604,7 +605,7 @@ class UCTools:
                 else None,
                 "schema_changes_count": result.schema_changes_count,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error fetching history for {table_name}: {e}")
             return {
                 "error": f"Failed to fetch history: {e}",
@@ -677,7 +678,7 @@ class UCTools:
                     for d in (result.daily_trend or [])[:14]
                 ],
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error analyzing access patterns for {table_name}: {e}")
             return {
                 "error": f"Failed to analyze access patterns: {e}",
@@ -748,7 +749,7 @@ class UCTools:
                 if result.last_stable_date
                 else None,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error detecting schema drift for {table_name}: {e}")
             return {
                 "error": f"Failed to detect schema drift: {e}",
@@ -829,7 +830,7 @@ class UCTools:
                 if result.estimated_impact
                 else None,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error(
                 f"Error generating storage recommendations for {table_name}: {e}"
             )
@@ -900,7 +901,7 @@ class UCTools:
                     "filter_recommendations": list(result.filter_recommendations),
                 },
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error analyzing query impact: {e}")
             return {
                 "error": f"Failed to analyze query impact: {e}",
@@ -1020,7 +1021,7 @@ class UCTools:
 
             return response
 
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error generating fingerprint for {table_name}: {e}")
             return {"error": f"Failed to generate fingerprint: {e}", "found": False, "error_code": "tool_error"}
 
@@ -1084,7 +1085,7 @@ class UCTools:
                     "change_pct": result.cost_change_pct,
                 },
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error attributing costs for {table_name}: {e}")
             return {
                 "error": f"Failed to attribute costs: {e}",
@@ -1172,7 +1173,7 @@ class UCTools:
                 "breaking_reason": result.breaking_reason,
                 "migration_sql": result.migration_sql,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error generating schema diff for {table_name}: {e}")
             return {
                 "error": f"Failed to generate schema diff: {e}",
@@ -1240,7 +1241,7 @@ class UCTools:
                 ],
                 "security_score": result.overall_security_score,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error analyzing policy coverage: {e}")
             return {"error": f"Failed to analyze policy coverage: {e}", "scope": scope, "error_code": "tool_error"}
 
@@ -1320,7 +1321,7 @@ class UCTools:
                 "source_tables": [],
                 "target_tables": [],
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error discovering tables from source: {e}")
             return {
                 "error": f"Failed to discover tables: {e}",
@@ -1363,7 +1364,7 @@ class UCTools:
                 "enriched_tables": [t.to_dict() for t in enriched_refs],
                 "table_metadata": table_metadata,
             }
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error enriching table references: {e}")
             return {
                 "error": f"Failed to enrich tables: {e}",

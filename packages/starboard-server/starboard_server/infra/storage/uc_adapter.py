@@ -16,6 +16,7 @@ from typing import Any
 
 from starboard_server.adapters.databricks.services.base import run_databricks_sync
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import DatabricksAPIError
 from starboard_server.infra.storage.table_registry import TableDef, TableRegistry
 
 logger = get_logger(__name__)
@@ -148,7 +149,7 @@ class UCStorageAdapter:
         """
         try:
             await run_databricks_sync(self.client.catalogs.get, self.config.catalog)
-        except Exception:
+        except DatabricksAPIError:
             # Catalog doesn't exist, create it
             logger.debug("creating_catalog", catalog=self.config.catalog)
             await run_databricks_sync(
@@ -168,7 +169,7 @@ class UCStorageAdapter:
         full_schema = f"{self.config.catalog}.{self.config.schema}"
         try:
             await run_databricks_sync(self.client.schemas.get, full_schema)
-        except Exception:
+        except DatabricksAPIError:
             # Schema doesn't exist, create it
             logger.debug("creating_schema", schema=full_schema)
             await run_databricks_sync(

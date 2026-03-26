@@ -151,7 +151,7 @@ async def submit_feedback(
             detail=f"Conversation or message not found: {str(e)}",
         ) from e
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "feedback_submission_failed",
             conversation_id=conversation_id,
@@ -261,7 +261,7 @@ async def get_agent_performance(
             generated_at=report.generated_at,
         )
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "performance_report_failed",
             agent_name=agent_name,

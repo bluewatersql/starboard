@@ -22,6 +22,7 @@ from starboard_core.domain.transformers import SchemaHistoryTransformer
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.services.uc.base import UCServiceBase, parse_timestamp
+from starboard_server.exceptions import AdapterError, QueryExecutionError
 
 if TYPE_CHECKING:
     from starboard_core.domain.models.uc import DeltaHistory, UCTableMetadata
@@ -211,7 +212,7 @@ class SchemaOperationsService(UCServiceBase):
                                 user=user,
                             )
                         )
-            except Exception as e:
+            except (QueryExecutionError, AdapterError) as e:
                 logger.warning("error_querying_schema_changes", error=str(e))
 
         # Transformer fallback if SQL yielded no changes
@@ -310,7 +311,7 @@ class SchemaOperationsService(UCServiceBase):
 
         try:
             rows = await self.sql_provider.execute_query(query)
-        except Exception as e:
+        except (QueryExecutionError, AdapterError) as e:
             logger.error(
                 "error_querying_schema_history", table_name=table_name, error=str(e)
             )

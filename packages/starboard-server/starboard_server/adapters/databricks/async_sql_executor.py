@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 import polars as pl
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import QueryExecutionError
 
 if TYPE_CHECKING:
     from starboard_server.adapters.databricks import AsyncDatabricksClient
@@ -137,7 +138,7 @@ class AsyncSQLExecutor:
 
             return df
 
-        except Exception as e:
+        except (QueryExecutionError, pl.exceptions.ComputeError) as e:
             logger.error(
                 "async_sql_executor_failed",
                 extra={
@@ -187,7 +188,7 @@ class AsyncSQLExecutor:
         if type_map:
             try:
                 df = df.cast(type_map)  # type: ignore[arg-type]
-            except Exception as e:
+            except (QueryExecutionError, pl.exceptions.ComputeError) as e:
                 logger.warning(
                     "type_casting_partial_failure",
                     extra={"error": str(e), "type_map": str(type_map)},
@@ -219,7 +220,7 @@ class AsyncSQLExecutor:
                     aggregations[f"{col}_avg"] = float(df[col].mean())  # type: ignore[arg-type]
                     aggregations[f"{col}_max"] = float(df[col].max())  # type: ignore[arg-type]
                     aggregations[f"{col}_min"] = float(df[col].min())  # type: ignore[arg-type]
-                except Exception:
+                except (QueryExecutionError, pl.exceptions.ComputeError):
                     # Skip if aggregation fails (e.g., all nulls)
                     pass
 

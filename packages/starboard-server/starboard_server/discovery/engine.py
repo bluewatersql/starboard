@@ -235,7 +235,7 @@ class DiscoveryEngine:
                     result.output_files = [str(p) for p in output_files]
                     _emit("output_done", {"files": len(output_files)})
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - discovery pipeline boundary
             result.errors.append(f"Pipeline error: {exc}")
             logger.exception(
                 "discovery_pipeline_failed",

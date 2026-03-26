@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, DatabricksAPIError
 
 if TYPE_CHECKING:
     from starboard_server.adapters.databricks import AsyncDatabricksClient
@@ -197,7 +198,7 @@ class SharedContextProvider:
             if data is not None:
                 self.cache.put(cache_key, data)
             return data
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError) as e:
             logger.error(
                 "fetch_error",
                 resource_type=resource_type,

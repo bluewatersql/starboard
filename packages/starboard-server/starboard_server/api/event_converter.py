@@ -164,7 +164,7 @@ def convert_streaming_event_to_chat_event(
         # Fallback: method does not accept conversation_id
         try:
             event_data = event.to_sse_data(message_id=message_id)  # type: ignore[call-arg]
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - API error boundary
             logger.error(
                 "event_serialization_failed",
                 event_type=type(event).__name__,
@@ -183,7 +183,7 @@ def convert_streaming_event_to_chat_event(
                 },
                 timestamp=datetime.now(UTC),
             )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "event_serialization_failed",
             event_type=type(event).__name__,

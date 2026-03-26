@@ -476,7 +476,7 @@ class MultiAgentConversationManager:
                             message_index=idx,
                             next_steps_count=len(next_steps_from_metadata),
                         )
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001 - non-critical prefetch
                         logger.warning(
                             "failed_to_deserialize_next_steps",
                             conversation_id=conversation_id,
@@ -1024,7 +1024,7 @@ class MultiAgentConversationManager:
 
                     formatted_markdown = format_agent_report(complete_report_data)
                     metadata["formatted_markdown"] = formatted_markdown
-                except Exception as fmt_err:
+                except Exception as fmt_err:  # noqa: BLE001 - optional formatting
                     logger.debug(
                         "report_formatting_failed",
                         error=str(fmt_err),

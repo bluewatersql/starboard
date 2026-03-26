@@ -143,7 +143,7 @@ class SQLiteMemoryStore:
                 "PYTHON_CONFIGURE_OPTS='--enable-loadable-sqlite-extensions' pyenv install <version>",
             )
             self._vec_enabled = False
-        except Exception as e:
+        except (aiosqlite.Error, ValueError) as e:
             logger.warning(
                 "sqlite_vec_extension_not_available",
                 error=str(e),
@@ -506,7 +506,7 @@ class SQLiteMemoryStore:
         # Get existing profile or create new
         try:
             profile = await self.get_profile(user_id)
-        except Exception:
+        except (aiosqlite.Error, ValueError):
             profile = UserProfile(
                 user_id=user_id,
                 created_at=datetime.now(UTC),

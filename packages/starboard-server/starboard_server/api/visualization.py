@@ -121,7 +121,7 @@ async def render_chart(
                 row_count=cached_df.height,
                 columns=cached_df.columns,
             )
-        except Exception as df_err:
+        except Exception as df_err:  # noqa: BLE001 - API error boundary
             logger.error(
                 "cached_data_conversion_failed",
                 data_reference=request.data_reference,
@@ -147,7 +147,7 @@ async def render_chart(
                 data=cached_df,
                 format=request.format,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - API error boundary
             logger.error(
                 "chart_rendering_failed",
                 data_reference=request.data_reference,
@@ -169,7 +169,7 @@ async def render_chart(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error("render_chart_unexpected_error", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

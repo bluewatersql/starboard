@@ -171,7 +171,7 @@ class AsyncCircuitBreaker:
         # Execute outside the lock to allow concurrent calls in CLOSED state
         try:
             result = await func(*args, **kwargs)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - circuit breaker records any failure
             await self._record_failure(e)
             raise
 

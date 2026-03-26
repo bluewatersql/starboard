@@ -344,7 +344,7 @@ class ToolExecutor:
                     arguments=parsed_args,
                 )
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - top-level tool error boundary
                 duration = time.time() - start_time
                 last_error = str(e)
 

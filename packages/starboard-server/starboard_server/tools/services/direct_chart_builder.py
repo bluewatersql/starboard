@@ -150,7 +150,7 @@ class DirectChartConfigBuilder:
                 has_visualization=True,
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error(
                 "chart_config_build_error",
                 error=str(e),

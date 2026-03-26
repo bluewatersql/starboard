@@ -75,7 +75,7 @@ class WarehouseService(BaseService):
             return await self._run_sync(_get)
         except NotFound:
             return None
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError, OSError) as e:
             logger.error(
                 "get_warehouse_failed",
                 extra={"warehouse_id": warehouse_id, "error": str(e)},
@@ -132,7 +132,7 @@ class WarehouseService(BaseService):
             return await self._run_sync(_get_state)
         except NotFound:
             return None
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError, OSError) as e:
             logger.error(
                 "get_warehouse_state_failed",
                 extra={"warehouse_id": warehouse_id, "error": str(e)},

@@ -105,7 +105,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         logger.debug("auth_service_initialized", provider="databricks")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "state_container_initialization_failed",
             error=str(e),
@@ -366,7 +366,7 @@ def create_app() -> FastAPI:
             )
         else:
             logger.debug("mcp_server_not_configured")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - API error boundary
         logger.warning(
             "mcp_server_mount_failed",
             error=str(exc),

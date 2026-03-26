@@ -12,6 +12,7 @@ from starboard_server.adapters.llm import create_llm_client
 from starboard_server.adapters.llm.base import BaseLLMClient
 from starboard_server.infra.core.config import EnvConfig
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError
 from starboard_server.services.context.provider import SharedContextProvider
 from starboard_server.services.context.transforms import (
     get_transformed,
@@ -153,7 +154,7 @@ class TableDiscovery:
                 budget=budget,
             )
             items = data.get("tables", [])
-        except Exception as e:
+        except (AdapterError, ValueError) as e:
             logger.warning(
                 "LLM table extraction failed (%s); falling back to regex-lite.", e
             )
@@ -272,7 +273,7 @@ class TableEnricher:
 
             return (table, None)
 
-        except Exception as e:
+        except (AdapterError, ValueError) as e:
             logger.error(
                 "enrich_table_failed",
                 table=table.resolved_3part,

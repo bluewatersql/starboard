@@ -159,7 +159,7 @@ class OutputManager:
             logger.debug("markdown_report_saved", path=str(md_path))
             return md_path
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - output handler boundary
             logger.error("markdown_save_failed", error=str(e))
             return None
 
@@ -202,7 +202,7 @@ class OutputManager:
             logger.debug("json_report_saved", path=str(json_path))
             return json_path
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - output handler boundary
             logger.error("json_save_failed", error=str(e))
             return None
 
@@ -245,7 +245,7 @@ class OutputManager:
             logger.debug("yaml_report_saved", path=str(yaml_path))
             return yaml_path
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - output handler boundary
             logger.error("yaml_save_failed", error=str(e))
             return None
 
@@ -269,7 +269,7 @@ class OutputManager:
             logger.debug("raw_context_saved", path=str(ctx_path))
             return ctx_path
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - output handler boundary
             logger.error("raw_context_save_failed", error=str(e))
             return None
 
@@ -293,7 +293,7 @@ class OutputManager:
             logger.debug("execution_trace_saved", path=str(trace_path))
             return trace_path
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - output handler boundary
             logger.error("execution_trace_save_failed", error=str(e))
             return None
 
@@ -317,7 +317,7 @@ class OutputManager:
             logger.debug("token_budget_saved", path=str(budget_path))
             return budget_path
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - output handler boundary
             logger.error("token_budget_save_failed", error=str(e))
             return None
 

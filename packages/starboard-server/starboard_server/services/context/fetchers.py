@@ -14,6 +14,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, DatabricksAPIError
 from starboard_server.tools.services.validation import (
     QualifiedTableName,
     validate_limit,
@@ -92,7 +93,7 @@ async def fetch_query_history(
         if history:
             return history[0]
         return None
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error(
             "fetch_query_history_error", statement_id=statement_id, error=str(e)
         )
@@ -121,7 +122,7 @@ async def fetch_explain_plan(
         if len(df) > 0:
             return str(df.row(0)[0])
         return None
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_explain_plan_error", error=str(e))
         return None
 
@@ -145,7 +146,7 @@ async def fetch_warehouse_query_history(
         return await client.sql.get_query_history(
             warehouse_id=warehouse_id, days_history=days_history
         )
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error(
             "fetch_warehouse_query_history_error",
             warehouse_id=warehouse_id,
@@ -178,7 +179,7 @@ async def fetch_table_metadata(
     try:
         # Use the catalog service to get table metadata
         return await client.unity_catalog.get_table(table_name)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_table_metadata_error", table_name=table_name, error=str(e))
         return None
 
@@ -201,7 +202,7 @@ async def fetch_table_lineage(
     """
     try:
         return await client.unity_catalog.get_table_lineage(table_name)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_table_lineage_error", table_name=table_name, error=str(e))
         return None
 
@@ -230,7 +231,7 @@ async def fetch_delta_history(
         if len(df) > 0:
             return df.to_dicts()
         return None
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_delta_history_error", table_name=table_name, error=str(e))
         return None
 
@@ -258,7 +259,7 @@ async def fetch_warehouse_config(
     """
     try:
         return await client.warehouses.get_warehouse(warehouse_id)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error(
             "fetch_warehouse_config_error", warehouse_id=warehouse_id, error=str(e)
         )
@@ -302,7 +303,7 @@ async def fetch_warehouse_metrics(
         if len(df) > 0:
             return df.to_dicts()[0]
         return None
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error(
             "fetch_warehouse_metrics_error", warehouse_id=warehouse_id, error=str(e)
         )
@@ -319,7 +320,7 @@ async def fetch_cluster_events(
     """
     try:
         return await client.clusters.get_cluster_events(cluster_id)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_cluster_events_error", cluster_id=cluster_id, error=str(e))
         return None
 
@@ -342,7 +343,7 @@ async def fetch_cluster_config(
     """
     try:
         return await client.clusters.get_cluster(cluster_id)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_cluster_config_error", cluster_id=cluster_id, error=str(e))
         return None
 
@@ -391,7 +392,7 @@ async def fetch_cluster_metrics(
         if len(df) > 0:
             return df.to_dicts()
         return None
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_cluster_metrics_error", error=str(e))
         return None
 
@@ -420,7 +421,7 @@ async def fetch_jobs_list(
     limit = kwargs.get("limit", 100)
     try:
         return await client.jobs.list_jobs(limit=limit)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_jobs_list_error", error=str(e))
         return None
 
@@ -475,7 +476,7 @@ async def fetch_jobs_by_name(
             result["job_id"] = str(matches[0].get("job_id"))
 
         return result
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_jobs_by_name_error", job_name=job_name, error=str(e))
         return None
 
@@ -506,7 +507,7 @@ async def fetch_job_metadata(
             runs = await client.list_job_runs(
                 parsed_job_id, limit=max_runs, expand_tasks=True
             )
-        except Exception as limit_error:
+        except (DatabricksAPIError, AdapterError, OSError) as limit_error:
             # If limit error (e.g., "Invalid limit 30 - it has to be no more than 26")
             # retry without limit to get all available runs
             error_msg = str(limit_error)
@@ -528,7 +529,7 @@ async def fetch_job_metadata(
             "job_settings": job_settings,
             "runs": runs,
         }
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_job_metadata_error", job_id=job_id, error=str(e))
         return None
 
@@ -601,7 +602,7 @@ async def fetch_job_run_detail(
         if len(df) > 0:
             return df.to_dicts()
         return None
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_job_run_detail_error", job_id=job_id, error=str(e))
         return None
 
@@ -629,7 +630,7 @@ async def fetch_notebook_source(
     """
     try:
         return await client.workspace.export_workspace_file(notebook_path)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error(
             "fetch_notebook_source_error", notebook_path=notebook_path, error=str(e)
         )
@@ -654,6 +655,6 @@ async def fetch_dbfs_file(
     """
     try:
         return await client.workspace.read_dbfs_file(dbfs_path)
-    except Exception as e:
+    except (DatabricksAPIError, AdapterError, OSError) as e:
         logger.error("fetch_dbfs_file_error", dbfs_path=dbfs_path, error=str(e))
         return None

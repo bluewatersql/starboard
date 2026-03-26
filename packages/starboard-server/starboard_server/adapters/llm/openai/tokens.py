@@ -162,8 +162,8 @@ class TokenBudget:
 
             # Fall back to cl100k_base (used by gpt-4, gpt-3.5-turbo, etc.)
             return tiktoken.get_encoding("cl100k_base")
-        except Exception:
-            logger.debug("Failed to get tiktoken encoding: {e}")
+        except Exception as e:  # noqa: BLE001 - tiktoken may not be imported
+            logger.debug("tiktoken_encoding_failed", error=str(e))
             return None
 
     @staticmethod
@@ -195,7 +195,7 @@ class TokenBudget:
                 encoding = TokenBudget.get_encoding_for_model(model)
                 if encoding:
                     return len(encoding.encode(content_str))
-            except Exception as e:
+            except (ImportError, ValueError) as e:
                 logger.debug(
                     f"tiktoken counting failed, falling back to estimation: {e}"
                 )

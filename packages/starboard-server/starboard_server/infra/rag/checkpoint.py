@@ -117,7 +117,7 @@ async def read_checkpoint(
             error=str(e),
         )
         return None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
         logger.error(
             "checkpoint_read_error",
             checkpoint_name=checkpoint_name,
@@ -163,7 +163,7 @@ async def write_checkpoint(
             path=str(checkpoint_file),
         )
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
         logger.error(
             "checkpoint_write_error",
             checkpoint_name=checkpoint_name,
@@ -220,7 +220,7 @@ def validate_checkpoint(  # noqa: UP047
             errors=e.errors(),
         )
         return None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
         logger.error(
             "checkpoint_validation_unexpected_error",
             model=model.__name__,

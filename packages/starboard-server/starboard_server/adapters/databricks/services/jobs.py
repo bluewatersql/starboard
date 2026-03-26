@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from starboard_server.adapters.databricks.services.base import BaseService
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import DatabricksAPIError
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
@@ -393,7 +394,7 @@ class JobService(BaseService):
                             if output_dict.get("logs"):
                                 task_output["logs"] = output_dict["logs"]
 
-                        except Exception as task_error:
+                        except (DatabricksAPIError, OSError) as task_error:
                             logger.warning(
                                 "get_task_output_failed",
                                 extra={
@@ -422,7 +423,7 @@ class JobService(BaseService):
 
                 return result
 
-            except Exception as e:
+            except (DatabricksAPIError, OSError) as e:
                 # Return error info instead of raising
                 logger.warning(
                     "get_run_output_failed",
@@ -553,7 +554,7 @@ class JobService(BaseService):
                         if output_dict.get("dbt_output"):
                             result["dbt_output"] = output_dict["dbt_output"]
 
-                    except Exception as output_error:
+                    except (DatabricksAPIError, OSError) as output_error:
                         logger.warning(
                             "get_task_logs_output_failed",
                             extra={
@@ -577,7 +578,7 @@ class JobService(BaseService):
 
                 return result
 
-            except Exception as e:
+            except (DatabricksAPIError, OSError) as e:
                 logger.warning(
                     "get_task_logs_failed",
                     extra={"run_id": run_id, "task_key": task_key, "error": str(e)},

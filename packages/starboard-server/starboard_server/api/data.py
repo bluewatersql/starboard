@@ -163,7 +163,7 @@ async def get_cached_data(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "get_cached_data_error",
             data_reference=data_reference,

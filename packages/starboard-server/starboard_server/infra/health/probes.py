@@ -58,7 +58,7 @@ class DatabaseProbe:
                 healthy=True,
                 latency_ms=(time.monotonic() - start) * 1000,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - health check boundary
             return ProbeResult(
                 name="database",
                 healthy=False,
@@ -85,7 +85,7 @@ class RedisProbe:
                 healthy=True,
                 latency_ms=(time.monotonic() - start) * 1000,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - health check boundary
             return ProbeResult(
                 name="cache",
                 healthy=False,
@@ -112,7 +112,7 @@ class DatabricksProbe:
                 healthy=True,
                 latency_ms=(time.monotonic() - start) * 1000,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - health check boundary
             return ProbeResult(
                 name="compute",
                 healthy=False,
@@ -139,7 +139,7 @@ class LLMProviderProbe:
                 healthy=True,
                 latency_ms=(time.monotonic() - start) * 1000,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - health check boundary
             return ProbeResult(
                 name="ai",
                 healthy=False,
@@ -180,7 +180,7 @@ class BackpressureProbe:
                 if healthy
                 else f"queue utilisation {utilisation:.0%} exceeds threshold",
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - health check boundary
             return ProbeResult(
                 name="backpressure",
                 healthy=False,

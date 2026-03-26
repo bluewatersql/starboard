@@ -173,5 +173,5 @@ def load_mcp_config(
 
     try:
         return MCPServerConfig.model_validate(raw)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - MCP error boundary
         raise ConfigurationError(f"Invalid MCP server configuration: {exc}") from exc

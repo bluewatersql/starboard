@@ -93,7 +93,7 @@ async def create_vector_store(
             )
             # Fall through to in-memory
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
             logger.warning(
                 "sqlite_vector_store_initialization_failed",
                 error=str(e),
@@ -142,7 +142,7 @@ async def create_vector_store(
                 "inmemory_vector_store_bootstrapped",
                 **counts,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
             logger.warning(
                 "inmemory_vector_store_bootstrap_failed",
                 error=str(e),

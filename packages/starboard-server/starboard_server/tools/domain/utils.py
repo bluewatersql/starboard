@@ -113,7 +113,7 @@ def is_nan(value: Any) -> bool:
     """
     try:
         return isinstance(value, float) and math.isnan(value)
-    except Exception:
+    except (ValueError, TypeError, KeyError):
         return False
 
 
@@ -151,7 +151,7 @@ def to_datetime(timestamp: Any | None) -> datetime | None:
     if hasattr(timestamp, "to_pydatetime"):
         try:
             return timestamp.to_pydatetime()
-        except Exception:
+        except (ValueError, TypeError, KeyError):
             pass
 
     if isinstance(timestamp, datetime):
@@ -162,7 +162,7 @@ def to_datetime(timestamp: Any | None) -> datetime | None:
             return datetime.fromisoformat(timestamp.replace("Z", "+00:00")).replace(
                 tzinfo=None
             )
-        except Exception:
+        except (ValueError, TypeError, KeyError):
             return None
 
     return None
@@ -183,7 +183,7 @@ def to_iso_string(timestamp: Any) -> str | None:
         if hasattr(timestamp, "isoformat"):
             return timestamp.isoformat()
         return str(timestamp)
-    except Exception:
+    except (ValueError, TypeError, KeyError):
         return str(timestamp)
 
 
@@ -200,7 +200,7 @@ def ts_ms_to_iso(ts_ms: int | None) -> str | None:
         return None
     try:
         return datetime.fromtimestamp(ts_ms / 1000, tz=UTC).isoformat()
-    except Exception:
+    except (ValueError, TypeError, KeyError):
         return None
 
 
@@ -217,7 +217,7 @@ def ts_ms_to_day_key(ts_ms: int | None) -> str | None:
         return None
     try:
         return datetime.fromtimestamp(ts_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
-    except Exception:
+    except (ValueError, TypeError, KeyError):
         return None
 
 
@@ -235,7 +235,7 @@ def try_json_load(value: Any, return_none: bool = False) -> Any:
     if isinstance(value, str):
         try:
             return json.loads(value)
-        except Exception:
+        except (ValueError, TypeError, KeyError):
             return None if return_none else value
     return None if return_none else value
 
@@ -276,7 +276,7 @@ def parse_json(value: Any, expected_type: type = dict) -> Any:
             parsed = json.loads(string_val)
             if isinstance(parsed, expected_type):
                 return parsed
-        except Exception:
+        except (ValueError, TypeError, KeyError):
             if (
                 expected_type is list
                 and string_val.startswith("[")
@@ -680,7 +680,7 @@ def payload_to_polars_df(payload: dict[str, Any]) -> pl.DataFrame:
             if tz:
                 try:
                     e = e.dt.replace_time_zone(tz)  # works on many versions
-                except Exception:
+                except (ValueError, TypeError, KeyError):
                     logger.debug(
                         "failed_to_restore_timezone",
                         col=col,

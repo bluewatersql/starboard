@@ -17,6 +17,7 @@ import polars as pl
 from starboard_core.rag.models import RAGContext
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, ToolError
 from starboard_server.tools.domain.analytics.dataframe_profiler import profile_dataframe
 from starboard_server.tools.domain.analytics_sql.llm_sql_generator import (
     LLMSQLGenerator,
@@ -292,7 +293,7 @@ class AnalyticsSQLTools:
                 rag_context=rag_ctx,
                 previous_errors=previous_errors,
             )
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error(
                 "sql_generation_failed",
                 extra={
@@ -407,7 +408,7 @@ class AnalyticsSQLTools:
 
         try:
             sql_cache_key = self.sql_validator.generate_sql_cache_key(sql)
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.debug(
                 "sql_cache_key_generation_failed",
                 extra={
@@ -449,7 +450,7 @@ class AnalyticsSQLTools:
                             "row_count": df.height,
                         },
                     )
-                except Exception as cache_error:
+                except (ToolError, AdapterError, ValueError) as cache_error:
                     # Don't fail query execution if caching fails
                     logger.warning(
                         "result_caching_failed",
@@ -500,7 +501,7 @@ class AnalyticsSQLTools:
                             "visualization_keys": list(visualization_output.keys()),
                         },
                     )
-                except Exception as viz_error:
+                except (ToolError, AdapterError, ValueError) as viz_error:
                     # Don't fail query execution if visualization fails
                     logger.warning(
                         "visualization_generation_failed",
@@ -528,7 +529,7 @@ class AnalyticsSQLTools:
 
             return result
 
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             execution_time_ms = (time.perf_counter() - start_time) * 1000
             logger.error(
                 "sql_query_execution_failed",
@@ -614,7 +615,7 @@ class AnalyticsSQLTools:
 
             return profile
 
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.warning(
                 "result_profiling_failed",
                 extra={

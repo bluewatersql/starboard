@@ -285,7 +285,7 @@ class SQLiteVectorStore:
                 "CPPFLAGS='-I/opt/homebrew/opt/sqlite/include' "
                 "pyenv install <python_version>"
             ) from e
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
             await db.close()
             raise RuntimeError(
                 f"Failed to load sqlite-vec extension. "
@@ -343,7 +343,7 @@ class SQLiteVectorStore:
                 for conn in pool:
                     await conn.close()
                 pool.clear()
-        except Exception:
+        except Exception:  # noqa: BLE001 - RAG infrastructure boundary
             # If lock fails, just ignore
             pass
 

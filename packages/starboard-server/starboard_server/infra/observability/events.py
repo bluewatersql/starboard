@@ -98,7 +98,7 @@ class EventEmitter:
         for handler in self.handlers:
             try:
                 handler(event)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - event emitter boundary
                 logger.error("event_handler_error", error=str(e), exc_info=True)
 
         # Bubble to parent

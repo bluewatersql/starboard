@@ -286,7 +286,7 @@ class ReasoningEngine:
                 }
                 return
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - reasoning step boundary
                 logger.error(
                     "reasoning_step_failed",
                     step=state.current_step,

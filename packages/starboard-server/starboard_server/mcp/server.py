@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 from mcp.server.fastmcp import FastMCP
 
 from starboard_server.mcp.agent_bridge import (
@@ -66,7 +66,7 @@ if TYPE_CHECKING:
     from starboard_server.agents.routing.intent_router import IntentRouter
     from starboard_server.agents.tools.tool_registry import ToolRegistry
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class StarboardMCPServer:
@@ -276,7 +276,7 @@ class StarboardMCPServer:
             try:
                 result = await composite_fn(_executor, **kwargs)
                 return json.dumps({"status": result.status, "data": result.data, "errors": result.errors})
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - MCP error boundary
                 return json.dumps({"isError": True, "code": "EXEC_COMPOSITE_FAILED", "message": str(exc)})
 
         _handler.__name__ = tool_name
@@ -571,7 +571,7 @@ class StarboardMCPServer:
                         tool_name, agent_context=agent_context, **arguments
                     )
                 exec_span.close()
-            except Exception:
+            except Exception:  # noqa: BLE001 - MCP error boundary
                 exec_span.close(status="error")
                 if breaker is not None:
                     log_circuit_open(
@@ -623,7 +623,7 @@ class StarboardMCPServer:
         except (RateLimitError, ExecutionError):
             # Let validation/rate-limit errors propagate — callers expect them.
             raise
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - MCP error boundary
             error_code = getattr(exc, "code", "UNKNOWN")
             root_span.close(status="error", error_code=error_code)
             log_tool_error(

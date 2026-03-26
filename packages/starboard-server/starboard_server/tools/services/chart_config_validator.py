@@ -131,7 +131,7 @@ class ChartConfigValidator:
                 encoding_count=len(validated.encodings),
             )
             return validated
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error(
                 "chart_config_validation_failed",
                 error=str(e),

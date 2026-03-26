@@ -188,7 +188,7 @@ async def send_message(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         ) from e
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "message_enqueue_failed",
             conversation_id=conversation_id,

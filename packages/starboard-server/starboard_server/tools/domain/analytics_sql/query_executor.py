@@ -12,6 +12,7 @@ from typing import Any, Protocol
 import polars as pl
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, QueryExecutionError
 
 logger = get_logger(__name__)
 
@@ -147,7 +148,7 @@ class AnalyticsQueryExecutor:
                     limit=limit,
                 )
 
-            except Exception as e:
+            except (QueryExecutionError, AdapterError) as e:
                 error_msg = str(e)
                 logger.warning(
                     "query_execution_failed",

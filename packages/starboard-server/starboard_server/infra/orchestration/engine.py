@@ -253,7 +253,7 @@ class WorkflowEngine:
                 errors=context.errors,
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - pipeline step error boundary
             logger.error(
                 "workflow_failed",
                 workflow_id=workflow.workflow_id,
@@ -311,7 +311,7 @@ class WorkflowEngine:
                     step_id=step.step_id,
                 )
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - pipeline step error boundary
                 context.errors[step.step_id] = e
 
                 if not step.required and step.fallback_value is not None:

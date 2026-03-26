@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, ToolError
 from starboard_server.services.context.transforms import (
     analyze_cluster_metrics,
     analyze_spark_logs,
@@ -347,7 +348,7 @@ class ClusterTools(BaseToolAdapter):
             metrics_list = await analyze_cluster_metrics(self.provider, [cluster_id])
             if metrics_list:
                 metrics = metrics_list[0]
-        except Exception:
+        except (ToolError, AdapterError, ValueError):
             logger.debug("Metrics unavailable for cluster {cluster_id}: {e}")
 
         # Build fingerprint from config and metrics
@@ -602,7 +603,7 @@ class ClusterTools(BaseToolAdapter):
                 return None
 
             return analyze_spark_logs(cluster_id, log_destination, raw=fmt == OutputFormat.RAW)
-        except Exception:
+        except (ToolError, AdapterError, ValueError):
             logger.debug("Error fetching logs for cluster {cluster_id}: {e}")
             return None
 

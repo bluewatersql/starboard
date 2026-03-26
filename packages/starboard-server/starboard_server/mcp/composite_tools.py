@@ -158,7 +158,7 @@ async def get_job_summary(
     try:
         job = await _guarded_call(executor, "resolve_job", target=target)
         data["job"] = job
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - MCP error boundary
         return CompositeResult(errors=[f"resolve_job failed: {exc}"])
 
     job_id = job.get("job_id", target)
@@ -167,7 +167,7 @@ async def get_job_summary(
     try:
         config = await _guarded_call(executor, "get_job_config", job_id=str(job_id))
         data["config"] = config
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - MCP error boundary
         errors.append(f"get_job_config failed: {exc}")
 
     return CompositeResult(data=data, errors=errors, partial=bool(errors))
@@ -185,7 +185,7 @@ async def get_query_analysis(
     try:
         query = await _guarded_call(executor, "resolve_query", target=target)
         data["query"] = query
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - MCP error boundary
         return CompositeResult(errors=[f"resolve_query failed: {exc}"])
 
     sql_text = query.get("sql_text", target)
@@ -200,7 +200,7 @@ async def get_query_analysis(
                     "get_query_runtime_metrics",
                     statement_id=statement_id,
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - MCP error boundary
                 errors.append(f"get_query_runtime_metrics failed: {exc}")
         return None
 
@@ -209,7 +209,7 @@ async def get_query_analysis(
             return await _guarded_call(
                 executor, "analyze_query_plan", sql_text=sql_text
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - MCP error boundary
             errors.append(f"analyze_query_plan failed: {exc}")
         return None
 
@@ -234,7 +234,7 @@ async def get_table_profile(
     try:
         metadata = await _guarded_call(executor, "get_table_metadata", table_name=table)
         data["metadata"] = metadata
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - MCP error boundary
         return CompositeResult(errors=[f"get_table_metadata failed: {exc}"])
 
     # Step 2: get_table_history
@@ -243,7 +243,7 @@ async def get_table_profile(
             executor, "get_table_history", table_name=table, limit=5
         )
         data["recent_history"] = history
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - MCP error boundary
         errors.append(f"get_table_history failed: {exc}")
 
     return CompositeResult(data=data, errors=errors, partial=bool(errors))
@@ -259,14 +259,14 @@ async def get_workspace_overview(
     async def _clusters() -> dict[str, Any] | None:
         try:
             return await _guarded_call(executor, "list_clusters")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - MCP error boundary
             errors.append(f"list_clusters failed: {exc}")
         return None
 
     async def _warehouses() -> dict[str, Any] | None:
         try:
             return await _guarded_call(executor, "get_warehouse_portfolio")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - MCP error boundary
             errors.append(f"get_warehouse_portfolio failed: {exc}")
         return None
 

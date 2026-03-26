@@ -21,6 +21,7 @@ from sqlglot.optimizer.canonicalize import canonicalize
 from sqlglot.optimizer.normalize_identifiers import normalize_identifiers
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, QueryExecutionError
 from starboard_server.tools.domain.analytics_sql.models import ValidationResult
 
 if TYPE_CHECKING:
@@ -423,7 +424,7 @@ class SQLValidator:
                 validation_method="explain",
             )
 
-        except Exception as e:
+        except (QueryExecutionError, AdapterError) as e:
             # EXPLAIN failed - capture error for reflexion
             error_msg = str(e)
 

@@ -15,7 +15,7 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.agents.output.envelope import (
     AgentMetrics,
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from starboard_server.agents.events.user_events import FinalOutputEvent
     from starboard_server.agents.routing.intent_router import IntentRouter
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 # All 8 domain agent tool names
 AGENT_DOMAINS: tuple[AgentDomain, ...] = (
@@ -198,7 +198,7 @@ class MCPProgressBridge:
                 self._events.append(event)
                 if self._callback is not None:
                     self._callback(event)
-        except Exception:
+        except Exception:  # noqa: BLE001 - MCP error boundary
             logger.debug("mcp_progress_bridge_handler_error", exc_info=True)
 
 
@@ -332,7 +332,7 @@ class MCPAgentExecutor:
                 start_time=start_time,
                 conversation_id=conversation_id,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - MCP error boundary
             bridge.unsubscribe()
             log_tool_error(
                 root_span,
@@ -429,7 +429,7 @@ class MCPAgentExecutor:
             ):
                 if isinstance(event, FinalOutputEvent):
                     final_output = event
-        except Exception:
+        except Exception:  # noqa: BLE001 - MCP error boundary
             logger.debug("agent_run_stream_error", exc_info=True)
             raise
 

@@ -164,7 +164,7 @@ async def export_conversation(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "conversation_export_failed",
             conversation_id=conversation_id,

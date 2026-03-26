@@ -200,7 +200,7 @@ class Container:
                 ttl=self._config.cache_ttl,
                 similarity_threshold=self._config.semantic_cache_threshold,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - DI container boundary
             # Log warning but don't fail initialization
             # Foundation components are optional features
             error_msg = str(e)

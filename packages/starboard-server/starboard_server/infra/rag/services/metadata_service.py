@@ -154,7 +154,7 @@ class MetadataExtractor:
             results = await asyncio.to_thread(
                 self.databricks_client.execute_query, query
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
             logger.error(
                 "failed_to_fetch_tables",
                 catalog=catalog,
@@ -227,7 +227,7 @@ class MetadataExtractor:
                 try:
                     table.columns = await self.extract_columns(table.full_name)
                     return table
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
                     logger.error(
                         "failed_to_extract_columns",
                         table=table.full_name,
@@ -307,7 +307,7 @@ class MetadataExtractor:
             results = await asyncio.to_thread(
                 self.databricks_client.execute_query, query
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
             logger.error(
                 "failed_to_fetch_columns",
                 table=table_full_name,
@@ -385,7 +385,7 @@ class MetadataExtractor:
                 predicates=len(self._analysis_result.raw_predicates or []),
                 aggregations=len(self._analysis_result.raw_aggregations or []),
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
             logger.error("failed_discovery_by_example", error=str(e))
             # Create empty result to avoid retrying
             self._analysis_result = AnalysisResult(

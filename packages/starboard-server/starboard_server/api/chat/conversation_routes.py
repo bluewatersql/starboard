@@ -141,7 +141,7 @@ async def create_conversation(
 
         return response
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         # Try to get user_id for logging if available
         user_id = "unknown"
         if hasattr(request.state, "user"):
@@ -262,7 +262,7 @@ async def list_conversations(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         # Try to get user_id for logging if available
         user_id = "unknown"
         if hasattr(request.state, "user"):
@@ -343,7 +343,7 @@ async def get_conversation(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "conversation_retrieval_failed",
             conversation_id=conversation_id,
@@ -511,7 +511,7 @@ async def get_conversation_history(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "conversation_history_retrieval_failed",
             conversation_id=conversation_id,
@@ -582,7 +582,7 @@ async def delete_all_conversations(
             count=count,
         )
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         user_id = "unknown"
         if hasattr(request.state, "user"):
             user_id = request.state.user.id
@@ -656,7 +656,7 @@ async def delete_conversation(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "conversation_deletion_failed",
             conversation_id=conversation_id,

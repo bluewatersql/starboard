@@ -200,7 +200,7 @@ class SSEBroadcaster:
                         else str(event.type)
                     ),
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - SSE send boundary
                 logger.error(
                     "broadcast_error",
                     conversation_id=conversation_id,
@@ -282,7 +282,7 @@ class SSEBroadcaster:
             # Stream was cancelled (client disconnected)
             logger.debug("event_stream_cancelled")
             raise
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - SSE stream boundary
             logger.error("event_stream_error", error=str(e), exc_info=True)
             raise
 

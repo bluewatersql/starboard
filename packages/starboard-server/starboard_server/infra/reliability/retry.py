@@ -115,7 +115,7 @@ def retry_with_backoff(
                 while attempt <= max_attempts:
                     try:
                         return await func(*args, **kwargs)
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001 - retry catches any exception by design
                         if attempt == max_attempts:
                             logger.error(
                                 "retry_exhausted",
@@ -158,7 +158,7 @@ def retry_with_backoff(
                 while attempt <= max_attempts:
                     try:
                         return func(*args, **kwargs)
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001 - retry catches any exception by design
                         if attempt == max_attempts:
                             logger.error(
                                 "retry_exhausted",

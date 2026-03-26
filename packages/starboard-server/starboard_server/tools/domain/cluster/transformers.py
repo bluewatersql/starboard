@@ -31,7 +31,7 @@ def _ts_ms_to_iso(ts_ms: int | None) -> str | None:
         return None
     try:
         return datetime.fromtimestamp(ts_ms / 1000, tz=UTC).isoformat()
-    except Exception:
+    except (ValueError, TypeError, KeyError):
         return None
 
 
@@ -41,7 +41,7 @@ def _ts_ms_to_day_key(ts_ms: int | None) -> str | None:
         return None
     try:
         return datetime.fromtimestamp(ts_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
-    except Exception:
+    except (ValueError, TypeError, KeyError):
         return None
 
 

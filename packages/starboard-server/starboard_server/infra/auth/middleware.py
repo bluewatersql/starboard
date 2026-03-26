@@ -142,7 +142,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 },
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - auth middleware boundary
             # Unexpected error - return 500
             logger.error(
                 "auth_middleware_error",

@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.infra.core.config import get_config
 from starboard_server.mcp.auth_context import EnvTokenAuthProvider
@@ -26,7 +26,7 @@ from starboard_server.mcp.sanitizer import MCPSanitizer
 from starboard_server.mcp.server import StarboardMCPServer
 from starboard_server.mcp.workspace_registry import DefaultWorkspaceRegistry
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 def create_starboard_mcp_server(

@@ -27,6 +27,7 @@ from starboard_core.domain.models.discovery.report import (
 
 from starboard_server.adapters.llm.base import BaseLLMClient
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError
 
 logger = get_logger(__name__)
 
@@ -234,7 +235,7 @@ class ReportAssembler:
                 trace_id=trace_id,
             )
             return result
-        except Exception as exc:
+        except (AdapterError, ValueError, TimeoutError) as exc:
             logger.warning(
                 "executive_summary_llm_failed_using_template",
                 trace_id=trace_id,

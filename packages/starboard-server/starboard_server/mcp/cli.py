@@ -20,12 +20,12 @@ from __future__ import annotations
 import argparse
 import sys
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.mcp.config import load_mcp_config
 from starboard_server.mcp.exceptions import ConfigurationError
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

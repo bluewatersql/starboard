@@ -26,6 +26,7 @@ from starboard_core.domain.models.warehouse import (
 )
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError
 from starboard_server.tools.domain.warehouse.chargeback import (
     ChargebackCalculator,
     WarehouseChargeback,
@@ -909,7 +910,7 @@ LIMIT 1
             )
             return 0.0
 
-        except Exception as e:
+        except (AdapterError, ValueError) as e:
             logger.warning(
                 "failed_to_fetch_warehouse_cost",
                 warehouse_id=warehouse_id,

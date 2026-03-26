@@ -11,13 +11,13 @@ from __future__ import annotations
 
 import os
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.mcp.config import WorkspaceProfile
 from starboard_server.mcp.exceptions import AuthenticationError
 from starboard_server.mcp.protocols import DatabricksCredentials
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class EnvTokenAuthProvider:

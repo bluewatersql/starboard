@@ -9,7 +9,7 @@ workspace, allowing independent failure isolation.
 
 from __future__ import annotations
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.infra.reliability.circuit_breaker import (
     AsyncCircuitBreaker,
@@ -17,7 +17,7 @@ from starboard_server.infra.reliability.circuit_breaker import (
     CircuitState,
 )
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class MCPCircuitBreakerRegistry:

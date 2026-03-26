@@ -138,7 +138,7 @@ class SparkEventLogExtractor:
             )
 
             app_model = ApplicationModel(lines_iter, debug=True)
-        except Exception as e:
+        except (ValueError, KeyError, OSError) as e:
             logger.warning("spark_event_log_parsing_failed", error=str(e))
             return self._fallback_extraction(content, inferred_goal)
 

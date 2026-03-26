@@ -223,7 +223,7 @@ class FinalOutputEvent(BaseModel):
                     report_type=complete_report.get("report_type"),
                     markdown_length=len(formatted_markdown),
                 )
-            except Exception as e:
+            except (TypeError, ValueError, KeyError) as e:
                 logger_local.error(
                     "failed_to_format_report",
                     error=str(e),
@@ -330,7 +330,7 @@ class FinalOutputEvent(BaseModel):
                     trace_id=trace_id,
                     envelope_status=envelope.status,
                 )
-            except Exception as e:
+            except (TypeError, ValueError) as e:
                 # Envelope generation failure should not break SSE
                 logger_local.error(
                     "envelope_generation_failed",

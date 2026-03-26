@@ -12,11 +12,11 @@ from __future__ import annotations
 import math
 import time
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.mcp.exceptions import RateLimitError
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class TokenBucket:

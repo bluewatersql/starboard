@@ -241,7 +241,7 @@ class ChartRenderer:
                 )
                 return svg_str
 
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error(
                 "chart_render_failed",
                 chart_type=chart_type_str,

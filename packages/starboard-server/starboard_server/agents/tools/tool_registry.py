@@ -559,7 +559,7 @@ class ToolRegistry:
                 raw_result=raw_result,
             )
 
-        except Exception as e:
+        except (ImportError, AttributeError, TypeError) as e:
             logger.error(
                 f"Tool execution failed: {tool_name}",
                 extra={"error": str(e), "kwargs": kwargs},

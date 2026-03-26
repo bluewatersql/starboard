@@ -40,7 +40,7 @@ class ErrorSanitizationMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         try:
             return await call_next(request)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - middleware error boundary
             correlation_id = str(uuid.uuid4())
 
             logger.error(

@@ -226,7 +226,7 @@ class QueryPatternAnalyzer:
                             )
                             self._join_keys[key] += 1
 
-        except Exception:
+        except (sqlglot.errors.SQLGlotError, ValueError):
             # sqlglot parse error - skip
             pass
 
@@ -255,7 +255,7 @@ class QueryPatternAnalyzer:
                         self._operators[col_key] = set()
                     self._operators[col_key].add(op_name)
 
-        except Exception:
+        except (sqlglot.errors.SQLGlotError, ValueError):
             # sqlglot parse error - skip
             pass
 

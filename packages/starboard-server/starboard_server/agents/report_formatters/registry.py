@@ -133,7 +133,7 @@ class ReportFormatterRegistry:
             )
             return result
 
-        except Exception as e:
+        except (ImportError, AttributeError) as e:
             logger.error(
                 "format_report_failed",
                 report_type=report_type,

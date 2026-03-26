@@ -214,7 +214,7 @@ class BaseService:
         for attempt in range(max_retries):
             try:
                 return await self._run_sync(func)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - SDK retry filters permanent errors
                 # Do not retry permanent HTTP errors (400, 401, 403, 404, …)
                 if (
                     isinstance(e, httpx.HTTPStatusError)

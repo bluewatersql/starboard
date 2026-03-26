@@ -167,7 +167,7 @@ class SparkEventLogExplorer:
             from starboard_log_parser import create_spark_application_from_content
 
             return create_spark_application_from_content(content, debug=True)
-        except Exception as e:
+        except (ValueError, KeyError, OSError) as e:
             logger.warning("failed_to_parse_spark_event_log", error=str(e))
             return None
 

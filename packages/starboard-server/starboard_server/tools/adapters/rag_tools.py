@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 from starboard_core.rag.models import RAGContext
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError
 
 if TYPE_CHECKING:
     from starboard_server.infra.rag.domain import (
@@ -131,7 +132,7 @@ class AnalyticsContextTools:
                 n_results_per_collection=n_results_per_collection,
                 domains=domains,
             )
-        except Exception:
+        except (AdapterError, ValueError):
             logger.warning(
                 "embedding_search_failed_using_empty_context",
                 extra={

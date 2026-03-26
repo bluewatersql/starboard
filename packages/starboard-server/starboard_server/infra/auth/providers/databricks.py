@@ -124,7 +124,7 @@ class DatabricksAuthProvider:
         except (AuthenticationError, UserNotFoundError):
             # Re-raise auth-specific errors
             raise
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - auth provider boundary
             logger.error(
                 "databricks_auth_failed",
                 error=str(e),

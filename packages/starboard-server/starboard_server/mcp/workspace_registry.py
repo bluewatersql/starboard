@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import os
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.mcp.config import MCPServerConfig, WorkspaceProfile
 from starboard_server.mcp.exceptions import ConfigurationError
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class DefaultWorkspaceRegistry:

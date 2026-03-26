@@ -295,7 +295,7 @@ class ConversationLifecycleManager:
 
             return conversations
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - lifecycle boundary
             logger.error(
                 "list_conversations_failed",
                 user_id=user_id,
@@ -351,7 +351,7 @@ class ConversationLifecycleManager:
             )
             return True
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - lifecycle boundary
             logger.error(
                 "delete_conversation_failed",
                 conversation_id=conversation_id,
@@ -411,7 +411,7 @@ class ConversationLifecycleManager:
             )
             return count
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - lifecycle boundary
             logger.error(
                 "delete_all_conversations_failed",
                 user_id=user_id,

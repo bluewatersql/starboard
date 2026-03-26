@@ -173,7 +173,7 @@ async def respond_to_clarification(
             detail=f"Clarification not found or already resolved: {str(e)}",
         ) from e
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "clarification_response_failed",
             conversation_id=conversation_id,

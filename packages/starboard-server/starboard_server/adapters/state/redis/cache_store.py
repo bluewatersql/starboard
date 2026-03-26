@@ -61,7 +61,7 @@ class RedisCacheStore:
         # Test connection
         try:
             await self._client.ping()  # type: ignore[misc]
-        except Exception as e:
+        except (redis.RedisError, OSError) as e:
             raise ConnectionError(f"Failed to connect to Redis: {e}") from e
 
     async def close(self) -> None:

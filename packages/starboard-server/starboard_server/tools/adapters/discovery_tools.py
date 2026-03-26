@@ -25,6 +25,7 @@ from starboard_core.domain.models.discovery.query import PackResult
 from starboard_core.domain.models.discovery.report import AnalysisContext
 
 from starboard_server.discovery.analyzer import DomainAnalyzer, build_fallback_analysis
+from starboard_server.exceptions import AdapterError
 from starboard_server.discovery.engine import DiscoveryEngine, EngineConfig
 from starboard_server.discovery.executor import QueryPackExecutor, SQLExecutor
 from starboard_server.discovery.heuristics import create_default_heuristic_registry
@@ -425,7 +426,7 @@ class DiscoveryTools:
                 result = await analyzer.analyze_domain(d, packs, trace_id=self._trace_id)
                 analyses.append(result)
                 self._domain_analyses.append(result)
-            except Exception as exc:
+            except (AdapterError, ValueError, TimeoutError) as exc:
                 logger.error(
                     "domain_analysis_failed_using_heuristic_fallback",
                     extra={"domain": d, "error": str(exc)},

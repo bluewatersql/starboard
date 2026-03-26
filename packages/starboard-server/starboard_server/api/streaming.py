@@ -57,7 +57,7 @@ def _build_error_event_data(
         try:
             config = get_config()
             production = config.environment == "production"
-        except Exception:
+        except Exception:  # noqa: BLE001 - API error boundary
             production = True  # Safe default
 
     if production:
@@ -267,7 +267,7 @@ async def event_stream(
         )
         raise
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - API error boundary
         logger.error(
             "sse_stream_error",
             conversation_id=conversation_id,

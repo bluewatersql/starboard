@@ -306,7 +306,7 @@ class DomainAgent(DomainAgentOutputMixin):
                 duration_seconds=round(time.time() - start_time, 2),
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - top-level agent error boundary
             # Intentional: top-level agent error boundary — catch all to emit
             # error events and metrics rather than crashing the conversation.
             logger.error("agent_run_failed", error=str(e), exc_info=True)

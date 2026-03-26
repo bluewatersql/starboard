@@ -20,6 +20,7 @@ from starboard_core.domain.models.uc import (
 )
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.exceptions import AdapterError, QueryExecutionError
 from starboard_server.tools.services.uc.base import (
     UCServiceBase,
     detect_principal_type,
@@ -236,7 +237,7 @@ class GovernanceService(UCServiceBase):
 
         try:
             rows = await self.sql_provider.execute_query(query)
-        except Exception as e:
+        except (QueryExecutionError, AdapterError) as e:
             logger.error("error_querying_access_patterns", error=str(e))
             return None
 
@@ -293,7 +294,7 @@ class GovernanceService(UCServiceBase):
                 )
                 for r in daily_rows
             )
-        except Exception:
+        except (QueryExecutionError, AdapterError):
             daily_trend = ()
 
         # Also fetch top readers
@@ -326,7 +327,7 @@ class GovernanceService(UCServiceBase):
                 )
                 for r in reader_rows
             )
-        except Exception:
+        except (QueryExecutionError, AdapterError):
             top_readers = ()
 
         # Classify pattern

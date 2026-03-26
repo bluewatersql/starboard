@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 from starboard_core.domain.transformers.job_transformers import transform_task_sources
 
 from starboard_server.infra.observability.events import EventEmitter
+from starboard_server.exceptions import AdapterError, ToolError
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.domain.source import SourceTransformer
 from starboard_server.tools.domain.source.models import CodeQualityIssue
@@ -328,7 +329,7 @@ class SourceTools:
         except (ValueError, TypeError):
             logger.error("Invalid job_id format: {job_id}, error: {e}")
             return []
-        except Exception:
+        except (ToolError, AdapterError, ValueError):
             logger.error("Failed to fetch job config for job_id={job_id}: {e}")
             return []
 
@@ -368,7 +369,7 @@ class SourceTools:
                     "source": source,
                 }
             logger.warning("Notebook {notebook_path} returned empty content")
-        except Exception:
+        except (ToolError, AdapterError, ValueError):
             logger.warning("Failed to fetch notebook {notebook_path}: {e}")
 
         return None
@@ -567,7 +568,7 @@ Return optimizations in json format."""
 
         try:
             return await self._call_llm_for_analysis(code_artifacts)
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Batch code analysis failed: {e}")
             return [], [f"Analysis failed: {str(e)}"]
 
@@ -609,6 +610,6 @@ Return optimizations in json format."""
             return await self._call_llm_for_analysis(
                 {context: source_info}, default_context=context
             )
-        except Exception as e:
+        except (ToolError, AdapterError, ValueError) as e:
             logger.error("Single code analysis failed for {context}: {e}")
             return [], [f"Analysis failed for {context}: {str(e)}"]

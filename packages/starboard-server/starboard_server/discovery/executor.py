@@ -154,7 +154,7 @@ class QueryPackExecutor:
                         execution_time_ms=elapsed_ms,
                     )
 
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 - retry loop with last_exc tracking
                     last_exc = exc
                     error_type = type(exc).__name__
                     is_transient = error_type in self._TRANSIENT_ERROR_TYPES

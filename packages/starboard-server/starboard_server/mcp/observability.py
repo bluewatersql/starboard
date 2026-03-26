@@ -15,12 +15,12 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
-import structlog
+from starboard_server.infra.observability.logging import get_logger
 
 from starboard_server.infra.observability.context import ObservabilityContext
 from starboard_server.infra.observability.logging import set_request_id
 
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------

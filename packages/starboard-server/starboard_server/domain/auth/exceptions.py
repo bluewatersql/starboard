@@ -1,14 +1,18 @@
-"""
-Authentication-specific exceptions.
+"""Authentication-specific exceptions.
 
 Following clean architecture principles, these exceptions are part of the domain layer
 and can be raised by any authentication-related component.
+
+All auth exceptions inherit from :class:`StarboardError` so they can be
+caught by application-wide error boundaries.
 """
 
 from typing import Any
 
+from starboard_server.exceptions import StarboardError
 
-class AuthenticationError(Exception):
+
+class AuthenticationError(StarboardError):
     """Base exception for all authentication errors."""
 
     def __init__(
@@ -17,18 +21,15 @@ class AuthenticationError(Exception):
         provider: str | None = None,
         details: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Initialize authentication error.
+        """Initialize authentication error.
 
         Args:
             message: Human-readable error message
             provider: Authentication provider that raised the error (e.g., 'databricks')
             details: Additional context about the error
         """
-        self.message = message
         self.provider = provider
-        self.details = details or {}
-        super().__init__(message)
+        super().__init__(message, details)
 
     def __str__(self) -> str:
         """Return string representation with provider context."""
@@ -46,8 +47,7 @@ class UserNotFoundError(AuthenticationError):
         provider: str | None = None,
         details: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Initialize user not found error.
+        """Initialize user not found error.
 
         Args:
             user_identifier: The identifier used to look up the user
@@ -74,8 +74,7 @@ class SessionExpiredError(AuthenticationError):
         provider: str | None = None,
         details: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Initialize session expired error.
+        """Initialize session expired error.
 
         Args:
             session_id: The expired session identifier

@@ -83,7 +83,7 @@ class CatalogService(BaseService):
 
         try:
             return await self._run_sync(_list)
-        except Exception as e:
+        except (DatabricksAPIError, OSError) as e:
             logger.error("list_catalogs_failed", extra={"error": str(e)})
             raise DatabricksAPIError(
                 message="Failed to list catalogs",
@@ -111,7 +111,7 @@ class CatalogService(BaseService):
             return await self._run_sync(_get)
         except NotFound:
             return None
-        except Exception as e:
+        except (DatabricksAPIError, OSError) as e:
             logger.error("get_catalog_failed", extra={"name": name, "error": str(e)})
             raise DatabricksAPIError(
                 message=f"Failed to get catalog {name}",
@@ -252,7 +252,7 @@ class CatalogService(BaseService):
             return await self._run_sync(_get)
         except NotFound:
             return None
-        except Exception as e:
+        except (DatabricksAPIError, OSError) as e:
             logger.error(
                 "get_table_failed", extra={"full_name": full_name, "error": str(e)}
             )

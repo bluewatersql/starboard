@@ -32,6 +32,7 @@ from starboard_server.adapters.databricks.services.workspace import WorkspaceSer
 from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.reliability.exceptions import ConfigurationError
+from starboard_server.exceptions import DatabricksAPIError
 
 if TYPE_CHECKING:
     import polars as pl
@@ -215,7 +216,7 @@ class AsyncDatabricksClient:
                 if self._sdk_client:
                     self._sdk_client.current_user.me()
                     return True
-            except Exception as e:
+            except (DatabricksAPIError, OSError) as e:
                 logger.error("auth_verification_failed", extra={"error": str(e)})
             return False
 
@@ -242,7 +243,7 @@ class AsyncDatabricksClient:
                         and setting.string_val
                     ):
                         return setting.string_val.value
-            except Exception as e:
+            except (DatabricksAPIError, OSError) as e:
                 logger.warning(
                     "failed_to_get_default_warehouse", extra={"error": str(e)}
                 )
@@ -988,6 +989,6 @@ class AsyncDatabricksClient:
             if self._sdk_client:
                 self._sdk_client.current_user.me()
                 return True
-        except Exception:
+        except (DatabricksAPIError, OSError):
             pass
         return False

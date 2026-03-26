@@ -352,7 +352,7 @@ class DiagnosticContextBuilder:
                 # Track suggested strategies from last result
                 suggested_strategies = [s.value for s in result.next_steps]
 
-            except Exception:
+            except (ValueError, TypeError, KeyError):
                 # Continue with other strategies on error
                 continue
 

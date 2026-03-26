@@ -235,7 +235,7 @@ def profile_dataframe(
                     for row in trend_df.to_dicts()
                 ],
             }
-        except Exception:
+        except (TypeError, ValueError):
             # Trend analysis failed (e.g., incompatible types), skip it
             trend = None
 

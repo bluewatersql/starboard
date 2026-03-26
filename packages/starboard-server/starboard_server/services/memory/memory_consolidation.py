@@ -83,7 +83,7 @@ class MemoryConsolidationService:
                 await asyncio.sleep(self.config.memory_consolidation_interval)
             except asyncio.CancelledError:
                 break
-            except Exception as e:
+            except (AdapterError, ValueError, TimeoutError) as e:
                 logger.error(
                     "consolidation_error",
                     error=str(e),
@@ -112,7 +112,7 @@ class MemoryConsolidationService:
 
             logger.debug("consolidation_cycle_complete")
 
-        except Exception as e:
+        except (AdapterError, ValueError, TimeoutError) as e:
             logger.error(
                 "consolidation_cycle_error",
                 error=str(e),

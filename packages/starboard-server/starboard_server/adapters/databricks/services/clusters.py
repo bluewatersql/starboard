@@ -80,7 +80,7 @@ class ClusterService(BaseService):
             return await self._run_sync(_get)
         except NotFound:
             return None
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError, OSError) as e:
             logger.error(
                 "get_cluster_failed",
                 extra={"cluster_id": cluster_id, "error": str(e)},
@@ -137,7 +137,7 @@ class ClusterService(BaseService):
             return await self._run_sync(_get_state)
         except NotFound:
             return None
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError, OSError) as e:
             logger.error(
                 "get_cluster_state_failed",
                 extra={"cluster_id": cluster_id, "error": str(e)},
@@ -174,7 +174,7 @@ class ClusterService(BaseService):
 
         try:
             return await self._run_sync(_get_events)
-        except Exception as e:
+        except (DatabricksAPIError, AdapterError, OSError) as e:
             logger.error(
                 "get_cluster_events_failed",
                 extra={"cluster_id": cluster_id, "error": str(e)},
