@@ -55,3 +55,39 @@ class TimeoutError(StarboardError):
     The ``ask()`` method raises this if the agent does not produce a
     ``FinalOutputEvent`` within the configured ``timeout`` seconds.
     """
+
+
+class AgentError(StarboardError):
+    """Raised when the agent returns a non-recoverable error event.
+
+    Attributes:
+        error_type: The agent's error classification (e.g. 'LLMError').
+        raw_event: The original error event dict for debugging.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_type: str = "Unknown",
+        raw_event: dict[str, object] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.error_type = error_type
+        self.raw_event = raw_event
+
+
+class DiscoveryError(StarboardError):
+    """Raised when workspace discovery fails.
+
+    Examples: discovery engine crash, no data sources available,
+    discovery timeout.
+    """
+
+
+class ConfigError(StarboardError):
+    """Raised when SDK configuration is invalid or incomplete.
+
+    Examples: missing required environment variables, invalid config
+    file format, incompatible option combinations.
+    """

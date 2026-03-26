@@ -1,9 +1,9 @@
 """SDK event type facade.
 
-Re-exports only the event types that SDK consumers need to work with
-streaming responses from ``ConversationSession.ask_stream()``.  Internal
-server event types that are not part of the stable SDK surface are not
-re-exported here.
+Re-exports the SDK-owned event types that consumers need to work with
+streaming responses from ``ConversationSession.ask_stream()``.  These
+types are stable public API — internal server event types are mapped to
+these in the SDK layer.
 
 Example::
 
@@ -23,7 +23,8 @@ Example::
 
 from __future__ import annotations
 
-from starboard_server.bootstrap import (
+from starboard_sdk.event_types import (
+    AgentEvent,
     ErrorEvent,
     FinalOutputEvent,
     StreamingEvent,
@@ -32,6 +33,7 @@ from starboard_server.bootstrap import (
 )
 
 __all__ = [
+    "AgentEvent",
     "ErrorEvent",
     "FinalOutputEvent",
     "StreamingEvent",

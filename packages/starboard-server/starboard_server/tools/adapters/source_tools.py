@@ -12,6 +12,7 @@ Architecture:
 from __future__ import annotations
 
 import asyncio
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from starboard_core.domain.transformers.job_transformers import transform_task_sources
@@ -19,6 +20,7 @@ from starboard_core.domain.transformers.job_transformers import transform_task_s
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.exceptions import AdapterError, ToolError
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.source import SourceTransformer
 from starboard_server.tools.domain.source.models import CodeQualityIssue
 from starboard_server.tools.domain.utils import pack_dict
@@ -118,14 +120,28 @@ CODE_PASS_SCHEMA = {
 # =============================================================================
 
 
-class SourceTools:
+class AnalysisMode(str, Enum):
+    """Analysis strategy for code quality.
+
+    Use ``BATCH`` (default) to analyze all code in a single LLM call, or
+    ``INDIVIDUAL`` to analyze each artifact separately in parallel.
+    """
+
+    BATCH = "batch"
+    """Analyze all code in single LLM call."""
+
+    INDIVIDUAL = "individual"
+    """Analyze each artifact separately in parallel."""
+
+
+class SourceTools(BaseToolAdapter):
     """Async reasoning interface for source code operations.
 
     Clean interface optimized for LLM reasoning. Combines the adapter
     and service layers for direct access to source code operations.
 
     Example:
-        >>> tools = SourceTools(api, llm_client, events)
+        >>> tools = SourceTools(api, llm_client, events=events)
         >>> result = await tools.get_source_code(job_id="12345")
     """
 
@@ -133,6 +149,7 @@ class SourceTools:
         self,
         api: AsyncDatabricksClient,
         llm_client: BaseLLMClient | None = None,
+        *,
         events: EventEmitter | None = None,
     ):
         """Initialize source tools.
@@ -142,9 +159,9 @@ class SourceTools:
             llm_client: Optional LLM client for code analysis
             events: Optional event emitter for status updates
         """
+        super().__init__(events=events)
         self.databricks_api = api
         self.llm_client = llm_client
-        self.events = events or EventEmitter()
 
     # =========================================================================
     # Public Methods (LLM-facing interface)
@@ -200,7 +217,7 @@ class SourceTools:
         job_id: str | None = None,
         task_key: str | None = None,
         language: str | None = None,  # noqa: ARG002
-        batch_mode: bool = True,
+        mode: AnalysisMode = AnalysisMode.BATCH,
     ) -> dict[str, Any]:
         """Analyze source code for quality issues using LLM.
 
@@ -213,7 +230,7 @@ class SourceTools:
             job_id: Optional job ID to fetch sources from
             task_key: Optional specific task key to filter (requires job_id)
             language: Optional language hint (auto-detected if not provided)
-            batch_mode: If True, analyze all code in single LLM call
+            mode: Analysis strategy (BATCH or INDIVIDUAL). Default: BATCH.
 
         Returns:
             Dict with quality issues and notes
@@ -253,7 +270,7 @@ class SourceTools:
             source_code=source_code,
             task_sources=task_sources,
             task_key=task_key,
-            batch_mode=batch_mode,
+            mode=mode,
         )
 
         # Extract data from result
@@ -447,7 +464,7 @@ class SourceTools:
         source_code: str | None = None,
         task_sources: dict[str, Any] | None = None,
         task_key: str | None = None,
-        batch_mode: bool = True,
+        mode: AnalysisMode = AnalysisMode.BATCH,
     ) -> dict[str, Any]:
         """Analyze source code for quality issues using LLM."""
         if not self.llm_client:
@@ -464,7 +481,7 @@ class SourceTools:
         self._emit_info(
             source="analyze_code_quality",
             message=f"Analyzing {context_msg} quality "
-            f"({'BATCH' if batch_mode else 'DISCRETE'} mode)",
+            f"({mode.value.upper()} mode)",
         )
 
         # Transform task sources if provided
@@ -488,7 +505,7 @@ class SourceTools:
                 code_artifacts[key] = source_info
 
         # Analyze based on mode
-        if batch_mode:
+        if mode == AnalysisMode.BATCH:
             issues, notes = await self._analyze_batch(code_artifacts)
         else:
             issues, notes = await self._analyze_individual_parallel(code_artifacts)

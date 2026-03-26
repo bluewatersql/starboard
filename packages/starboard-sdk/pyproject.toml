@@ -8,6 +8,7 @@ license = {text = "MIT"}
 dependencies = [
     "starboard-core",
     "starboard-server",
+    "starboard-cli",
     "python-dotenv>=1.0.0",
 ]
 

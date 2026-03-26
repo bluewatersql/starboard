@@ -3,7 +3,27 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any
+from typing import NotRequired, TypedDict
+
+
+class RawAgentOutput(TypedDict, total=False):
+    """Typed dictionary for raw agent output.
+
+    All fields are optional because the agent may not populate every key.
+    """
+
+    user_goal: str
+    summary: str
+    domain: str
+    steps_taken: int
+    tools_used: list[str]
+    tokens_used: int
+    cost_usd: float
+    duration_seconds: float
+    conversation_id: str
+    complete_report: dict[str, object]
+    formatted_markdown: str
+    recommendations: list[dict[str, str]]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -27,7 +47,7 @@ class AgentResponse:
 
     question: str
     report: str | None
-    raw_output: dict[str, Any]
+    raw_output: RawAgentOutput
     tools_used: list[str]
     tokens_used: int | None
     cost_usd: float | None

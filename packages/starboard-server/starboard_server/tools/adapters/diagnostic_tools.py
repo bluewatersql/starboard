@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.diagnostic.artifact_exploration_service import (
     ArtifactExplorationService,
 )
@@ -24,14 +25,14 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class DiagnosticTools:
+class DiagnosticTools(BaseToolAdapter):
     """Async reasoning interface for diagnostic operations.
 
     Provides intent-aware exploration of large uploaded artifacts
     like query profiles, Spark event logs, and EXPLAIN plans.
 
     Example:
-        >>> tools = DiagnosticTools(cache, events)
+        >>> tools = DiagnosticTools(cache, events=events)
         >>> result = await tools.explore_artifact(
         ...     attachment_id="att_conv123_abc",
         ...     focus="range join hints, join strategies",
@@ -42,6 +43,7 @@ class DiagnosticTools:
     def __init__(
         self,
         attachments_cache: NamespacedCache,
+        *,
         events: EventEmitter | None = None,
     ) -> None:
         """Initialize diagnostic tools.
@@ -50,7 +52,7 @@ class DiagnosticTools:
             attachments_cache: Namespaced cache for artifact storage
             events: Optional event emitter for status updates
         """
-        self._events = events
+        super().__init__(events=events)
         self._exploration_service = ArtifactExplorationService(attachments_cache)
 
     async def explore_artifact(

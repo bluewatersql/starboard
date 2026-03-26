@@ -19,18 +19,26 @@ import asyncio
 import contextlib
 import time
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from starboard_core.domain.models.llm import OptimizationMode
 from starboard_server.bootstrap import (
-    ErrorEvent,
-    FinalOutputEvent,
-    StreamingEvent,
-    ToolEndEvent,
+    ErrorEvent as _ServerErrorEvent,
+    FinalOutputEvent as _ServerFinalOutputEvent,
+    ToolEndEvent as _ServerToolEndEvent,
     get_logger,
 )
 
-from starboard_sdk.models import AgentResponse
+from starboard_sdk._event_mapper import map_event
+from starboard_sdk.event_types import AgentEvent, ErrorEvent, FinalOutputEvent, ToolEndEvent
+from starboard_sdk.exceptions import (
+    AgentError,
+    AuthenticationError,
+    ConfigError,
+    ConnectionError,
+    SessionError,
+)
+from starboard_sdk.models import AgentResponse, RawAgentOutput
 
 if TYPE_CHECKING:
     from starboard_cli.sessions.session_manager import SessionInfo, SessionManager
@@ -39,6 +47,13 @@ if TYPE_CHECKING:
     )
 
 logger = get_logger(__name__)
+
+
+@runtime_checkable
+class AsyncCloseable(Protocol):
+    """Protocol for objects with an async ``close()`` method."""
+
+    async def close(self) -> None: ...
 
 
 class ConversationSession:
@@ -107,8 +122,9 @@ class ConversationSession:
             AgentResponse with report, raw output, and metadata.
 
         Raises:
-            TimeoutError: If the agent does not respond within ``timeout`` seconds.
-            RuntimeError: If the agent returns a non-recoverable error.
+            starboard_sdk.exceptions.TimeoutError: If the agent does not
+                respond within ``timeout`` seconds.
+            AgentError: If the agent returns a non-recoverable error.
         """
         effective_mode = mode or self._mode
         final_output: dict[str, object] | None = None
@@ -126,18 +142,15 @@ class ConversationSession:
             )
             try:
                 async for event in stream:
-                    if isinstance(event, ToolEndEvent):
+                    if isinstance(event, _ServerToolEndEvent):
                         tools_used.append(event.tool_name)
-                    elif isinstance(event, FinalOutputEvent):
+                    elif isinstance(event, _ServerFinalOutputEvent):
                         final_output = (
                             event.output
                             if isinstance(event.output, dict)
                             else event.output.to_dict()
                         )
-                    elif isinstance(event, ErrorEvent) and not event.is_recoverable:
-                        # Record the error but don't raise — the agent may still
-                        # emit a FinalOutputEvent (e.g. a best-effort report).
-                        # Surfaced in AgentResponse.error so callers can inspect.
+                    elif isinstance(event, _ServerErrorEvent) and not event.is_recoverable:
                         agent_error = f"{event.error_type}: {event.error}"
                         logger.warning(
                             "sdk_agent_error_event",
@@ -153,7 +166,9 @@ class ConversationSession:
             try:
                 await asyncio.wait_for(_consume_stream(), timeout=timeout)
             except TimeoutError as exc:
-                raise TimeoutError(
+                from starboard_sdk.exceptions import TimeoutError as SdkTimeoutError
+
+                raise SdkTimeoutError(
                     f"Agent did not respond within {timeout:.0f}s. "
                     "Increase the timeout or check for backend issues."
                 ) from exc
@@ -169,8 +184,9 @@ class ConversationSession:
         ):
             with contextlib.suppress(Exception):
                 from starboard_server.bootstrap import format_agent_report
+
                 formatted_report = format_agent_report(
-                    cast(dict[str, Any], final_output["complete_report"])
+                    final_output["complete_report"]  # type: ignore[arg-type]
                 )
 
         self._turn_count += 1
@@ -181,15 +197,17 @@ class ConversationSession:
                     self._session_name, message
                 )
 
+        raw: RawAgentOutput = final_output or {}  # type: ignore[assignment]
+
         return AgentResponse(
             question=message,
             report=formatted_report,
-            raw_output=final_output or {},
+            raw_output=raw,
             tools_used=tools_used,
-            tokens_used=final_output.get("tokens_used") if final_output else None,  # type: ignore[arg-type]
-            cost_usd=final_output.get("cost_usd") if final_output else None,  # type: ignore[arg-type]
+            tokens_used=raw.get("tokens_used") if raw else None,  # type: ignore[arg-type]
+            cost_usd=raw.get("cost_usd") if raw else None,  # type: ignore[arg-type]
             duration_seconds=round(elapsed, 2),
-            domain=final_output.get("domain") if final_output else None,  # type: ignore[arg-type]
+            domain=raw.get("domain") if raw else None,  # type: ignore[arg-type]
             conversation_id=self._conversation_id,
             turn_number=self._turn_count,
             error=agent_error,
@@ -199,28 +217,32 @@ class ConversationSession:
         self,
         message: str,
         mode: OptimizationMode | None = None,
-    ) -> AsyncIterator[StreamingEvent | FinalOutputEvent]:
-        """Send a message and stream raw events.
+        timeout: float | None = None,
+    ) -> AsyncIterator[AgentEvent]:
+        """Send a message and stream SDK events.
 
         Args:
             message: User message text.
             mode: Override optimization mode for this turn.
+            timeout: Optional timeout in seconds. ``None`` means no limit.
 
         Yields:
-            StreamingEvent or FinalOutputEvent instances.
+            SDK event instances (``ToolStartEvent``, ``ToolEndEvent``,
+            ``ErrorEvent``, ``FinalOutputEvent``, ``StreamingEvent``).
         """
         effective_mode = mode or self._mode
 
         try:
-            async for event in self._manager.handle_message_stream(
-                conversation_id=self._conversation_id,
-                user_message=message,
-                mode=effective_mode,
-            ):
-                yield event
+            async with asyncio.timeout(timeout):
+                async for server_event in self._manager.handle_message_stream(
+                    conversation_id=self._conversation_id,
+                    user_message=message,
+                    mode=effective_mode,
+                ):
+                    sdk_event = map_event(server_event)
+                    if sdk_event is not None:
+                        yield sdk_event
         finally:
-            # Always increment turn count and update session activity,
-            # even if the stream exits early due to an exception or break.
             self._turn_count += 1
 
             if self._session_mgr and self._session_name:
@@ -228,6 +250,32 @@ class ConversationSession:
                     await self._session_mgr.update_session_activity(
                         self._session_name, message
                     )
+
+    # -- Convenience wrappers for common agent tasks --------------------------
+
+    async def analyze_query(self, statement_id: str, **kwargs: object) -> AgentResponse:
+        """Analyze a SQL query by statement ID."""
+        return await self.ask(f"Analyze query {statement_id}", **kwargs)  # type: ignore[arg-type]
+
+    async def analyze_job(self, job_id: str | int, **kwargs: object) -> AgentResponse:
+        """Analyze a Databricks job by ID."""
+        return await self.ask(f"Analyze job {job_id}", **kwargs)  # type: ignore[arg-type]
+
+    async def analyze_table(self, table_name: str, **kwargs: object) -> AgentResponse:
+        """Analyze a Unity Catalog table."""
+        return await self.ask(f"Analyze table {table_name}", **kwargs)  # type: ignore[arg-type]
+
+    async def analyze_cluster(self, cluster_id: str, **kwargs: object) -> AgentResponse:
+        """Analyze a Databricks cluster by ID."""
+        return await self.ask(f"Analyze cluster {cluster_id}", **kwargs)  # type: ignore[arg-type]
+
+    async def analyze_warehouse(self, warehouse_id: str, **kwargs: object) -> AgentResponse:
+        """Analyze a SQL warehouse by ID."""
+        return await self.ask(f"Analyze warehouse {warehouse_id}", **kwargs)  # type: ignore[arg-type]
+
+    async def diagnose(self, description: str, **kwargs: object) -> AgentResponse:
+        """Diagnose an issue described in natural language."""
+        return await self.ask(f"Diagnose: {description}", **kwargs)  # type: ignore[arg-type]
 
 
 class StarboardClient:
@@ -252,7 +300,7 @@ class StarboardClient:
         self,
         manager: MultiAgentConversationManager,
         session_mgr: SessionManager | None = None,
-        resources: tuple[object, ...] = (),
+        resources: tuple[AsyncCloseable, ...] = (),
     ) -> None:
         """Initialize client with pre-built components.
 
@@ -279,6 +327,13 @@ class StarboardClient:
         and server.  Call ``await client.close()`` (or use ``async with``)
         when done to release background resources.
 
+        Example::
+
+            client = await StarboardClient.from_env()
+            async with client:
+                session = await client.create_session()
+                response = await session.ask("Analyze job 12345")
+
         Args:
             session_db: Path to the SQLite session database used for
                 persistent multi-turn sessions.  Tilde-expanded.  Defaults
@@ -286,26 +341,51 @@ class StarboardClient:
 
         Returns:
             Configured StarboardClient ready to create sessions.
+
+        Raises:
+            ConfigError: If required environment variables are missing.
+            AuthenticationError: If credentials are invalid.
+            ConnectionError: If a backend service is unreachable.
         """
         from dotenv import load_dotenv
 
         load_dotenv()
 
-        from starboard_cli.cli.main import create_agent_manager
-        from starboard_cli.sessions.session_manager import SessionManager
-        from starboard_server.bootstrap import get_config
+        try:
+            from starboard_cli.cli.main import create_agent_manager
+            from starboard_cli.sessions.session_manager import SessionManager
+            from starboard_server.bootstrap import get_config
 
-        config = get_config()
+            config = get_config()
 
-        session_mgr = SessionManager(db_path=session_db)
-        await session_mgr.connect()
+            if not config.databricks_host or not config.databricks_token:
+                raise ConfigError(
+                    "Missing required credentials. Set DATABRICKS_HOST and "
+                    "DATABRICKS_TOKEN environment variables."
+                )
 
-        manager, api, vector_store = await create_agent_manager(
-            config, state_manager=session_mgr.conversation_repo
-        )
+            session_mgr = SessionManager(db_path=session_db)
+            await session_mgr.connect()
 
-        resources: tuple[object, ...] = tuple(
-            r for r in (api, vector_store) if r is not None
+            manager, api, vector_store = await create_agent_manager(
+                config, state_manager=session_mgr.conversation_repo
+            )
+        except (ConfigError, AuthenticationError, ConnectionError):
+            raise
+        except Exception as exc:
+            msg = str(exc)
+            if "token" in msg.lower() or "auth" in msg.lower() or "credential" in msg.lower():
+                raise AuthenticationError(
+                    f"Authentication failed: {msg}"
+                ) from exc
+            if "connect" in msg.lower() or "unreachable" in msg.lower() or "dns" in msg.lower():
+                raise ConnectionError(
+                    f"Could not reach backend: {msg}"
+                ) from exc
+            raise ConfigError(f"Failed to initialize client: {msg}") from exc
+
+        resources: tuple[AsyncCloseable, ...] = tuple(
+            r for r in (api, vector_store) if r is not None and isinstance(r, AsyncCloseable)
         )
 
         return cls(
@@ -360,11 +440,10 @@ class StarboardClient:
             ConversationSession with prior context loaded automatically.
 
         Raises:
-            ValueError: If no session with the given name exists and
-                no SessionManager is configured.
+            SessionError: If no SessionManager is configured.
         """
         if not self._session_mgr:
-            raise ValueError(
+            raise SessionError(
                 "Cannot resume sessions without a SessionManager. "
                 "Use StarboardClient.from_env() for persistent sessions."
             )
@@ -387,6 +466,83 @@ class StarboardClient:
             return []
         return await self._session_mgr.list_sessions()
 
+    async def delete_session(self, name: str) -> bool:
+        """Delete a session by name.
+
+        Args:
+            name: Session name to delete.
+
+        Returns:
+            True if deleted, False if session not found.
+
+        Raises:
+            SessionError: If no SessionManager is configured.
+        """
+        if not self._session_mgr:
+            raise SessionError(
+                "Cannot delete sessions without a SessionManager. "
+                "Use StarboardClient.from_env() for persistent sessions."
+            )
+        return await self._session_mgr.delete_session(name)
+
+    async def health_check(self) -> dict[str, object]:
+        """Check connectivity to backend services.
+
+        Returns:
+            Dictionary with ``healthy`` (bool), ``version`` (str), and
+            per-backend reachability flags.
+
+        Raises:
+            ConnectionError: If all backends are unreachable.
+        """
+        import importlib.metadata
+
+        try:
+            sdk_version = importlib.metadata.version("starboard-sdk")
+        except importlib.metadata.PackageNotFoundError:
+            sdk_version = "0.0.0"
+
+        details: dict[str, str] = {}
+        databricks_ok = False
+        llm_ok = False
+
+        # Check Databricks connectivity
+        try:
+            api = getattr(self._manager, "_databricks_client", None)
+            if api and hasattr(api, "is_authenticated"):
+                databricks_ok = await api.is_authenticated()
+                details["databricks"] = "ok" if databricks_ok else "auth_failed"
+            else:
+                details["databricks"] = "unknown"
+        except Exception as exc:
+            details["databricks"] = f"error: {exc}"
+
+        # Check LLM connectivity
+        try:
+            llm = getattr(self._manager, "_llm_client", None)
+            if llm is not None:
+                llm_ok = True
+                details["llm"] = "ok"
+            else:
+                details["llm"] = "not_configured"
+        except Exception as exc:
+            details["llm"] = f"error: {exc}"
+
+        healthy = databricks_ok or llm_ok
+
+        if not healthy:
+            raise ConnectionError(
+                "All backends are unreachable. Check your credentials and network."
+            )
+
+        return {
+            "healthy": healthy,
+            "databricks_reachable": databricks_ok,
+            "llm_reachable": llm_ok,
+            "version": sdk_version,
+            "details": details,
+        }
+
     async def close(self) -> None:
         """Close all resources (LLM client, Databricks client, etc.)."""
         if self._session_mgr:
@@ -394,9 +550,8 @@ class StarboardClient:
                 await self._session_mgr.close()
 
         for resource in self._resources:
-            if hasattr(resource, "close"):
-                with contextlib.suppress(Exception):
-                    await resource.close()
+            with contextlib.suppress(Exception):
+                await resource.close()
 
     async def __aenter__(self) -> StarboardClient:
         """Support async context manager usage."""

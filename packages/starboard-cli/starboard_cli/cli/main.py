@@ -23,6 +23,16 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from starboard_cli.cli.exit_codes import (
+    AUTH_ERROR,
+    CONFIG_ERROR,
+    CONNECTION_ERROR,
+    GENERAL_ERROR,
+    INTERRUPTED,
+    SUCCESS,
+    TIMEOUT_ERROR,
+)
+
 import structlog
 import yaml
 from dotenv import load_dotenv
@@ -65,7 +75,7 @@ logger = structlog.get_logger("starboard_cli")
 
 def setup_cli_logging(
     log_level: str, log_file: str | None = None, quiet: bool = False
-) -> Any:
+) -> object:
     """
     Configure logging for CLI context.
 
@@ -672,10 +682,6 @@ async def handle_streaming_events(
                     await handle_user_input_request(event, console)
 
                 elif isinstance(event, ErrorEvent):
-                    # Show error
-                    console.print(
-                        f"\n[bold red]❌ Error: {event.error_type}[/bold red]\n{event.error}"
-                    )
                     raise RuntimeError(
                         f"Agent error: {event.error_type} - {event.error}"
                     )
@@ -861,184 +867,178 @@ Environment Variables:
         """,
     )
 
-    # ======================
-    # Main user input
-    # ======================
-    parser.add_argument(
+    # -- Input ----------------------------------------------------------------
+    input_group = parser.add_argument_group("Input")
+    input_group.add_argument(
         "--goal",
         type=str,
         required=False,
         help="What you want the agent to do (natural language)",
     )
-
-    # ======================
-    # Configuration
-    # ======================
-    parser.add_argument(
-        "--config",
+    input_group.add_argument(
+        "--input-file",
         type=str,
-        help="Path to YAML config file for broader configuration",
+        help="File path to load and pass to the agent (e.g., source code, SQL)",
     )
 
-    # ======================
-    # Databricks parameters
-    # ======================
-    parser.add_argument(
+    # -- Databricks Configuration ---------------------------------------------
+    db_group = parser.add_argument_group("Databricks Configuration")
+    db_group.add_argument(
         "--databricks-host",
         type=str,
         help="Databricks workspace URL (or set DATABRICKS_HOST)",
     )
-    parser.add_argument(
+    db_group.add_argument(
         "--databricks-token",
         type=str,
         help="Databricks personal access token (or set DATABRICKS_TOKEN)",
     )
 
-    # ======================
-    # LLM parameters
-    # ======================
-    parser.add_argument(
+    # -- LLM Configuration ----------------------------------------------------
+    llm_group = parser.add_argument_group("LLM Configuration")
+    llm_group.add_argument(
         "--llm-model",
         type=str,
         help="LLM model name (e.g., gpt-4o, claude-3-5-sonnet)",
     )
-    parser.add_argument(
+    llm_group.add_argument(
         "--llm-api-key",
         type=str,
         help="LLM API key (or set LLM_API_KEY)",
     )
-    parser.add_argument(
+    llm_group.add_argument(
         "--llm-base-url",
         type=str,
         help="LLM API base URL for custom endpoints",
     )
-    parser.add_argument(
+    llm_group.add_argument(
         "--llm-temperature",
         type=float,
         help="LLM temperature (0.0-1.0, default: 0.4)",
     )
-    parser.add_argument(
+    llm_group.add_argument(
         "--llm-max-tokens",
         type=int,
         help="Maximum token budget for session (default: 120000)",
     )
 
-    # ======================
-    # Input/Output
-    # ======================
-    parser.add_argument(
-        "--input-file",
-        type=str,
-        help="File path to load and pass to the agent (e.g., source code, SQL)",
-    )
-    parser.add_argument(
+    # -- Output & Display -----------------------------------------------------
+    output_group = parser.add_argument_group("Output & Display")
+    output_group.add_argument(
         "--output-path",
         type=str,
         help="Directory to save results (JSON and Markdown reports)",
     )
-
-    # ======================
-    # Display options
-    # ======================
-    parser.add_argument(
+    output_group.add_argument(
         "--plain",
         action="store_true",
         help="Use plain text output instead of Rich formatting",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--quiet",
         "-q",
         action="store_true",
         help="Suppress progress output (only show final results)",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--json",
         action="store_true",
         help="Output results as JSON to stdout (implies --quiet)",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--no-color",
         action="store_true",
         default=bool(os.environ.get("NO_COLOR")),
         help="Disable color output (also respects NO_COLOR env var)",
     )
 
-    # ======================
-    # Logging options
-    # ======================
-    parser.add_argument(
-        "--log-level",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        default="WARNING",
-        help="Logging level (default: WARNING — suppresses info/debug noise)",
-    )
-    parser.add_argument(
-        "--log-file",
-        type=str,
-        help="Write logs to file instead of console (recommended for debugging)",
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug logging to stderr (shows internal operations)",
-    )
-
-    # ======================
-    # Agent options
-    # ======================
-    parser.add_argument(
-        "--mode",
-        choices=["online", "offline", "diagnostic"],
-        default="online",
-        help="Optimization mode: online (comprehensive), offline (fast), diagnostic (focused)",
-    )
-
-    # ======================
-    # Session / multi-turn
-    # ======================
-    parser.add_argument(
+    # -- Session Management ---------------------------------------------------
+    session_group = parser.add_argument_group("Session Management")
+    session_group.add_argument(
         "--session",
         type=str,
         default=None,
         help="Named session for multi-turn conversations. Reuse a name to continue a prior conversation.",
     )
-    parser.add_argument(
+    session_group.add_argument(
         "--session-db",
         type=str,
         default=None,
         help="Path to session database (default: ~/.starboard/sessions.db)",
     )
-    parser.add_argument(
+    session_group.add_argument(
         "--chat",
         action="store_true",
         help="Start interactive chat mode for multi-turn conversations",
     )
 
-    # ======================
-    # Discovery mode
-    # ======================
-    parser.add_argument(
+    # -- Workspace Discovery --------------------------------------------------
+    discovery_group = parser.add_argument_group("Workspace Discovery")
+    discovery_group.add_argument(
         "--discover",
         action="store_true",
         help="Run workspace discovery and health assessment via the discovery agent",
     )
-    parser.add_argument(
+    discovery_group.add_argument(
         "--lookback-days",
         type=int,
         default=30,
         choices=[30, 60, 90],
         help="Discovery lookback period in days (default: 30)",
     )
-    parser.add_argument(
+    discovery_group.add_argument(
         "--discovery-domains",
         type=str,
         nargs="+",
         help="Specific domains to analyze (default: all active)",
     )
-    parser.add_argument(
+    discovery_group.add_argument(
         "--data-only",
         action="store_true",
         help="Skip LLM analysis in discovery mode (raw data only)",
+    )
+
+    # -- Agent Options --------------------------------------------------------
+    agent_group = parser.add_argument_group("Agent Options")
+    agent_group.add_argument(
+        "--mode",
+        choices=["online", "offline", "diagnostic"],
+        default="online",
+        help="Optimization mode: online (comprehensive), offline (fast), diagnostic (focused)",
+    )
+
+    # -- Logging & Debug ------------------------------------------------------
+    logging_group = parser.add_argument_group("Logging & Debug")
+    logging_group.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="WARNING",
+        help="Logging level (default: WARNING — suppresses info/debug noise)",
+    )
+    logging_group.add_argument(
+        "--log-file",
+        type=str,
+        help="Write logs to file instead of console (recommended for debugging)",
+    )
+    logging_group.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging to stderr (shows internal operations)",
+    )
+    logging_group.add_argument(
+        "--config",
+        type=str,
+        help=(
+            "Path to YAML config file. Schema:\n"
+            "  databricks:\n"
+            "    host: https://your-workspace.databricks.com\n"
+            "    token: dapi...\n"
+            "  llm:\n"
+            "    model: gpt-4o\n"
+            "    api_key: sk-...\n"
+            "    temperature: 0.4\n"
+            "See examples/env.example for all options."
+        ),
     )
 
     return parser.parse_args(argv)
@@ -1322,8 +1322,8 @@ async def async_main(args: argparse.Namespace) -> None:
                 file_config = load_config_file(config_path)
                 logger.debug("config_loaded", path=str(config_path))
             except (FileNotFoundError, ValueError) as e:
-                err_console.print(f"[bold red]❌ Config error:[/bold red] {e}")
-                sys.exit(1)
+                err_console.print(f"[bold red]Config error:[/bold red] {e}")
+                sys.exit(CONFIG_ERROR)
 
         # Merge configuration
         config = merge_env_config(file_config, args)
@@ -1331,16 +1331,23 @@ async def async_main(args: argparse.Namespace) -> None:
         # Validate required configuration
         if not config.databricks_host or not config.databricks_token:
             err_console.print(
-                "[bold red]❌ Missing Databricks credentials[/bold red]\n"
+                "[bold red]Missing Databricks credentials[/bold red]\n"
                 "Set DATABRICKS_HOST and DATABRICKS_TOKEN environment variables,\n"
                 "or provide --databricks-host and --databricks-token arguments,\n"
                 "or specify them in a config file with --config"
             )
-            sys.exit(1)
+            sys.exit(CONFIG_ERROR)
 
-        if not config.llm_api_key:
+        if config.llm_api_key:
+            key = config.llm_api_key.strip()
+            if len(key) < 10:
+                err_console.print(
+                    "[bold red]Error:[/bold red] LLM_API_KEY appears invalid (too short)."
+                )
+                sys.exit(AUTH_ERROR)
+        elif not args.discover or not args.data_only:
             err_console.print(
-                "[bold yellow]⚠️  Warning:[/bold yellow] LLM_API_KEY not set\n"
+                "[bold yellow]Warning:[/bold yellow] LLM_API_KEY not set.\n"
                 "Some LLM providers may require an API key."
             )
 
@@ -1360,23 +1367,23 @@ async def async_main(args: argparse.Namespace) -> None:
         is_chat_mode = getattr(args, "chat", False)
         if not user_message and not is_chat_mode:
             err_console.print(
-                "[bold yellow]❌ No goal provided[/bold yellow]\n"
+                "[bold yellow]No goal provided[/bold yellow]\n"
                 "Please provide what you want the agent to do:\n"
                 '  --goal "your goal"\n'
                 'Example: starboard --goal "Optimize query with statement_id abc123"\n'
                 "Or start an interactive session:\n"
                 "  starboard --chat"
             )
-            sys.exit(1)
+            sys.exit(CONFIG_ERROR)
 
         # Load input file if provided
         if args.input_file:
             input_path = Path(args.input_file)
             if not input_path.exists():
                 err_console.print(
-                    f"[bold red]❌ Input file not found:[/bold red] {input_path}"
+                    f"[bold red]Input file not found:[/bold red] {input_path}"
                 )
-                sys.exit(1)
+                sys.exit(CONFIG_ERROR)
 
             try:
                 file_content = await asyncio.to_thread(
@@ -1389,8 +1396,8 @@ async def async_main(args: argparse.Namespace) -> None:
                     "input_file_loaded", path=str(input_path), size=len(file_content)
                 )
             except Exception as e:
-                err_console.print(f"[bold red]❌ Error reading input file:[/bold red] {e}")
-                sys.exit(1)
+                err_console.print(f"[bold red]Error reading input file:[/bold red] {e}")
+                sys.exit(CONFIG_ERROR)
 
         # =====================================================================
         # Session management: determine state manager and conversation_id
@@ -1407,26 +1414,26 @@ async def async_main(args: argparse.Namespace) -> None:
 
         # Create agent manager
         if not args.quiet:
-            console.print("\n🤖 [bold blue]Initializing Starboard Agent...[/bold blue]")
+            err_console.print("\n[bold blue]Initializing Starboard Agent...[/bold blue]")
 
         try:
             manager, _api, _vector_store = await create_agent_manager(
                 config, state_manager=session_state_manager
             )
         except Exception as e:
-            err_console.print(f"[bold red]❌ Failed to initialize agent:[/bold red] {e}")
+            err_console.print(f"[bold red]Failed to initialize agent:[/bold red] {e}")
             logger.exception("agent_initialization_failed")
-            sys.exit(1)  # finally block below will still close any partial resources
+            sys.exit(CONNECTION_ERROR)  # finally block below will still close any partial resources
 
         if not args.quiet:
-            console.print(
-                f"✓ Agent ready: model={config.llm_model}, "
+            err_console.print(
+                f"[green]Agent ready:[/green] model={config.llm_model}, "
                 f"budget={config.llm_max_tokens:,} tokens"
             )
 
             # Display domain model configuration if any overrides exist
             if config.domain_model_overrides:
-                console.print("\n[dim]Multi-Agent Configuration:[/dim]")
+                err_console.print("\n[dim]Multi-Agent Configuration:[/dim]")
                 domain_labels = {
                     "router": "Router",
                     "query": "Query Optimization",
@@ -1445,9 +1452,9 @@ async def async_main(args: argparse.Namespace) -> None:
                         temp_override = (
                             f" (temp: {config.domain_temperature_overrides[domain]})"
                         )
-                    console.print(f"  • {label}: [cyan]{model}[/cyan]{temp_override}")
+                    err_console.print(f"  {label}: [cyan]{model}[/cyan]{temp_override}")
 
-            console.print()
+            err_console.print()
 
         # =====================================================================
         # Interactive chat mode (REPL)
@@ -1462,6 +1469,7 @@ async def async_main(args: argparse.Namespace) -> None:
                 console=console,
                 mode=OptimizationMode[args.mode.upper()],
                 plain=args.plain,
+                no_color=no_color,
             )
             return
 
@@ -1488,7 +1496,7 @@ async def async_main(args: argparse.Namespace) -> None:
 
         # Run agent with streaming
         if not args.quiet:
-            console.print("🔍 [bold green]Starting analysis...[/bold green]\n")
+            err_console.print("[bold green]Starting analysis...[/bold green]\n")
 
         try:
             final_output, formatted_markdown = await handle_streaming_events(
@@ -1506,47 +1514,60 @@ async def async_main(args: argparse.Namespace) -> None:
                 await session_mgr.update_session_activity(session_name, user_message)
 
         except KeyboardInterrupt:
-            err_console.print("\n[yellow]⚠️  Analysis interrupted by user[/yellow]")
-            sys.exit(130)
+            err_console.print("\n[yellow]Analysis interrupted by user[/yellow]")
+            sys.exit(INTERRUPTED)
         except Exception as e:
-            err_console.print(f"\n[bold red]❌ Analysis failed:[/bold red] {e}")
+            if getattr(args, "json", False):
+                error_payload = {
+                    "ok": False,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                }
+                print(json.dumps(error_payload, indent=2))
+            else:
+                err_console.print(f"\n[bold red]Analysis failed:[/bold red] {e}")
             logger.exception("analysis_failed")
-            sys.exit(1)
+            sys.exit(GENERAL_ERROR)
 
         # Display results
         if final_output:
-            # --json: emit the raw output as JSON to stdout, then stop
+            # --json: emit structured JSON envelope to stdout, then stop
             if getattr(args, "json", False):
-                print(json.dumps(final_output, indent=2, default=str))
+                envelope = {
+                    "ok": True,
+                    "data": final_output,
+                    "formatted_markdown": formatted_markdown,
+                }
+                print(json.dumps(envelope, indent=2, default=str))
                 return
 
             if not args.quiet:
-                console.print("\n" + "=" * 70)
-                console.print("[bold green]✅ RESULTS[/bold green]")
-                console.print("=" * 70 + "\n")
+                err_console.print("\n" + "=" * 70)
+                err_console.print("[bold green]RESULTS[/bold green]")
+                err_console.print("=" * 70 + "\n")
 
                 # Display summary metrics
-                console.print(f"Steps taken: {final_output.get('steps_taken', 'N/A')}")
-                console.print(
+                err_console.print(f"Steps taken: {final_output.get('steps_taken', 'N/A')}")
+                err_console.print(
                     f"Tools used: {', '.join(final_output.get('tools_used', [])) if final_output.get('tools_used') else 'N/A'}"
                 )
-                console.print(
+                err_console.print(
                     f"Tokens used: {final_output.get('tokens_used', 'N/A'):,}"
                     if isinstance(final_output.get("tokens_used"), int)
                     else f"Tokens used: {final_output.get('tokens_used', 'N/A')}"
                 )
-                console.print(f"Cost: ${final_output.get('cost_usd', 0):.4f}")
-                console.print(
+                err_console.print(f"Cost: ${final_output.get('cost_usd', 0):.4f}")
+                err_console.print(
                     f"Duration: {final_output.get('duration_seconds', 0):.2f}s\n"
                 )
 
             # Display formatted markdown report if available
             if formatted_markdown:
                 if not args.quiet:
-                    # Display formatted markdown report using Rich
-                    console.print("\n" + "=" * 70)
-                    console.print("[bold]📋 ANALYSIS REPORT[/bold]")
-                    console.print("=" * 70 + "\n")
+                    # Display report header to stderr, report content to stdout
+                    err_console.print("\n" + "=" * 70)
+                    err_console.print("[bold]ANALYSIS REPORT[/bold]")
+                    err_console.print("=" * 70 + "\n")
 
                     # Print markdown as plain text (Rich's Markdown renderer centers headers)
                     # This ensures all headers are left-aligned as intended
@@ -1565,9 +1586,9 @@ async def async_main(args: argparse.Namespace) -> None:
                         conversation_id=conversation_id,
                     )
                     if not args.quiet:
-                        console.print("\n💾 Results saved:")
-                        console.print(f"   JSON: {json_path}")
-                        console.print(f"   Markdown: {markdown_path}")
+                        err_console.print("\nResults saved:")
+                        err_console.print(f"   JSON: {json_path}")
+                        err_console.print(f"   Markdown: {markdown_path}")
                 except Exception as e:
                     err_console.print(
                         f"\n[bold yellow]⚠️  Failed to save results:[/bold yellow] {e}"
@@ -1575,12 +1596,20 @@ async def async_main(args: argparse.Namespace) -> None:
                     logger.exception("save_results_failed")
 
         else:
-            err_console.print("\n[bold yellow]⚠️  No results to display[/bold yellow]")
+            err_console.print("\n[bold yellow]No results to display[/bold yellow]")
 
     except Exception as e:
-        err_console.print(f"\n[bold red]❌ Unexpected error:[/bold red] {e}")
+        if getattr(args, "json", False):
+            error_payload = {
+                "ok": False,
+                "error": str(e),
+                "error_type": type(e).__name__,
+            }
+            print(json.dumps(error_payload, indent=2))
+        else:
+            err_console.print(f"\n[bold red]Unexpected error:[/bold red] {e}")
         logger.exception("unexpected_error")
-        sys.exit(1)
+        sys.exit(GENERAL_ERROR)
 
     finally:
         # Always close long-lived resources so their connection pools and threads
@@ -1612,11 +1641,11 @@ def main(argv: list | None = None) -> None:
         args = parse_args(argv)
         asyncio.run(async_main(args))
     except KeyboardInterrupt:
-        print("\n⚠️  Interrupted by user")
-        sys.exit(130)
+        print("\nInterrupted by user", file=sys.stderr)
+        sys.exit(INTERRUPTED)
     except Exception as e:
-        print(f"❌ Fatal error: {e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"Fatal error: {e}", file=sys.stderr)
+        sys.exit(GENERAL_ERROR)
 
 
 if __name__ == "__main__":

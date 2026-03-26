@@ -20,6 +20,7 @@ from starboard_core.rag.models import RAGContext
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError
+from starboard_server.tools.adapters.base import BaseToolAdapter
 
 if TYPE_CHECKING:
     from starboard_server.infra.rag.domain import (
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class AnalyticsContextTools:
+class AnalyticsContextTools(BaseToolAdapter):
     """Agent-callable tool to build RAG context for analytics SQL generation."""
 
     def __init__(
@@ -46,6 +47,7 @@ class AnalyticsContextTools:
             embedding_provider: Provider for generating embeddings
             analytics_sql_tools: Optional SQL tools instance for context handle storage
         """
+        super().__init__()
         self.vector_store = vector_store
         self.embedding_provider = embedding_provider
         self.analytics_sql_tools = analytics_sql_tools

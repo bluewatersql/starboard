@@ -16,6 +16,14 @@ from openai import (
     RateLimitError,
 )
 
+from starboard_server.adapters.llm.openai.sdk_types import (
+    get_chunk_usage,
+    get_delta_content,
+    get_delta_tool_calls,
+    get_tool_call_function_args,
+    get_tool_call_function_name,
+    get_tool_call_id,
+)
 from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
@@ -51,9 +59,10 @@ async def iter_text_stream(
                 yield delta.content
 
         # Collect usage if available (usually in the last chunk)
-        if hasattr(chunk, "usage") and chunk.usage:
-            collect_token_usage(chunk.usage)
-            normalized_usage = normalize_usage(chunk.usage)
+        usage = get_chunk_usage(chunk)
+        if usage:
+            collect_token_usage(usage)
+            normalized_usage = normalize_usage(usage)
             input_tokens = normalized_usage["prompt_tokens"]
             output_tokens = normalized_usage["completion_tokens"]
 
@@ -80,9 +89,10 @@ async def iter_json_stream(
             if delta.content:
                 yield delta.content, None
 
-        if hasattr(chunk, "usage") and chunk.usage:
-            collect_token_usage(chunk.usage)
-            yield "", chunk.usage
+        usage = get_chunk_usage(chunk)
+        if usage:
+            collect_token_usage(usage)
+            yield "", usage
 
 
 async def iter_tool_call_stream(
@@ -111,17 +121,19 @@ async def iter_tool_call_stream(
         finish_reason = chunk.choices[0].finish_reason or finish_reason
 
         # Handle content deltas (thinking/reasoning text)
-        if hasattr(delta, "content") and delta.content:
+        content = get_delta_content(delta)
+        if content:
             total_tokens_estimate += 1
             yield {
                 "type": "content_delta",
-                "content": delta.content,
+                "content": content,
                 "finish_reason": finish_reason,
             }
 
         # Handle tool call deltas (buffered until complete)
-        if hasattr(delta, "tool_calls") and delta.tool_calls:
-            for tc_delta in delta.tool_calls:
+        tool_calls = get_delta_tool_calls(delta)
+        if tool_calls:
+            for tc_delta in tool_calls:
                 idx = tc_delta.index
 
                 if idx not in tool_calls_buffer:
@@ -132,23 +144,15 @@ async def iter_tool_call_stream(
                         "arguments": "",
                     }
 
-                if hasattr(tc_delta, "id") and tc_delta.id:
-                    tool_calls_buffer[idx]["id"] = tc_delta.id
-                if hasattr(tc_delta, "function"):
-                    if (
-                        hasattr(tc_delta.function, "name")
-                        and tc_delta.function.name
-                    ):
-                        tool_calls_buffer[idx]["name"] = (
-                            tc_delta.function.name
-                        )
-                    if (
-                        hasattr(tc_delta.function, "arguments")
-                        and tc_delta.function.arguments
-                    ):
-                        tool_calls_buffer[idx]["arguments"] += (
-                            tc_delta.function.arguments
-                        )
+                tc_id = get_tool_call_id(tc_delta)
+                if tc_id:
+                    tool_calls_buffer[idx]["id"] = tc_id
+                tc_name = get_tool_call_function_name(tc_delta)
+                if tc_name:
+                    tool_calls_buffer[idx]["name"] = tc_name
+                tc_args = get_tool_call_function_args(tc_delta)
+                if tc_args:
+                    tool_calls_buffer[idx]["arguments"] += tc_args
 
     # Stream complete - yield buffered tool calls if any
     if tool_calls_buffer:
@@ -192,13 +196,14 @@ def build_streaming_usage(
     Returns:
         Usage data dict with prompt_tokens, completion_tokens, total_tokens
     """
-    if hasattr(stream, "usage") and stream.usage:
+    usage = get_chunk_usage(stream)
+    if usage:
         usage_data = {
-            "prompt_tokens": stream.usage.prompt_tokens,
-            "completion_tokens": stream.usage.completion_tokens,
-            "total_tokens": stream.usage.total_tokens,
+            "prompt_tokens": usage.prompt_tokens,
+            "completion_tokens": usage.completion_tokens,
+            "total_tokens": usage.total_tokens,
         }
-        collect_token_usage(stream.usage)
+        collect_token_usage(usage)
     else:
         prompt_tokens = (
             sum(len(str(m.get("content", "")).split()) for m in messages) * 1.3

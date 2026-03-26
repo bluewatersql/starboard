@@ -55,13 +55,14 @@ class BaseToolAdapter:
 
     def __init__(
         self,
-        provider: SharedContextProvider,
+        *,
+        provider: SharedContextProvider | None = None,
         events: EventEmitter | None = None,
     ) -> None:
         """Initialize tool adapter.
 
         Args:
-            provider: SharedContextProvider for data access.
+            provider: Optional SharedContextProvider for data access.
             events: Optional event emitter for observability.
         """
         self.provider = provider
@@ -75,7 +76,8 @@ class BaseToolAdapter:
     ) -> BaseToolAdapter:
         """Create adapter from SharedContextProvider.
 
-        Factory method for convenient construction.
+        Factory method for convenient construction.  Subclasses that accept
+        additional constructor arguments should override this method.
 
         Args:
             provider: SharedContextProvider for data access.
@@ -87,7 +89,7 @@ class BaseToolAdapter:
         Example:
             >>> tools = ClusterTools.from_provider(provider)
         """
-        return cls(provider=provider, events=events)
+        return cls(provider=provider, events=events)  # type: ignore[call-arg]
 
     def _log_obs_context(
         self,

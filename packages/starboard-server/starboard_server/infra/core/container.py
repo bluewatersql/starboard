@@ -273,6 +273,19 @@ class Container:
 
         return real_embedding
 
+    async def _close_if_available(self, store: object, name: str) -> None:
+        """Close a store if it exists and has a close method.
+
+        Args:
+            store: Store instance to close (may be ``None``).
+            name: Human-readable name for logging on failure.
+        """
+        if store is not None and hasattr(store, "close"):
+            try:
+                await store.close()  # type: ignore[union-attr]
+            except Exception:
+                logger.warning(f"Failed to close {name}", exc_info=True)
+
     async def shutdown(self) -> None:
         """
         Shutdown all providers (call on app shutdown).
@@ -280,28 +293,12 @@ class Container:
         Closes connections and releases resources for all
         providers that require cleanup.
         """
-        if self._state_store and hasattr(self._state_store, "close"):
-            await self._state_store.close()
-
-        if self._cache_store and hasattr(self._cache_store, "close"):
-            await self._cache_store.close()
-
-        if self._memory_store and hasattr(self._memory_store, "close"):
-            await self._memory_store.close()
-
-        # Close foundation components
-        if self._reflexion_store is not None and hasattr(
-            self._reflexion_store, "close"
-        ):
-            await self._reflexion_store.close()  # type: ignore[union-attr]
-
-        if self._vector_store is not None and hasattr(self._vector_store, "close"):
-            await self._vector_store.close()  # type: ignore[union-attr]
-
-        if self._semantic_cache is not None and hasattr(
-            self._semantic_cache, "close"
-        ):
-            await self._semantic_cache.close()  # type: ignore[union-attr]
+        await self._close_if_available(self._state_store, "state_store")
+        await self._close_if_available(self._cache_store, "cache_store")
+        await self._close_if_available(self._memory_store, "memory_store")
+        await self._close_if_available(self._reflexion_store, "reflexion_store")
+        await self._close_if_available(self._vector_store, "vector_store")
+        await self._close_if_available(self._semantic_cache, "semantic_cache")
 
     @property
     def conversation_repo(self) -> ConversationRepository:

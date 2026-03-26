@@ -211,6 +211,22 @@ class ArtifactExplorer:
         self._max_steps = max_steps
         self._confidence_threshold = confidence_threshold
 
+        # Strategy dispatch table — maps each strategy to its handler method.
+        # All handlers share the same signature: (text: str) -> ExplorationResult.
+        self._strategy_dispatch: dict[ExplorationStrategy, Any] = {
+            ExplorationStrategy.DETECT_TYPE: self._explore_detect_type,
+            ExplorationStrategy.EXTRACT_EVIDENCE: self._explore_extract_evidence,
+            ExplorationStrategy.EXTRACT_IDS: self._explore_extract_ids,
+            ExplorationStrategy.MATCH_PATTERNS: self._explore_match_patterns,
+            ExplorationStrategy.EXPAND_WINDOW: self._explore_expand_window,
+            ExplorationStrategy.SUMMARIZE: self._explore_summarize,
+            ExplorationStrategy.CORRELATE: self._explore_correlate,
+            ExplorationStrategy.SYNTHESIZE: lambda text: self._explore_not_implemented(ExplorationStrategy.SYNTHESIZE),
+            ExplorationStrategy.FETCH_RUN_OUTPUT: self._explore_fetch_run_output,
+            ExplorationStrategy.FETCH_CLUSTER_EVENTS: self._explore_fetch_cluster_events,
+            ExplorationStrategy.FETCH_QUERY_HISTORY: self._explore_fetch_query_history,
+        }
+
     def explore(
         self,
         text: str,
@@ -229,31 +245,10 @@ class ArtifactExplorer:
         Raises:
             ValueError: If strategy is unknown.
         """
-        if strategy == ExplorationStrategy.DETECT_TYPE:
-            return self._explore_detect_type(text)
-        elif strategy == ExplorationStrategy.EXTRACT_EVIDENCE:
-            return self._explore_extract_evidence(text)
-        elif strategy == ExplorationStrategy.EXTRACT_IDS:
-            return self._explore_extract_ids(text)
-        elif strategy == ExplorationStrategy.MATCH_PATTERNS:
-            return self._explore_match_patterns(text)
-        elif strategy == ExplorationStrategy.EXPAND_WINDOW:
-            return self._explore_expand_window(text)
-        elif strategy == ExplorationStrategy.SUMMARIZE:
-            return self._explore_summarize(text)
-        elif strategy == ExplorationStrategy.CORRELATE:
-            return self._explore_correlate(text)
-        elif strategy == ExplorationStrategy.SYNTHESIZE:
-            return self._explore_not_implemented(strategy)
-        # ONLINE strategies - require parsed IDs
-        elif strategy == ExplorationStrategy.FETCH_RUN_OUTPUT:
-            return self._explore_fetch_run_output(text)
-        elif strategy == ExplorationStrategy.FETCH_CLUSTER_EVENTS:
-            return self._explore_fetch_cluster_events(text)
-        elif strategy == ExplorationStrategy.FETCH_QUERY_HISTORY:
-            return self._explore_fetch_query_history(text)
-        else:
+        handler = self._strategy_dispatch.get(strategy)
+        if handler is None:
             raise ValueError(f"Unknown strategy: {strategy}")
+        return handler(text)
 
     def should_continue_exploring(self, state: ExplorationState) -> bool:
         """Determine if exploration should continue.

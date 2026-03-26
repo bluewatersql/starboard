@@ -11,7 +11,12 @@ This package provides the CLI for interacting with Starboard:
 - Rich terminal output
 """
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("starboard-cli")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
 
 __all__ = [
     "__version__",

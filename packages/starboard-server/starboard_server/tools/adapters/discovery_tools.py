@@ -35,6 +35,7 @@ from starboard_server.discovery.query_packs.registry import create_default_regis
 from starboard_server.discovery.synthesizer import ReportAssembler
 from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.adapters.base import BaseToolAdapter
 
 if TYPE_CHECKING:
     from starboard_core.domain.models.discovery.report import DiscoveryReport
@@ -119,7 +120,7 @@ def _build_report_summary(report: DiscoveryReport) -> dict[str, Any]:
     }
 
 
-class DiscoveryTools:
+class DiscoveryTools(BaseToolAdapter):
     """Agent tool adapters for workspace discovery.
 
     Wraps the discovery pipeline components to expose each phase as an
@@ -137,6 +138,7 @@ class DiscoveryTools:
         llm_client: Any | None = None,
         env_config: EnvConfig | None = None,
     ) -> None:
+        super().__init__()
         self._sql_executor = sql_executor
         self._llm_client = llm_client
         self._env_config = env_config or get_config()

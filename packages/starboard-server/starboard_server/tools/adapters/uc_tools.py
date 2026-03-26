@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, ToolError
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.services.query_workload_service import (
     QueryWorkloadService,
 )
@@ -105,7 +106,7 @@ class DatabricksSQLProvider(SQLQueryProvider):
             raise
 
 
-class UCTools:
+class UCTools(BaseToolAdapter):
     """
     Reasoning interface for Unity Catalog operations.
 
@@ -134,6 +135,7 @@ class UCTools:
         self,
         databricks_api: AsyncDatabricksClient,
         llm_client: BaseLLMClient | None = None,
+        *,
         events: EventEmitter | None = None,
     ) -> None:
         """
@@ -144,9 +146,9 @@ class UCTools:
             llm_client: Optional LLM client for table discovery from source code
             events: Optional event emitter for observability
         """
+        super().__init__(events=events)
         self.databricks_api = databricks_api
         self.llm_client = llm_client
-        self.events = events
 
         # Use async CatalogService from AsyncDatabricksClient
         # CatalogService provides both catalog and lineage operations (all async)

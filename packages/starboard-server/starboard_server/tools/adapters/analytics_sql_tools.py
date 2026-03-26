@@ -18,6 +18,7 @@ from starboard_core.rag.models import RAGContext
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.exceptions import AdapterError, ToolError
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.analytics.dataframe_profiler import profile_dataframe
 from starboard_server.tools.domain.analytics_sql.llm_sql_generator import (
     LLMSQLGenerator,
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class AnalyticsSQLTools:
+class AnalyticsSQLTools(BaseToolAdapter):
     """Agent-callable tools for Analytics agentic RAG workflow.
 
     Provides three main tools:
@@ -64,6 +65,7 @@ class AnalyticsSQLTools:
             sql_validator: SQL validator (with EXPLAIN support)
             result_cache: Optional result cache for query results (enables frontend data fetching)
         """
+        super().__init__()
         self.llm_client = llm_client
         self.sql_executor = sql_executor
         self.sql_validator = sql_validator

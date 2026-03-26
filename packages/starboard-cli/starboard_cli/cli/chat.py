@@ -6,7 +6,7 @@ Starboard agent, maintaining context across turns via session persistence.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from rich.console import Console
 from starboard_server.bootstrap import (
@@ -43,6 +43,7 @@ async def run_interactive_chat(
     console: Console,
     mode: OptimizationMode,
     plain: bool = False,
+    no_color: bool = False,
 ) -> None:
     """Run the interactive chat REPL.
 
@@ -53,7 +54,10 @@ async def run_interactive_chat(
         console: Rich console for output.
         mode: Optimization mode for agent.
         plain: Use plain text output instead of Rich formatting.
+        no_color: Disable color and emoji output.
     """
+    err_console = Console(stderr=True, no_color=no_color)
+
     if session_mgr is None:
         session_mgr = SessionManager()
         await session_mgr.connect()
@@ -123,10 +127,12 @@ async def run_interactive_chat(
                 plain=plain,
             )
         except KeyboardInterrupt:
-            console.print("\n[yellow]Interrupted. Type /exit to quit.[/yellow]\n")
+            err_console.print("\n[yellow]Interrupted. Type /exit to quit.[/yellow]\n")
             continue
         except Exception as e:
-            console.print(f"\n[red]Error: {e}[/red]\n")
+            # Error already displayed inside _stream_agent_response for
+            # ErrorEvent; for other exceptions print to stderr.
+            err_console.print(f"\n[red]Error: {e}[/red]\n")
             logger.exception("chat_turn_failed")
             continue
 
@@ -182,14 +188,14 @@ async def _show_sessions(session_mgr: SessionManager, console: Console) -> None:
     console.print()
 
 
-def _show_history(session_info: Any, console: Console) -> None:
+def _show_history(session_info: object, console: Console) -> None:
     """Show conversation metadata."""
     console.print(
-        f"\n[bold]Session:[/bold] {session_info.session_name}\n"
-        f"  Conversation ID: {session_info.conversation_id}\n"
-        f"  Turns: {session_info.turn_count}\n"
-        f"  Created: {session_info.created_at:%Y-%m-%d %H:%M}\n"
-        f"  Updated: {session_info.updated_at:%Y-%m-%d %H:%M}\n"
+        f"\n[bold]Session:[/bold] {session_info.session_name}\n"  # type: ignore[attr-defined]
+        f"  Conversation ID: {session_info.conversation_id}\n"  # type: ignore[attr-defined]
+        f"  Turns: {session_info.turn_count}\n"  # type: ignore[attr-defined]
+        f"  Created: {session_info.created_at:%Y-%m-%d %H:%M}\n"  # type: ignore[attr-defined]
+        f"  Updated: {session_info.updated_at:%Y-%m-%d %H:%M}\n"  # type: ignore[attr-defined]
     )
 
 
@@ -215,6 +221,7 @@ async def _stream_agent_response(
         RuntimeError: If agent encounters a fatal error.
         KeyboardInterrupt: If user interrupts with Ctrl+C.
     """
+    err_console = Console(stderr=True)
     formatted_markdown = None
 
     async for event in manager.handle_message_stream(
@@ -224,13 +231,13 @@ async def _stream_agent_response(
     ):
         if isinstance(event, ToolStartEvent):
             if plain:
-                print(f"  🔧 {event.tool_name}…", flush=True)
+                print(f"  [...]  {event.tool_name}...", flush=True)
             else:
                 console.print(f"  [dim]⏳ {event.friendly_name}…[/dim]")
 
         elif isinstance(event, ToolEndEvent):
             if plain:
-                status = "✓" if event.success else "✗"
+                status = "[OK]" if event.success else "[FAIL]"
                 print(
                     f"  {status} {event.tool_name} ({event.duration_seconds:.2f}s)",
                     flush=True,
@@ -268,12 +275,14 @@ async def _stream_agent_response(
 
         elif isinstance(event, UserInputRequestEvent):
             console.print(
-                f"\n[yellow]🤔 Agent asks: {event.question}[/yellow]"
+                f"\n[yellow]Agent asks: {event.question}[/yellow]"
             )
 
         elif isinstance(event, ErrorEvent):
-            console.print(
-                f"\n[bold red]❌ {event.error_type}: {event.error}[/bold red]"
+            # Print error to stderr only — the caller will catch the
+            # RuntimeError and display its own message, avoiding duplicates.
+            err_console.print(
+                f"\n[bold red]{event.error_type}: {event.error}[/bold red]"
             )
             raise RuntimeError(f"{event.error_type}: {event.error}")
 

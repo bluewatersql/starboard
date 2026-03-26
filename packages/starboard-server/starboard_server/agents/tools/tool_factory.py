@@ -127,8 +127,8 @@ def create_tool_registry(
     logger.debug("Creating core tools with direct provider architecture")
     job_tools = JobTools.from_provider(provider, events=events)
     query_tools = QueryTools.from_provider(api, provider, events=events)
-    uc_tools = UCTools(api, llm_client, events)
-    source_tools = SourceTools(api, llm_client, events)
+    uc_tools = UCTools(api, llm_client, events=events)
+    source_tools = SourceTools(api, llm_client, events=events)
     intent_tools = IntentTools(events=events)
     cluster_tools = ClusterTools.from_provider(provider, events=events)
 

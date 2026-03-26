@@ -6,13 +6,14 @@ Uses IntentResolver domain logic directly - no intermediate service layer.
 
 from starboard_server.infra.observability.events import EventEmitter
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.adapters.base import BaseToolAdapter
 from starboard_server.tools.domain.intent.models import IntentResolutionInput
 from starboard_server.tools.domain.intent.resolver import IntentResolver
 
 logger = get_logger(__name__)
 
 
-class IntentTools:
+class IntentTools(BaseToolAdapter):
     """Reasoning interface for intent resolution operations.
 
     Provides LLM-facing tools for analyzing user input and classifying intent.
@@ -27,13 +28,13 @@ class IntentTools:
         >>> result = await tools.resolve_user_intent("Optimize job 12345")
     """
 
-    def __init__(self, events: EventEmitter | None = None):
+    def __init__(self, *, events: EventEmitter | None = None):
         """Initialize intent tools.
 
         Args:
             events: Optional event emitter for status updates.
         """
-        self.events = events
+        super().__init__(events=events)
 
     async def resolve_user_intent(
         self,

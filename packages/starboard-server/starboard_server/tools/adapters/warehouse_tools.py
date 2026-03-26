@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from starboard_server.infra.observability import ObservabilityContext
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.services.context.transforms import (
     analyze_warehouse_queries,
@@ -20,7 +19,7 @@ from starboard_server.services.context.transforms import (
     transform_query_history,
     transform_warehouse_configuration,
 )
-from starboard_server.tools.adapters.base import tool_schema
+from starboard_server.tools.adapters.base import BaseToolAdapter, tool_schema
 
 if TYPE_CHECKING:
     from starboard_server.infra.observability.events import EventEmitter
@@ -32,7 +31,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class WarehouseTools:
+class WarehouseTools(BaseToolAdapter):
     """Reasoning interface for warehouse portfolio operations.
 
     Provides tools for:
@@ -43,7 +42,7 @@ class WarehouseTools:
     - Basic warehouse config and metrics lookups
 
     Example:
-        >>> tools = WarehouseTools(warehouse_service, provider)
+        >>> tools = WarehouseTools(warehouse_service, provider=provider)
         >>> portfolio = await tools.get_warehouse_portfolio(window_days=7)
         >>> for wh in portfolio["warehouses"]:
         ...     print(f"{wh['warehouse_name']}: {wh['health_score']}")
@@ -52,19 +51,19 @@ class WarehouseTools:
     def __init__(
         self,
         warehouse_service: WarehousePortfolioService,
-        events: EventEmitter | None = None,
+        *,
         provider: SharedContextProvider | None = None,
+        events: EventEmitter | None = None,
     ) -> None:
         """Initialize warehouse tools.
 
         Args:
             warehouse_service: WarehousePortfolioService for portfolio operations.
-            events: Optional event emitter for observability.
             provider: Optional SharedContextProvider for basic config/metrics lookups.
+            events: Optional event emitter for observability.
         """
+        super().__init__(provider=provider, events=events)
         self.service = warehouse_service
-        self.events = events
-        self.provider = provider
 
     @tool_schema(
         description=(
@@ -80,7 +79,6 @@ class WarehouseTools:
         self,
         window_days: int = 7,
         include_inactive: bool = False,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Get portfolio view of all SQL warehouses.
 
@@ -90,7 +88,6 @@ class WarehouseTools:
         Args:
             window_days: Analysis window (7, 30, or 90 days). Default: 7.
             include_inactive: Include warehouses with no recent activity. Default: False.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             Portfolio data with:
@@ -105,10 +102,7 @@ class WarehouseTools:
             >>> for wh in portfolio["warehouses"][:3]:
             ...     print(f"  {wh['warehouse_name']}: {wh['health_status']}")
         """
-        extra = {"window_days": window_days, "include_inactive": include_inactive}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_get_warehouse_portfolio", extra=extra)
+        self._log_obs_context("get_warehouse_portfolio", {"window_days": window_days, "include_inactive": include_inactive})
         return await self.service.get_portfolio(
             window_days=window_days,
             include_inactive=include_inactive,
@@ -134,7 +128,6 @@ class WarehouseTools:
         self,
         warehouse_id: str,
         window_days: int = 7,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Generate detailed fingerprint for a specific warehouse.
 
@@ -145,7 +138,6 @@ class WarehouseTools:
         Args:
             warehouse_id: Target warehouse ID.
             window_days: Analysis window (7, 30, or 90 days). Default: 7.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             Fingerprint data including:
@@ -163,10 +155,7 @@ class WarehouseTools:
             >>> print(f"Pattern: {fp['workload_pattern']['pattern_type']}")
             >>> print(f"P95 latency: {fp['p95_runtime_sec']:.1f}s")
         """
-        extra = {"warehouse_id": warehouse_id, "window_days": window_days}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_get_warehouse_fingerprint", extra=extra)
+        self._log_obs_context("get_warehouse_fingerprint", {"warehouse_id": warehouse_id, "window_days": window_days})
         fingerprint = await self.service.get_fingerprint(
             warehouse_id=warehouse_id,
             window_days=window_days,
@@ -224,11 +213,22 @@ class WarehouseTools:
             },
         }
 
+    @tool_schema(
+        description=(
+            "Get health score and SLO compliance for a warehouse. Returns overall "
+            "score (0-100), risk factors, and recommendations. Use to assess a "
+            "specific warehouse's health and get actionable suggestions."
+        ),
+        properties_override={
+            "warehouse_id": {
+                "description": "The warehouse ID OR warehouse name. Both formats are accepted - the system will resolve names to IDs automatically."
+            },
+        },
+    )
     async def get_warehouse_health(
         self,
         warehouse_id: str,
         window_days: int = 7,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Get health score and SLO compliance for a warehouse.
 
@@ -238,7 +238,6 @@ class WarehouseTools:
         Args:
             warehouse_id: Target warehouse ID.
             window_days: Analysis window for metrics. Default: 7.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             Health data including:
@@ -258,10 +257,7 @@ class WarehouseTools:
             ...     for action in health["immediate_actions"]:
             ...         print(f"ACTION: {action}")
         """
-        extra = {"warehouse_id": warehouse_id, "window_days": window_days}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_get_warehouse_health", extra=extra)
+        self._log_obs_context("get_warehouse_health", {"warehouse_id": warehouse_id, "window_days": window_days})
         health = await self.service.get_health(
             warehouse_id=warehouse_id,
             window_days=window_days,
@@ -308,6 +304,21 @@ class WarehouseTools:
             "optimization_opportunities": list(health.optimization_opportunities),
         }
 
+    @tool_schema(
+        description=(
+            "Configure SLO targets for a warehouse. Use preset profiles "
+            "(interactive, batch_etl, critical_bi) or specify custom targets. "
+            "SLOs affect health scoring and enable proactive alerting."
+        ),
+        properties_override={
+            "warehouse_id": {
+                "description": "The warehouse ID OR warehouse name. Both formats are accepted."
+            },
+            "slo_profile": {
+                "enum": ["interactive", "batch_etl", "critical_bi"],
+            },
+        },
+    )
     async def configure_warehouse_slo(
         self,
         warehouse_id: str,
@@ -315,7 +326,6 @@ class WarehouseTools:
         p95_latency_target_sec: float | None = None,
         availability_target_pct: float | None = None,
         queue_time_target_sec: float | None = None,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Configure SLO targets for a warehouse.
 
@@ -331,7 +341,6 @@ class WarehouseTools:
             p95_latency_target_sec: Custom p95 latency target (overrides profile).
             availability_target_pct: Custom availability target (e.g., 99.9).
             queue_time_target_sec: Custom queue time target.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             SLO configuration with:
@@ -351,10 +360,7 @@ class WarehouseTools:
             ...     p95_latency_target_sec=8.0
             ... )
         """
-        extra = {"warehouse_id": warehouse_id, "slo_profile": slo_profile}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_configure_warehouse_slo", extra=extra)
+        self._log_obs_context("configure_warehouse_slo", {"warehouse_id": warehouse_id, "slo_profile": slo_profile})
         config = await self.service.configure_slo(
             warehouse_id=warehouse_id,
             slo_profile=slo_profile,
@@ -381,11 +387,22 @@ class WarehouseTools:
             "updated_at": config.updated_at.isoformat(),
         }
 
+    @tool_schema(
+        description=(
+            "Get user activity breakdown for warehouses showing who is using them, "
+            "how much, and resource consumption. Essential for understanding usage "
+            "patterns and preparing chargeback data."
+        ),
+        properties_override={
+            "warehouse_id": {
+                "description": "Specific warehouse ID OR warehouse name (optional, omit for all). Both formats are accepted."
+            },
+        },
+    )
     async def get_warehouse_user_activity(
         self,
         warehouse_id: str | None = None,
         window_days: int = 30,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Get user activity breakdown for warehouses.
 
@@ -395,7 +412,6 @@ class WarehouseTools:
         Args:
             warehouse_id: Specific warehouse (optional, None for all).
             window_days: Analysis window in days. Default: 30.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             User activity data with:
@@ -408,22 +424,35 @@ class WarehouseTools:
             >>> for user in activity["users"][:5]:
             ...     print(f"{user['user_name']}: {user['total_queries']} queries")
         """
-        extra = {"warehouse_id": warehouse_id, "window_days": window_days}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_get_warehouse_user_activity", extra=extra)
+        self._log_obs_context("get_warehouse_user_activity", {"warehouse_id": warehouse_id, "window_days": window_days})
         return await self.service.get_user_activity(
             warehouse_id=warehouse_id,
             window_days=window_days,
         )
 
+    @tool_schema(
+        description=(
+            "Generate cost chargeback report for a specific warehouse. "
+            "Automatically fetches actual cost from billing data and allocates it "
+            "to users based on their usage share. Returns a detailed table showing "
+            "each user's cost allocation. Use this for cost attribution, "
+            "accountability reporting, and team chargeback."
+        ),
+        properties_override={
+            "warehouse_id": {
+                "description": "The warehouse ID OR warehouse name. Both formats are accepted - the system will resolve names to IDs automatically."
+            },
+            "allocation_method": {
+                "enum": ["runtime", "queries", "bytes"],
+            },
+        },
+    )
     async def generate_warehouse_chargeback(
         self,
         warehouse_id: str,
         total_cost_usd: float | None = None,
         window_days: int = 30,
         allocation_method: str = "runtime",
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Generate cost chargeback report for a warehouse.
 
@@ -440,7 +469,6 @@ class WarehouseTools:
                 - "runtime": Based on query runtime (default, most fair)
                 - "queries": Based on query count
                 - "bytes": Based on bytes processed
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             Chargeback report with:
@@ -463,10 +491,7 @@ class WarehouseTools:
             >>> for alloc in cb["allocations"][:3]:
             ...     print(f"{alloc['user_name']}: ${alloc['allocated_cost_usd']:.2f} ({alloc['usage_pct']:.1f}%)")
         """
-        extra = {"warehouse_id": warehouse_id, "total_cost_usd": total_cost_usd}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_generate_warehouse_chargeback", extra=extra)
+        self._log_obs_context("generate_warehouse_chargeback", {"warehouse_id": warehouse_id, "total_cost_usd": total_cost_usd})
         chargeback = await self.service.get_chargeback(
             warehouse_id=warehouse_id,
             total_cost_usd=total_cost_usd,
@@ -494,11 +519,21 @@ class WarehouseTools:
             ],
         }
 
+    @tool_schema(
+        description=(
+            "Generate chargeback report across all warehouses. Aggregates user costs "
+            "portfolio-wide for organization-level cost attribution."
+        ),
+        properties_override={
+            "allocation_method": {
+                "enum": ["runtime", "queries", "bytes"],
+            },
+        },
+    )
     async def generate_portfolio_chargeback(
         self,
         window_days: int = 30,
         allocation_method: str = "runtime",
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Generate chargeback report across all warehouses.
 
@@ -508,7 +543,6 @@ class WarehouseTools:
         Args:
             window_days: Analysis window in days. Default: 30.
             allocation_method: How to allocate costs.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             Portfolio chargeback with:
@@ -524,19 +558,25 @@ class WarehouseTools:
             >>> for user in cb["user_summary"][:5]:
             ...     print(f"{user['user_name']}: ${user['allocated_cost_usd']:.2f}")
         """
-        extra = {"window_days": window_days, "allocation_method": allocation_method}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_generate_portfolio_chargeback", extra=extra)
+        self._log_obs_context("generate_portfolio_chargeback", {"window_days": window_days, "allocation_method": allocation_method})
         return await self.service.get_portfolio_chargeback(
             window_days=window_days,
             allocation_method=allocation_method,
         )
 
+    @tool_schema(
+        description=(
+            "Analyze warehouse fleet topology for optimization opportunities. "
+            "Detects similar/duplicate warehouses, clusters by workload type, "
+            "and identifies consolidation opportunities."
+        ),
+        properties_override={
+            "window_days": {"enum": [7, 30, 90]},
+        },
+    )
     async def analyze_warehouse_topology(
         self,
         window_days: int = 7,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Analyze warehouse fleet topology for optimization opportunities.
 
@@ -545,7 +585,6 @@ class WarehouseTools:
 
         Args:
             window_days: Analysis window in days. Default: 7.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             Topology analysis with:
@@ -562,26 +601,29 @@ class WarehouseTools:
             ...     if insight["severity"] == "warning":
             ...         print(f"ACTION: {insight['recommendation']}")
         """
-        extra = {"window_days": window_days}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_analyze_warehouse_topology", extra=extra)
+        self._log_obs_context("analyze_warehouse_topology", {"window_days": window_days})
         return await self.service.analyze_topology(window_days=window_days)
 
     # =========================================================================
     # Basic Warehouse Config/Metrics Tools (migrated from ClusterTools)
     # =========================================================================
 
+    @tool_schema(
+        description="Get configuration for a SQL warehouse.",
+        properties_override={
+            "warehouse_id": {
+                "description": "Warehouse ID to fetch configuration for."
+            },
+        },
+    )
     async def get_warehouse_config(
         self,
         warehouse_id: str,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Get configuration for a SQL warehouse.
 
         Args:
             warehouse_id: Warehouse ID to fetch configuration for.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             On success: {"found": True, "warehouse_id": "...", "config": {...}}
@@ -592,10 +634,7 @@ class WarehouseTools:
             >>> if config["found"]:
             ...     print(config["config"]["name"])
         """
-        extra = {"warehouse_id": warehouse_id}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_get_warehouse_config", extra=extra)
+        self._log_obs_context("get_warehouse_config", {"warehouse_id": warehouse_id})
 
         if self.provider is None:
             return {
@@ -625,16 +664,22 @@ class WarehouseTools:
             "config": config,
         }
 
+    @tool_schema(
+        description="Get query history metrics for a SQL warehouse.",
+        properties_override={
+            "warehouse_id": {
+                "description": "Warehouse ID to fetch metrics for."
+            },
+        },
+    )
     async def get_warehouse_metrics(
         self,
         warehouse_id: str,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Get query history metrics for a SQL warehouse.
 
         Args:
             warehouse_id: Warehouse ID to fetch metrics for.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             On success: {"found": True, "warehouse_id": "...", "metrics": {...}}
@@ -645,10 +690,7 @@ class WarehouseTools:
             >>> if metrics["found"]:
             ...     print(f"Total queries: {metrics['metrics']['total_queries']}")
         """
-        extra = {"warehouse_id": warehouse_id}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_get_warehouse_metrics", extra=extra)
+        self._log_obs_context("get_warehouse_metrics", {"warehouse_id": warehouse_id})
 
         if self.provider is None:
             return {
@@ -673,16 +715,22 @@ class WarehouseTools:
             "metrics": metrics,
         }
 
+    @tool_schema(
+        description="Get execution statistics for a query statement.",
+        properties_override={
+            "statement_id": {
+                "description": "Statement ID to fetch metrics for."
+            },
+        },
+    )
     async def get_query_runtime_metrics(
         self,
         statement_id: str,
-        obs_ctx: ObservabilityContext | None = None,
     ) -> dict[str, Any]:
         """Get execution statistics for a query statement.
 
         Args:
             statement_id: Statement ID to fetch metrics for.
-            obs_ctx: Optional observability context for tracing.
 
         Returns:
             On success: {"found": True, "statement_id": "...", "metrics": {...}}
@@ -693,10 +741,7 @@ class WarehouseTools:
             >>> if metrics["found"]:
             ...     print(metrics["metrics"])
         """
-        extra = {"statement_id": statement_id}
-        if obs_ctx:
-            extra.update(obs_ctx.to_log_dict())
-        logger.debug("tool_get_query_runtime_metrics", extra=extra)
+        self._log_obs_context("get_query_runtime_metrics", {"statement_id": statement_id})
 
         if self.provider is None:
             return {
@@ -725,241 +770,3 @@ class WarehouseTools:
             "statement_id": statement_id,
             "metrics": metrics,
         }
-
-
-# Tool schemas for OpenAI function calling
-WAREHOUSE_TOOL_SCHEMAS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_warehouse_portfolio",
-            "description": (
-                "Get portfolio view of all SQL warehouses with health scores, "
-                "performance metrics, and summary statistics. Use this for fleet-wide "
-                "visibility and to identify warehouses needing attention."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "window_days": {
-                        "type": "integer",
-                        "description": "Analysis window in days (7, 30, or 90)",
-                        "default": 7,
-                        "enum": [7, 30, 90],
-                    },
-                    "include_inactive": {
-                        "type": "boolean",
-                        "description": "Include warehouses with no recent activity",
-                        "default": False,
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_warehouse_fingerprint",
-            "description": (
-                "Generate detailed fingerprint for a specific warehouse including "
-                "performance percentiles, workload patterns, time distribution, and "
-                "query type breakdown. Use for deep analysis of a single warehouse."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "warehouse_id": {
-                        "type": "string",
-                        "description": "The warehouse ID OR warehouse name. Both formats are accepted - the system will resolve names to IDs automatically.",
-                    },
-                    "window_days": {
-                        "type": "integer",
-                        "description": "Analysis window in days",
-                        "default": 7,
-                        "enum": [7, 30, 90],
-                    },
-                },
-                "required": ["warehouse_id"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_warehouse_health",
-            "description": (
-                "Get health score and SLO compliance for a warehouse. Returns overall "
-                "score (0-100), risk factors, and recommendations. Use to assess a "
-                "specific warehouse's health and get actionable suggestions."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "warehouse_id": {
-                        "type": "string",
-                        "description": "The warehouse ID OR warehouse name. Both formats are accepted - the system will resolve names to IDs automatically.",
-                    },
-                    "window_days": {
-                        "type": "integer",
-                        "description": "Analysis window in days",
-                        "default": 7,
-                    },
-                },
-                "required": ["warehouse_id"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "configure_warehouse_slo",
-            "description": (
-                "Configure SLO targets for a warehouse. Use preset profiles "
-                "(interactive, batch_etl, critical_bi) or specify custom targets. "
-                "SLOs affect health scoring and enable proactive alerting."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "warehouse_id": {
-                        "type": "string",
-                        "description": "The warehouse ID OR warehouse name. Both formats are accepted.",
-                    },
-                    "slo_profile": {
-                        "type": "string",
-                        "description": "Preset SLO profile",
-                        "enum": ["interactive", "batch_etl", "critical_bi"],
-                    },
-                    "p95_latency_target_sec": {
-                        "type": "number",
-                        "description": "P95 latency target in seconds (overrides profile)",
-                    },
-                    "availability_target_pct": {
-                        "type": "number",
-                        "description": "Availability target percentage (e.g., 99.9)",
-                    },
-                    "queue_time_target_sec": {
-                        "type": "number",
-                        "description": "Queue time target in seconds",
-                    },
-                },
-                "required": ["warehouse_id"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_warehouse_user_activity",
-            "description": (
-                "Get user activity breakdown for warehouses showing who is using them, "
-                "how much, and resource consumption. Essential for understanding usage "
-                "patterns and preparing chargeback data."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "warehouse_id": {
-                        "type": "string",
-                        "description": "Specific warehouse ID OR warehouse name (optional, omit for all). Both formats are accepted.",
-                    },
-                    "window_days": {
-                        "type": "integer",
-                        "description": "Analysis window in days",
-                        "default": 30,
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "generate_warehouse_chargeback",
-            "description": (
-                "Generate cost chargeback report for a specific warehouse. "
-                "Automatically fetches actual cost from billing data and allocates it "
-                "to users based on their usage share. Returns a detailed table showing "
-                "each user's cost allocation. Use this for cost attribution, "
-                "accountability reporting, and team chargeback."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "warehouse_id": {
-                        "type": "string",
-                        "description": "The warehouse ID OR warehouse name. Both formats are accepted - the system will resolve names to IDs automatically.",
-                    },
-                    "total_cost_usd": {
-                        "type": "number",
-                        "description": "Optional cost override. If omitted, actual cost is fetched from system.billing.usage automatically.",
-                    },
-                    "window_days": {
-                        "type": "integer",
-                        "description": "Analysis window in days",
-                        "default": 30,
-                    },
-                    "allocation_method": {
-                        "type": "string",
-                        "description": "How to allocate costs",
-                        "enum": ["runtime", "queries", "bytes"],
-                        "default": "runtime",
-                    },
-                },
-                "required": ["warehouse_id"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "generate_portfolio_chargeback",
-            "description": (
-                "Generate chargeback report across all warehouses. Aggregates user costs "
-                "portfolio-wide for organization-level cost attribution."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "window_days": {
-                        "type": "integer",
-                        "description": "Analysis window in days",
-                        "default": 30,
-                    },
-                    "allocation_method": {
-                        "type": "string",
-                        "description": "How to allocate costs",
-                        "enum": ["runtime", "queries", "bytes"],
-                        "default": "runtime",
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "analyze_warehouse_topology",
-            "description": (
-                "Analyze warehouse fleet topology for optimization opportunities. "
-                "Detects similar/duplicate warehouses, clusters by workload type, "
-                "and identifies consolidation opportunities."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "window_days": {
-                        "type": "integer",
-                        "description": "Analysis window in days",
-                        "default": 7,
-                        "enum": [7, 30, 90],
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-]

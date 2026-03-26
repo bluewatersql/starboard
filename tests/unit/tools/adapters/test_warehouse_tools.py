@@ -19,8 +19,8 @@ from starboard_core.domain.models.warehouse import (
     WarehouseFingerprint,
     WorkloadPattern,
 )
+from starboard_server.tools.adapters.base import collect_tool_schemas
 from starboard_server.tools.adapters.warehouse_tools import (
-    WAREHOUSE_TOOL_SCHEMAS,
     WarehouseTools,
 )
 
@@ -369,15 +369,21 @@ class TestConfigureWarehouseSLO:
 
 
 class TestToolSchemas:
-    """Test tool schemas for OpenAI function calling."""
+    """Test tool schemas auto-generated via @tool_schema decorator."""
 
-    def test_has_eight_schemas(self) -> None:
-        """Has schemas for all eight tools."""
-        assert len(WAREHOUSE_TOOL_SCHEMAS) == 8
+    @pytest.fixture
+    def schemas(self, mock_service: AsyncMock) -> list:
+        """Collect schemas from a WarehouseTools instance."""
+        wt = WarehouseTools(warehouse_service=mock_service)
+        return collect_tool_schemas(wt)
 
-    def test_schema_structure(self) -> None:
+    def test_has_eleven_schemas(self, schemas: list) -> None:
+        """Has schemas for all eleven tool methods."""
+        assert len(schemas) == 11
+
+    def test_schema_structure(self, schemas: list) -> None:
         """Schemas have correct structure."""
-        for schema in WAREHOUSE_TOOL_SCHEMAS:
+        for schema in schemas:
             assert "type" in schema
             assert schema["type"] == "function"
             assert "function" in schema
@@ -385,40 +391,40 @@ class TestToolSchemas:
             assert "description" in schema["function"]
             assert "parameters" in schema["function"]
 
-    def test_portfolio_schema(self) -> None:
+    def test_portfolio_schema(self, schemas: list) -> None:
         """Portfolio schema is correct."""
         schema = next(
             s
-            for s in WAREHOUSE_TOOL_SCHEMAS
+            for s in schemas
             if s["function"]["name"] == "get_warehouse_portfolio"
         )
         params = schema["function"]["parameters"]
         assert "window_days" in params["properties"]
         assert "include_inactive" in params["properties"]
 
-    def test_fingerprint_schema_requires_warehouse_id(self) -> None:
+    def test_fingerprint_schema_requires_warehouse_id(self, schemas: list) -> None:
         """Fingerprint schema requires warehouse_id."""
         schema = next(
             s
-            for s in WAREHOUSE_TOOL_SCHEMAS
+            for s in schemas
             if s["function"]["name"] == "get_warehouse_fingerprint"
         )
         assert "warehouse_id" in schema["function"]["parameters"]["required"]
 
-    def test_health_schema_requires_warehouse_id(self) -> None:
+    def test_health_schema_requires_warehouse_id(self, schemas: list) -> None:
         """Health schema requires warehouse_id."""
         schema = next(
             s
-            for s in WAREHOUSE_TOOL_SCHEMAS
+            for s in schemas
             if s["function"]["name"] == "get_warehouse_health"
         )
         assert "warehouse_id" in schema["function"]["parameters"]["required"]
 
-    def test_slo_schema_requires_warehouse_id(self) -> None:
+    def test_slo_schema_requires_warehouse_id(self, schemas: list) -> None:
         """SLO schema requires warehouse_id."""
         schema = next(
             s
-            for s in WAREHOUSE_TOOL_SCHEMAS
+            for s in schemas
             if s["function"]["name"] == "configure_warehouse_slo"
         )
         assert "warehouse_id" in schema["function"]["parameters"]["required"]

@@ -27,24 +27,45 @@ except PackageNotFoundError:
 from starboard_core.domain.models.llm import OptimizationMode
 
 from starboard_sdk.client import ConversationSession, StarboardClient
+from starboard_sdk.event_types import (
+    AgentEvent,
+    ErrorEvent,
+    FinalOutputEvent,
+    StreamingEvent,
+    ToolEndEvent,
+    ToolStartEvent,
+)
 from starboard_sdk.exceptions import (
+    AgentError,
     AuthenticationError,
+    ConfigError,
     ConnectionError,
+    DiscoveryError,
     SessionError,
     StarboardError,
     TimeoutError,
 )
-from starboard_sdk.models import AgentResponse
+from starboard_sdk.models import AgentResponse, RawAgentOutput
 
 __all__ = [
+    "AgentError",
+    "AgentEvent",
     "AgentResponse",
     "AuthenticationError",
+    "ConfigError",
     "ConnectionError",
     "ConversationSession",
+    "DiscoveryError",
+    "ErrorEvent",
+    "FinalOutputEvent",
     "OptimizationMode",
+    "RawAgentOutput",
     "SessionError",
     "StarboardClient",
     "StarboardError",
+    "StreamingEvent",
     "TimeoutError",
+    "ToolEndEvent",
+    "ToolStartEvent",
     "__version__",
 ]
