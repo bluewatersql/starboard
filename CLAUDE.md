@@ -45,6 +45,15 @@ make dev-server         # Backend only (http://localhost:8000, API docs at /docs
 make dev-frontend       # Frontend only (http://localhost:3000)
 ```
 
+### MCP Server (Claude Code / Cursor Integration)
+```bash
+starboard-mcp                    # Start MCP server (stdio transport, default)
+starboard-mcp --transport http   # Start MCP server (HTTP transport, port 8100)
+starboard-mcp --config mcp.json  # Start with explicit config file
+./scripts/setup-mcp.sh           # Interactive setup wizard
+```
+See `docs/CLAUDE_CODE_INTEGRATION.md` for full setup guide and tool reference.
+
 ### Testing
 ```bash
 make test               # All tests (unit + integration)

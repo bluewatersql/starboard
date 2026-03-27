@@ -1,0 +1,21 @@
+{
+  "default_workspace_id": "production",
+  "workspaces": {
+    "production": {
+      "host": "https://prod.cloud.databricks.com",
+      "token_env": "DATABRICKS_TOKEN_PROD",
+      "warehouse_id": "abc123def456",
+      "default_catalog": "main",
+      "default_schema": "default"
+    },
+    "staging": {
+      "host": "https://staging.cloud.databricks.com",
+      "token_env": "DATABRICKS_TOKEN_STAGING"
+    }
+  },
+  "tool_scope": "phase_b",
+  "rate_limit_per_minute": 60,
+  "max_response_size_bytes": 65536,
+  "agent_timeout": 120,
+  "safe_mode": false
+}
