@@ -1,0 +1,77 @@
+name: starboard-discovery
+description: Run comprehensive workspace health assessment and product usage discovery for Databricks. Use when user mentions workspace health, discovery, assessment, audit, or inventory.
+  Triggers on: workspace health, discovery, assessment, audit, overview, inventory, what's running.
+
+## Prerequisites
+
+- Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
+- Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
+
+## Quick Path (Agent Tool)
+
+For comprehensive analysis, call the `discovery_agent` MCP tool with a natural language message.
+The agent runs a full reasoning loop with automatic tool selection and multi-step analysis.
+
+Example:
+```
+Call MCP tool: discovery_agent
+Arguments: { "message": "Run a full workspace health assessment and identify optimization opportunities" }
+```
+
+## Manual Workflow (Individual Tools)
+
+For targeted analysis or when you need specific data points:
+
+1. **Discover active products** -- Call `discover_active_products` (no params required)
+   - Returns: Audit of active Databricks products and features in the workspace
+   - Use when: You need an inventory of what products are deployed and in use
+
+2. **Run discovery queries** -- Call `run_discovery_queries` (no params required)
+   - Returns: Results from discovery SQL query packs covering clusters, jobs, warehouses, and usage
+   - Use when: You need raw data about workspace resources and activity
+
+3. **Analyze domain** -- Call `analyze_discovery_domain` (no params required)
+   - Returns: Domain-level analysis using heuristics and LLM-driven assessment
+   - Use when: You want interpreted findings rather than raw data
+
+4. **Synthesize report** -- Call `synthesize_discovery_report` (no params required)
+   - Returns: Comprehensive report assembling domain analyses into a unified assessment
+   - Use when: You want a final, consolidated workspace health report
+
+5. **Full discovery pipeline** -- Call `run_workspace_discovery` (no params required)
+   - Returns: End-to-end workspace assessment combining all discovery steps
+   - Use when: You want to run the complete discovery pipeline in a single call
+
+## Available MCP Tools
+
+| Tool | Description | Required Params |
+|------|-------------|-----------------|
+| `discover_active_products` | Audit workspace for active Databricks products | (none) |
+| `run_discovery_queries` | Execute discovery SQL query packs | (none) |
+| `analyze_discovery_domain` | Analyze domains using heuristics and LLM | (none) |
+| `synthesize_discovery_report` | Assemble domain analyses into final report | (none) |
+| `run_workspace_discovery` | Run comprehensive workspace assessment | (none) |
+| `discovery_agent` | Full workspace discovery (agent) | `message` |
+
+## Composite Tools
+
+| Tool | Description | Chains |
+|------|-------------|--------|
+| `get_workspace_overview` | Clusters and warehouses in parallel | `list_clusters` + `get_warehouse_portfolio` (parallel) |
+
+## Example Prompts
+
+- "Run a full workspace health assessment and tell me what needs attention"
+- "What Databricks products are active in our workspace and how heavily are they used?"
+- "Give me an inventory of all running clusters, warehouses, and jobs with their current state"
+- "Audit our workspace for unused resources and optimization opportunities"
+- "What does our overall Databricks footprint look like? Show me the high-level overview"
+
+## Interpreting Results
+
+- **Product adoption**: The discovery report identifies which Databricks products are actively used (Jobs, SQL Warehouses, Unity Catalog, MLflow, Delta Live Tables, etc.). Low adoption of governance features like Unity Catalog may indicate compliance risk.
+- **Workload distribution**: Look at how workloads are spread across compute resources. Heavy concentration on a few clusters or warehouses creates reliability risk and complicates cost attribution.
+- **Unused resources**: Idle clusters, dormant jobs, and empty warehouses represent direct cost waste. Prioritize decommissioning resources with no activity in the past 30 days.
+- **Governance posture**: Assess Unity Catalog adoption, access control coverage, and audit logging. Workspaces without centralized governance are harder to secure and optimize.
+- **Optimization opportunities**: The synthesized report highlights specific areas for improvement ranked by estimated impact. Common findings include oversized clusters, unoptimized table storage (missing VACUUM, Z-ORDER), and redundant warehouses.
+- **Baseline establishment**: Use the initial discovery as a baseline. Re-run periodically (monthly or quarterly) to track improvements and detect drift.
