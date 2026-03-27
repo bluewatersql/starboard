@@ -101,6 +101,23 @@ make dev-frontend       # Frontend at http://localhost:3000
 make dev-stop
 ```
 
+### Use with Claude Code / Cursor
+
+Starboard can be used as an MCP server inside Claude Code, Cursor, or Claude Desktop:
+
+```bash
+# Quick setup
+pip install -e "packages/starboard-server"
+cp examples/cursor-mcp.json .cursor/mcp.json
+# Edit .cursor/mcp.json with your Databricks and LLM credentials
+# Restart your IDE — Starboard tools appear in the MCP tool list
+
+# Or use the interactive setup wizard:
+./scripts/setup-mcp.sh
+```
+
+See [Claude Code Integration Guide](docs/CLAUDE_CODE_INTEGRATION.md) for full details, tool reference, and usage examples.
+
 ### Testing
 
 ```bash
