@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+
 class ClusterService(BaseService):
     """Async service for Databricks cluster operations.
 

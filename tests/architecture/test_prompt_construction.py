@@ -72,11 +72,7 @@ def _find_prompt_construction_violations(
 def test_prompts_do_not_use_variable_interpolation(project_root: Path) -> None:
     """Prompt files must not use f-strings or .format() with variable interpolation."""
     prompts_root = (
-        project_root
-        / "packages"
-        / "starboard-server"
-        / "starboard_server"
-        / "prompts"
+        project_root / "packages" / "starboard-server" / "starboard_server" / "prompts"
     )
     if not prompts_root.exists():
         pytest.skip(f"Prompts directory not found: {prompts_root}")

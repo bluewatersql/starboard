@@ -12,8 +12,8 @@ def _make_history(turns: int) -> list[dict]:
     """Create conversation history with user/assistant message pairs."""
     history = []
     for i in range(turns):
-        history.append({"role": "user", "content": f"User question {i+1}"})
-        history.append({"role": "assistant", "content": f"Agent response {i+1}"})
+        history.append({"role": "user", "content": f"User question {i + 1}"})
+        history.append({"role": "assistant", "content": f"Agent response {i + 1}"})
     return history
 
 

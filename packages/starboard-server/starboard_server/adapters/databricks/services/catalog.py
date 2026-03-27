@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+
 class CatalogService(BaseService):
     """Async service for Unity Catalog operations.
 

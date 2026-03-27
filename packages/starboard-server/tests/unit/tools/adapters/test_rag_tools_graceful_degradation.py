@@ -21,13 +21,9 @@ def _make_tools(
     vector_store = MagicMock()
 
     if search_side_effect:
-        vector_store.search_multi_collection = AsyncMock(
-            side_effect=search_side_effect
-        )
+        vector_store.search_multi_collection = AsyncMock(side_effect=search_side_effect)
     elif search_return:
-        vector_store.search_multi_collection = AsyncMock(
-            return_value=search_return
-        )
+        vector_store.search_multi_collection = AsyncMock(return_value=search_return)
     else:
         mock_ctx = MagicMock()
         mock_ctx.tables = []
@@ -68,9 +64,7 @@ class TestBuildAnalyticsContextGracefulDegradation:
     async def test_returns_empty_context_on_connection_error(self):
         from starboard_server.exceptions import AdapterError
 
-        tools = _make_tools(
-            search_side_effect=AdapterError("Connection refused")
-        )
+        tools = _make_tools(search_side_effect=AdapterError("Connection refused"))
 
         result = await tools.build_analytics_context(
             user_query="Analyze costs",
@@ -82,9 +76,7 @@ class TestBuildAnalyticsContextGracefulDegradation:
     async def test_returns_empty_context_on_timeout(self):
         from starboard_server.exceptions import AdapterError
 
-        tools = _make_tools(
-            search_side_effect=AdapterError("Embedding timed out")
-        )
+        tools = _make_tools(search_side_effect=AdapterError("Embedding timed out"))
 
         result = await tools.build_analytics_context(
             user_query="Analyze costs",

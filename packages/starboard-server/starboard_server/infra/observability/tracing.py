@@ -42,7 +42,7 @@ def init_tracing(
     provider = TracerProvider(resource=resource)
 
     if otlp_endpoint:
-        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore[import-not-found]
             OTLPSpanExporter,
         )
 
@@ -50,6 +50,7 @@ def init_tracing(
         provider.add_span_processor(BatchSpanProcessor(exporter))
 
     trace.set_tracer_provider(provider)
+
 
 def get_tracer(name: str) -> trace.Tracer:
     """Get a named tracer from the global TracerProvider.
@@ -61,6 +62,7 @@ def get_tracer(name: str) -> trace.Tracer:
         A Tracer instance for creating spans.
     """
     return trace.get_tracer(name)
+
 
 class TraceContextFilter(logging.Filter):
     """Logging filter that injects trace_id and span_id into log records.

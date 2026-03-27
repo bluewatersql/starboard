@@ -248,8 +248,12 @@ class StarboardMCPServer:
             "get_workspace_overview": get_workspace_overview,
         }
         for tool_def in COMPOSITE_TOOL_METADATA:
-            self._register_single_composite_tool(tool_def, _composite_fns[tool_def["name"]])
-        logger.info("mcp_composite_tools_registered", count=len(COMPOSITE_TOOL_METADATA))
+            self._register_single_composite_tool(
+                tool_def, _composite_fns[tool_def["name"]]
+            )
+        logger.info(
+            "mcp_composite_tools_registered", count=len(COMPOSITE_TOOL_METADATA)
+        )
 
     def _register_single_composite_tool(
         self, tool_def: dict[str, Any], composite_fn: Any
@@ -258,9 +262,13 @@ class StarboardMCPServer:
         tool_name = tool_def["name"]
 
         async def _handler(**kwargs: Any) -> str:
-            workspace_id = kwargs.pop("workspace_id", None) or self._config.default_workspace_id
+            workspace_id = (
+                kwargs.pop("workspace_id", None) or self._config.default_workspace_id
+            )
 
-            async def _executor(inner_tool_name: str, **inner_kwargs: Any) -> dict[str, Any]:
+            async def _executor(
+                inner_tool_name: str, **inner_kwargs: Any
+            ) -> dict[str, Any]:
                 """Adapter that routes composite sub-calls through _execute_tool."""
                 result_json = await self._execute_tool(
                     inner_tool_name, {"workspace_id": workspace_id, **inner_kwargs}
@@ -275,9 +283,21 @@ class StarboardMCPServer:
 
             try:
                 result = await composite_fn(_executor, **kwargs)
-                return json.dumps({"status": result.status, "data": result.data, "errors": result.errors})
+                return json.dumps(
+                    {
+                        "status": result.status,
+                        "data": result.data,
+                        "errors": result.errors,
+                    }
+                )
             except Exception as exc:  # noqa: BLE001 - MCP error boundary
-                return json.dumps({"isError": True, "code": "EXEC_COMPOSITE_FAILED", "message": str(exc)})
+                return json.dumps(
+                    {
+                        "isError": True,
+                        "code": "EXEC_COMPOSITE_FAILED",
+                        "message": str(exc),
+                    }
+                )
 
         _handler.__name__ = tool_name
         _handler.__qualname__ = f"StarboardMCPServer._composite_handler.{tool_name}"
@@ -306,7 +326,9 @@ class StarboardMCPServer:
 
                 fn_name = resource_uri.replace("://", "_").replace("/", "_")
                 _handler.__name__ = fn_name
-                _handler.__qualname__ = f"StarboardMCPServer._resource_handler.{fn_name}"
+                _handler.__qualname__ = (
+                    f"StarboardMCPServer._resource_handler.{fn_name}"
+                )
                 return _handler
 
             handler = _make_handler(uri)
@@ -497,11 +519,13 @@ class StarboardMCPServer:
             validation_error = self._validate_tool_inputs(tool_name, arguments)
             if validation_error is not None:
                 root_span.close(status="error", error_code="EXEC_INVALID_INPUT")
-                return json.dumps({
-                    "isError": True,
-                    "code": "EXEC_INVALID_INPUT",
-                    "message": validation_error,
-                })
+                return json.dumps(
+                    {
+                        "isError": True,
+                        "code": "EXEC_INVALID_INPUT",
+                        "message": validation_error,
+                    }
+                )
 
             # 4. Resolve workspace
             profile = None
@@ -637,11 +661,13 @@ class StarboardMCPServer:
             )
             # Return structured error JSON for unexpected exceptions.
             # This preserves MCP protocol framing for runtime errors.
-            return json.dumps({
-                "isError": True,
-                "code": error_code,
-                "message": str(exc),
-            })
+            return json.dumps(
+                {
+                    "isError": True,
+                    "code": error_code,
+                    "message": str(exc),
+                }
+            )
 
     def _validate_tool_inputs(
         self, tool_name: str, arguments: dict[str, Any]
@@ -666,9 +692,8 @@ class StarboardMCPServer:
         required_fields: list[str] = params.get("required", [])
         missing = [f for f in required_fields if f not in arguments]
         if missing:
-            return (
-                f"Tool {tool_name!r} missing required parameter(s): "
-                + ", ".join(repr(f) for f in missing)
+            return f"Tool {tool_name!r} missing required parameter(s): " + ", ".join(
+                repr(f) for f in missing
             )
         return None
 

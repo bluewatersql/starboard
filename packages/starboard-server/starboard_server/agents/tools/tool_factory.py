@@ -236,7 +236,7 @@ def create_tool_registry(
     )
 
     # Tool mapping: tool_name -> (instance, method_name)
-    tool_mapping = {
+    tool_mapping: dict[str, tuple[object, str]] = {
         # Intent resolution tools
         "resolve_user_intent": (intent_tools, "resolve_user_intent"),
         # Query tools

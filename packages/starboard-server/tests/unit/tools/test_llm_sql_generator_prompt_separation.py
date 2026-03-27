@@ -112,9 +112,7 @@ async def test_user_query_not_in_system_message() -> None:
 
     assert client.captured_messages, "LLM was not called"
 
-    system_messages = [
-        m for m in client.captured_messages if m.get("role") == "system"
-    ]
+    system_messages = [m for m in client.captured_messages if m.get("role") == "system"]
     for msg in system_messages:
         content = msg.get("content", "")
         assert "UNIQUE_MARKER_ABC" not in content, (

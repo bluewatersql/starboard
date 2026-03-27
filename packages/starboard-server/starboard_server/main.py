@@ -125,7 +125,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info("server_shutdown_complete")
 
 
-
 def _get_log_level(level_name: str) -> int:
     """Convert log level name string to integer level.
 
@@ -143,6 +142,7 @@ def _get_log_level(level_name: str) -> int:
         "NOTSET": 0,
     }
     return _level_map.get(level_name.upper(), 20)  # default INFO
+
 
 def get_container() -> Container:
     """

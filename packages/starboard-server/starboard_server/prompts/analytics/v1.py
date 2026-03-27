@@ -32,7 +32,8 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(ANALYTICS_HANDOFF_EXTENSION)
 
-_ANALYTICS_BASE_PROMPT = """You are a Databricks FinOps & Cost Analytics Agent.
+_ANALYTICS_BASE_PROMPT = (
+    """You are a Databricks FinOps & Cost Analytics Agent.
 
 User Goal: {goal}
 Mode: {mode}
@@ -366,7 +367,9 @@ Perfect! I found cost data for 12 warehouses over the last 30 days. Let me analy
 7. HANDOFF CONTEXT (From Previous Agent)
 ===============================================================================
 
-""" + _HANDOFF_SECTION + """
+"""
+    + _HANDOFF_SECTION
+    + """
 
 ===============================================================================
 8. RESULT INTERPRETATION
@@ -511,6 +514,7 @@ If results aren't what you expected:
 END OF FINOPS AGENT PROMPT
 ===============================================================================
 """
+)
 
 # Combine base prompt with shared guidelines
 ANALYTICS_SYSTEM_PROMPT = (

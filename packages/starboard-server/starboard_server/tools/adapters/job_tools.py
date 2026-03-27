@@ -60,6 +60,9 @@ class JobTools(BaseToolAdapter):
             - job_id: Job ID if exactly one match found, None otherwise
             - partial_matches: List of partial matches if multiple found
         """
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         result = await search_jobs_by_name(
             self.provider,
             job_name=job_name,
@@ -193,6 +196,9 @@ class JobTools(BaseToolAdapter):
         # Map lookback_days to max_runs (cap at 25 to avoid exceeding API limits)
         max_runs = min(max(lookback_days, 5), 25)
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         # Use transforms helper for data access
         job_metadata = await get_job_metadata(self.provider, job_id, max_runs)
 
@@ -275,6 +281,9 @@ class JobTools(BaseToolAdapter):
         """
         logger.debug("Fetching job configuration for job: {job_id}")
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         # Fetch job metadata using transforms helper
         job_metadata = await get_job_metadata(self.provider, job_id, max_runs=1)
 
@@ -337,6 +346,9 @@ class JobTools(BaseToolAdapter):
 
         run_id_int = int(run_id)
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         # Get comprehensive run output including all task-level outputs
         # The service layer now iterates through tasks and fetches each task's output
         run_output = await self.provider.client.get_run_output(run_id_int)
@@ -371,7 +383,8 @@ class JobTools(BaseToolAdapter):
             "state_message": state_message,
             "start_time": run_output.get("start_time"),
             "end_time": run_output.get("end_time"),
-            "error": run_output.get("error"), "error_code": "tool_error",
+            "error": run_output.get("error"),
+            "error_code": "tool_error",
             "summary": run_output.get("summary"),  # Aggregated task errors
             "tasks": tasks,  # Full task outputs with logs/notebook_output
             "failed_tasks": failed_tasks,  # Quick reference to failed tasks
@@ -413,6 +426,9 @@ class JobTools(BaseToolAdapter):
 
         run_id_int = int(run_id)
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         # Get task-specific logs
         task_logs = await self.provider.client.get_task_logs(run_id_int, task_key)
 
@@ -444,7 +460,8 @@ class JobTools(BaseToolAdapter):
             "state": result_state,
             "state_message": state_message,
             "logs": task_logs.get("logs"),
-            "error": task_logs.get("error"), "error_code": "tool_error",
+            "error": task_logs.get("error"),
+            "error_code": "tool_error",
             "notebook_output": task_logs.get("notebook_output"),
             "sql_output": task_logs.get("sql_output"),
             "dbt_output": task_logs.get("dbt_output"),

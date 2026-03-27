@@ -18,6 +18,7 @@ logger = get_logger(__name__)
 
 meter = metrics.get_meter("starboard.pools")
 
+
 class PoolMetricsCollector:
     """Collects and exports connection pool metrics via OpenTelemetry.
 

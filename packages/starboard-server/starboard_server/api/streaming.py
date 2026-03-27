@@ -75,6 +75,7 @@ def _build_error_event_data(
         }
     }
 
+
 router = APIRouter(prefix="/api/chat", tags=["Chat Streaming"])
 
 # SSE configuration

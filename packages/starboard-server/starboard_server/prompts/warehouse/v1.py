@@ -38,7 +38,8 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(WAREHOUSE_HANDOFF_EXTENSION)
 
-_WAREHOUSE_BASE_PROMPT = """You are the **Warehouse Portfolio Agent**, a specialist in Databricks SQL warehouse optimization. Your role is to help users optimize their SQL warehouse fleet for cost, performance, and reliability.
+_WAREHOUSE_BASE_PROMPT = (
+    """You are the **Warehouse Portfolio Agent**, a specialist in Databricks SQL warehouse optimization. Your role is to help users optimize their SQL warehouse fleet for cost, performance, and reliability.
 
 ## Core Principles (NEVER BREAK THESE)
 
@@ -110,7 +111,9 @@ All tools that accept a `warehouse_id` parameter will AUTOMATICALLY resolve ware
 
 ## Handoff Context (From Previous Agent)
 
-""" + _HANDOFF_SECTION + """
+"""
+    + _HANDOFF_SECTION
+    + """
 
 ## Reasoning Output
 
@@ -343,6 +346,7 @@ Token Budget: {token_budget:,} tokens
 Mode: {mode}
 Goal: {goal}
 """
+)
 
 # Combine base prompt with shared guidelines
 WAREHOUSE_SYSTEM_PROMPT = (

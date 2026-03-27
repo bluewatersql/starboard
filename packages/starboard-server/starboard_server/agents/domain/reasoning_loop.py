@@ -499,9 +499,7 @@ async def reasoning_loop_stream(
             "fallback_report_generated",
             has_summary=fallback_report.get("summary") is not None,
             has_analysis=fallback_report.get("analysis") is not None,
-            findings_count=len(
-                fallback_report.get("analysis", {}).get("findings", [])
-            ),
+            findings_count=len(fallback_report.get("analysis", {}).get("findings", [])),
         )
 
     # === STEP 5: BUILD FINAL OUTPUT (via OutputBuilder) ===

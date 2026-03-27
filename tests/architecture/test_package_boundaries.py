@@ -57,9 +57,7 @@ def _collect_server_internal_imports(
             elif isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 if any(module.startswith(p) for p in _INTERNAL_PREFIXES):
-                    results.append(
-                        (py_file, node.lineno, f"from {module} import ...")
-                    )
+                    results.append((py_file, node.lineno, f"from {module} import ..."))
     return results
 
 
@@ -72,8 +70,7 @@ def test_cli_does_not_import_internal_server_modules(project_root: Path) -> None
 
     violations = _collect_server_internal_imports(cli_dir, "starboard_cli")
     formatted = [
-        f"{f.relative_to(project_root)}:{ln}: {imp}"
-        for f, ln, imp in violations
+        f"{f.relative_to(project_root)}:{ln}: {imp}" for f, ln, imp in violations
     ]
     assert not formatted, (
         f"GUIDELINE-005: {len(formatted)} internal server import(s) in starboard_cli:\n"
@@ -90,8 +87,7 @@ def test_sdk_does_not_import_internal_server_modules(project_root: Path) -> None
 
     violations = _collect_server_internal_imports(sdk_dir, "starboard_sdk")
     formatted = [
-        f"{f.relative_to(project_root)}:{ln}: {imp}"
-        for f, ln, imp in violations
+        f"{f.relative_to(project_root)}:{ln}: {imp}" for f, ln, imp in violations
     ]
     assert not formatted, (
         f"GUIDELINE-005: {len(formatted)} internal server import(s) in starboard_sdk:\n"

@@ -208,7 +208,7 @@ class BIL003UntaggedConsumption:
         if total_dbus <= 0:
             return []
 
-        ratio = float(total_untagged / total_dbus)
+        ratio = float(total_untagged) / float(total_dbus)
         if ratio <= 0.3:
             return []
 
@@ -270,7 +270,7 @@ class BIL004UnattributedIdentity:
 
         unattributed_df = df.filter(pl.col("user_type") == "Unattributed")
         unattributed_dbus = unattributed_df.get_column("dbus_consumed").sum()
-        ratio = float(unattributed_dbus / total)
+        ratio = float(unattributed_dbus) / float(total)
         if ratio <= 0.2:
             return []
 
@@ -332,7 +332,7 @@ class BIL005ServerlessAdoptionGap:
 
         serverless_df = df.filter(pl.col("is_serverless") == True)  # noqa: E712
         serverless_dbus = serverless_df.get_column("dbus_consumed").sum()
-        ratio = float(serverless_dbus / total)
+        ratio = float(serverless_dbus) / float(total)
         if ratio >= 0.1:
             return []
 

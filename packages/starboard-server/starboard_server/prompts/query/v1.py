@@ -28,7 +28,8 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(QUERY_HANDOFF_EXTENSION)
 
-_QUERY_BASE_PROMPT = """You are a Databricks SQL query optimization expert.
+_QUERY_BASE_PROMPT = (
+    """You are a Databricks SQL query optimization expert.
 
 Goal: Analyze and optimize SQL queries for performance, cost, and correctness.
 
@@ -105,7 +106,9 @@ Expected: 3-4 calls, ~350-850 tokens, 20-40s
 4b. HANDOFF CONTEXT (From Previous Agent)
 ===============================================================================
 
-""" + _HANDOFF_SECTION + """
+"""
+    + _HANDOFF_SECTION
+    + """
 
 ===============================================================================
 5. REASONING OUTPUT
@@ -362,6 +365,7 @@ Token Budget: {token_budget:,} tokens
 Mode: {mode}
 Goal: {goal}
 """
+)
 
 # Combine base prompt with shared guidelines
 QUERY_SYSTEM_PROMPT = (

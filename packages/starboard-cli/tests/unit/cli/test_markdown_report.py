@@ -126,9 +126,7 @@ class TestGenerateMarkdownReport:
             },
         }
 
-        with patch(
-            "starboard_server.bootstrap.format_agent_report"
-        ) as mock_format:
+        with patch("starboard_server.bootstrap.format_agent_report") as mock_format:
             mock_format.return_value = "## Formatted Report Content"
 
             result = _generate_markdown_report(output)
@@ -146,9 +144,7 @@ class TestGenerateMarkdownReport:
             "complete_report": {"invalid": "data"},
         }
 
-        with patch(
-            "starboard_server.bootstrap.format_agent_report"
-        ) as mock_format:
+        with patch("starboard_server.bootstrap.format_agent_report") as mock_format:
             mock_format.side_effect = Exception("Formatter error")
 
             result = _generate_markdown_report(output)
@@ -165,9 +161,7 @@ class TestGenerateMarkdownReport:
             "complete_report": {},
         }
 
-        with patch(
-            "starboard_server.bootstrap.format_agent_report"
-        ) as mock_format:
+        with patch("starboard_server.bootstrap.format_agent_report") as mock_format:
             mock_format.return_value = None
 
             result = _generate_markdown_report(output)
@@ -184,9 +178,7 @@ class TestGenerateMarkdownReport:
             "complete_report": {"data": "test"},
         }
 
-        with patch(
-            "starboard_server.bootstrap.format_agent_report"
-        ) as mock_format:
+        with patch("starboard_server.bootstrap.format_agent_report") as mock_format:
             mock_format.return_value = "## Report"
 
             result = _generate_markdown_report(output)
@@ -202,9 +194,7 @@ class TestGenerateMarkdownReport:
             "complete_report": {"data": "test"},
         }
 
-        with patch(
-            "starboard_server.bootstrap.format_agent_report"
-        ) as mock_format:
+        with patch("starboard_server.bootstrap.format_agent_report") as mock_format:
             mock_format.return_value = "## Report"
 
             result = _generate_markdown_report(output)

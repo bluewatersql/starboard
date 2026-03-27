@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-import aiofiles
+import aiofiles  # type: ignore[import-untyped]
 import yaml
 
 

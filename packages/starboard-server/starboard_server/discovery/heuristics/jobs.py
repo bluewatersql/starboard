@@ -297,6 +297,7 @@ class JOB004DBUPerMinuteOutliers:
         threshold = 3 * median_f
         # Prevent polars from doing a float->Decimal conversion with infinite precision which overflows
         from decimal import Decimal
+
         threshold_dec = Decimal(f"{threshold:.4f}")
         breachers = df.filter(dbu_col > threshold_dec)
         if breachers.is_empty():

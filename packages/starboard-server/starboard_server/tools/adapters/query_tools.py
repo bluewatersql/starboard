@@ -188,6 +188,9 @@ class QueryTools(BaseToolAdapter):
 
         input_data = ExplainPlanInput(sql_text=sql_text)
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         # Use transforms helper for EXPLAIN plan
         plan_text = await get_explain_plan(self.provider, input_data.sql_text)
 

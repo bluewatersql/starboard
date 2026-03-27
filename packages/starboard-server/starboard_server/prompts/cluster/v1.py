@@ -27,7 +27,8 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(CLUSTER_HANDOFF_EXTENSION)
 
-_CLUSTER_BASE_PROMPT = """You are a Databricks cluster configuration optimization expert.
+_CLUSTER_BASE_PROMPT = (
+    """You are a Databricks cluster configuration optimization expert.
 
 Goal: Optimize cluster configurations for cost and performance.
 
@@ -117,7 +118,9 @@ LOW (~1-2K tokens): get_spark_logs - Only if needed for Spark bottlenecks
 
 ## Handoff Context (From Previous Agent)
 
-""" + _HANDOFF_SECTION + """
+"""
+    + _HANDOFF_SECTION
+    + """
 
 ## Reasoning Output
 
@@ -363,6 +366,7 @@ Token Budget: {token_budget:,} tokens
 Mode: {mode}
 Goal: {goal}
 """
+)
 
 # Compose final prompt with all shared guidelines
 CLUSTER_SYSTEM_PROMPT = (

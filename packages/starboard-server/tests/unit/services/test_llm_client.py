@@ -147,7 +147,9 @@ class TestOpenAIProvider:
 
     def test_log_llm_call(self, llm_client):
         """Test LLM call logging."""
-        with patch("starboard_server.adapters.llm.openai.request_lifecycle.logger") as mock_logger:
+        with patch(
+            "starboard_server.adapters.llm.openai.request_lifecycle.logger"
+        ) as mock_logger:
             llm_client._log_llm_call(
                 call_type="text_call",
                 trace_id="test-123",

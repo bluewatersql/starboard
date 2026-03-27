@@ -85,7 +85,9 @@ async def test_inmemory_store():
     stats_table.add_row("Facets Collection", str(stats["collections"]["facets"]))
 
     # Calculate approximate memory usage
-    approx_mem_mb = stats["total_vectors"] * 1024 * 4 / (1024 * 1024)  # 1024 floats * 4 bytes
+    approx_mem_mb = (
+        stats["total_vectors"] * 1024 * 4 / (1024 * 1024)
+    )  # 1024 floats * 4 bytes
     stats_table.add_row("Approx Memory (MB)", f"{approx_mem_mb:.2f}")
 
     console.print(stats_table)
@@ -117,11 +119,15 @@ async def test_inmemory_store():
             collections=["nuance"],
             n_results_per_collection=3,
         )
-        console.print(f"  ✓ Nuance search returned {len(nuance_context.nuance)} results")
+        console.print(
+            f"  ✓ Nuance search returned {len(nuance_context.nuance)} results"
+        )
 
         if nuance_context.nuance:
             console.print(f"    • Top result: {nuance_context.nuance[0].topic}")
-            console.print(f"    • Score: {nuance_context.nuance[0].relevance_score:.4f}")
+            console.print(
+                f"    • Score: {nuance_context.nuance[0].relevance_score:.4f}"
+            )
     except Exception as e:
         console.print(f"  [red]✗ Nuance search failed: {e}[/red]")
         return False
@@ -133,11 +139,15 @@ async def test_inmemory_store():
             collections=["codebook"],
             n_results_per_collection=3,
         )
-        console.print(f"  ✓ Codebook search returned {len(codebook_context.codebook)} results")
+        console.print(
+            f"  ✓ Codebook search returned {len(codebook_context.codebook)} results"
+        )
 
         if codebook_context.codebook:
             console.print(f"    • Top result: {codebook_context.codebook[0].code}")
-            console.print(f"    • Score: {codebook_context.codebook[0].relevance_score:.4f}")
+            console.print(
+                f"    • Score: {codebook_context.codebook[0].relevance_score:.4f}"
+            )
     except Exception as e:
         console.print(f"  [red]✗ Codebook search failed: {e}[/red]")
         return False
@@ -154,11 +164,13 @@ async def test_inmemory_store():
         )
 
         total_results = (
-            len(multi_context.tables) +
-            len(multi_context.nuance) +
-            len(multi_context.codebook)
+            len(multi_context.tables)
+            + len(multi_context.nuance)
+            + len(multi_context.codebook)
         )
-        console.print(f"  ✓ Multi-collection search returned {total_results} total results")
+        console.print(
+            f"  ✓ Multi-collection search returned {total_results} total results"
+        )
 
         # Show distribution
         console.print("    • Results by collection:")

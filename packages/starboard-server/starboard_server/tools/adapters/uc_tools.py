@@ -247,7 +247,12 @@ class UCTools(BaseToolAdapter):
                 "asset_type": result.asset_type,
             }
         except ValueError as e:
-            return {"error": str(e), "error_code": "tool_error", "assets": [], "total_count": 0}
+            return {
+                "error": str(e),
+                "error_code": "tool_error",
+                "assets": [],
+                "total_count": 0,
+            }
         except (ToolError, AdapterError) as e:
             logger.error("Error enumerating UC assets: {e}")
             return {
@@ -287,7 +292,11 @@ class UCTools(BaseToolAdapter):
         try:
             result = await self.service.fetch_table_metadata(table_name)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
+                return {
+                    "error": f"Table not found: {table_name}",
+                    "found": False,
+                    "error_code": "tool_error",
+                }
 
             return {
                 "found": True,
@@ -335,7 +344,11 @@ class UCTools(BaseToolAdapter):
             }
         except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error fetching table metadata for {table_name}: {e}")
-            return {"error": f"Failed to fetch metadata: {e}", "found": False, "error_code": "tool_error"}
+            return {
+                "error": f"Failed to fetch metadata: {e}",
+                "found": False,
+                "error_code": "tool_error",
+            }
 
     @staticmethod
     def _serialize_lineage_nodes(nodes: Sequence[Any]) -> list[dict[str, Any]]:
@@ -444,7 +457,8 @@ class UCTools(BaseToolAdapter):
                 return {
                     "table_name": table_name,
                     "can_access_grants": False,
-                    "error": "Permission denied or table not found", "error_code": "tool_error",
+                    "error": "Permission denied or table not found",
+                    "error_code": "tool_error",
                 }
 
             return {
@@ -515,7 +529,11 @@ class UCTools(BaseToolAdapter):
         try:
             result = await self.service.analyze_table_schema(table_name)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
+                return {
+                    "error": f"Table not found: {table_name}",
+                    "found": False,
+                    "error_code": "tool_error",
+                }
 
             return {
                 "found": True,
@@ -544,7 +562,11 @@ class UCTools(BaseToolAdapter):
             }
         except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error analyzing schema for {table_name}: {e}")
-            return {"error": f"Failed to analyze schema: {e}", "found": False, "error_code": "tool_error"}
+            return {
+                "error": f"Failed to analyze schema: {e}",
+                "found": False,
+                "error_code": "tool_error",
+            }
 
     async def fetch_delta_history(
         self,
@@ -578,7 +600,8 @@ class UCTools(BaseToolAdapter):
             result = await self.service.fetch_delta_history(table_name, limit)
             if not result:
                 return {
-                    "error": "Unable to fetch history (table not found or not a Delta table)", "error_code": "tool_error",
+                    "error": "Unable to fetch history (table not found or not a Delta table)",
+                    "error_code": "tool_error",
                     "table_name": table_name,
                     "found": False,
                 }
@@ -647,7 +670,8 @@ class UCTools(BaseToolAdapter):
             result = await self.service.analyze_access_patterns(table_name, window_days)
             if not result:
                 return {
-                    "error": "Unable to analyze access patterns (system tables unavailable)", "error_code": "tool_error",
+                    "error": "Unable to analyze access patterns (system tables unavailable)",
+                    "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -720,7 +744,8 @@ class UCTools(BaseToolAdapter):
             )
             if not result:
                 return {
-                    "error": "Unable to detect schema drift (history unavailable)", "error_code": "tool_error",
+                    "error": "Unable to detect schema drift (history unavailable)",
+                    "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -789,7 +814,11 @@ class UCTools(BaseToolAdapter):
         try:
             result = await self.service.recommend_storage_optimization(table_name)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
+                return {
+                    "error": f"Table not found: {table_name}",
+                    "found": False,
+                    "error_code": "tool_error",
+                }
 
             return {
                 "found": True,
@@ -836,7 +865,11 @@ class UCTools(BaseToolAdapter):
             logger.error(
                 f"Error generating storage recommendations for {table_name}: {e}"
             )
-            return {"error": f"Failed to generate recommendations: {e}", "found": False, "error_code": "tool_error"}
+            return {
+                "error": f"Failed to generate recommendations: {e}",
+                "found": False,
+                "error_code": "tool_error",
+            }
 
     async def analyze_query_impact(
         self,
@@ -871,7 +904,8 @@ class UCTools(BaseToolAdapter):
             result = await self.service.analyze_query_impact(table_names, query_pattern)
             if not result:
                 return {
-                    "error": "Unable to analyze query impact", "error_code": "tool_error",
+                    "error": "Unable to analyze query impact",
+                    "error_code": "tool_error",
                     "tables": table_names,
                 }
 
@@ -949,7 +983,11 @@ class UCTools(BaseToolAdapter):
         try:
             result = await self.service.fetch_table_fingerprint(table_name, window_days)
             if not result:
-                return {"error": f"Table not found: {table_name}", "found": False, "error_code": "tool_error"}
+                return {
+                    "error": f"Table not found: {table_name}",
+                    "found": False,
+                    "error_code": "tool_error",
+                }
 
             # Build response with new comprehensive structure
             response: dict[str, Any] = {
@@ -1025,7 +1063,11 @@ class UCTools(BaseToolAdapter):
 
         except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error generating fingerprint for {table_name}: {e}")
-            return {"error": f"Failed to generate fingerprint: {e}", "found": False, "error_code": "tool_error"}
+            return {
+                "error": f"Failed to generate fingerprint: {e}",
+                "found": False,
+                "error_code": "tool_error",
+            }
 
     async def attribute_table_costs(
         self,
@@ -1057,7 +1099,8 @@ class UCTools(BaseToolAdapter):
             result = await self.service.attribute_table_costs(table_name, window_days)
             if not result:
                 return {
-                    "error": "Unable to attribute costs (system tables unavailable)", "error_code": "tool_error",
+                    "error": "Unable to attribute costs (system tables unavailable)",
+                    "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -1131,7 +1174,8 @@ class UCTools(BaseToolAdapter):
             )
             if not result:
                 return {
-                    "error": "Unable to generate schema diff", "error_code": "tool_error",
+                    "error": "Unable to generate schema diff",
+                    "error_code": "tool_error",
                     "table_name": table_name,
                 }
 
@@ -1216,7 +1260,11 @@ class UCTools(BaseToolAdapter):
         try:
             result = await self.service.analyze_policy_coverage(scope, catalog, schema)
             if not result:
-                return {"error": "Invalid scope or missing parameters", "error_code": "tool_error", "scope": scope}
+                return {
+                    "error": "Invalid scope or missing parameters",
+                    "error_code": "tool_error",
+                    "scope": scope,
+                }
 
             return {
                 "scope": result.scope,
@@ -1245,7 +1293,11 @@ class UCTools(BaseToolAdapter):
             }
         except (ToolError, AdapterError, ValueError) as e:
             logger.error("Error analyzing policy coverage: {e}")
-            return {"error": f"Failed to analyze policy coverage: {e}", "scope": scope, "error_code": "tool_error"}
+            return {
+                "error": f"Failed to analyze policy coverage: {e}",
+                "scope": scope,
+                "error_code": "tool_error",
+            }
 
     # =========================================================================
     # Table Discovery (LLM-based)
@@ -1294,7 +1346,8 @@ class UCTools(BaseToolAdapter):
         """
         if not source_text:
             return {
-                "error": "No source_text provided", "error_code": "tool_error",
+                "error": "No source_text provided",
+                "error_code": "tool_error",
                 "all_tables": [],
                 "source_tables": [],
                 "target_tables": [],
@@ -1318,7 +1371,8 @@ class UCTools(BaseToolAdapter):
         except RuntimeError as e:
             # Discovery provider not configured
             return {
-                "error": str(e), "error_code": "tool_error",
+                "error": str(e),
+                "error_code": "tool_error",
                 "all_tables": [],
                 "source_tables": [],
                 "target_tables": [],

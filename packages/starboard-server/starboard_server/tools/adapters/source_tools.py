@@ -480,8 +480,7 @@ class SourceTools(BaseToolAdapter):
         context_msg = f"task '{task_key}'" if task_key else "code"
         self._emit_info(
             source="analyze_code_quality",
-            message=f"Analyzing {context_msg} quality "
-            f"({mode.value.upper()} mode)",
+            message=f"Analyzing {context_msg} quality ({mode.value.upper()} mode)",
         )
 
         # Transform task sources if provided

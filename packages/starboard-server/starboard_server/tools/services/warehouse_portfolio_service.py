@@ -85,7 +85,6 @@ class SLOConfigStore(Protocol):
         """Generic key-value set (Protocol compliance)."""
         ...
 
-
         ...
 
 

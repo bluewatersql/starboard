@@ -51,6 +51,3 @@ def test_rapidfuzz_not_installed() -> None:
 def test_sqlparse_not_installed() -> None:
     """sqlparse was removed from starboard-server dependencies (zero imports)."""
     _assert_not_importable("sqlparse")
-
-
-

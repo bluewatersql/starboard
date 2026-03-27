@@ -15,6 +15,7 @@ from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 class HTTPClient:
     """Generic async HTTP REST client.
 

@@ -29,7 +29,9 @@ if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
 
 # HTTP status codes that indicate permanent (non-retryable) errors.
-_PERMANENT_HTTP_STATUS_CODES: frozenset[int] = frozenset({400, 401, 403, 404, 405, 409, 422})
+_PERMANENT_HTTP_STATUS_CODES: frozenset[int] = frozenset(
+    {400, 401, 403, 404, 405, 409, 422}
+)
 
 logger = get_logger(__name__)
 
@@ -43,6 +45,7 @@ _databricks_executor: ThreadPoolExecutor | None = None
 
 # Threshold (fraction) at which we emit a capacity warning.
 _CAPACITY_WARN_THRESHOLD = 0.75
+
 
 def _get_databricks_executor(max_workers: int = 8) -> ThreadPoolExecutor:
     """Get or create dedicated Databricks SDK thread pool.
@@ -68,6 +71,7 @@ def _get_databricks_executor(max_workers: int = 8) -> ThreadPoolExecutor:
         )
     return _databricks_executor
 
+
 def shutdown_databricks_executor(wait: bool = True) -> None:
     """Shutdown the dedicated Databricks SDK thread pool.
 
@@ -83,6 +87,7 @@ def shutdown_databricks_executor(wait: bool = True) -> None:
         _databricks_executor.shutdown(wait=wait)
         _databricks_executor = None
         logger.info("databricks_thread_pool_shutdown")
+
 
 async def run_databricks_sync(func: Callable[..., T], *args: object) -> T:  # noqa: UP047
     """Run sync Databricks SDK call in dedicated thread pool.
@@ -116,6 +121,7 @@ async def run_databricks_sync(func: Callable[..., T], *args: object) -> T:  # no
             )
 
     return await loop.run_in_executor(executor, func, *args)
+
 
 class BaseService:
     """Base class for Databricks service implementations.

@@ -47,9 +47,7 @@ def _imports_api_layer(file_path: Path) -> list[str]:
                 _FORBIDDEN_PREFIX + "."
             ):
                 names = ", ".join(a.name for a in node.names)
-                violations.append(
-                    f"line {node.lineno}: from {module} import {names}"
-                )
+                violations.append(f"line {node.lineno}: from {module} import {names}")
     return violations
 
 
@@ -62,11 +60,7 @@ def test_agents_layer_does_not_import_api_layer(project_root: Path) -> None:
     reuse of agents outside the HTTP context (e.g. CLI, SDK, tests).
     """
     agents_root = (
-        project_root
-        / "packages"
-        / "starboard-server"
-        / "starboard_server"
-        / "agents"
+        project_root / "packages" / "starboard-server" / "starboard_server" / "agents"
     )
     if not agents_root.exists():
         pytest.skip(f"agents directory not found: {agents_root}")

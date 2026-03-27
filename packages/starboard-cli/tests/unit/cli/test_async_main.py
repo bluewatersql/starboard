@@ -275,9 +275,7 @@ class TestHandleStreamingEvents:
         mock_manager.handle_message_stream = mock_stream
         console = Console(quiet=True)
 
-        with patch(
-            "starboard_server.bootstrap.format_agent_report"
-        ) as mock_format:
+        with patch("starboard_server.bootstrap.format_agent_report") as mock_format:
             mock_format.return_value = "# Formatted Report"
 
             _, formatted_markdown = await handle_streaming_events(

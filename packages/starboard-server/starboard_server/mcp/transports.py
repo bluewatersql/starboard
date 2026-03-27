@@ -144,14 +144,16 @@ def _wrap_with_api_key_auth(app: Any, api_key: str) -> Any:
                 response_body = _json.dumps(
                     {"error": "Unauthorized", "message": "Invalid or missing API key."}
                 ).encode()
-                await send({
-                    "type": "http.response.start",
-                    "status": 401,
-                    "headers": [
-                        (b"content-type", b"application/json"),
-                        (b"content-length", str(len(response_body)).encode()),
-                    ],
-                })
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 401,
+                        "headers": [
+                            (b"content-type", b"application/json"),
+                            (b"content-length", str(len(response_body)).encode()),
+                        ],
+                    }
+                )
                 await send({"type": "http.response.body", "body": response_body})
                 return
         await app(scope, receive, send)

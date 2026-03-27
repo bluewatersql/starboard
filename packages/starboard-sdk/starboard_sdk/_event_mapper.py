@@ -60,7 +60,7 @@ def map_event(server_event: object) -> AgentEvent | None:
         )
     if isinstance(server_event, _ServerErrorEvent):
         return ErrorEvent(
-            error_type=server_event.error_type,
+            error_type=server_event.error_type or "Unknown",
             error=server_event.error,
             is_recoverable=server_event.is_recoverable,
         )

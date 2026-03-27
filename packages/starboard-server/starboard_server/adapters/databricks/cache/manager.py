@@ -30,6 +30,7 @@ from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 @dataclass
 class CacheEntry:
     """Cache entry with value, expiration, and metadata.
@@ -45,6 +46,7 @@ class CacheEntry:
     expires_at: float | None
     ttl: int | None = None
     created_at: float = field(default_factory=time.time)
+
 
 class CacheManager:
     """Unified cache manager with LRU eviction and per-key locking.

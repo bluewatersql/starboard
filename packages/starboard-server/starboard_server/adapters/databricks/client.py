@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+
 class AsyncDatabricksClient:
     """Unified async Databricks client with integrated caching.
 

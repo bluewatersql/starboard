@@ -27,7 +27,8 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(JOB_HANDOFF_EXTENSION)
 
-_JOB_BASE_PROMPT = """You are a Databricks job optimization expert.
+_JOB_BASE_PROMPT = (
+    """You are a Databricks job optimization expert.
 
 Goal: Optimize job configurations, task performance, and workflow reliability.
 
@@ -211,7 +212,9 @@ Expected: 4-5 calls, ~1,550-2,350 tokens, 40-80s
 4b. HANDOFF CONTEXT (From Previous Agent)
 ===============================================================================
 
-""" + _HANDOFF_SECTION + """
+"""
+    + _HANDOFF_SECTION
+    + """
 
 ===============================================================================
 5. REASONING OUTPUT
@@ -482,6 +485,7 @@ Token Budget: {token_budget:,} tokens
 Mode: {mode}
 Goal: {goal}
 """
+)
 
 # Combine base prompt with shared guidelines
 JOB_SYSTEM_PROMPT = (

@@ -89,11 +89,7 @@ class ConversationContextStrategy:
         Returns:
             ContextWindow with summary and recent messages ready for the agent.
         """
-        turn_count = sum(
-            1
-            for m in conversation_history
-            if _get_role(m) == "user"
-        )
+        turn_count = sum(1 for m in conversation_history if _get_role(m) == "user")
 
         wm_snapshot = _extract_working_memory_snapshot(working_memory)
 
@@ -143,35 +139,34 @@ class ConversationContextStrategy:
         Returns:
             Enriched user input string with prior context prepended.
         """
-        if not context_window.was_summarized and not context_window.working_memory_snapshot:
+        if (
+            not context_window.was_summarized
+            and not context_window.working_memory_snapshot
+        ):
             return user_input
 
         parts: list[str] = []
 
         if context_window.summary:
-            parts.append(
-                f"[Prior Conversation Summary]\n{context_window.summary}"
-            )
+            parts.append(f"[Prior Conversation Summary]\n{context_window.summary}")
 
         wm = context_window.working_memory_snapshot
         if wm.get("discovered_entities"):
             entity_lines = []
             for etype, values in wm["discovered_entities"].items():
                 if values:
-                    entity_lines.append(f"  {etype}: {', '.join(str(v) for v in values)}")
+                    entity_lines.append(
+                        f"  {etype}: {', '.join(str(v) for v in values)}"
+                    )
             if entity_lines:
-                parts.append(
-                    "[Discovered Entities]\n" + "\n".join(entity_lines)
-                )
+                parts.append("[Discovered Entities]\n" + "\n".join(entity_lines))
 
         if wm.get("user_constraints"):
             constraint_lines = []
             for k, v in wm["user_constraints"].items():
                 constraint_lines.append(f"  {k}: {v}")
             if constraint_lines:
-                parts.append(
-                    "[Active Constraints]\n" + "\n".join(constraint_lines)
-                )
+                parts.append("[Active Constraints]\n" + "\n".join(constraint_lines))
 
         if wm.get("key_facts"):
             parts.append(
@@ -190,9 +185,7 @@ class ConversationContextStrategy:
     ) -> list[Message] | list[dict[str, Any]]:
         """Extract the most recent N turns (user+assistant pairs) from history."""
         user_indices = [
-            i
-            for i, m in enumerate(conversation_history)
-            if _get_role(m) == "user"
+            i for i, m in enumerate(conversation_history) if _get_role(m) == "user"
         ]
 
         if len(user_indices) <= self._recent_window:
@@ -230,9 +223,13 @@ class ConversationContextStrategy:
 
             if role == "user":
                 turn_num += 1
-                summary_parts.append(f"Turn {turn_num} — User: {_truncate(content, 200)}")
+                summary_parts.append(
+                    f"Turn {turn_num} — User: {_truncate(content, 200)}"
+                )
             elif role == "assistant":
-                summary_parts.append(f"Turn {turn_num} — Agent: {_truncate(content, 400)}")
+                summary_parts.append(
+                    f"Turn {turn_num} — Agent: {_truncate(content, 400)}"
+                )
 
         return "\n".join(summary_parts)
 

@@ -40,6 +40,7 @@ def _make_tool_end_event(name: str = "resolve_query"):
     event.success = True
     event.duration_seconds = 1.5
     event.friendly_name = name
+    event.tool_call_id = f"call_{name}"
     return event
 
 
@@ -229,8 +230,9 @@ class TestConversationSession:
             manager=mock_manager,
         )
 
-        with pytest.raises(RuntimeError, match="LLM timed out"):
-            await session.ask("Trigger error")
+        response = await session.ask("Trigger error")
+        assert response.error is not None
+        assert "LLM timed out" in response.error
 
     @pytest.mark.unit
     async def test_ask_continues_on_recoverable_error_event(self, mock_manager):
@@ -250,6 +252,8 @@ class TestConversationSession:
 
     @pytest.mark.unit
     async def test_ask_times_out(self, mock_manager):
+        from starboard_sdk.exceptions import TimeoutError as SdkTimeoutError
+
         mock_manager.handle_message_stream = MagicMock(
             return_value=_mock_stream_then_hang()
         )
@@ -259,7 +263,7 @@ class TestConversationSession:
             manager=mock_manager,
         )
 
-        with pytest.raises(TimeoutError, match="did not respond"):
+        with pytest.raises(SdkTimeoutError, match="did not respond"):
             await session.ask("Will hang", timeout=0.05)
 
     @pytest.mark.unit
@@ -301,6 +305,16 @@ class TestAskStream:
     @pytest.mark.unit
     async def test_ask_stream_yields_all_events(self, mock_manager):
         """ask_stream yields every event from handle_message_stream."""
+        from starboard_sdk.event_types import (
+            FinalOutputEvent as SdkFinalOutput,
+        )
+        from starboard_sdk.event_types import (
+            ToolEndEvent as SdkToolEnd,
+        )
+        from starboard_sdk.event_types import (
+            ToolStartEvent as SdkToolStart,
+        )
+
         tool_start = _make_tool_start_event("resolve_query")
         tool_end = _make_tool_end_event("resolve_query")
         final = _make_final_event()
@@ -319,9 +333,11 @@ class TestAskStream:
             events.append(event)
 
         assert len(events) == 3
-        assert events[0] is tool_start
-        assert events[1] is tool_end
-        assert events[2] is final
+        assert isinstance(events[0], SdkToolStart)
+        assert events[0].tool_name == "resolve_query"
+        assert isinstance(events[1], SdkToolEnd)
+        assert events[1].tool_name == "resolve_query"
+        assert isinstance(events[2], SdkFinalOutput)
 
     @pytest.mark.unit
     async def test_ask_stream_increments_turn_count(self, mock_manager):
@@ -365,9 +381,7 @@ class TestAskStream:
     async def test_ask_stream_yields_error_events(self, mock_manager):
         """Error events are yielded (not swallowed) so callers can handle them."""
         error = _make_error_event("timeout", recoverable=False)
-        mock_manager.handle_message_stream = MagicMock(
-            return_value=_mock_stream(error)
-        )
+        mock_manager.handle_message_stream = MagicMock(return_value=_mock_stream(error))
 
         session = ConversationSession(
             conversation_id="conv_stream",
@@ -379,13 +393,23 @@ class TestAskStream:
             events.append(event)
 
         assert len(events) == 1
-        from starboard_server.agents.events import ErrorEvent
+        from starboard_sdk.event_types import ErrorEvent as SdkErrorEvent
 
-        assert isinstance(events[0], ErrorEvent)
+        assert isinstance(events[0], SdkErrorEvent)
 
     @pytest.mark.unit
     async def test_ask_stream_yields_tool_lifecycle(self, mock_manager):
-        """Verifies tool start→end pairs are streamed for notebook progress display."""
+        """Verifies tool start->end pairs are streamed for notebook progress display."""
+        from starboard_sdk.event_types import (
+            FinalOutputEvent as SdkFinalOutput,
+        )
+        from starboard_sdk.event_types import (
+            ToolEndEvent as SdkToolEnd,
+        )
+        from starboard_sdk.event_types import (
+            ToolStartEvent as SdkToolStart,
+        )
+
         start = _make_tool_start_event("get_job_config")
         end = _make_tool_end_event("get_job_config")
         final = _make_final_event()
@@ -399,19 +423,13 @@ class TestAskStream:
             manager=mock_manager,
         )
 
-        from starboard_server.agents.events import (
-            FinalOutputEvent,
-            ToolEndEvent,
-            ToolStartEvent,
-        )
-
         types_seen = []
         async for event in session.ask_stream("Analyze job"):
-            if isinstance(event, ToolStartEvent):
+            if isinstance(event, SdkToolStart):
                 types_seen.append("start")
-            elif isinstance(event, ToolEndEvent):
+            elif isinstance(event, SdkToolEnd):
                 types_seen.append("end")
-            elif isinstance(event, FinalOutputEvent):
+            elif isinstance(event, SdkFinalOutput):
                 types_seen.append("final")
 
         assert types_seen == ["start", "end", "final"]
@@ -427,7 +445,9 @@ class TestStarboardClient:
         assert session.session_name is None
 
     @pytest.mark.unit
-    async def test_create_session_with_session_mgr(self, mock_manager, mock_session_mgr):
+    async def test_create_session_with_session_mgr(
+        self, mock_manager, mock_session_mgr
+    ):
         from datetime import UTC, datetime
 
         from starboard_cli.sessions.session_manager import SessionInfo
@@ -453,9 +473,11 @@ class TestStarboardClient:
 
     @pytest.mark.unit
     async def test_resume_without_session_mgr_raises(self, mock_manager):
+        from starboard_sdk.exceptions import SessionError
+
         client = StarboardClient(manager=mock_manager)
 
-        with pytest.raises(ValueError, match="Cannot resume"):
+        with pytest.raises(SessionError, match="Cannot resume"):
             await client.resume_session("nonexistent")
 
     @pytest.mark.unit

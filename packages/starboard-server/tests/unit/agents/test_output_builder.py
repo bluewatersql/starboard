@@ -192,9 +192,7 @@ class TestOutputBuilderBuild:
             "report_type": "advisor",
             "summary": {"overview": "All good"},
             "analysis": {
-                "findings": [
-                    {"title": "Use partitioning", "category": "PERFORMANCE"}
-                ]
+                "findings": [{"title": "Use partitioning", "category": "PERFORMANCE"}]
             },
         }
         state = _make_state(

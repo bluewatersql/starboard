@@ -70,9 +70,7 @@ class TestBaseToolAdapter:
     def test_log_obs_context_calls_logger_debug(self):
         provider = make_provider()
         adapter = BaseToolAdapter(provider=provider)
-        with patch(
-            "starboard_server.tools.adapters.base.logger"
-        ) as mock_logger:
+        with patch("starboard_server.tools.adapters.base.logger") as mock_logger:
             adapter._log_obs_context("test_operation", {"key": "value"})
             mock_logger.debug.assert_called_once_with(
                 "test_operation",
@@ -82,9 +80,7 @@ class TestBaseToolAdapter:
     def test_log_obs_context_without_extra(self):
         provider = make_provider()
         adapter = BaseToolAdapter(provider=provider)
-        with patch(
-            "starboard_server.tools.adapters.base.logger"
-        ) as mock_logger:
+        with patch("starboard_server.tools.adapters.base.logger") as mock_logger:
             adapter._log_obs_context("list_clusters")
             mock_logger.debug.assert_called_once_with(
                 "list_clusters",
@@ -158,7 +154,10 @@ class TestToolSchemaDecorator:
             """Fetch important data from the service."""
 
         schema = my_tool.__tool_schema__
-        assert schema["function"]["description"] == "Fetch important data from the service."
+        assert (
+            schema["function"]["description"]
+            == "Fetch important data from the service."
+        )
 
     def test_schema_uses_explicit_description(self):
         @tool_schema(description="Custom description override")
@@ -202,7 +201,9 @@ class TestToolSchemaDecorator:
             """A tool."""
 
         schema = my_tool.__tool_schema__
-        assert schema["function"]["parameters"]["properties"]["window_days"]["enum"] == [
+        assert schema["function"]["parameters"]["properties"]["window_days"][
+            "enum"
+        ] == [
             7,
             30,
             90,
@@ -214,7 +215,9 @@ class TestToolSchemaDecorator:
             """A tool."""
 
         schema = my_tool.__tool_schema__
-        assert schema["function"]["parameters"]["properties"]["name"]["type"] == "string"
+        assert (
+            schema["function"]["parameters"]["properties"]["name"]["type"] == "string"
+        )
 
     def test_schema_type_mapping_int(self):
         @tool_schema()
@@ -222,7 +225,9 @@ class TestToolSchemaDecorator:
             """A tool."""
 
         schema = my_tool.__tool_schema__
-        assert schema["function"]["parameters"]["properties"]["count"]["type"] == "integer"
+        assert (
+            schema["function"]["parameters"]["properties"]["count"]["type"] == "integer"
+        )
 
     def test_schema_type_mapping_bool(self):
         @tool_schema()
@@ -230,7 +235,9 @@ class TestToolSchemaDecorator:
             """A tool."""
 
         schema = my_tool.__tool_schema__
-        assert schema["function"]["parameters"]["properties"]["flag"]["type"] == "boolean"
+        assert (
+            schema["function"]["parameters"]["properties"]["flag"]["type"] == "boolean"
+        )
 
     def test_schema_default_value_included(self):
         @tool_schema()
@@ -238,7 +245,10 @@ class TestToolSchemaDecorator:
             """A tool."""
 
         schema = my_tool.__tool_schema__
-        assert schema["function"]["parameters"]["properties"]["window_days"]["default"] == 7
+        assert (
+            schema["function"]["parameters"]["properties"]["window_days"]["default"]
+            == 7
+        )
 
     def test_schema_structure_matches_openai_function_format(self):
         @tool_schema()

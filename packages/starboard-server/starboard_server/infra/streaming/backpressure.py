@@ -31,6 +31,7 @@ _DEFAULT_DROPPABLE_TYPES = frozenset({"progress", "heartbeat", "debug", "status"
 # dropped immediately, but kept for future reference).
 _CRITICAL_PUT_TIMEOUT = 5.0
 
+
 @dataclass
 class BackpressureConfig:
     """Configuration for backpressure behavior."""
@@ -41,6 +42,7 @@ class BackpressureConfig:
     droppable_types: frozenset[str] = field(
         default_factory=lambda: _DEFAULT_DROPPABLE_TYPES
     )
+
 
 class BackpressuredEventStream:
     """SSE event stream with backpressure handling.

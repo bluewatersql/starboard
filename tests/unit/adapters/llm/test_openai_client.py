@@ -928,7 +928,9 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_top_level_properties(self) -> None:
         """Defaults on simple top-level properties are removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+        from starboard_server.adapters.llm.openai.schema_adapter import (
+            make_schema_strict,
+        )
 
         schema = {
             "type": "object",
@@ -948,7 +950,9 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_nested_refs(self) -> None:
         """Defaults inside ``$defs`` that get inlined are also removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+        from starboard_server.adapters.llm.openai.schema_adapter import (
+            make_schema_strict,
+        )
 
         schema = {
             "type": "object",
@@ -972,7 +976,9 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_list_items(self) -> None:
         """Defaults inside array item schemas are removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+        from starboard_server.adapters.llm.openai.schema_adapter import (
+            make_schema_strict,
+        )
 
         schema = {
             "type": "object",
@@ -994,7 +1000,9 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_anyof(self) -> None:
         """Defaults inside anyOf branches are removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import make_schema_strict
+        from starboard_server.adapters.llm.openai.schema_adapter import (
+            make_schema_strict,
+        )
 
         schema = {
             "type": "object",
@@ -1015,7 +1023,9 @@ class TestMakeSchemaStrict:
         prepare_json_schema with all defaults removed."""
         from enum import StrEnum
 
-        from starboard_server.adapters.llm.openai.schema_adapter import prepare_json_schema
+        from starboard_server.adapters.llm.openai.schema_adapter import (
+            prepare_json_schema,
+        )
 
         class Severity(StrEnum):
             LOW = "LOW"
@@ -1042,9 +1052,10 @@ class TestMakeSchemaStrict:
         """Regression: the actual DomainAnalysis and ExecutiveSummaryLLMOutput
         models used in the discovery pipeline emit no defaults after strict
         patching."""
-        from starboard_server.adapters.llm.openai.schema_adapter import prepare_json_schema
-
         from starboard_core.domain.models.discovery.analysis import DomainAnalysis
+        from starboard_server.adapters.llm.openai.schema_adapter import (
+            prepare_json_schema,
+        )
         from starboard_server.discovery.synthesizer import ExecutiveSummaryLLMOutput
 
         for model_cls in (DomainAnalysis, ExecutiveSummaryLLMOutput):

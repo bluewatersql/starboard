@@ -175,12 +175,10 @@ class InMemoryCacheStore:
 
     async def clear(self) -> None:
         """Clear all cached values."""
+        self._cache.clear()
 
     async def close(self) -> None:
         """Release resources (no-op for this store)."""
 
     async def connect(self) -> None:
         """Initialize connection (no-op for this store)."""
-
-
-        self._cache.clear()

@@ -267,9 +267,7 @@ class VectorStoreExporter:
                 if max_items == 0:
                     continue
 
-                task = progress.add_task(
-                    f"Exporting {collection}...", total=max_items
-                )
+                task = progress.add_task(f"Exporting {collection}...", total=max_items)
 
                 stats = self.export_collection(
                     collection=collection,

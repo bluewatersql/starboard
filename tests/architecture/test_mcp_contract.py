@@ -70,9 +70,7 @@ def _find_schema_violations(file_path: Path) -> list[tuple[int, str, str]]:
         params_node = _get_dict_value(value, "parameters")
         if isinstance(params_node, ast.Dict):
             if not params_node.keys:
-                hits.append(
-                    (node.lineno, const_name, "'parameters' is an empty dict")
-                )
+                hits.append((node.lineno, const_name, "'parameters' is an empty dict"))
             elif not _dict_has_key(params_node, "properties"):
                 hits.append(
                     (

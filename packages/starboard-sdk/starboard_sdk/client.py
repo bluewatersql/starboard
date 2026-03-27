@@ -157,7 +157,10 @@ class ConversationSession:
                             if isinstance(event.output, dict)
                             else event.output.to_dict()
                         )
-                    elif isinstance(event, _ServerErrorEvent) and not event.is_recoverable:
+                    elif (
+                        isinstance(event, _ServerErrorEvent)
+                        and not event.is_recoverable
+                    ):
                         agent_error = f"{event.error_type}: {event.error}"
                         logger.warning(
                             "sdk_agent_error_event",
@@ -276,7 +279,9 @@ class ConversationSession:
         """Analyze a Databricks cluster by ID."""
         return await self.ask(f"Analyze cluster {cluster_id}", **kwargs)  # type: ignore[arg-type]
 
-    async def analyze_warehouse(self, warehouse_id: str, **kwargs: object) -> AgentResponse:
+    async def analyze_warehouse(
+        self, warehouse_id: str, **kwargs: object
+    ) -> AgentResponse:
         """Analyze a SQL warehouse by ID."""
         return await self.ask(f"Analyze warehouse {warehouse_id}", **kwargs)  # type: ignore[arg-type]
 
@@ -381,18 +386,24 @@ class StarboardClient:
             raise
         except Exception as exc:
             msg = str(exc)
-            if "token" in msg.lower() or "auth" in msg.lower() or "credential" in msg.lower():
-                raise AuthenticationError(
-                    f"Authentication failed: {msg}"
-                ) from exc
-            if "connect" in msg.lower() or "unreachable" in msg.lower() or "dns" in msg.lower():
-                raise ConnectionError(
-                    f"Could not reach backend: {msg}"
-                ) from exc
+            if (
+                "token" in msg.lower()
+                or "auth" in msg.lower()
+                or "credential" in msg.lower()
+            ):
+                raise AuthenticationError(f"Authentication failed: {msg}") from exc
+            if (
+                "connect" in msg.lower()
+                or "unreachable" in msg.lower()
+                or "dns" in msg.lower()
+            ):
+                raise ConnectionError(f"Could not reach backend: {msg}") from exc
             raise ConfigError(f"Failed to initialize client: {msg}") from exc
 
         resources: tuple[AsyncCloseable, ...] = tuple(
-            r for r in (api, vector_store) if r is not None and isinstance(r, AsyncCloseable)
+            r
+            for r in (api, vector_store)
+            if r is not None and isinstance(r, AsyncCloseable)
         )
 
         return cls(

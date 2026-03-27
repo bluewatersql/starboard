@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+
 class JobService(BaseService):
     """Async service for Databricks job operations.
 

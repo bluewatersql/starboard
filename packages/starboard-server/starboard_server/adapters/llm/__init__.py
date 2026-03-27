@@ -17,6 +17,7 @@ logger = get_logger(__name__)
 
 __all__ = ["BaseLLMClient", "OpenAIProvider", "create_llm_client"]
 
+
 def create_llm_client(cfg: "EnvConfig | None" = None) -> BaseLLMClient:
     """
     Factory function to create the appropriate LLM client based on configuration.

@@ -363,11 +363,17 @@ class TestLoggingSetup:
             with patch("starboard_cli.cli.main.logging.basicConfig"):
                 setup_cli_logging(log_level="INFO")
 
-            suppressed = {
-                call[0][0] for call in mock_get_logger.call_args_list
-            }
-            for name in ("httpx", "httpcore", "openai", "opentelemetry",
-                         "urllib3", "asyncio", "databricks.sdk", "aiosqlite"):
+            suppressed = {call[0][0] for call in mock_get_logger.call_args_list}
+            for name in (
+                "httpx",
+                "httpcore",
+                "openai",
+                "opentelemetry",
+                "urllib3",
+                "asyncio",
+                "databricks.sdk",
+                "aiosqlite",
+            ):
                 assert name in suppressed, f"{name} not suppressed"
 
 

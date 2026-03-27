@@ -233,7 +233,8 @@ class AnalyticsSQLTools(BaseToolAdapter):
             )
             return {
                 "success": False,
-                "error": error_msg, "error_code": "tool_error",
+                "error": error_msg,
+                "error_code": "tool_error",
                 "sql": None,
                 "confidence": 0.0,
                 "missing_context": ["valid_rag_context"],

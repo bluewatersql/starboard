@@ -483,18 +483,35 @@ class SQLiteMemoryStore:
             row = await cursor.fetchone()
 
         if row is None:
-            # Create new profile
+            # Create new profile and persist directly (avoid calling update_profile
+            # which would re-enter get_profile, causing infinite recursion)
             profile = UserProfile(
                 user_id=user_id,
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
             )
-            await self.update_profile(user_id, {})
+            profile_dict = profile.model_dump(mode="json")
+            data_json = json.dumps(profile_dict)
+            await self.conn.execute(
+                """
+                INSERT INTO user_profiles (user_id, data, created_at, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    data = excluded.data,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    user_id,
+                    data_json,
+                    profile_dict["created_at"],
+                    profile_dict["updated_at"],
+                ),
+            )
+            await self.conn.commit()
             return profile
 
         data_json, created_at_str, updated_at_str = row
         data = json.loads(data_json)
-        # UserProfile is a Pydantic model - use model_validate to deserialize
         return UserProfile.model_validate(data)
 
     async def update_profile(
@@ -503,10 +520,16 @@ class SQLiteMemoryStore:
         updates: dict[str, Any],
     ) -> None:
         """Update user profile fields."""
-        # Get existing profile or create new
-        try:
-            profile = await self.get_profile(user_id)
-        except (aiosqlite.Error, ValueError):
+        # Query the DB directly to avoid recursion through get_profile
+        async with self.conn.execute(
+            "SELECT data FROM user_profiles WHERE user_id = ?",
+            (user_id,),
+        ) as cursor:
+            row = await cursor.fetchone()
+
+        if row is not None:
+            profile = UserProfile.model_validate(json.loads(row[0]))
+        else:
             profile = UserProfile(
                 user_id=user_id,
                 created_at=datetime.now(UTC),
@@ -518,7 +541,6 @@ class SQLiteMemoryStore:
         profile_dict.update(updates)
         profile_dict["updated_at"] = datetime.now(UTC).isoformat()
 
-        # Store
         data_json = json.dumps(profile_dict)
 
         await self.conn.execute(

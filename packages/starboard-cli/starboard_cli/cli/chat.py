@@ -65,9 +65,7 @@ async def run_interactive_chat(
     session_info = await session_mgr.get_or_create(session_name)
     conversation_id = session_info.conversation_id
 
-    console.print(
-        "\n[bold blue]━━━ Starboard Interactive Chat ━━━[/bold blue]"
-    )
+    console.print("\n[bold blue]━━━ Starboard Interactive Chat ━━━[/bold blue]")
     console.print(
         f"[dim]Session: {session_info.session_name} | "
         f"Turns: {session_info.turn_count} | "
@@ -137,9 +135,7 @@ async def run_interactive_chat(
             continue
 
         # Update session activity
-        await session_mgr.update_session_activity(
-            session_info.session_name, user_input
-        )
+        await session_mgr.update_session_activity(session_info.session_name, user_input)
         # Refresh local session_info to reflect new turn_count
         session_info = await session_mgr.get_or_create(session_info.session_name)
 
@@ -256,16 +252,11 @@ async def _stream_agent_response(
                 if isinstance(event.output, dict)
                 else event.output.to_dict()
             )
-            if (
-                "complete_report" in output
-                and output["complete_report"]
-            ):
+            if "complete_report" in output and output["complete_report"]:
                 try:
                     from starboard_server.bootstrap import format_agent_report
 
-                    formatted_markdown = format_agent_report(
-                        output["complete_report"]
-                    )
+                    formatted_markdown = format_agent_report(output["complete_report"])
                 except Exception as fmt_err:
                     logger.warning(
                         "report_format_failed",
@@ -274,9 +265,7 @@ async def _stream_agent_response(
                     )
 
         elif isinstance(event, UserInputRequestEvent):
-            console.print(
-                f"\n[yellow]Agent asks: {event.question}[/yellow]"
-            )
+            console.print(f"\n[yellow]Agent asks: {event.question}[/yellow]")
 
         elif isinstance(event, ErrorEvent):
             # Print error to stderr only — the caller will catch the

@@ -125,7 +125,9 @@ class TestContainerShutdownFoundationComponents:
     def config(self):
         from starboard_server.infra.core.config import EnvConfig
 
-        return EnvConfig(environment="test", database_backend="sqlite", offline_mode=True)
+        return EnvConfig(
+            environment="test", database_backend="sqlite", offline_mode=True
+        )
 
     @pytest.mark.asyncio
     async def test_shutdown_closes_reflexion_store(self, config) -> None:
@@ -217,7 +219,14 @@ class TestChatReportFormattingError:
         import ast
         from pathlib import Path
 
-        chat_path = Path(__file__).resolve().parents[6] / "packages" / "starboard-cli" / "starboard_cli" / "cli" / "chat.py"
+        chat_path = (
+            Path(__file__).resolve().parents[6]
+            / "packages"
+            / "starboard-cli"
+            / "starboard_cli"
+            / "cli"
+            / "chat.py"
+        )
         if not chat_path.exists():
             pytest.skip("chat.py not found")
 
@@ -229,9 +238,15 @@ class TestChatReportFormattingError:
         for node in ast.walk(tree):
             if isinstance(node, ast.Try):
                 for child in ast.walk(node):
-                    if isinstance(child, ast.Attribute) and child.attr == "format_agent_report":
+                    if (
+                        isinstance(child, ast.Attribute)
+                        and child.attr == "format_agent_report"
+                    ):
                         found_try_around_format = True
-                    if isinstance(child, ast.Name) and child.id == "format_agent_report":
+                    if (
+                        isinstance(child, ast.Name)
+                        and child.id == "format_agent_report"
+                    ):
                         found_try_around_format = True
 
         assert found_try_around_format, (
@@ -243,7 +258,14 @@ class TestChatReportFormattingError:
         """The except block must call logger.warning with report_format_failed."""
         from pathlib import Path
 
-        chat_path = Path(__file__).resolve().parents[6] / "packages" / "starboard-cli" / "starboard_cli" / "cli" / "chat.py"
+        chat_path = (
+            Path(__file__).resolve().parents[6]
+            / "packages"
+            / "starboard-cli"
+            / "starboard_cli"
+            / "cli"
+            / "chat.py"
+        )
         if not chat_path.exists():
             pytest.skip("chat.py not found")
 
@@ -375,7 +397,9 @@ class TestRetryClassification:
                 )
             return "success"
 
-        result = await service._run_with_retry(raise_429, max_retries=3, retry_delay=0.01)
+        result = await service._run_with_retry(
+            raise_429, max_retries=3, retry_delay=0.01
+        )
         assert result == "success"
         assert call_count == 3
 
@@ -401,7 +425,9 @@ class TestRetryClassification:
                 )
             return "ok"
 
-        result = await service._run_with_retry(raise_503, max_retries=3, retry_delay=0.01)
+        result = await service._run_with_retry(
+            raise_503, max_retries=3, retry_delay=0.01
+        )
         assert result == "ok"
 
     @pytest.mark.asyncio

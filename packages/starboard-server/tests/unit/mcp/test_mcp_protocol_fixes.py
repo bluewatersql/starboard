@@ -77,9 +77,7 @@ class TestRegisterResources:
         uris = [str(r.uri) for r in resources]
         assert "starboard://agents/catalog" in uris
 
-    async def test_health_resource_registered(
-        self, server: StarboardMCPServer
-    ) -> None:
+    async def test_health_resource_registered(self, server: StarboardMCPServer) -> None:
         resources = await server.mcp.list_resources()
         uris = [str(r.uri) for r in resources]
         assert "starboard://health" in uris
@@ -91,9 +89,7 @@ class TestRegisterResources:
         uris = [str(r.uri) for r in resources]
         assert "starboard://tools/dependencies" in uris
 
-    async def test_resources_have_mime_type(
-        self, server: StarboardMCPServer
-    ) -> None:
+    async def test_resources_have_mime_type(self, server: StarboardMCPServer) -> None:
         """Each resource must declare a mimeType."""
         resources = await server.mcp.list_resources()
         for r in resources:
@@ -143,9 +139,7 @@ class TestExecuteToolErrorHandling:
         # Must be parseable JSON and have isError
         assert parsed.get("isError") is True
 
-    async def test_auth_error_returns_json(
-        self, mcp_config: MCPServerConfig
-    ) -> None:
+    async def test_auth_error_returns_json(self, mcp_config: MCPServerConfig) -> None:
         """AuthenticationError must also return isError JSON."""
         from starboard_server.mcp.exceptions import AuthenticationError
 
@@ -185,9 +179,7 @@ class TestInputSchemaRegistration:
         phase_a = {t.name: t for t in tools if t.name != "starboard_ping"}
         assert len(phase_a) > 0, "No Phase A tools registered"
         for name, tool in phase_a.items():
-            assert tool.inputSchema is not None, (
-                f"Tool '{name}' has no inputSchema"
-            )
+            assert tool.inputSchema is not None, f"Tool '{name}' has no inputSchema"
             # Must be a dict-like object with 'type' key
             schema = tool.inputSchema
             assert hasattr(schema, "__getitem__") or hasattr(schema, "model_fields"), (
@@ -218,9 +210,7 @@ class TestInputSchemaRegistration:
 class TestCompositeToolRegistration:
     """Items 4 & 10: Composite tools must be registered in MCP."""
 
-    async def test_get_job_summary_registered(
-        self, server: StarboardMCPServer
-    ) -> None:
+    async def test_get_job_summary_registered(self, server: StarboardMCPServer) -> None:
         tools = await server.mcp.list_tools()
         names = {t.name for t in tools}
         assert "get_job_summary" in names, (
@@ -351,7 +341,8 @@ class TestMissingAuthExplicitFail:
         )
         error_text = str(parsed)
         assert any(
-            kw in error_text.lower() for kw in ("auth", "credential", "token", "authentication")
+            kw in error_text.lower()
+            for kw in ("auth", "credential", "token", "authentication")
         ), f"Expected auth-related error message, got: {error_text}"
 
 

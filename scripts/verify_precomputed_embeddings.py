@@ -46,7 +46,9 @@ async def main():
         console.print("[red]✗ No embeddings loaded![/red]")
         return 1
 
-    console.print("\n[bold green]✓ Precomputed embeddings are valid OpenAI embeddings![/bold green]")
+    console.print(
+        "\n[bold green]✓ Precomputed embeddings are valid OpenAI embeddings![/bold green]"
+    )
     console.print(
         "\n[yellow]Note:[/yellow] Search tests with MockEmbeddingProvider will return 0 results "
         "because mock embeddings are in a different vector space than real OpenAI embeddings."

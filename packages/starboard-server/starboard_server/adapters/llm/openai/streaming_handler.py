@@ -239,7 +239,9 @@ def yield_error_event(error: Exception) -> dict[str, Any]:
             "error_type": "APIError",
             "error_message": str(error),
         }
-    elif isinstance(error, (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout)):
+    elif isinstance(
+        error, (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout)
+    ):
         return {
             "type": "error",
             "error_type": type(error).__name__,

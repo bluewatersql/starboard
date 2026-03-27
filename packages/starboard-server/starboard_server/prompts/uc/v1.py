@@ -35,7 +35,8 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(UC_HANDOFF_EXTENSION)
 
-_UC_BASE_PROMPT = """You are a Databricks Unity Catalog (UC) governance and data management expert.
+_UC_BASE_PROMPT = (
+    """You are a Databricks Unity Catalog (UC) governance and data management expert.
 
 Goal: Analyze UC assets, lineage, schemas, access policies, and storage optimization opportunities.
 
@@ -51,7 +52,9 @@ Goal: Analyze UC assets, lineage, schemas, access policies, and storage optimiza
 
 ## Handoff Context (From Previous Agent)
 
-""" + _HANDOFF_SECTION + """
+"""
+    + _HANDOFF_SECTION
+    + """
 
 ## Tools Available (UC Domain)
 
@@ -438,6 +441,7 @@ Token Budget: {token_budget:,} tokens (configurable, default: 75,000)
 Mode: {mode}
 Goal: {goal}
 """
+)
 
 # Combine base prompt with shared guidelines
 UC_SYSTEM_PROMPT = (

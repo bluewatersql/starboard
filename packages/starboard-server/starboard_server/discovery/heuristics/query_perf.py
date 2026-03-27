@@ -128,7 +128,7 @@ class QPF003RepeatedQueryRate:
         dup_sum = dup_rows["execution_count"].sum()
         if dup_sum is None:
             dup_sum = 0
-        ratio = dup_sum / total
+        ratio = float(dup_sum) / float(total)
         if ratio <= 0.2:
             return []
         return [
@@ -172,12 +172,10 @@ class QPF004LowCacheHitRate:
             if total_weight is not None and total_weight > 0:
                 weighted_sum = (df["cache_hit_pct"] * df["execution_count"]).sum()
                 if weighted_sum is not None:
-                    avg = float(weighted_sum / total_weight)
+                    avg = float(weighted_sum) / float(total_weight)
                 else:
                     mean_raw = df["cache_hit_pct"].mean()
-                    avg = (
-                        float(cast(Any, mean_raw)) if mean_raw is not None else 0.0
-                    )
+                    avg = float(cast(Any, mean_raw)) if mean_raw is not None else 0.0
             else:
                 mean_raw = df["cache_hit_pct"].mean()
                 avg = float(cast(Any, mean_raw)) if mean_raw is not None else 0.0

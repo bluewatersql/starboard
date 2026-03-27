@@ -102,7 +102,10 @@ class WarehouseTools(BaseToolAdapter):
             >>> for wh in portfolio["warehouses"][:3]:
             ...     print(f"  {wh['warehouse_name']}: {wh['health_status']}")
         """
-        self._log_obs_context("get_warehouse_portfolio", {"window_days": window_days, "include_inactive": include_inactive})
+        self._log_obs_context(
+            "get_warehouse_portfolio",
+            {"window_days": window_days, "include_inactive": include_inactive},
+        )
         return await self.service.get_portfolio(
             window_days=window_days,
             include_inactive=include_inactive,
@@ -155,7 +158,10 @@ class WarehouseTools(BaseToolAdapter):
             >>> print(f"Pattern: {fp['workload_pattern']['pattern_type']}")
             >>> print(f"P95 latency: {fp['p95_runtime_sec']:.1f}s")
         """
-        self._log_obs_context("get_warehouse_fingerprint", {"warehouse_id": warehouse_id, "window_days": window_days})
+        self._log_obs_context(
+            "get_warehouse_fingerprint",
+            {"warehouse_id": warehouse_id, "window_days": window_days},
+        )
         fingerprint = await self.service.get_fingerprint(
             warehouse_id=warehouse_id,
             window_days=window_days,
@@ -257,7 +263,10 @@ class WarehouseTools(BaseToolAdapter):
             ...     for action in health["immediate_actions"]:
             ...         print(f"ACTION: {action}")
         """
-        self._log_obs_context("get_warehouse_health", {"warehouse_id": warehouse_id, "window_days": window_days})
+        self._log_obs_context(
+            "get_warehouse_health",
+            {"warehouse_id": warehouse_id, "window_days": window_days},
+        )
         health = await self.service.get_health(
             warehouse_id=warehouse_id,
             window_days=window_days,
@@ -360,7 +369,10 @@ class WarehouseTools(BaseToolAdapter):
             ...     p95_latency_target_sec=8.0
             ... )
         """
-        self._log_obs_context("configure_warehouse_slo", {"warehouse_id": warehouse_id, "slo_profile": slo_profile})
+        self._log_obs_context(
+            "configure_warehouse_slo",
+            {"warehouse_id": warehouse_id, "slo_profile": slo_profile},
+        )
         config = await self.service.configure_slo(
             warehouse_id=warehouse_id,
             slo_profile=slo_profile,
@@ -424,7 +436,10 @@ class WarehouseTools(BaseToolAdapter):
             >>> for user in activity["users"][:5]:
             ...     print(f"{user['user_name']}: {user['total_queries']} queries")
         """
-        self._log_obs_context("get_warehouse_user_activity", {"warehouse_id": warehouse_id, "window_days": window_days})
+        self._log_obs_context(
+            "get_warehouse_user_activity",
+            {"warehouse_id": warehouse_id, "window_days": window_days},
+        )
         return await self.service.get_user_activity(
             warehouse_id=warehouse_id,
             window_days=window_days,
@@ -491,7 +506,10 @@ class WarehouseTools(BaseToolAdapter):
             >>> for alloc in cb["allocations"][:3]:
             ...     print(f"{alloc['user_name']}: ${alloc['allocated_cost_usd']:.2f} ({alloc['usage_pct']:.1f}%)")
         """
-        self._log_obs_context("generate_warehouse_chargeback", {"warehouse_id": warehouse_id, "total_cost_usd": total_cost_usd})
+        self._log_obs_context(
+            "generate_warehouse_chargeback",
+            {"warehouse_id": warehouse_id, "total_cost_usd": total_cost_usd},
+        )
         chargeback = await self.service.get_chargeback(
             warehouse_id=warehouse_id,
             total_cost_usd=total_cost_usd,
@@ -558,7 +576,10 @@ class WarehouseTools(BaseToolAdapter):
             >>> for user in cb["user_summary"][:5]:
             ...     print(f"{user['user_name']}: ${user['allocated_cost_usd']:.2f}")
         """
-        self._log_obs_context("generate_portfolio_chargeback", {"window_days": window_days, "allocation_method": allocation_method})
+        self._log_obs_context(
+            "generate_portfolio_chargeback",
+            {"window_days": window_days, "allocation_method": allocation_method},
+        )
         return await self.service.get_portfolio_chargeback(
             window_days=window_days,
             allocation_method=allocation_method,
@@ -601,7 +622,9 @@ class WarehouseTools(BaseToolAdapter):
             ...     if insight["severity"] == "warning":
             ...         print(f"ACTION: {insight['recommendation']}")
         """
-        self._log_obs_context("analyze_warehouse_topology", {"window_days": window_days})
+        self._log_obs_context(
+            "analyze_warehouse_topology", {"window_days": window_days}
+        )
         return await self.service.analyze_topology(window_days=window_days)
 
     # =========================================================================
@@ -611,9 +634,7 @@ class WarehouseTools(BaseToolAdapter):
     @tool_schema(
         description="Get configuration for a SQL warehouse.",
         properties_override={
-            "warehouse_id": {
-                "description": "Warehouse ID to fetch configuration for."
-            },
+            "warehouse_id": {"description": "Warehouse ID to fetch configuration for."},
         },
     )
     async def get_warehouse_config(
@@ -667,9 +688,7 @@ class WarehouseTools(BaseToolAdapter):
     @tool_schema(
         description="Get query history metrics for a SQL warehouse.",
         properties_override={
-            "warehouse_id": {
-                "description": "Warehouse ID to fetch metrics for."
-            },
+            "warehouse_id": {"description": "Warehouse ID to fetch metrics for."},
         },
     )
     async def get_warehouse_metrics(
@@ -718,9 +737,7 @@ class WarehouseTools(BaseToolAdapter):
     @tool_schema(
         description="Get execution statistics for a query statement.",
         properties_override={
-            "statement_id": {
-                "description": "Statement ID to fetch metrics for."
-            },
+            "statement_id": {"description": "Statement ID to fetch metrics for."},
         },
     )
     async def get_query_runtime_metrics(
@@ -741,7 +758,9 @@ class WarehouseTools(BaseToolAdapter):
             >>> if metrics["found"]:
             ...     print(metrics["metrics"])
         """
-        self._log_obs_context("get_query_runtime_metrics", {"statement_id": statement_id})
+        self._log_obs_context(
+            "get_query_runtime_metrics", {"statement_id": statement_id}
+        )
 
         if self.provider is None:
             return {

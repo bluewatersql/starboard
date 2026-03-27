@@ -58,12 +58,7 @@ def _has_stdlib_logging_import(file_path: Path) -> list[str]:
 @pytest.mark.unit
 def test_no_stdlib_logging_in_server_package(project_root: Path) -> None:
     """starboard_server must not use stdlib logging — use structlog instead."""
-    server_root = (
-        project_root
-        / "packages"
-        / "starboard-server"
-        / "starboard_server"
-    )
+    server_root = project_root / "packages" / "starboard-server" / "starboard_server"
     if not server_root.exists():
         pytest.skip(f"server package not found: {server_root}")
 

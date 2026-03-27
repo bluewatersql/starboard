@@ -221,7 +221,9 @@ class ArtifactExplorer:
             ExplorationStrategy.EXPAND_WINDOW: self._explore_expand_window,
             ExplorationStrategy.SUMMARIZE: self._explore_summarize,
             ExplorationStrategy.CORRELATE: self._explore_correlate,
-            ExplorationStrategy.SYNTHESIZE: lambda _text: self._explore_not_implemented(ExplorationStrategy.SYNTHESIZE),
+            ExplorationStrategy.SYNTHESIZE: lambda _text: self._explore_not_implemented(
+                ExplorationStrategy.SYNTHESIZE
+            ),
             ExplorationStrategy.FETCH_RUN_OUTPUT: self._explore_fetch_run_output,
             ExplorationStrategy.FETCH_CLUSTER_EVENTS: self._explore_fetch_cluster_events,
             ExplorationStrategy.FETCH_QUERY_HISTORY: self._explore_fetch_query_history,

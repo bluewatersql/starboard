@@ -473,9 +473,13 @@ class IntentRouter:
         current_user: str | None = None
 
         for msg in conversation_history:
-            role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
+            role = (
+                msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
+            )
             content = (
-                msg.get("content") if isinstance(msg, dict) else getattr(msg, "content", None)
+                msg.get("content")
+                if isinstance(msg, dict)
+                else getattr(msg, "content", None)
             )
             if not content:
                 continue

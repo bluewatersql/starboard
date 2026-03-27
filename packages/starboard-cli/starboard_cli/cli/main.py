@@ -1420,7 +1420,9 @@ async def async_main(args: argparse.Namespace) -> None:
 
         # Create agent manager
         if not args.quiet:
-            err_console.print("\n[bold blue]Initializing Starboard Agent...[/bold blue]")
+            err_console.print(
+                "\n[bold blue]Initializing Starboard Agent...[/bold blue]"
+            )
 
         try:
             manager, _api, _vector_store = await create_agent_manager(
@@ -1429,7 +1431,9 @@ async def async_main(args: argparse.Namespace) -> None:
         except Exception as e:
             err_console.print(f"[bold red]Failed to initialize agent:[/bold red] {e}")
             logger.exception("agent_initialization_failed")
-            sys.exit(CONNECTION_ERROR)  # finally block below will still close any partial resources
+            sys.exit(
+                CONNECTION_ERROR
+            )  # finally block below will still close any partial resources
 
         if not args.quiet:
             err_console.print(
@@ -1553,7 +1557,9 @@ async def async_main(args: argparse.Namespace) -> None:
                 err_console.print("=" * 70 + "\n")
 
                 # Display summary metrics
-                err_console.print(f"Steps taken: {final_output.get('steps_taken', 'N/A')}")
+                err_console.print(
+                    f"Steps taken: {final_output.get('steps_taken', 'N/A')}"
+                )
                 err_console.print(
                     f"Tools used: {', '.join(final_output.get('tools_used', [])) if final_output.get('tools_used') else 'N/A'}"
                 )

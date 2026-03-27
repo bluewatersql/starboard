@@ -40,17 +40,79 @@ _WORKSPACE_PACKAGES = {
 
 # Known stdlib top-level modules — these need no declared dependency
 _STDLIB_MODULES = {
-    "abc", "ast", "asyncio", "base64", "builtins", "collections", "concurrent",
-    "contextlib", "copy", "dataclasses", "datetime", "decimal", "difflib",
-    "email", "enum", "fnmatch", "functools", "gc", "glob", "gzip", "hashlib",
-    "hmac", "html", "http", "importlib", "inspect", "io", "itertools", "json",
-    "logging", "math", "mimetypes", "os", "pathlib", "pickle", "platform",
-    "pprint", "queue", "random", "re", "shutil", "signal", "socket", "sqlite3",
-    "ssl", "stat", "string", "struct", "subprocess", "sys", "tempfile",
-    "textwrap", "threading", "time", "traceback", "types", "typing",
-    "unittest", "urllib", "uuid", "warnings", "weakref", "xml", "zipfile",
-    "__future__", "tomllib", "tomlib",
-    "argparse", "atexit", "contextvars", "statistics", "unicodedata", "zoneinfo",
+    "abc",
+    "ast",
+    "asyncio",
+    "base64",
+    "builtins",
+    "collections",
+    "concurrent",
+    "contextlib",
+    "copy",
+    "dataclasses",
+    "datetime",
+    "decimal",
+    "difflib",
+    "email",
+    "enum",
+    "fnmatch",
+    "functools",
+    "gc",
+    "glob",
+    "gzip",
+    "hashlib",
+    "hmac",
+    "html",
+    "http",
+    "importlib",
+    "inspect",
+    "io",
+    "itertools",
+    "json",
+    "logging",
+    "math",
+    "mimetypes",
+    "os",
+    "pathlib",
+    "pickle",
+    "platform",
+    "pprint",
+    "queue",
+    "random",
+    "re",
+    "shutil",
+    "signal",
+    "socket",
+    "sqlite3",
+    "ssl",
+    "stat",
+    "string",
+    "struct",
+    "subprocess",
+    "sys",
+    "tempfile",
+    "textwrap",
+    "threading",
+    "time",
+    "traceback",
+    "types",
+    "typing",
+    "unittest",
+    "urllib",
+    "uuid",
+    "warnings",
+    "weakref",
+    "xml",
+    "zipfile",
+    "__future__",
+    "tomllib",
+    "tomlib",
+    "argparse",
+    "atexit",
+    "contextvars",
+    "statistics",
+    "unicodedata",
+    "zoneinfo",
 }
 
 # Manual overrides: dist-name -> import-name when the mapping is non-obvious
@@ -110,17 +172,17 @@ _DIST_TO_IMPORT: dict[str, str] = {
 
 # Dependencies that are used indirectly (not via Python import)
 _INDIRECT_DEPENDENCIES = {
-    "asyncpg",        # Used via SQLAlchemy async engine
-    "multipart",      # Required by FastAPI for form parsing
-    "pgvector",       # Used via SQL extension, not Python import
-    "sqlite_vec",     # Loaded as SQLite extension, not imported
-    "rich",           # Used by CLI (server declares for downstream consumers)
-    "dotenv",         # Used by CLI (server declares for downstream consumers)
+    "asyncpg",  # Used via SQLAlchemy async engine
+    "multipart",  # Required by FastAPI for form parsing
+    "pgvector",  # Used via SQL extension, not Python import
+    "sqlite_vec",  # Loaded as SQLite extension, not imported
+    "rich",  # Used by CLI (server declares for downstream consumers)
+    "dotenv",  # Used by CLI (server declares for downstream consumers)
 }
 
 # Transitive dependencies that are technically undeclared but come from declared deps
 _KNOWN_TRANSITIVES = {
-    "starlette",      # Transitive via fastapi
+    "starlette",  # Transitive via fastapi
 }
 
 # Dependencies declared in optional extras, actively used
@@ -189,19 +251,22 @@ def _check_package(
     actual_imports = _collect_top_level_imports(source_dir)
     # Remove stdlib, workspace packages, and private/relative imports
     third_party = {
-        m for m in actual_imports
+        m
+        for m in actual_imports
         if m not in _STDLIB_MODULES
         and m not in _WORKSPACE_PACKAGES
         and not m.startswith("_")
     }
 
     undeclared = sorted(
-        third_party - declared_imports - _WORKSPACE_PACKAGES
-        - _KNOWN_TRANSITIVES - _OPTIONAL_DEPENDENCIES
+        third_party
+        - declared_imports
+        - _WORKSPACE_PACKAGES
+        - _KNOWN_TRANSITIVES
+        - _OPTIONAL_DEPENDENCIES
     )
     unused = sorted(
-        declared_imports - third_party - _WORKSPACE_PACKAGES
-        - _INDIRECT_DEPENDENCIES
+        declared_imports - third_party - _WORKSPACE_PACKAGES - _INDIRECT_DEPENDENCIES
     )
     return undeclared, unused
 
@@ -243,13 +308,11 @@ def test_cli_package_dependency_hygiene(project_root: Path) -> None:
     messages: list[str] = []
     if undeclared:
         messages.append(
-            "  Undeclared imports:\n"
-            + "\n".join(f"    - {m}" for m in undeclared)
+            "  Undeclared imports:\n" + "\n".join(f"    - {m}" for m in undeclared)
         )
     if unused:
         messages.append(
-            "  Unused dependencies:\n"
-            + "\n".join(f"    - {m}" for m in unused)
+            "  Unused dependencies:\n" + "\n".join(f"    - {m}" for m in unused)
         )
 
     assert not messages, (
@@ -269,13 +332,11 @@ def test_sdk_package_dependency_hygiene(project_root: Path) -> None:
     messages: list[str] = []
     if undeclared:
         messages.append(
-            "  Undeclared imports:\n"
-            + "\n".join(f"    - {m}" for m in undeclared)
+            "  Undeclared imports:\n" + "\n".join(f"    - {m}" for m in undeclared)
         )
     if unused:
         messages.append(
-            "  Unused dependencies:\n"
-            + "\n".join(f"    - {m}" for m in unused)
+            "  Unused dependencies:\n" + "\n".join(f"    - {m}" for m in unused)
         )
 
     assert not messages, (

@@ -81,14 +81,24 @@ class OpenAIProvider(BaseLLMClient):
 
     # Pricing tables (kept on class for backward compat)
     _INPUT_PRICE_PER_1K = {
-        "gpt-4o": 0.0025, "gpt-4o-mini": 0.00015, "gpt-4-turbo": 0.01,
-        "gpt-4": 0.03, "gpt-3.5-turbo": 0.0005, "gpt-5": 0.015,
-        "o1": 0.015, "o3": 0.01,
+        "gpt-4o": 0.0025,
+        "gpt-4o-mini": 0.00015,
+        "gpt-4-turbo": 0.01,
+        "gpt-4": 0.03,
+        "gpt-3.5-turbo": 0.0005,
+        "gpt-5": 0.015,
+        "o1": 0.015,
+        "o3": 0.01,
     }
     _OUTPUT_PRICE_PER_1K = {
-        "gpt-4o": 0.01, "gpt-4o-mini": 0.0006, "gpt-4-turbo": 0.03,
-        "gpt-4": 0.06, "gpt-3.5-turbo": 0.0015, "gpt-5": 0.06,
-        "o1": 0.06, "o3": 0.04,
+        "gpt-4o": 0.01,
+        "gpt-4o-mini": 0.0006,
+        "gpt-4-turbo": 0.03,
+        "gpt-4": 0.06,
+        "gpt-3.5-turbo": 0.0015,
+        "gpt-5": 0.06,
+        "o1": 0.06,
+        "o3": 0.04,
     }
     _DEFAULT_INPUT_PRICE_PER_1K: float = 0.01
     _DEFAULT_OUTPUT_PRICE_PER_1K: float = 0.03
@@ -1095,7 +1105,9 @@ class OpenAIProvider(BaseLLMClient):
                     }
 
                 usage_data = build_streaming_usage(
-                    stream, messages, total_tokens_estimate,
+                    stream,
+                    messages,
+                    total_tokens_estimate,
                     self.__collect_token_usage,
                 )
 

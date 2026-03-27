@@ -67,9 +67,7 @@ def test_all_stores_implement_state_store_protocol(project_root: Path) -> None:
         missing = REQUIRED_METHODS - defined_methods
         if missing:
             rel = file_path.relative_to(project_root)
-            violations.append(
-                f"{rel}::{class_name} missing methods: {sorted(missing)}"
-            )
+            violations.append(f"{rel}::{class_name} missing methods: {sorted(missing)}")
 
     assert not violations, (
         f"GUIDELINE-001: {len(violations)} Store class(es) do not implement the "

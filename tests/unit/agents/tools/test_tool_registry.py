@@ -324,7 +324,12 @@ class TestCoerceKwargsToSchema:
     }
 
     def test_already_correct_types_unchanged(self):
-        kwargs = {"query": "hello", "limit": 10, "threshold": 0.5, "include_details": True}
+        kwargs = {
+            "query": "hello",
+            "limit": 10,
+            "threshold": 0.5,
+            "include_details": True,
+        }
         result = _coerce_kwargs_to_schema(kwargs, self.SCHEMA)
         assert result == kwargs
 

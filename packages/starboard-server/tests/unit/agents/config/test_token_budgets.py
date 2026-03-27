@@ -98,6 +98,7 @@ class TestTokenBudgetWarningThresholds:
         budget_warnings = [
             log
             for log in logs
-            if "budget_warning" in log.get("event", "") or "budget_exhausted" in log.get("event", "")
+            if "budget_warning" in log.get("event", "")
+            or "budget_exhausted" in log.get("event", "")
         ]
         assert len(budget_warnings) == 0

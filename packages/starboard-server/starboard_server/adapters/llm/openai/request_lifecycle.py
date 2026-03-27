@@ -258,9 +258,7 @@ def normalize_usage(usage: Any) -> dict[str, int]:
         )
 
     prompt_tokens = int(prompt_tokens) if prompt_tokens is not None else 0
-    completion_tokens = (
-        int(completion_tokens) if completion_tokens is not None else 0
-    )
+    completion_tokens = int(completion_tokens) if completion_tokens is not None else 0
 
     total_tokens = (
         usage_dict.get("total_tokens")
@@ -296,9 +294,7 @@ def handle_api_error(
             "llm_rate_limit", trace_id=trace_id, phase=phase, error=str(error)
         )
     elif isinstance(error, APITimeoutError):
-        logger.warning(
-            "llm_timeout", trace_id=trace_id, phase=phase, error=str(error)
-        )
+        logger.warning("llm_timeout", trace_id=trace_id, phase=phase, error=str(error))
     elif isinstance(error, APIError):
         logger.error(
             "llm_api_error",

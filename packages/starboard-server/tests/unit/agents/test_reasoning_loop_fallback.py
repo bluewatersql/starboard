@@ -124,7 +124,9 @@ class TestReasoningLoopFallbackReport:
     @pytest.mark.asyncio
     async def test_fallback_when_max_steps_reached_without_complete(self):
         """Agent hits max_steps without calling complete → fallback report."""
-        tool_result_content = '{"found": "3 slow queries", "details": "query analysis results"}'
+        tool_result_content = (
+            '{"found": "3 slow queries", "details": "query analysis results"}'
+        )
         messages = [
             Message(role="system", content="You are an agent"),
             Message(role="user", content="Analyze my queries"),

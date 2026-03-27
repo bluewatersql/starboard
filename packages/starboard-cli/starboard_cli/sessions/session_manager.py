@@ -253,7 +253,9 @@ class SessionManager:
 
         conversation_id = str(row[0])
         await self._conversation_repo.delete(conversation_id)
-        await conn.execute("DELETE FROM cli_sessions WHERE session_name = ?", (session_name,))
+        await conn.execute(
+            "DELETE FROM cli_sessions WHERE session_name = ?", (session_name,)
+        )
         await conn.commit()
 
         logger.debug("session_deleted", session_name=session_name)

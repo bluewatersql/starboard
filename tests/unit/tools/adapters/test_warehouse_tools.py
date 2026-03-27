@@ -394,9 +394,7 @@ class TestToolSchemas:
     def test_portfolio_schema(self, schemas: list) -> None:
         """Portfolio schema is correct."""
         schema = next(
-            s
-            for s in schemas
-            if s["function"]["name"] == "get_warehouse_portfolio"
+            s for s in schemas if s["function"]["name"] == "get_warehouse_portfolio"
         )
         params = schema["function"]["parameters"]
         assert "window_days" in params["properties"]
@@ -405,27 +403,21 @@ class TestToolSchemas:
     def test_fingerprint_schema_requires_warehouse_id(self, schemas: list) -> None:
         """Fingerprint schema requires warehouse_id."""
         schema = next(
-            s
-            for s in schemas
-            if s["function"]["name"] == "get_warehouse_fingerprint"
+            s for s in schemas if s["function"]["name"] == "get_warehouse_fingerprint"
         )
         assert "warehouse_id" in schema["function"]["parameters"]["required"]
 
     def test_health_schema_requires_warehouse_id(self, schemas: list) -> None:
         """Health schema requires warehouse_id."""
         schema = next(
-            s
-            for s in schemas
-            if s["function"]["name"] == "get_warehouse_health"
+            s for s in schemas if s["function"]["name"] == "get_warehouse_health"
         )
         assert "warehouse_id" in schema["function"]["parameters"]["required"]
 
     def test_slo_schema_requires_warehouse_id(self, schemas: list) -> None:
         """SLO schema requires warehouse_id."""
         schema = next(
-            s
-            for s in schemas
-            if s["function"]["name"] == "configure_warehouse_slo"
+            s for s in schemas if s["function"]["name"] == "configure_warehouse_slo"
         )
         assert "warehouse_id" in schema["function"]["parameters"]["required"]
 

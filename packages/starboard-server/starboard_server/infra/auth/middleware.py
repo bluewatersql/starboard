@@ -97,7 +97,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # Skip authentication for excluded paths — use prefix match so that
         # sub-paths (e.g. /health/live/detail) are also excluded.
         path = request.url.path
-        if any(path == excluded or path.startswith(excluded + "/") for excluded in self.exclude_paths):
+        if any(
+            path == excluded or path.startswith(excluded + "/")
+            for excluded in self.exclude_paths
+        ):
             logger.debug(
                 "auth_skipped_excluded_path",
                 path=path,

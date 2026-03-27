@@ -33,7 +33,7 @@ class TestClusterType:
 
     def test_string_behavior(self) -> None:
         """Test enum is string-compatible."""
-        assert str(ClusterType.ALL_PURPOSE) == "ClusterType.ALL_PURPOSE"
+        assert str(ClusterType.ALL_PURPOSE) == "ALL_PURPOSE"
         assert ClusterType.ALL_PURPOSE == "ALL_PURPOSE"
 
 

@@ -951,7 +951,13 @@ def analyze_dataframe(
     if statement_column not in df.columns:
         raise ValueError(f"Column '{statement_column}' not found in DataFrame")
 
-    statements = df.select(pl.col(statement_column)).to_series().drop_nulls().cast(pl.Utf8).to_list()
+    statements = (
+        df.select(pl.col(statement_column))
+        .to_series()
+        .drop_nulls()
+        .cast(pl.Utf8)
+        .to_list()
+    )
     if not statements:
         return AnalysisResult(
             success_count=0,

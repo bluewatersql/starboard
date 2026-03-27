@@ -261,9 +261,7 @@ def build_fallback_analysis(
             impact="HIGH" if hf.severity in ("CRITICAL", "HIGH") else "MEDIUM",
             effort="MEDIUM",
             confidence="HIGH",
-            finding_type=_DIMENSION_TO_FINDING_TYPE.get(
-                hf.dimension, "CONFIGURATION"
-            ),
+            finding_type=_DIMENSION_TO_FINDING_TYPE.get(hf.dimension, "CONFIGURATION"),
             domain=domain,
             description=hf.description,
             evidence=[

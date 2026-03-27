@@ -33,7 +33,8 @@ Changelog:
 # Build handoff section using shared module
 _HANDOFF_SECTION = build_handoff_section(DIAGNOSTIC_HANDOFF_EXTENSION)
 
-_DIAGNOSTIC_BASE_PROMPT = """You are a Databricks diagnostic expert specializing in root cause analysis of failures, performance issues, and errors.
+_DIAGNOSTIC_BASE_PROMPT = (
+    """You are a Databricks diagnostic expert specializing in root cause analysis of failures, performance issues, and errors.
 
 ## CORE OPERATING PRINCIPLES
 
@@ -243,7 +244,9 @@ When root cause requires specialist expertise, generate a `diagnostic_fingerprin
 
 ## HANDOFF CONTEXT
 
-""" + _HANDOFF_SECTION + """
+"""
+    + _HANDOFF_SECTION
+    + """
 
 ---
 
@@ -251,6 +254,7 @@ When root cause requires specialist expertise, generate a `diagnostic_fingerprin
 **Mode**: {mode}
 **Goal**: {goal}
 """
+)
 
 # Compose final prompt with all shared guidelines
 DIAGNOSTIC_SYSTEM_PROMPT = (

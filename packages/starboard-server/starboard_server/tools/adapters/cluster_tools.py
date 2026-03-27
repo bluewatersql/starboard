@@ -104,6 +104,9 @@ class ClusterTools(BaseToolAdapter):
             },
         )
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         # Query cluster list via provider
         all_clusters = await self.provider.get("cluster_list", "all")
 
@@ -216,6 +219,9 @@ class ClusterTools(BaseToolAdapter):
         """
         logger.debug("Fetching configuration for cluster: {cluster_id}")
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         config = await get_transformed(
             self.provider,
             "cluster_config",
@@ -249,6 +255,9 @@ class ClusterTools(BaseToolAdapter):
             ...     print(f"Found {len(events['events']['events'])} events")
         """
         logger.debug("Fetching events for cluster: {cluster_id}")
+
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
 
         events = await get_transformed(
             self.provider,
@@ -286,6 +295,9 @@ class ClusterTools(BaseToolAdapter):
             ...     print(f"CPU: {metrics['metrics']['cpu_utilization']}%")
         """
         logger.debug("Fetching metrics for cluster: {cluster_id}")
+
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
 
         metrics_list = await analyze_cluster_metrics(self.provider, [cluster_id])
 
@@ -329,6 +341,9 @@ class ClusterTools(BaseToolAdapter):
             ...         print(f"  - {risk['title']}")
         """
         logger.debug("Analyzing health for cluster: {cluster_id}")
+
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
 
         # Get cluster configuration (required)
         config = await get_transformed(
@@ -471,6 +486,9 @@ class ClusterTools(BaseToolAdapter):
         """
         logger.debug("Fetching Spark logs for cluster: {cluster_id}")
 
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
+
         # Get cluster config to find log destination
         config = await get_transformed(
             self.provider,
@@ -501,7 +519,9 @@ class ClusterTools(BaseToolAdapter):
             ).to_dict()
 
         # Fetch logs
-        logs = analyze_spark_logs(cluster_id, log_destination, raw=fmt == OutputFormat.RAW)
+        logs = analyze_spark_logs(
+            cluster_id, log_destination, raw=fmt == OutputFormat.RAW
+        )
 
         if logs is None:
             logger.debug("Spark logs not found for cluster: {cluster_id}")
@@ -536,6 +556,9 @@ class ClusterTools(BaseToolAdapter):
             - Multiple runs: {"runs": [...], "total_runs": N}
         """
         max_runs = min(max_runs, 5)  # Cap at 5
+
+        if self.provider is None:
+            raise RuntimeError("SharedContextProvider not initialized")
 
         # Fetch job metadata to get cluster IDs
         job_metadata = await get_job_metadata(
@@ -585,6 +608,9 @@ class ClusterTools(BaseToolAdapter):
             Spark logs dict if available, None otherwise.
         """
         try:
+            if self.provider is None:
+                raise RuntimeError("SharedContextProvider not initialized")
+
             config = await get_transformed(
                 self.provider,
                 "cluster_config",
@@ -602,7 +628,9 @@ class ClusterTools(BaseToolAdapter):
             if not log_destination:
                 return None
 
-            return analyze_spark_logs(cluster_id, log_destination, raw=fmt == OutputFormat.RAW)
+            return analyze_spark_logs(
+                cluster_id, log_destination, raw=fmt == OutputFormat.RAW
+            )
         except (ToolError, AdapterError, ValueError):
             logger.debug("Error fetching logs for cluster {cluster_id}: {e}")
             return None

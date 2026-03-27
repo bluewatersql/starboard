@@ -80,9 +80,7 @@ async def test_user_input_not_in_system_message() -> None:
 
     assert client.captured_messages, "LLM was not called"
 
-    system_messages = [
-        m for m in client.captured_messages if m.get("role") == "system"
-    ]
+    system_messages = [m for m in client.captured_messages if m.get("role") == "system"]
 
     for msg in system_messages:
         content = msg.get("content", "")
@@ -102,9 +100,7 @@ async def test_system_message_instructs_classify_only() -> None:
 
     assert client.captured_messages, "LLM was not called"
 
-    system_messages = [
-        m for m in client.captured_messages if m.get("role") == "system"
-    ]
+    system_messages = [m for m in client.captured_messages if m.get("role") == "system"]
     assert system_messages, "No system-role message found in LLM classification call"
 
     system_content = " ".join(m.get("content", "") for m in system_messages).lower()

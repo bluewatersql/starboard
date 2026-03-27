@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+
 class BaseLLMClient(ABC):
     """Abstract base class for LLM client implementations."""
 

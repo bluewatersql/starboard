@@ -361,6 +361,7 @@ class TestConversationOwnershipVerification:
 
         async def run():
             from starboard_core.domain.models.feedback import FeedbackRating
+
             with pytest.raises((ValueError, PermissionError, Exception)):
                 await service.submit_feedback(
                     conversation_id="other_user_conv",
@@ -390,6 +391,7 @@ class TestAuthMiddlewarePathMatching:
             async def get_current_user(self, request):
                 call_count["n"] += 1
                 from starboard_core.domain.models.auth import User
+
                 return User(id="u1", username="u1", email="u1@x.com")
 
             async def validate_token(self, token):
@@ -422,7 +424,9 @@ class TestAuthMiddlewarePathMatching:
         call_count["n"] = 0
         response = client.get("/health/live/detail")
         assert response.status_code == 200
-        assert call_count["n"] == 0, "Auth should not be called for prefix of excluded path"
+        assert call_count["n"] == 0, (
+            "Auth should not be called for prefix of excluded path"
+        )
 
     def test_non_excluded_path_calls_auth(self) -> None:
         """Non-excluded paths must go through auth."""
@@ -469,9 +473,9 @@ class TestCORSMethodsRestricted:
         main_path = pathlib.Path(__file__).parents[3] / "starboard_server" / "main.py"
         source = main_path.read_text()
 
-        assert 'allow_methods=["*"]' not in source and "allow_methods=['*']" not in source, (
-            "CORS allow_methods must not use wildcard '*'"
-        )
+        assert (
+            'allow_methods=["*"]' not in source and "allow_methods=['*']" not in source
+        ), "CORS allow_methods must not use wildcard '*'"
 
     def test_cors_allows_required_methods(self) -> None:
         """CORS must allow GET, POST, OPTIONS."""
@@ -536,6 +540,7 @@ class TestDataEndpointRateLimiting:
         import inspect
 
         from starboard_server.api.data import get_cached_data
+
         source = inspect.getsource(get_cached_data)
         # The function should either use @limiter.limit or call check_rate_limit
         has_rate_limiting = (
@@ -573,7 +578,12 @@ class TestSyncToEnvAtexitCleanup:
         registered = []
         original_register = atexit.register
 
-        with patch("atexit.register", side_effect=lambda fn, *a, **kw: registered.append(fn) or original_register(fn, *a, **kw)):
+        with patch(
+            "atexit.register",
+            side_effect=lambda fn, *a, **kw: (
+                registered.append(fn) or original_register(fn, *a, **kw)
+            ),
+        ):
             config.sync_to_env()
 
         assert len(registered) >= 1, (
@@ -598,7 +608,9 @@ class TestSyncToEnvAtexitCleanup:
 
         with patch(
             "atexit.register",
-            side_effect=lambda fn, *a, **kw: cleanup_fns.append((fn, a, kw)) or original_register(fn, *a, **kw),
+            side_effect=lambda fn, *a, **kw: (
+                cleanup_fns.append((fn, a, kw)) or original_register(fn, *a, **kw)
+            ),
         ):
             config.sync_to_env()
 
@@ -610,8 +622,14 @@ class TestSyncToEnvAtexitCleanup:
             fn(*args, **kwargs)
 
         # Sensitive vars must be removed
-        assert "DATABRICKS_TOKEN" not in os.environ or os.environ.get("DATABRICKS_TOKEN") != "dapi_test_sensitive_token"
-        assert "LLM_API_KEY" not in os.environ or os.environ.get("LLM_API_KEY") != "sk-test-sensitive-key"
+        assert (
+            "DATABRICKS_TOKEN" not in os.environ
+            or os.environ.get("DATABRICKS_TOKEN") != "dapi_test_sensitive_token"
+        )
+        assert (
+            "LLM_API_KEY" not in os.environ
+            or os.environ.get("LLM_API_KEY") != "sk-test-sensitive-key"
+        )
 
 
 # =============================================================================
@@ -646,4 +664,6 @@ class TestDetectSecretsPreCommitHook:
             if found:
                 break
 
-        assert found, "detect-secrets hook must be configured in .pre-commit-config.yaml"
+        assert found, (
+            "detect-secrets hook must be configured in .pre-commit-config.yaml"
+        )
