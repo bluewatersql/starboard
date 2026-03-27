@@ -13,57 +13,40 @@ SELECT
   target_table_schema,
   target_table_name,
   COUNT(DISTINCT entity_run_id) AS pipeline_references,
-  MAX(event_time) AS last_referenced
+  MAX(event_time)               AS last_referenced
 FROM system.access.table_lineage
-WHERE event_time >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
-GROUP BY
-  source_table_catalog, source_table_schema, source_table_name,
-  target_table_catalog, target_table_schema, target_table_name
+WHERE event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+GROUP BY ALL
 ORDER BY pipeline_references DESC
 LIMIT 5000
 """
 
 N_L02_SQL = """\
+WITH cutoff AS (
+  SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt
+)
 SELECT
-  request_params.table_full_name AS table_full_name,
+  request_params.table_full_name           AS table_full_name,
   action_name,
-  COUNT(*) AS access_count,
-  COUNT(DISTINCT user_identity.email) AS distinct_users,
-  COUNT(DISTINCT service_name) AS distinct_services,
-  MIN(event_time) AS first_access,
-  MAX(event_time) AS last_access,
+  COUNT(*)                                 AS access_count,
+  COUNT(DISTINCT user_identity.email)      AS distinct_users,
+  COUNT(DISTINCT service_name)             AS distinct_services,
+  MIN(event_time)                          AS first_access,
+  MAX(event_time)                          AS last_access,
   DATEDIFF(DAY, MAX(event_time), CURRENT_TIMESTAMP()) AS days_since_last_access
-FROM system.access.audit
-WHERE event_time >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
+FROM system.access.audit, cutoff
+WHERE event_time >= cutoff.dt
   AND action_name IN ('getTable', 'queryTable', 'createTableAsSelect')
   AND request_params.table_full_name IS NOT NULL
-GROUP BY request_params.table_full_name, action_name
+GROUP BY ALL
 ORDER BY days_since_last_access DESC, access_count DESC
 LIMIT 5000
 """
 
-# N-L03 disabled: system.information_schema.table_privileges times out
-# on large workspaces. Re-enable when we add catalog-scoped filtering.
-# N_L03_SQL = """\
-# SELECT
-#   table_catalog, table_schema, table_name, privilege_type,
-#   COUNT(DISTINCT grantee) AS grantee_count,
-#   CASE
-#     WHEN privilege_type = 'SELECT' AND COUNT(DISTINCT grantee) > 20
-#       THEN 'REVIEW: Broad SELECT access'
-#     WHEN privilege_type = 'MODIFY' THEN 'REVIEW: Write access granted'
-#     WHEN privilege_type = 'ALL PRIVILEGES' THEN 'REVIEW: Full access granted'
-#     ELSE 'OK'
-#   END AS governance_flag
-# FROM system.information_schema.table_privileges
-# WHERE table_catalog NOT IN ('system', '__databricks_internal')
-# GROUP BY table_catalog, table_schema, table_name, privilege_type
-# HAVING grantee_count > 5 OR privilege_type IN ('MODIFY', 'ALL PRIVILEGES')
-# ORDER BY grantee_count DESC
-# LIMIT 5000
-# """
-
 N_DT01_SQL = """\
+WITH now AS (
+  SELECT CURRENT_TIMESTAMP() AS ts
+)
 SELECT
   table_catalog,
   table_schema,
@@ -72,13 +55,13 @@ SELECT
   data_source_format,
   created,
   last_altered,
-  DATEDIFF(DAY, last_altered, CURRENT_TIMESTAMP()) AS days_since_modified,
+  DATEDIFF(DAY, last_altered, now.ts)      AS days_since_modified,
   CASE
-    WHEN DATEDIFF(DAY, last_altered, CURRENT_TIMESTAMP()) > 30 THEN 'Stale (>30d)'
-    WHEN DATEDIFF(DAY, last_altered, CURRENT_TIMESTAMP()) > 7 THEN 'Recent (7-30d)'
+    WHEN DATEDIFF(DAY, last_altered, now.ts) > 30 THEN 'Stale (>30d)'
+    WHEN DATEDIFF(DAY, last_altered, now.ts) > 7  THEN 'Recent (7-30d)'
     ELSE 'Active'
-  END AS freshness_status
-FROM system.information_schema.tables
+  END                                      AS freshness_status
+FROM system.information_schema.tables, now
 WHERE table_catalog NOT IN ('system', '__databricks_internal')
   AND data_source_format = 'DELTA'
 ORDER BY days_since_modified DESC
@@ -88,18 +71,14 @@ LIMIT 5000
 N_NB01_SQL = """\
 SELECT
   workspace_id,
-  identity_metadata.run_as AS user,
-  billing_origin_product,
+  identity_metadata.run_as            AS user,
   CASE
-    WHEN billing_origin_product = 'ALL_PURPOSE'
-     AND usage_metadata.job_id IS NULL THEN 'Interactive/Notebook'
-    WHEN billing_origin_product = 'ALL_PURPOSE'
-     AND usage_metadata.job_id IS NOT NULL THEN 'All-Purpose Job Compute'
-    ELSE billing_origin_product
-  END AS compute_context,
-  ROUND(SUM(usage_quantity), 2) AS dbus
+    WHEN usage_metadata.job_id IS NULL THEN 'Interactive/Notebook'
+    ELSE                                    'All-Purpose Job Compute'
+  END                                 AS compute_context,
+  ROUND(SUM(usage_quantity), 2)       AS dbus
 FROM system.billing.usage
-WHERE usage_date >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
+WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   AND billing_origin_product = 'ALL_PURPOSE'
   AND identity_metadata.run_as LIKE '%@%'
 GROUP BY ALL
@@ -111,17 +90,16 @@ SELECT
   workspace_id,
   sku_name,
   billing_origin_product,
-  DATE_TRUNC('MONTH', usage_date) AS year_month,
-  ROUND(SUM(usage_quantity), 2) AS usage_quantity,
+  DATE_TRUNC('MONTH', usage_date)      AS year_month,
+  ROUND(SUM(usage_quantity), 2)        AS usage_quantity,
   usage_unit
 FROM system.billing.usage
-WHERE usage_date >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
+WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   AND (
-    sku_name LIKE '%STORAGE%'
-    OR sku_name LIKE '%CLOUD_STORAGE%'
-    OR billing_origin_product = 'DELTA_CACHE'
+    billing_origin_product = 'DELTA_CACHE'
+    OR sku_name LIKE '%STORAGE%'
   )
-GROUP BY workspace_id, sku_name, billing_origin_product, DATE_TRUNC('MONTH', usage_date), usage_unit
+GROUP BY ALL
 ORDER BY usage_quantity DESC
 """
 

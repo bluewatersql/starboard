@@ -12,13 +12,14 @@ from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
 P_AUDIT01_SQL = """\
 SELECT
   billing_origin_product,
-  ROUND(SUM(usage_quantity), 2) AS total_dbus,
-  COUNT(DISTINCT sku_name) AS distinct_skus,
-  MIN(usage_date) AS first_seen,
-  MAX(usage_date) AS last_seen
+  ROUND(SUM(usage_quantity), 2)  AS total_dbus,
+  COUNT(DISTINCT sku_name)       AS distinct_skus,
+  MIN(usage_date)                AS first_seen,
+  MAX(usage_date)                AS last_seen
 FROM system.billing.usage
-WHERE usage_date >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
-GROUP BY billing_origin_product
+WHERE usage_date BETWEEN DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+                     AND CURRENT_DATE()
+GROUP BY ALL
 ORDER BY total_dbus DESC
 """
 

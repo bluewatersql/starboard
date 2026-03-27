@@ -8,18 +8,19 @@ C_MG01_SQL = """\
 WITH cluster_usage AS (
   SELECT
     workspace_id,
-    usage_metadata.cluster_id AS cluster_id,
-    ROUND(SUM(usage_quantity), 2) AS total_dbus,
-    MAX(usage_end_time) AS last_used
+    usage_metadata.cluster_id          AS cluster_id,
+    ROUND(SUM(usage_quantity), 2)      AS total_dbus,
+    MAX(usage_end_time)                AS last_used
   FROM system.billing.usage
-  WHERE (sku_name LIKE '%ALL_PURPOSE_COMPUTE%' OR sku_name LIKE '%JOBS_COMPUTE%')
-    AND usage_date >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
-    AND sku_name NOT LIKE '%PHOTON%'
+  WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+    AND sku_name IN ('ALL_PURPOSE_COMPUTE', 'JOBS_COMPUTE')  -- ⚠ verify exact values; see note
   GROUP BY workspace_id, usage_metadata.cluster_id
 ),
 latest_clusters AS (
-  SELECT *, ROW_NUMBER() OVER(PARTITION BY workspace_id, cluster_id ORDER BY change_time DESC) AS rn
-  FROM system.compute.clusters QUALIFY rn = 1
+  SELECT *
+  FROM system.compute.clusters
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY workspace_id, cluster_id
+                              ORDER BY change_time DESC) = 1
 )
 SELECT
   c.workspace_id,
@@ -27,56 +28,69 @@ SELECT
   c.cluster_name,
   c.cluster_source,
   c.worker_node_type,
-  cu.total_dbus AS non_photon_dbus,
+  cu.total_dbus      AS non_photon_dbus,
   cu.last_used,
   CASE
     WHEN cu.total_dbus > 1000 THEN 'HIGH: >1000 DBUs on non-Photon'
-    WHEN cu.total_dbus > 100 THEN 'MEDIUM: 100-1000 DBUs on non-Photon'
-    ELSE 'LOW: <100 DBUs'
-  END AS migration_priority
+    WHEN cu.total_dbus > 100  THEN 'MEDIUM: 100-1000 DBUs on non-Photon'
+    ELSE                           'LOW: <100 DBUs'
+  END                AS migration_priority
 FROM cluster_usage cu
-LEFT JOIN latest_clusters c ON cu.workspace_id = c.workspace_id AND cu.cluster_id = c.cluster_id
+LEFT JOIN latest_clusters c USING (workspace_id, cluster_id)
 WHERE c.delete_time IS NULL
 ORDER BY cu.total_dbus DESC
 """
 
 C_MG02_SQL = """\
-WITH job_usage AS (
-  SELECT workspace_id, usage_metadata.job_id AS job_id,
-    ROUND(SUM(CASE WHEN sku_name NOT LIKE '%SERVERLESS%' THEN usage_quantity ELSE 0 END), 2) AS classic_dbus,
-    ROUND(SUM(CASE WHEN sku_name LIKE '%SERVERLESS%' THEN usage_quantity ELSE 0 END), 2) AS serverless_dbus,
-    MAX(CASE WHEN sku_name LIKE '%SERVERLESS%' THEN 1 ELSE 0 END) AS already_serverless
-  FROM system.billing.usage
+WITH cutoff AS (
+  SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt
+),
+job_usage AS (
+  SELECT
+    workspace_id,
+    usage_metadata.job_id                                          AS job_id,
+    ROUND(SUM(CASE WHEN sku_name NOT LIKE '%SERVERLESS%'
+                   THEN usage_quantity ELSE 0 END), 2)             AS classic_dbus,
+    ROUND(SUM(CASE WHEN sku_name LIKE '%SERVERLESS%'
+                   THEN usage_quantity ELSE 0 END), 2)             AS serverless_dbus,
+    -- BOOL_OR is a single-pass boolean aggregation; avoids MAX(CASE...) integer trick
+    BOOL_OR(sku_name LIKE '%SERVERLESS%')                          AS already_serverless
+  FROM system.billing.usage, cutoff
   WHERE billing_origin_product = 'JOBS'
-    AND usage_start_time >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
+    AND usage_start_time >= cutoff.dt
   GROUP BY workspace_id, usage_metadata.job_id
 ),
 latest_jobs AS (
-  SELECT *, ROW_NUMBER() OVER(PARTITION BY workspace_id, job_id ORDER BY change_time DESC) AS rn
-  FROM system.lakeflow.jobs QUALIFY rn = 1
+  SELECT *
+  FROM system.lakeflow.jobs
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY workspace_id, job_id
+                              ORDER BY change_time DESC) = 1
 ),
 user_usage AS (
-  SELECT workspace_id, identity_metadata.run_as AS run_as,
-    ROUND(SUM(CASE WHEN billing_origin_product = 'ALL_PURPOSE' AND sku_name NOT LIKE '%SERVERLESS%'
-        THEN usage_quantity ELSE 0 END), 2) AS classic_all_purpose_dbus
-  FROM system.billing.usage
-  WHERE usage_start_time >= CURRENT_DATE() - INTERVAL {lookback_days} DAYS
+  SELECT
+    workspace_id,
+    identity_metadata.run_as                                       AS run_as,
+    ROUND(SUM(CASE WHEN billing_origin_product = 'ALL_PURPOSE'
+                    AND sku_name NOT LIKE '%SERVERLESS%'
+                   THEN usage_quantity ELSE 0 END), 2)             AS classic_all_purpose_dbus
+  FROM system.billing.usage, cutoff
+  WHERE usage_start_time >= cutoff.dt
     AND identity_metadata.run_as LIKE '%@%'
   GROUP BY workspace_id, identity_metadata.run_as
 )
 SELECT
-  'JOB' AS scope,
-  j.name AS entity_name,
+  'JOB'                                                            AS scope,
+  j.name                                                           AS entity_name,
   ju.workspace_id,
-  ju.classic_dbus AS classic_compute_dbus,
+  ju.classic_dbus                                                  AS classic_compute_dbus,
   ju.serverless_dbus,
   CASE
-    WHEN ju.already_serverless = 1 THEN 'Already Serverless'
-    WHEN ju.classic_dbus / 30.0 < 100 THEN 'Serverless Candidate (low volume)'
-    WHEN ju.classic_dbus / 30.0 < 1000 THEN 'Serverless Candidate (medium volume)'
-    ELSE 'Evaluate (high volume)'
-  END AS recommendation,
-  ROUND(ju.classic_dbus * 0.4, 0) AS est_serverless_savings_dbus
+    WHEN ju.already_serverless                    THEN 'Already Serverless'
+    WHEN ju.classic_dbus < 3000.0                 THEN 'Serverless Candidate (low volume)'
+    WHEN ju.classic_dbus < 30000.0                THEN 'Serverless Candidate (medium volume)'
+    ELSE                                               'Evaluate (high volume)'
+  END                                                              AS recommendation,
+  ROUND(ju.classic_dbus * 0.4, 0)                                 AS est_serverless_savings_dbus
 FROM job_usage ju
 LEFT JOIN latest_jobs j USING (workspace_id, job_id)
 WHERE ju.classic_dbus > 0
@@ -84,16 +98,16 @@ WHERE ju.classic_dbus > 0
 UNION ALL
 
 SELECT
-  'USER' AS scope,
-  uu.run_as AS entity_name,
+  'USER'                                                           AS scope,
+  uu.run_as                                                        AS entity_name,
   uu.workspace_id,
-  uu.classic_all_purpose_dbus AS classic_compute_dbus,
-  0 AS serverless_dbus,
+  uu.classic_all_purpose_dbus                                      AS classic_compute_dbus,
+  0                                                                AS serverless_dbus,
   CASE
     WHEN uu.classic_all_purpose_dbus > 500 THEN 'Serverless SQL Candidate'
-    ELSE 'Low Priority'
-  END AS recommendation,
-  ROUND(uu.classic_all_purpose_dbus * 0.5, 0) AS est_serverless_savings_dbus
+    ELSE                                        'Low Priority'
+  END                                                              AS recommendation,
+  ROUND(uu.classic_all_purpose_dbus * 0.5, 0)                     AS est_serverless_savings_dbus
 FROM user_usage uu
 WHERE uu.classic_all_purpose_dbus > 0
 ORDER BY est_serverless_savings_dbus DESC
