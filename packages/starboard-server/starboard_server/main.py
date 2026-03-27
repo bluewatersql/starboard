@@ -113,6 +113,29 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         raise
 
+    # Inject tool_registry, agent_factory, intent_router into MCP server
+    # (if mounted). This enables call_tool and agent tool execution.
+    mcp_server = getattr(app.state, "mcp_server", None)
+    if mcp_server is not None:
+        try:
+            from starboard_server.api.dependencies import get_multi_agent_manager
+
+            manager = await get_multi_agent_manager()
+            factory = manager.agent_factory
+            router = manager.intent_router
+
+            mcp_server.inject_runtime_deps(
+                tool_registry=factory.tool_registry,
+                agent_factory=factory,
+                intent_router=router,
+            )
+        except Exception as exc:  # noqa: BLE001 - API error boundary
+            logger.warning(
+                "mcp_server_dep_injection_failed",
+                error=str(exc),
+                message="MCP server will serve tool listings but call_tool may fail.",
+            )
+
     yield
 
     # Shutdown
@@ -353,11 +376,13 @@ def create_app() -> FastAPI:
     # ========================================================================
     try:
         from starboard_server.mcp.config import load_mcp_config
-        from starboard_server.mcp.transports import create_mcp_app
+        from starboard_server.mcp.transports import create_starboard_mcp_server
 
         mcp_config = load_mcp_config()
         if mcp_config:
-            mcp_app = create_mcp_app(config=mcp_config)
+            mcp_server = create_starboard_mcp_server(mcp_config)
+            app.state.mcp_server = mcp_server
+            mcp_app = mcp_server.mcp.streamable_http_app()
             app.mount("/mcp", mcp_app)
             logger.info(
                 "mcp_server_mounted",

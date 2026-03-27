@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -85,6 +85,9 @@ class MCPServerConfig(BaseModel):
         rate_limit_per_minute: Maximum MCP calls per minute per session.
         max_response_size_bytes: Truncation threshold for tool responses.
         safe_mode: When ``True``, only offline tools are exposed.
+        tool_scope: Tool exposure scope — ``"phase_a"`` (quick-lookup only),
+            ``"phase_b"`` (adds deep-analysis and discovery tools), or
+            ``"full"`` (all non-internal tools).
         schema_version: Configuration schema version for forward compat.
         agent_timeout: Default timeout in seconds for agent executions.
     """
@@ -96,6 +99,7 @@ class MCPServerConfig(BaseModel):
     rate_limit_per_minute: int = 60
     max_response_size_bytes: int = 32_768
     safe_mode: bool = False
+    tool_scope: Literal["phase_a", "phase_b", "full"] = "phase_a"
     schema_version: str = "1.0.0"
     agent_timeout: int = 120
     token_budget: int | None = None
