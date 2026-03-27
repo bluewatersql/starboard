@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.mcp.agent_bridge import (
@@ -56,9 +56,8 @@ from starboard_server.mcp.resource_providers import StarboardResourceProvider
 from starboard_server.mcp.result_formatter import format_tool_result
 from starboard_server.mcp.sanitizer import MCPSanitizer
 from starboard_server.mcp.tool_bridge import (
-    PHASE_A_TOOLS,
-    SAFE_MODE_ALLOWED_TOOLS,
     get_mcp_tools,
+    resolve_allowed_tools,
 )
 
 if TYPE_CHECKING:
@@ -196,6 +195,50 @@ class StarboardMCPServer:
         return self._agent_executor
 
     # ------------------------------------------------------------------
+    # Runtime dependency injection
+    # ------------------------------------------------------------------
+
+    def inject_runtime_deps(
+        self,
+        *,
+        tool_registry: ToolRegistry | None = None,
+        agent_factory: AgentFactory | None = None,
+        intent_router: IntentRouter | None = None,
+    ) -> None:
+        """Inject runtime dependencies after construction.
+
+        Call this to wire in ``ToolRegistry``, ``AgentFactory``, and
+        ``IntentRouter`` when they are not available at construction time
+        (e.g. when the MCP server is mounted before the FastAPI lifespan
+        initializes the full dependency stack).
+
+        Args:
+            tool_registry: Tool registry for executing tools.
+            agent_factory: Factory for domain-specialist agents.
+            intent_router: Router for classifying user intent.
+        """
+        if tool_registry is not None:
+            self._tool_registry = tool_registry
+        if agent_factory is not None:
+            self._agent_factory = agent_factory
+        if intent_router is not None:
+            self._intent_router = intent_router
+        if agent_factory is not None:
+            self._agent_executor = MCPAgentExecutor(
+                agent_factory=agent_factory,
+                intent_router=intent_router or self._intent_router,
+                token_budget_tracker=self._token_budget_tracker,
+                default_timeout=self._config.agent_timeout,
+            )
+            logger.info(
+                "mcp_server_deps_injected",
+                tool_count=(
+                    len(tool_registry.list_tools()) if tool_registry else 0
+                ),
+                agent_tools_enabled=True,
+            )
+
+    # ------------------------------------------------------------------
     # Tool registration
     # ------------------------------------------------------------------
 
@@ -210,8 +253,8 @@ class StarboardMCPServer:
             return "pong"
 
     def _register_tools(self) -> None:
-        """Dynamically register Phase A tools from tool_bridge metadata."""
-        tool_defs = get_mcp_tools(safe_mode=self._config.safe_mode)
+        """Dynamically register tools from tool_bridge metadata based on tool_scope."""
+        tool_defs = get_mcp_tools(safe_mode=self._config.safe_mode, tool_scope=self._config.tool_scope)
         for tool_def in tool_defs:
             self._register_single_tool(tool_def)
         logger.info(
@@ -354,8 +397,8 @@ class StarboardMCPServer:
         """Register one MCP agent tool backed by MCPAgentExecutor."""
         tool_name = tool_def["name"]
 
-        async def _handler(**kwargs: Any) -> str:
-            return await self._execute_agent_tool(tool_name, kwargs)
+        async def _handler(ctx: Context, **kwargs: Any) -> str:
+            return await self._execute_agent_tool(tool_name, kwargs, ctx=ctx)
 
         _handler.__name__ = tool_name
         _handler.__qualname__ = f"StarboardMCPServer._agent_handler.{tool_name}"
@@ -401,12 +444,15 @@ class StarboardMCPServer:
         self,
         tool_name: str,
         arguments: dict[str, Any],
+        *,
+        ctx: Context | None = None,
     ) -> str:
         """Execute an agent tool through MCPAgentExecutor.
 
         Args:
             tool_name: MCP agent tool name (e.g. ``query_agent``).
             arguments: Caller-supplied arguments (message, workspace_id, etc.).
+            ctx: Optional FastMCP context for progress notifications.
 
         Returns:
             JSON string of the ``MCPAgentResponse``.
@@ -441,6 +487,7 @@ class StarboardMCPServer:
             session_id=session_id,
             conversation_id=conversation_id,
             config_overrides=config_overrides,
+            mcp_context=ctx,
         )
 
         response_dict = response.model_dump(mode="json")
@@ -504,9 +551,11 @@ class StarboardMCPServer:
                     raise
 
             # 2. Validate tool name
-            allowed = (
-                SAFE_MODE_ALLOWED_TOOLS if self._config.safe_mode else PHASE_A_TOOLS
+            allowed = resolve_allowed_tools(
+                safe_mode=self._config.safe_mode,
+                tool_scope=self._config.tool_scope,
             )
+
             if tool_name not in allowed:
                 code = (
                     "EXEC_SAFE_MODE_RESTRICTED"

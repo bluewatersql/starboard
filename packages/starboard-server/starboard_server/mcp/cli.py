@@ -93,11 +93,13 @@ def main(argv: list[str] | None = None) -> None:
         from starboard_server.mcp.transports import create_stdio_server
 
         logger.info("mcp_cli_starting", transport="stdio")
-        create_stdio_server(config)
+        create_stdio_server(config, bootstrap=True)
     else:
+        import asyncio
+
         import uvicorn
 
-        from starboard_server.mcp.transports import create_mcp_app
+        from starboard_server.mcp.transports import bootstrap_mcp_server
 
         logger.info(
             "mcp_cli_starting",
@@ -105,7 +107,8 @@ def main(argv: list[str] | None = None) -> None:
             host=args.host,
             port=args.port,
         )
-        app = create_mcp_app(config)
+        server = asyncio.run(bootstrap_mcp_server(config))
+        app = server.mcp.streamable_http_app()
         uvicorn.run(app, host=args.host, port=args.port)
 
 

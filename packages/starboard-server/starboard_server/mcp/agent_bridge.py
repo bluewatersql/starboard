@@ -36,6 +36,8 @@ from starboard_server.mcp.observability import (
 )
 
 if TYPE_CHECKING:
+    from mcp.server.fastmcp import Context
+
     from starboard_server.agents.agent_factory import AgentFactory
     from starboard_server.agents.events.user_events import FinalOutputEvent
     from starboard_server.agents.routing.intent_router import IntentRouter
@@ -161,10 +163,12 @@ class MCPProgressBridge:
         callback: Any | None = None,
         *,
         include_trace: bool = False,
+        mcp_context: Context | None = None,
     ) -> None:
         self._emitter = emitter
         self._callback = callback
         self._include_trace = include_trace
+        self._mcp_context = mcp_context
         self._events: list[StatusEvent] = []
         self._subscribed = False
 
@@ -191,12 +195,23 @@ class MCPProgressBridge:
         try:
             if (
                 event.type == EventType.INFO
-                or self._include_trace
-                and event.type == EventType.TRACE
+                or (self._include_trace and event.type == EventType.TRACE)
             ):
                 self._events.append(event)
                 if self._callback is not None:
                     self._callback(event)
+                if self._mcp_context is not None:
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(
+                            self._mcp_context.report_progress(
+                                progress=len(self._events),
+                                total=None,
+                                message=event.message,
+                            )
+                        )
+                    except RuntimeError:
+                        pass  # No running event loop — skip progress notification
         except Exception:  # noqa: BLE001 - MCP error boundary
             logger.debug("mcp_progress_bridge_handler_error", exc_info=True)
 
@@ -236,6 +251,7 @@ class MCPAgentExecutor:
         session_id: str = "default",
         conversation_id: str | None = None,
         config_overrides: dict[str, Any] | None = None,
+        mcp_context: Context | None = None,
     ) -> MCPAgentResponse:
         """Execute a domain agent in non-interactive mode.
 
@@ -309,7 +325,7 @@ class MCPAgentExecutor:
 
         # Set up progress bridge
         emitter = self._agent_factory.events or EventEmitter()
-        bridge = MCPProgressBridge(emitter)
+        bridge = MCPProgressBridge(emitter, mcp_context=mcp_context)
         bridge.subscribe()
 
         try:
