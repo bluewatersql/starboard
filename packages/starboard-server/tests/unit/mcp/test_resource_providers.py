@@ -37,16 +37,20 @@ def _make_provider(**config_overrides: object) -> StarboardResourceProvider:
 class TestListResources:
     """Tests for list_resources."""
 
-    def test_returns_all_5(self) -> None:
+    def test_returns_all_resources(self) -> None:
         provider = _make_provider()
         resources = provider.list_resources()
-        assert len(resources) == 5
         uris = {r["uri"] for r in resources}
+        # 5 core resources + 8 domain prompt resources = 13
+        assert len(resources) == 13
         assert "starboard://workspace/info" in uris
         assert "starboard://agents/catalog" in uris
         assert "starboard://tools/catalog" in uris
         assert "starboard://tools/dependencies" in uris
         assert "starboard://health" in uris
+        assert "starboard://prompts/query" in uris
+        assert "starboard://prompts/job" in uris
+        assert "starboard://prompts/discovery" in uris
 
 
 class TestWorkspaceInfo:
@@ -126,6 +130,46 @@ class TestHealth:
         health = provider.read_resource("starboard://health")
         assert "uptime_seconds" in health
         assert health["uptime_seconds"] >= 0
+
+
+class TestDomainPromptResource:
+    """Tests for starboard://prompts/{domain} resources."""
+
+    def test_returns_prompt_for_valid_domain(self) -> None:
+        provider = _make_provider()
+        result = provider.read_resource("starboard://prompts/query")
+        assert result["domain"] == "query"
+        assert "system_prompt" in result
+        assert len(result["system_prompt"]) > 100
+        assert "available_tools" in result
+        assert isinstance(result["available_tools"], list)
+        assert "usage" in result
+
+    def test_returns_prompt_version(self) -> None:
+        provider = _make_provider()
+        result = provider.read_resource("starboard://prompts/job")
+        assert "prompt_version" in result
+
+    def test_all_domains_accessible(self) -> None:
+        provider = _make_provider()
+        for domain in (
+            "query",
+            "job",
+            "uc",
+            "cluster",
+            "analytics",
+            "warehouse",
+            "diagnostic",
+            "discovery",
+        ):
+            result = provider.read_resource(f"starboard://prompts/{domain}")
+            assert result["domain"] == domain
+
+    def test_unknown_domain_raises(self) -> None:
+        provider = _make_provider()
+        with pytest.raises(ExecutionError) as exc_info:
+            provider.read_resource("starboard://prompts/nonexistent")
+        assert exc_info.value.code == "EXEC_UNKNOWN_RESOURCE"
 
 
 class TestUnknownURI:

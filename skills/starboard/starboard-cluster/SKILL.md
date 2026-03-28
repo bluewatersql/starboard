@@ -7,16 +7,24 @@ description: Analyze Databricks cluster configuration, health, resource utilizat
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-For comprehensive analysis, call the `cluster_agent` MCP tool with a natural language message.
-The agent runs a full reasoning loop with automatic tool selection and multi-step analysis.
+Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent.
 
-Example:
+### Direct Orchestration (Recommended)
+
+1. Fetch MCP resource `starboard://prompts/cluster` — this returns the expert system prompt with tool ordering, autoscaling knowledge, and cluster optimization workflows.
+2. Follow the returned prompt's guidance to call tools directly based on the user's request.
+3. Start with `list_clusters` to discover clusters, then use `get_cluster_config`, `get_cluster_health`, and `get_cluster_metrics` as the prompt directs.
+
+### Auto-Pilot
+
+Call MCP tool `cluster_agent` with:
+```json
+{ "message": "<the user's original request about clusters>" }
 ```
-Call MCP tool: cluster_agent
-Arguments: { "message": "Analyze cluster 0315-182023-abcde for autoscaling efficiency and right-sizing" }
-```
+
+If the user did not specify a cluster, use: `{ "message": "List all clusters, analyze health and utilization, and suggest right-sizing changes" }`
 
 ## Manual Workflow (Individual Tools)
 

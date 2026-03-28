@@ -7,16 +7,24 @@ description: Analyze SQL query performance, execution plans, and optimization fo
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-For comprehensive analysis, call the `query_agent` MCP tool with a natural language message.
-The agent runs a full reasoning loop with automatic tool selection and multi-step analysis.
+Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent.
 
-Example:
+### Direct Orchestration (Recommended)
+
+1. Fetch MCP resource `starboard://prompts/query` — this returns the expert system prompt with tool ordering, Databricks SQL knowledge, and analysis workflows.
+2. Follow the returned prompt's guidance to call tools directly based on the user's request.
+3. Start with `resolve_query` to identify the query, then use `analyze_query_plan` and `get_query_runtime_metrics` as the prompt directs.
+
+### Auto-Pilot
+
+Call MCP tool `query_agent` with:
+```json
+{ "message": "<the user's original request about SQL queries>" }
 ```
-Call MCP tool: query_agent
-Arguments: { "message": "Analyze the performance of statement 01ef-abcd-1234 and suggest optimizations" }
-```
+
+If the user did not specify a query, use: `{ "message": "Analyze recent query performance and identify optimization opportunities" }`
 
 ## Manual Workflow (Individual Tools)
 

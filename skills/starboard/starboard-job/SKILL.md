@@ -7,16 +7,24 @@ description: Analyze Databricks job configuration, run history, failures, and pe
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-For comprehensive analysis, call the `job_agent` MCP tool with a natural language message.
-The agent runs a full reasoning loop with automatic tool selection and multi-step analysis.
+Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent.
 
-Example:
+### Direct Orchestration (Recommended)
+
+1. Fetch MCP resource `starboard://prompts/job` — this returns the expert system prompt with tool ordering, Spark tuning knowledge, and job analysis workflows.
+2. Follow the returned prompt's guidance to call tools directly based on the user's request.
+3. Start with `resolve_job` to identify the job, then use `get_job_config`, `analyze_job_history`, and other tools as the prompt directs.
+
+### Auto-Pilot
+
+Call MCP tool `job_agent` with:
+```json
+{ "message": "<the user's original request about jobs>" }
 ```
-Call MCP tool: job_agent
-Arguments: { "message": "Analyze job 12345 — it failed 3 times this week and I need to understand why" }
-```
+
+If the user did not specify a job, use: `{ "message": "List jobs, analyze recent run history, and identify failures or performance issues" }`
 
 ## Manual Workflow (Individual Tools)
 

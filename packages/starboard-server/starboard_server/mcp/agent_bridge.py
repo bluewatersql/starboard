@@ -89,6 +89,23 @@ _AGENT_DESCRIPTIONS: dict[str, str] = {
     ),
 }
 
+_AGENT_DEFAULT_MESSAGES: dict[str, str] = {
+    "query": "Analyze recent query performance and identify optimization opportunities.",
+    "job": "List jobs, analyze recent run history, and identify failures or performance issues.",
+    "uc": "Explore Unity Catalog assets, check governance policies, and identify optimization opportunities.",
+    "cluster": "List all clusters, analyze health and utilization, and suggest right-sizing changes.",
+    "analytics": "Analyze workspace costs and usage trends over the last 30 days.",
+    "warehouse": "Analyze the SQL warehouse portfolio with health scores, sizing, and utilization.",
+    "diagnostic": "Run a health check and identify any current issues or anomalies.",
+    "discovery": "Run a comprehensive workspace health assessment covering product usage, workload patterns, and optimization opportunities.",
+}
+
+_DOMAIN_TIMEOUT_OVERRIDES: dict[str, int] = {
+    "discovery": 900,
+    "analytics": 900,
+    "diagnostic": 600,
+}
+
 _AGENT_TOOL_PARAMS: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -267,7 +284,8 @@ class MCPAgentExecutor:
             Structured ``MCPAgentResponse`` with envelope and metadata.
         """
         overrides = config_overrides or {}
-        timeout = overrides.get("agent_timeout", self._default_timeout)
+        base_timeout = overrides.get("agent_timeout", self._default_timeout)
+        timeout = _DOMAIN_TIMEOUT_OVERRIDES.get(domain, base_timeout) if domain else base_timeout
 
         # Ensure every execution has a conversation_id for multi-turn tracking
         if conversation_id is None:
@@ -287,6 +305,7 @@ class MCPAgentExecutor:
             self._token_budget_tracker is not None
             and not self._token_budget_tracker.check_budget(session_id)
         ):
+            root_span.close(status="error", error_code="BUDGET_EXCEEDED")
             return self._budget_exceeded_response(
                 domain=domain or "unknown",
                 workspace_id=workspace_id,
@@ -336,6 +355,7 @@ class MCPAgentExecutor:
             )
         except TimeoutError:
             bridge.unsubscribe()
+            root_span.close(status="error", error_code="AGENT_TIMEOUT")
             return self._timeout_response(
                 domain=domain,
                 workspace_id=workspace_id,
@@ -349,6 +369,7 @@ class MCPAgentExecutor:
             )
         except Exception as exc:  # noqa: BLE001 - MCP error boundary
             bridge.unsubscribe()
+            root_span.close(status="error", error_code="AGENT_EXECUTION_ERROR")
             log_tool_error(
                 root_span,
                 f"{domain}_agent",
@@ -379,6 +400,12 @@ class MCPAgentExecutor:
                 session_id, envelope.metrics.tokens_used
             )
 
+        # Derive MCP status from the envelope rather than hardcoding "success".
+        # When the agent stream produces no FinalOutputEvent, _run_agent
+        # returns an envelope with status="error" — surface that truthfully.
+        envelope_status = getattr(envelope, "status", None) if envelope else None
+        mcp_status = "error" if envelope_status == "error" else "success"
+
         metadata = MCPResponseMetadata(
             workspace_id_used=workspace_id,
             domain_selected=domain,
@@ -391,8 +418,12 @@ class MCPAgentExecutor:
             conversation_id=conversation_id,
         )
 
+        root_span.close(
+            status="error" if mcp_status == "error" else "ok",
+        )
+
         return MCPAgentResponse(
-            status="success",
+            status=mcp_status,
             workspace_id_used=workspace_id,
             agent_domain=domain,
             response_text=self._extract_response_text(envelope),

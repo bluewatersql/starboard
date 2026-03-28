@@ -1,15 +1,16 @@
 # Copyright (c) 2025 Starboard AI
 # Licensed under the MIT License (see LICENSE file in the root directory)
 
-"""MCP resource providers for catalog and health introspection.
+"""MCP resource providers for catalog, health, and prompt introspection.
 
-Implements ``list_resources`` / ``read_resource`` with 5 resources:
+Implements ``list_resources`` / ``read_resource`` with resources:
 
-- ``starboard://workspace/info``  — workspace config (no secrets)
-- ``starboard://agents/catalog``  — domain agents and their tools
-- ``starboard://tools/catalog``   — full tool inventory
-- ``starboard://tools/dependencies`` — tool dependency graph
-- ``starboard://health``          — server health snapshot
+- ``starboard://workspace/info``       — workspace config (no secrets)
+- ``starboard://agents/catalog``       — domain agents and their tools
+- ``starboard://tools/catalog``        — full tool inventory
+- ``starboard://tools/dependencies``   — tool dependency graph
+- ``starboard://health``               — server health snapshot
+- ``starboard://prompts/{domain}``     — domain agent system prompts (8 domains)
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from typing import Any
 
 from starboard_server.agents.tool_categories import TOOL_CATEGORIES
 from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+from starboard_server.mcp.agent_bridge import AGENT_DOMAINS
 from starboard_server.mcp.circuit_breaker_registry import MCPCircuitBreakerRegistry
 from starboard_server.mcp.config import MCPServerConfig
 from starboard_server.mcp.exceptions import ExecutionError
@@ -43,6 +45,17 @@ class StarboardResourceProvider:
         config: Server configuration.
         circuit_breakers: Per-workspace circuit breaker registry.
     """
+
+    _DOMAIN_PROMPT_DESCRIPTIONS: dict[str, str] = {
+        "query": "SQL query optimization expert guidance — tool ordering, Databricks SQL knowledge, and analysis workflows",
+        "job": "Databricks job performance analysis — Spark tuning, cluster sizing, and job optimization workflows",
+        "uc": "Unity Catalog governance expert — lineage, access control, schema intelligence, and storage optimization",
+        "cluster": "Cluster configuration and optimization — autoscaling, instance types, Spark configs",
+        "analytics": "FinOps cost analysis and billing — consumption trends, budget forecasting, chargeback",
+        "warehouse": "SQL warehouse portfolio optimization — concurrency, sizing, SLO configuration",
+        "diagnostic": "Troubleshooting and root cause analysis — error diagnosis, performance debugging",
+        "discovery": "Workspace health assessment — cross-domain analysis, optimization opportunities",
+    }
 
     _RESOURCES: list[dict[str, str]] = [
         {
@@ -70,6 +83,15 @@ class StarboardResourceProvider:
             "name": "Server Health",
             "description": "Server health, circuit breakers, rate limits",
         },
+        *[
+            {
+                "uri": f"starboard://prompts/{domain}",
+                "name": f"{domain.title()} Agent Prompt",
+                "description": desc,
+            }
+            for domain, desc in _DOMAIN_PROMPT_DESCRIPTIONS.items()
+            if domain in AGENT_DOMAINS
+        ],
     ]
 
     def __init__(
@@ -105,12 +127,19 @@ class StarboardResourceProvider:
             "starboard://health": self._health,
         }
         handler = handlers.get(uri)
-        if handler is None:
-            raise ExecutionError(
-                f"Unknown resource URI: {uri!r}",
-                code="EXEC_UNKNOWN_RESOURCE",
-            )
-        return handler()
+        if handler is not None:
+            return handler()
+
+        # Dynamic prompt resources: starboard://prompts/{domain}
+        if uri.startswith("starboard://prompts/"):
+            domain = uri.removeprefix("starboard://prompts/")
+            if domain in AGENT_DOMAINS:
+                return self._domain_prompt(domain)
+
+        raise ExecutionError(
+            f"Unknown resource URI: {uri!r}",
+            code="EXEC_UNKNOWN_RESOURCE",
+        )
 
     # ------------------------------------------------------------------
     # Resource handlers
@@ -191,3 +220,62 @@ class StarboardResourceProvider:
             "tools_registered": len(ALL_TOOL_METADATA),
             "uptime_seconds": round(uptime),
         }
+
+    def _domain_prompt(self, domain: str) -> dict[str, Any]:
+        """Return the system prompt for a domain agent.
+
+        The prompt contains the full expert guidance: tool ordering,
+        Databricks domain knowledge, analysis workflows, error handling
+        strategies, and output formatting. Claude can use this to
+        orchestrate domain tools directly without a server-side agent.
+        """
+        from starboard_server.prompts.factories import get_system_prompt
+
+        prompt_text = get_system_prompt(
+            domain=domain,
+            goal="{goal}",
+            token_budget=120_000,
+            mode="online",
+        )
+
+        tools_config = TOOL_CATEGORIES.get(domain, [])
+        if tools_config == "all":
+            tool_list = sorted(ALL_TOOL_METADATA.keys())
+        elif isinstance(tools_config, list):
+            tool_list = sorted(tools_config)
+        else:
+            tool_list = []
+
+        return {
+            "domain": domain,
+            "prompt_version": self._get_prompt_version(domain),
+            "system_prompt": prompt_text,
+            "available_tools": tool_list,
+            "usage": (
+                "Use this prompt as expert guidance when orchestrating "
+                f"Starboard {domain} tools directly. Replace {{goal}} with "
+                "the user's actual goal. Call the listed tools in the order "
+                "recommended by the prompt."
+            ),
+        }
+
+    @staticmethod
+    def _get_prompt_version(domain: str) -> str:
+        """Extract PROMPT_VERSION from a domain's prompt module."""
+        _module_map: dict[str, str] = {
+            "query": "starboard_server.prompts.query",
+            "job": "starboard_server.prompts.job",
+            "uc": "starboard_server.prompts.uc",
+            "cluster": "starboard_server.prompts.cluster",
+            "analytics": "starboard_server.prompts.analytics.v1",
+            "warehouse": "starboard_server.prompts.warehouse",
+            "diagnostic": "starboard_server.prompts.diagnostic",
+            "discovery": "starboard_server.prompts.discovery",
+        }
+        try:
+            import importlib
+
+            mod = importlib.import_module(_module_map[domain])
+            return getattr(mod, "PROMPT_VERSION", "1.0.0")
+        except (ImportError, KeyError):
+            return "1.0.0"

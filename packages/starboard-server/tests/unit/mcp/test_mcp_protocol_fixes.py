@@ -201,6 +201,88 @@ class TestInputSchemaRegistration:
                     f"Tool '{tool.name}' inputSchema missing 'properties': {schema}"
                 )
 
+    async def test_tool_schema_not_kwargs_wrapped(
+        self, server: StarboardMCPServer
+    ) -> None:
+        """No tool should advertise a 'kwargs: string' schema from FastMCP auto-gen.
+
+        FastMCP auto-generates ``{"kwargs": {"type": "string"}}`` for
+        ``**kwargs`` handlers.  _fix_tool_schema must replace it with the
+        real parameter schema so MCP clients see actual parameter names.
+        """
+        tools = await server.mcp.list_tools()
+        for tool in tools:
+            schema = tool.inputSchema
+            if not isinstance(schema, dict):
+                continue
+            props = schema.get("properties", {})
+            assert "kwargs" not in props, (
+                f"Tool '{tool.name}' still has auto-generated 'kwargs' "
+                f"property — _fix_tool_schema not applied: {schema}"
+            )
+
+    async def test_analyze_discovery_domain_exposes_domains_param(
+        self, server: StarboardMCPServer
+    ) -> None:
+        """analyze_discovery_domain must advertise 'domains' and 'domain' params."""
+        tools = await server.mcp.list_tools()
+        by_name = {t.name: t for t in tools}
+        tool = by_name.get("analyze_discovery_domain")
+        if tool is None:
+            pytest.skip("analyze_discovery_domain not registered in this scope")
+        schema = tool.inputSchema
+        assert isinstance(schema, dict)
+        props = schema.get("properties", {})
+        assert "domains" in props, (
+            f"analyze_discovery_domain missing 'domains' property: {props.keys()}"
+        )
+        assert "domain" in props, (
+            f"analyze_discovery_domain missing 'domain' property: {props.keys()}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Item 3b: _PassthroughMeta delivers raw arguments to **kwargs handlers
+# ---------------------------------------------------------------------------
+
+
+class TestPassthroughMeta:
+    """_PassthroughMeta must deliver raw arguments without wrapping."""
+
+    async def test_passthrough_meta_delivers_raw_args(self) -> None:
+        """Handler must receive the actual parameter names, not a kwargs wrapper."""
+        from mcp.server.fastmcp import FastMCP
+        from starboard_server.mcp.server import _PassthroughMeta
+
+        mcp = FastMCP("test")
+        received: dict[str, Any] = {}
+
+        async def my_tool(**kwargs: Any) -> str:
+            received.update(kwargs)
+            return "ok"
+
+        mcp.add_tool(my_tool, name="my_tool", description="test")
+        tool = mcp._tool_manager.get_tool("my_tool")
+        assert tool is not None
+
+        tool.parameters = {
+            "type": "object",
+            "properties": {
+                "domains": {"type": "array", "items": {"type": "string"}},
+            },
+        }
+        tool.fn_metadata = _PassthroughMeta(
+            arg_model=tool.fn_metadata.arg_model,
+            output_schema=None,
+            output_model=None,
+            wrap_output=False,
+        )
+
+        await tool.run({"domains": ["billing", "jobs"]}, context=None)
+        assert "domains" in received, f"Expected 'domains' key, got: {received}"
+        assert received["domains"] == ["billing", "jobs"]
+        assert "kwargs" not in received, "kwargs wrapper leaked through"
+
 
 # ---------------------------------------------------------------------------
 # Item 4 & 10: Composite tools registered in MCP

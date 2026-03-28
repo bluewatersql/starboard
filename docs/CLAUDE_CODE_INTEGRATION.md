@@ -49,6 +49,7 @@ starboard-mcp --help
        "starboard": {
          "command": "starboard-mcp",
          "args": ["--transport", "stdio"],
+         "timeout": 900,
          "env": {
            "DATABRICKS_HOST": "https://YOUR_WORKSPACE.cloud.databricks.com",
            "DATABRICKS_TOKEN": "dapi_YOUR_TOKEN_HERE",
@@ -78,6 +79,7 @@ starboard-mcp --help
        "starboard": {
          "command": "starboard-mcp",
          "args": ["--transport", "stdio"],
+         "timeout": 900,
          "env": {
            "DATABRICKS_HOST": "https://YOUR_WORKSPACE.cloud.databricks.com",
            "DATABRICKS_TOKEN": "dapi_YOUR_TOKEN_HERE",

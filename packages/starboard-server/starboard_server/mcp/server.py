@@ -12,12 +12,15 @@ out of the box.
 from __future__ import annotations
 
 import json
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
 
 from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.fastmcp.utilities.func_metadata import FuncMetadata
 
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.mcp.agent_bridge import (
+    _AGENT_DEFAULT_MESSAGES,
     AGENT_TOOL_METADATA,
     TOOL_NAME_TO_DOMAIN,
     MCPAgentExecutor,
@@ -66,6 +69,30 @@ if TYPE_CHECKING:
     from starboard_server.agents.tools.tool_registry import ToolRegistry
 
 logger = get_logger(__name__)
+
+
+class _PassthroughMeta(FuncMetadata):
+    """FuncMetadata that bypasses Pydantic arg-model validation.
+
+    FastMCP auto-generates arg models from function signatures.  When the
+    handler uses ``**kwargs``, the generated model has a single ``kwargs: str``
+    field, which mangles the real parameters.  This subclass passes the raw
+    argument dict straight through to the handler, letting the downstream
+    tool registry and adapter perform their own validation.
+    """
+
+    async def call_fn_with_arg_validation(
+        self,
+        fn: Callable[..., Any | Awaitable[Any]],
+        fn_is_async: bool,
+        arguments_to_validate: dict[str, Any],
+        arguments_to_pass_directly: dict[str, Any] | None,
+    ) -> Any:
+        kwargs = dict(arguments_to_validate)
+        kwargs.update(arguments_to_pass_directly or {})
+        if fn_is_async:
+            return await fn(**kwargs)
+        return fn(**kwargs)
 
 
 class StarboardMCPServer:
@@ -132,6 +159,7 @@ class StarboardMCPServer:
             ),
         )
         self._register_ping()
+        self._register_workspace_tools()
         self._register_tools()
         self._register_composite_tools()
         self._register_agent_tools()
@@ -232,9 +260,7 @@ class StarboardMCPServer:
             )
             logger.info(
                 "mcp_server_deps_injected",
-                tool_count=(
-                    len(tool_registry.list_tools()) if tool_registry else 0
-                ),
+                tool_count=(len(tool_registry.list_tools()) if tool_registry else 0),
                 agent_tools_enabled=True,
             )
 
@@ -252,9 +278,80 @@ class StarboardMCPServer:
         async def starboard_ping() -> str:
             return "pong"
 
+    def _register_workspace_tools(self) -> None:
+        """Register workspace management tools."""
+        config = self._config
+
+        @self._mcp.tool(
+            name="list_workspaces",
+            description=(
+                "List configured Databricks workspaces with their IDs, "
+                "hosts, and default status. Does not expose tokens. "
+                "Use this to discover available workspaces before calling "
+                "other tools with a specific workspace_id."
+            ),
+        )
+        async def list_workspaces() -> str:
+            workspaces: list[dict[str, Any]] = []
+            for ws_id, profile in config.workspaces.items():
+                workspaces.append(
+                    {
+                        "workspace_id": ws_id,
+                        "host": profile.host,
+                        "is_default": ws_id == config.default_workspace_id,
+                        "warehouse_id": profile.warehouse_id,
+                        "default_catalog": profile.default_catalog,
+                    }
+                )
+            return json.dumps(
+                {
+                    "default_workspace_id": config.default_workspace_id,
+                    "workspaces": workspaces,
+                    "total": len(workspaces),
+                }
+            )
+
+        @self._mcp.tool(
+            name="switch_workspace",
+            description=(
+                "Switch the active workspace context for subsequent tool "
+                "calls. Pass the workspace_id from list_workspaces. "
+                "This does NOT change the default — it returns the "
+                "workspace_id to use in subsequent tool calls."
+            ),
+        )
+        async def switch_workspace(workspace_id: str) -> str:
+            if workspace_id not in config.workspaces:
+                return json.dumps(
+                    {
+                        "isError": True,
+                        "code": "UNKNOWN_WORKSPACE",
+                        "message": (
+                            f"Workspace '{workspace_id}' not found. "
+                            f"Available: {list(config.workspaces.keys())}"
+                        ),
+                    }
+                )
+            profile = config.workspaces[workspace_id]
+            return json.dumps(
+                {
+                    "status": "ok",
+                    "workspace_id": workspace_id,
+                    "host": profile.host,
+                    "instruction": (
+                        f"Pass workspace_id='{workspace_id}' to subsequent "
+                        "tool calls to target this workspace."
+                    ),
+                }
+            )
+
+        logger.info("mcp_workspace_tools_registered", count=2)
+
     def _register_tools(self) -> None:
         """Dynamically register tools from tool_bridge metadata based on tool_scope."""
-        tool_defs = get_mcp_tools(safe_mode=self._config.safe_mode, tool_scope=self._config.tool_scope)
+        tool_defs = get_mcp_tools(
+            safe_mode=self._config.safe_mode, tool_scope=self._config.tool_scope
+        )
         for tool_def in tool_defs:
             self._register_single_tool(tool_def)
         logger.info(
@@ -263,15 +360,40 @@ class StarboardMCPServer:
             safe_mode=self._config.safe_mode,
         )
 
+    def _fix_tool_schema(
+        self, tool_name: str, tool_def: dict[str, Any]
+    ) -> None:
+        """Replace FastMCP's auto-generated ``kwargs: str`` schema with the real one.
+
+        FastMCP infers parameter schemas from handler signatures.  Our handlers
+        use ``**kwargs`` (parameters vary per tool), so FastMCP generates a
+        single ``kwargs: string`` field.  This breaks MCP clients that rely on
+        the advertised schema to construct arguments.
+
+        This method patches the registered ``Tool`` object *after* ``add_tool``
+        so the MCP ``list_tools`` response exposes the correct JSON Schema and
+        ``call_tool`` passes raw arguments through without mangling.
+        """
+        tool = self._mcp._tool_manager.get_tool(tool_name)
+        if tool is None:
+            return
+        schema = tool_def.get("inputSchema") or tool_def.get("parameters")
+        if schema:
+            tool.parameters = schema
+        tool.fn_metadata = _PassthroughMeta(
+            arg_model=tool.fn_metadata.arg_model,
+            output_schema=None,
+            output_model=None,
+            wrap_output=False,
+        )
+
     def _register_single_tool(self, tool_def: dict[str, Any]) -> None:
         """Register one MCP tool backed by the execution pipeline."""
         tool_name = tool_def["name"]
 
-        # Create a closure that captures tool_name for call_tool dispatch.
         async def _handler(**kwargs: Any) -> str:
             return await self._execute_tool(tool_name, kwargs)
 
-        # Give the function a distinct __name__ for FastMCP
         _handler.__name__ = tool_name
         _handler.__qualname__ = f"StarboardMCPServer._handler.{tool_name}"
         _handler.__doc__ = tool_def.get("description", "")
@@ -281,6 +403,7 @@ class StarboardMCPServer:
             name=tool_name,
             description=tool_def.get("description", ""),
         )
+        self._fix_tool_schema(tool_name, tool_def)
 
     def _register_composite_tools(self) -> None:
         """Register composite tools that chain multiple quick-lookup tools."""
@@ -303,11 +426,15 @@ class StarboardMCPServer:
     ) -> None:
         """Register one composite tool with its chained execution function."""
         tool_name = tool_def["name"]
+        _known_params = frozenset(
+            tool_def.get("parameters", {}).get("properties", {}).keys()
+        ) - {"workspace_id"}
 
         async def _handler(**kwargs: Any) -> str:
             workspace_id = (
                 kwargs.pop("workspace_id", None) or self._config.default_workspace_id
             )
+            kwargs = {k: v for k, v in kwargs.items() if k in _known_params}
 
             async def _executor(
                 inner_tool_name: str, **inner_kwargs: Any
@@ -317,9 +444,10 @@ class StarboardMCPServer:
                     inner_tool_name, {"workspace_id": workspace_id, **inner_kwargs}
                 )
                 parsed = json.loads(result_json)
-                if parsed.get("isError"):
+                if parsed.get("isError") or parsed.get("status") == "error":
                     raise ExecutionError(
-                        parsed.get("message", "sub-tool failed"),
+                        parsed.get("message")
+                        or parsed.get("data", {}).get("error", "sub-tool failed"),
                         code=parsed.get("code", "EXEC_FAILED"),
                     )
                 return parsed.get("data", parsed)
@@ -351,6 +479,7 @@ class StarboardMCPServer:
             name=tool_name,
             description=tool_def.get("description", ""),
         )
+        self._fix_tool_schema(tool_name, tool_def)
 
     def _register_resources(self) -> None:
         """Register MCP resources for catalog and health introspection."""
@@ -409,6 +538,7 @@ class StarboardMCPServer:
             name=tool_name,
             description=tool_def.get("description", ""),
         )
+        self._fix_tool_schema(tool_name, tool_def)
 
     def _register_prompts(self) -> None:
         """Register 8 domain agent prompts from prompt_bridge metadata."""
@@ -462,7 +592,7 @@ class StarboardMCPServer:
                 code="EXEC_NO_AGENT_FACTORY",
                 message="Agent tools are not configured on this server.",
             )
-            return json.dumps(error.model_dump())
+            return json.dumps({"isError": True, **error.model_dump()})
 
         domain = TOOL_NAME_TO_DOMAIN.get(tool_name)
         if domain is None:
@@ -470,15 +600,31 @@ class StarboardMCPServer:
                 code="EXEC_UNKNOWN_AGENT",
                 message=f"Unknown agent tool: {tool_name!r}",
             )
-            return json.dumps(error.model_dump())
+            return json.dumps({"isError": True, **error.model_dump()})
 
-        message = arguments.pop("message", "")
+        message = (
+            arguments.pop("message", None)
+            or arguments.pop("question", None)
+            or _AGENT_DEFAULT_MESSAGES.get(domain, "")
+        )
         session_id = str(arguments.pop("_session_id", "default"))
         workspace_id = (
             arguments.pop("workspace_id", None) or self._config.default_workspace_id
         )
         conversation_id = arguments.pop("conversation_id", None)
         config_overrides = arguments.pop("config_overrides", None)
+
+        if self._rate_limiter is not None:
+            try:
+                self._rate_limiter.check(session_id)
+            except RateLimitError:
+                return json.dumps(
+                    {
+                        "isError": True,
+                        "code": "RATE_LIMITED",
+                        "message": f"Rate limit exceeded for session {session_id!r}.",
+                    }
+                )
 
         response = await self._agent_executor.execute(
             message=message,
@@ -644,9 +790,13 @@ class StarboardMCPServer:
                         tool_name, agent_context=agent_context, **arguments
                     )
                 exec_span.close()
-            except Exception:  # noqa: BLE001 - MCP error boundary
+            except Exception as exc:  # noqa: BLE001 - MCP error boundary
                 exec_span.close(status="error")
-                if breaker is not None:
+                from starboard_server.infra.reliability.circuit_breaker import (
+                    CircuitBreakerError,
+                )
+
+                if isinstance(exc, CircuitBreakerError):
                     log_circuit_open(
                         root_span,
                         session_id=session_id,

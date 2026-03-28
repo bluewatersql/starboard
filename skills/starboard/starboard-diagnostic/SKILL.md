@@ -7,17 +7,25 @@ description: Troubleshoot Databricks issues with error detection, log analysis, 
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-For comprehensive troubleshooting, call the `diagnostic_agent` MCP tool with a natural language message.
-The diagnostic agent has access to ALL Starboard tools across every domain, enabling cross-domain
-root cause analysis that correlates job failures with cluster events, query metrics, and table state.
+Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent.
 
-Example:
+### Direct Orchestration (Recommended)
+
+1. Fetch MCP resource `starboard://prompts/diagnostic` — this returns the expert system prompt with troubleshooting workflows, cross-domain correlation patterns, and root cause analysis strategies.
+2. Follow the returned prompt's guidance to call tools directly based on the user's error or issue.
+3. Gather signals from multiple domains (jobs, clusters, queries, tables) and correlate them as the prompt directs.
+
+### Auto-Pilot
+
+Call MCP tool `diagnostic_agent` with:
+```json
+{ "message": "<the user's original error description or troubleshooting request>" }
 ```
-Call MCP tool: diagnostic_agent
-Arguments: { "message": "Job 12345 failed on its last 3 runs with OOM errors -- find the root cause" }
-```
+Wait for the result (the diagnostic agent correlates signals across jobs, clusters, queries, and tables).
+
+If the user did not specify a resource, use: `{ "message": "Run a health check and identify any current issues or anomalies" }`
 
 ## Manual Workflow (Individual Tools)
 

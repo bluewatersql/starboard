@@ -16,6 +16,6 @@
   "tool_scope": "phase_b",
   "rate_limit_per_minute": 60,
   "max_response_size_bytes": 65536,
-  "agent_timeout": 120,
+  "agent_timeout": 900,
   "safe_mode": false
 }

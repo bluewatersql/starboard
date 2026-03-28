@@ -6,11 +6,13 @@
 Configuration priority (highest to lowest):
 1. ``--config`` CLI flag (path to JSON file)
 2. ``STARBOARD_MCP_CONFIG`` env var (JSON string)
-3. Fallback: ``DATABRICKS_HOST`` + ``DATABRICKS_TOKEN`` → single workspace ``"default"``
+3. ``~/.starboard/config.json`` user config file
+4. Fallback: ``DATABRICKS_HOST`` + ``DATABRICKS_TOKEN`` → single workspace ``"default"``
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -99,9 +101,9 @@ class MCPServerConfig(BaseModel):
     rate_limit_per_minute: int = 60
     max_response_size_bytes: int = 32_768
     safe_mode: bool = False
-    tool_scope: Literal["phase_a", "phase_b", "full"] = "phase_a"
+    tool_scope: Literal["phase_a", "phase_b", "full"] = "phase_b"
     schema_version: str = "1.0.0"
-    agent_timeout: int = 120
+    agent_timeout: int = 900
     token_budget: int | None = None
 
     @model_validator(mode="after")
@@ -157,7 +159,14 @@ def load_mcp_config(
                     f"Invalid JSON in STARBOARD_MCP_CONFIG: {exc}"
                 ) from exc
 
-    # Priority 3: Fallback from DATABRICKS_HOST + DATABRICKS_TOKEN
+    # Priority 3: User config file (~/.starboard/config.json)
+    if raw is None:
+        user_config_path = Path.home() / ".starboard" / "config.json"
+        if user_config_path.is_file():
+            with contextlib.suppress(json.JSONDecodeError, OSError):
+                raw = json.loads(user_config_path.read_text(encoding="utf-8"))
+
+    # Priority 4: Fallback from DATABRICKS_HOST + DATABRICKS_TOKEN
     if raw is None:
         host = os.environ.get("DATABRICKS_HOST")
         token_env = "DATABRICKS_TOKEN"

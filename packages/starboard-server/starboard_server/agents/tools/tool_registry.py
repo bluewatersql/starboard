@@ -260,6 +260,13 @@ class NativeToolAdapter:
         # Some LLM providers emit all tool-call args as strings.
         kwargs = _coerce_kwargs_to_schema(kwargs, self.metadata.parameters)
 
+        # Strip unknown kwargs that aren't in the tool's JSON Schema.
+        # MCP clients sometimes inject extra parameters (e.g. wrapping
+        # arguments under a "kwargs" key) that the tool method doesn't accept.
+        known_keys = set(self.metadata.parameters.get("properties", {}).keys())
+        if known_keys:
+            kwargs = {k: v for k, v in kwargs.items() if k in known_keys}
+
         logger.debug(
             f"Executing native tool: {self.method_name}",
             extra={"kwargs": kwargs},

@@ -7,16 +7,25 @@ description: Run comprehensive workspace health assessment and product usage dis
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-For comprehensive analysis, call the `discovery_agent` MCP tool with a natural language message.
-The agent runs a full reasoning loop with automatic tool selection and multi-step analysis.
+Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent (may take several minutes).
 
-Example:
+### Direct Orchestration (Recommended)
+
+1. Fetch MCP resource `starboard://prompts/discovery` — this returns the expert system prompt with workspace assessment workflows and cross-domain analysis patterns.
+2. Follow the returned prompt's guidance to call discovery tools directly.
+3. Start with `discover_active_products`, then `run_discovery_queries`, then `analyze_discovery_domain`, and finally `synthesize_discovery_report`.
+
+### Auto-Pilot
+
+Call MCP tool `discovery_agent` with:
+```json
+{ "message": "Run a full workspace health assessment and identify optimization opportunities" }
 ```
-Call MCP tool: discovery_agent
-Arguments: { "message": "Run a full workspace health assessment and identify optimization opportunities" }
-```
+Wait for the result (this may take several minutes — discovery runs multiple phases).
+
+If the user provided a specific question, pass it as the `message` instead of the default above.
 
 ## Manual Workflow (Individual Tools)
 

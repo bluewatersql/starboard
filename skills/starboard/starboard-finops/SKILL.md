@@ -7,16 +7,24 @@ description: Run FinOps cost analysis, billing queries, budget forecasting, and 
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-For comprehensive analysis, call the `analytics_agent` MCP tool with a natural language message.
-The agent runs a full reasoning loop with automatic SQL generation and multi-step analysis.
+Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent.
 
-Example:
+### Direct Orchestration (Recommended)
+
+1. Fetch MCP resource `starboard://prompts/analytics` — this returns the expert system prompt with FinOps knowledge, SQL generation workflows, and cost analysis patterns.
+2. Follow the returned prompt's guidance to call tools directly based on the user's request.
+3. Use `build_analytics_context` → `build_sql_query` → `validate_sql_query` → `execute_sql_query` as the prompt directs.
+
+### Auto-Pilot
+
+Call MCP tool `analytics_agent` with:
+```json
+{ "message": "<the user's original cost or billing question>" }
 ```
-Call MCP tool: analytics_agent
-Arguments: { "message": "Show me cost trends by workspace for the last 90 days" }
-```
+
+If the user did not specify a question, use: `{ "message": "Analyze workspace costs and usage trends over the last 30 days" }`
 
 ## Manual Workflow (Individual Tools)
 

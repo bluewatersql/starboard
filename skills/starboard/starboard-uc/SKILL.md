@@ -7,16 +7,24 @@ description: Explore Unity Catalog assets, lineage, governance, and storage opti
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-For comprehensive analysis, call the `uc_agent` MCP tool with a natural language message.
-The agent runs a full reasoning loop with automatic tool selection and multi-step analysis.
+Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent.
 
-Example:
+### Direct Orchestration (Recommended)
+
+1. Fetch MCP resource `starboard://prompts/uc` — this returns the expert system prompt with tool ordering, Unity Catalog governance knowledge, and analysis workflows.
+2. Follow the returned prompt's guidance to call tools directly based on the user's request.
+3. Start with `list_uc_assets` or `get_table_metadata` to identify assets, then use lineage, grants, and schema tools as the prompt directs.
+
+### Auto-Pilot
+
+Call MCP tool `uc_agent` with:
+```json
+{ "message": "<the user's original request about tables, catalogs, or Unity Catalog>" }
 ```
-Call MCP tool: uc_agent
-Arguments: { "message": "Analyze lineage and access controls for catalog.schema.customer_orders" }
-```
+
+If the user did not specify a table, use: `{ "message": "Explore Unity Catalog assets, check governance policies, and identify optimization opportunities" }`
 
 ## Manual Workflow (Individual Tools)
 

@@ -7,13 +7,23 @@ description: Route Databricks analysis requests to the right Starboard domain. U
 - Starboard MCP server configured in `.cursor/mcp.json` or Claude Desktop config
 - Environment variables set: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `LLM_API_KEY`
 
-## Quick Path (Agent Tool)
+## Quick Path
 
-This is a **meta-routing skill** — it does NOT call tools directly. Instead, determine the user's intent and route to the correct domain skill.
+When this skill is triggered, IMMEDIATELY match the user's message against the routing table below and route to the appropriate domain. Do NOT describe the routing table, list capabilities, or ask the user which domain to use. Route and execute now.
 
-Read the user's message and match against the routing table below, then invoke the corresponding domain skill.
+### Orchestrated Mode (Recommended)
 
-If the request spans multiple domains, call the corresponding `*_agent` MCP tools in parallel for each relevant domain.
+1. Match the user's input against the routing table in the "Manual Workflow" section below.
+2. Fetch MCP resource `starboard://prompts/<matched_domain>` (e.g. `starboard://prompts/query` for SQL queries).
+3. Follow the returned prompt's guidance to call domain tools directly.
+4. If the request spans multiple domains, fetch multiple prompt resources and call tools from each domain.
+
+### Auto-Pilot Mode
+
+1. Match the user's input against the routing table.
+2. Call the matched `*_agent` MCP tool with `{ "message": "<the user's original request>" }`.
+3. If the request spans multiple domains, call multiple `*_agent` MCP tools in parallel.
+4. If no clear match, call `discovery_agent` with the user's message for a workspace-level overview.
 
 ## Manual Workflow (Intent Routing)
 
