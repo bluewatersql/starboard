@@ -25,6 +25,8 @@ dependencies = [
     # Data visualization (FinOps charts)
     "altair>=5.0.0,<6.0.0", # Declarative visualization with Vega-Lite
     "vl-convert-python>=1.0.0,<2.0.0", # Convert Vega-Lite to PNG/SVG
+    # Prompt templating
+    "Jinja2>=3.1.0",
     # Configuration
     "pydantic>=2.0.0,<3.0.0",
     "pydantic-settings>=2.0.0,<3.0.0",

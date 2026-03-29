@@ -1,8 +1,15 @@
+
 """Migration prioritization pack."""
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 C_MG01_SQL = """\
 WITH cluster_usage AS (
@@ -136,6 +143,13 @@ MIGRATION_PACK = QueryPack(
             sql_template=C_MG01_SQL,
             required_tables=("system.billing.usage", "system.compute.clusters"),
             domain="migration",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Photon migration priority list",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-MG02",
@@ -144,6 +158,13 @@ MIGRATION_PACK = QueryPack(
             sql_template=C_MG02_SQL,
             required_tables=("system.billing.usage", "system.lakeflow.jobs"),
             domain="migration",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Serverless migration candidates",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset(),

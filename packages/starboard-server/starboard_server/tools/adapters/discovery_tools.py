@@ -33,7 +33,6 @@ from starboard_server.discovery.output.formatters import OutputFormatter
 from starboard_server.discovery.prompts.domain_analysis import PromptBuilder
 from starboard_server.discovery.query_packs.registry import create_default_registry
 from starboard_server.discovery.synthesizer import ReportAssembler
-from starboard_server.exceptions import AdapterError
 from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.adapters.base import BaseToolAdapter

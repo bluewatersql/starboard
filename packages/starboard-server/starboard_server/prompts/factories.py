@@ -4,23 +4,38 @@ Prompt factory functions for domain agents.
 This module provides factory functions that build formatted prompts
 for each domain agent with appropriate context (mode, goal, token budget).
 
-Extracted from domain_prompts.py for better organization.
+Uses Jinja2 templates (v2) for prompt rendering. Legacy str.format()
+imports retained for backward compatibility.
 """
 
 from collections.abc import Callable
 
 from starboard_core.domain.models.llm import OptimizationMode
 
-from starboard_server.prompts.analytics.v1 import ANALYTICS_SYSTEM_PROMPT
+from starboard_server.prompts.analytics.v2 import (
+    build_system_prompt as _analytics_build,
+)
 from starboard_server.prompts.base import AgentDomain
-from starboard_server.prompts.cluster import CLUSTER_SYSTEM_PROMPT
-from starboard_server.prompts.diagnostic import DIAGNOSTIC_SYSTEM_PROMPT
-from starboard_server.prompts.discovery import DISCOVERY_SYSTEM_PROMPT
-from starboard_server.prompts.job import JOB_SYSTEM_PROMPT
-from starboard_server.prompts.query import QUERY_SYSTEM_PROMPT
-from starboard_server.prompts.router import ROUTER_SYSTEM_PROMPT
-from starboard_server.prompts.uc import UC_SYSTEM_PROMPT
-from starboard_server.prompts.warehouse import WAREHOUSE_SYSTEM_PROMPT
+from starboard_server.prompts.cluster.v2 import (
+    build_system_prompt as _cluster_build,
+)
+from starboard_server.prompts.diagnostic.v2 import (
+    build_system_prompt as _diagnostic_build,
+)
+from starboard_server.prompts.discovery.v3 import (
+    build_system_prompt as _discovery_build,
+)
+from starboard_server.prompts.job.v2 import build_system_prompt as _job_build
+from starboard_server.prompts.query.v2 import (
+    build_system_prompt as _query_build,
+)
+from starboard_server.prompts.router.v2 import (
+    build_system_prompt as _router_build,
+)
+from starboard_server.prompts.uc.v2 import build_system_prompt as _uc_build
+from starboard_server.prompts.warehouse.v2 import (
+    build_system_prompt as _warehouse_build,
+)
 
 
 def get_system_prompt(
@@ -54,49 +69,59 @@ def get_system_prompt(
         >>> "SQL query optimization expert" in prompt
         True
     """
-    prompts = {
-        "router": ROUTER_SYSTEM_PROMPT,
-        "query": QUERY_SYSTEM_PROMPT,
-        "job": JOB_SYSTEM_PROMPT,
-        "uc": UC_SYSTEM_PROMPT,
-        "cluster": CLUSTER_SYSTEM_PROMPT,
-        "diagnostic": DIAGNOSTIC_SYSTEM_PROMPT,
-        "analytics": ANALYTICS_SYSTEM_PROMPT,
-        "warehouse": WAREHOUSE_SYSTEM_PROMPT,
-        "discovery": DISCOVERY_SYSTEM_PROMPT,
+    builders = {
+        "router": lambda: _router_build(),
+        "query": lambda: _query_build(
+            goal=goal or "Optimize SQL query performance",
+            token_budget=token_budget,
+            mode=mode,
+        ),
+        "job": lambda: _job_build(
+            goal=goal or "Optimize Databricks job performance",
+            token_budget=token_budget,
+            mode=mode,
+        ),
+        "uc": lambda: _uc_build(
+            goal=goal or "Analyze Unity Catalog assets, governance, and optimization",
+            token_budget=token_budget,
+            mode=mode,
+        ),
+        "cluster": lambda: _cluster_build(
+            goal=goal or "Optimize cluster configuration",
+            token_budget=token_budget,
+            mode=mode,
+        ),
+        "diagnostic": lambda: _diagnostic_build(
+            goal=goal or "Diagnose and troubleshoot performance issues",
+            token_budget=token_budget,
+            mode=mode,
+            available_artifacts=format_available_artifacts(None),
+        ),
+        "analytics": lambda: _analytics_build(
+            goal=goal or "Analyze costs and provide FinOps recommendations",
+            mode=mode,
+        ),
+        "warehouse": lambda: _warehouse_build(
+            goal=goal or "Optimize SQL warehouse portfolio",
+            token_budget=token_budget,
+            mode=mode,
+        ),
+        "discovery": lambda: _discovery_build(
+            goal=goal or "Run a comprehensive workspace health assessment",
+            token_budget=token_budget,
+            mode=mode,
+        ),
     }
 
-    if domain not in prompts:
+    if domain not in builders:
         raise ValueError(
             "Unknown domain: "
             + domain
             + ". Must be one of: "
-            + str(list(prompts.keys()))
+            + str(list(builders.keys()))
         )
 
-    base_prompt = prompts[domain]
-
-    # Router prompt doesn't use format strings
-    if domain == "router":
-        return base_prompt
-
-    # Diagnostic prompt needs available_artifacts parameter
-    if domain == "diagnostic":
-        return base_prompt.format(
-            goal=goal or "Diagnose and troubleshoot performance issues",
-            token_budget=token_budget,
-            mode=mode,
-            available_artifacts=format_available_artifacts(
-                None
-            ),  # Default to no artifacts
-        )
-
-    # Format prompt with context for other domains
-    return base_prompt.format(
-        goal=goal or "Optimize the provided workload",
-        token_budget=token_budget,
-        mode=mode,
-    )
+    return builders[domain]()
 
 
 def build_router_prompt(
@@ -120,7 +145,7 @@ def build_router_prompt(
     Returns:
         Static router system prompt
     """
-    return ROUTER_SYSTEM_PROMPT
+    return _router_build()
 
 
 def build_query_prompt(
@@ -141,7 +166,7 @@ def build_query_prompt(
     Returns:
         Formatted query agent system prompt
     """
-    return QUERY_SYSTEM_PROMPT.format(
+    return _query_build(
         goal=goal or "Optimize SQL query performance",
         token_budget=budget_remaining,
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,
@@ -166,7 +191,7 @@ def build_job_prompt(
     Returns:
         Formatted job agent system prompt
     """
-    return JOB_SYSTEM_PROMPT.format(
+    return _job_build(
         goal=goal or "Optimize Databricks job performance",
         token_budget=budget_remaining,
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,
@@ -195,7 +220,7 @@ def build_uc_prompt(
     Returns:
         Formatted UC agent system prompt
     """
-    return UC_SYSTEM_PROMPT.format(
+    return _uc_build(
         goal=goal or "Analyze Unity Catalog assets, governance, and optimization",
         token_budget=budget_remaining,
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,
@@ -220,7 +245,7 @@ def build_cluster_prompt(
     Returns:
         Formatted cluster agent system prompt
     """
-    return CLUSTER_SYSTEM_PROMPT.format(
+    return _cluster_build(
         goal=goal or "Optimize cluster configuration",
         token_budget=budget_remaining,
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,
@@ -283,7 +308,7 @@ def build_diagnostic_prompt(
     available_artifacts = context.get("available_artifacts") if context else None
     formatted_artifacts = format_available_artifacts(available_artifacts)
 
-    return DIAGNOSTIC_SYSTEM_PROMPT.format(
+    return _diagnostic_build(
         goal=goal or "Diagnose and troubleshoot performance issues",
         token_budget=budget_remaining,
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,
@@ -309,7 +334,7 @@ def build_analytics_prompt(
     Returns:
         Formatted analytics agent system prompt
     """
-    return ANALYTICS_SYSTEM_PROMPT.format(
+    return _analytics_build(
         goal=goal or "Analyze costs and provide FinOps recommendations",
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,
     )
@@ -333,7 +358,7 @@ def build_warehouse_prompt(
     Returns:
         Formatted warehouse agent system prompt
     """
-    return WAREHOUSE_SYSTEM_PROMPT.format(
+    return _warehouse_build(
         goal=goal or "Optimize SQL warehouse portfolio",
         token_budget=budget_remaining,
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,
@@ -357,7 +382,7 @@ def build_discovery_prompt(
     Returns:
         Formatted discovery agent system prompt.
     """
-    return DISCOVERY_SYSTEM_PROMPT.format(
+    return _discovery_build(
         goal=goal or "Run a comprehensive workspace health assessment",
         token_budget=budget_remaining,
         mode=mode.value if isinstance(mode, OptimizationMode) else mode,

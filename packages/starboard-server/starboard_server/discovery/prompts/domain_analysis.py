@@ -248,6 +248,138 @@ recommended_actions (5-10), and data_coverage.
 """
 )
 
+DLT_PIPELINES_ANALYSIS_PROMPT = (
+    DOMAIN_ANALYSIS_PREAMBLE
+    + """\
+## Role
+You are a Databricks platform expert analyzing Delta Live Tables (DLT) pipeline health.
+
+## Focus Areas
+- **Pipeline reliability**: Update failure rates, frequent failures, error patterns
+- **Performance**: Long-running updates, p95 duration outliers, slow target tables
+- **Resource efficiency**: DBU consumption per pipeline, serverless migration candidates
+- **Lifecycle management**: Stale/abandoned pipelines, continuous vs triggered balance
+- **Configuration**: Edition selection, Photon adoption, serverless usage
+
+## Grading Rubric
+- **A (90-100)**: <5% failure rate, efficient update durations, no stale pipelines, \
+serverless where applicable, good Photon adoption
+- **B (75-89)**: 5-10% failure rate, minor duration outliers, few stale pipelines
+- **C (60-74)**: 10-20% failure rate, several long-running updates, stale pipelines present
+- **D (40-59)**: >20% failure rate, widespread duration issues, many abandoned pipelines
+- **F (0-39)**: Systemic pipeline failures, extreme waste, no lifecycle management
+
+## Heuristic Findings (pre-screened)
+{heuristic_findings}
+
+## Query Results
+{query_results}
+
+Produce a DomainAnalysis JSON object with grade, score, summary, observations (include workload \
+breakdown details), patterns, findings (10-15, one per distinct issue), \
+recommended_actions (5-10), and data_coverage.
+"""
+)
+
+AI_GATEWAY_ANALYSIS_PROMPT = (
+    DOMAIN_ANALYSIS_PREAMBLE
+    + """\
+## Role
+You are a Databricks platform expert analyzing AI Gateway and model serving health.
+
+## Focus Areas
+- **Endpoint reliability**: Error rates, server errors, success ratios
+- **Latency profile**: Average and p95 latency, latency outliers
+- **Token efficiency**: Token consumption patterns, cost attribution by requester
+- **Capacity**: Request volumes, peak patterns, scaling behavior
+- **Cost governance**: Per-requester chargeback readiness, token budget adherence
+
+## Grading Rubric
+- **A (90-100)**: <1% error rate, p95 latency <5s, tokens well-attributed, \
+balanced load across endpoints
+- **B (75-89)**: 1-3% error rate, occasional latency spikes, mostly attributed
+- **C (60-74)**: 3-5% error rate, frequent latency issues, attribution gaps
+- **D (40-59)**: >5% error rate, poor latency, uncontrolled token spending
+- **F (0-39)**: Systemic endpoint failures, extreme latency, no cost governance
+
+## Heuristic Findings (pre-screened)
+{heuristic_findings}
+
+## Query Results
+{query_results}
+
+Produce a DomainAnalysis JSON object with grade, score, summary, observations (include workload \
+breakdown details), patterns, findings (10-15, one per distinct issue), \
+recommended_actions (5-10), and data_coverage.
+"""
+)
+
+MLFLOW_ANALYSIS_PROMPT = (
+    DOMAIN_ANALYSIS_PREAMBLE
+    + """\
+## Role
+You are a Databricks platform expert analyzing MLflow experiment and model lifecycle health.
+
+## Focus Areas
+- **Experiment health**: Success ratios, noisy experiments, reliability patterns
+- **Usage patterns**: Run volume trends, active vs deleted experiments, user activity
+- **Resource efficiency**: Long-running runs, experiment lifecycle management
+- **Governance**: Soft-deleted experiment cleanup, user attribution, experiment naming
+- **Adoption maturity**: Run frequency, user diversity, experiment organization
+
+## Grading Rubric
+- **A (90-100)**: >90% success ratio, well-organized experiments, no stale artifacts, \
+active user base, clean lifecycle
+- **B (75-89)**: 80-90% success, minor cleanup needed, good user adoption
+- **C (60-74)**: 70-80% success, noisy experiments present, some stale artifacts
+- **D (40-59)**: <70% success, many noisy experiments, poor experiment hygiene
+- **F (0-39)**: Systemic run failures, abandoned experiments, no governance
+
+## Heuristic Findings (pre-screened)
+{heuristic_findings}
+
+## Query Results
+{query_results}
+
+Produce a DomainAnalysis JSON object with grade, score, summary, observations (include workload \
+breakdown details), patterns, findings (10-15, one per distinct issue), \
+recommended_actions (5-10), and data_coverage.
+"""
+)
+
+LAKEFLOW_CONNECT_ANALYSIS_PROMPT = (
+    DOMAIN_ANALYSIS_PREAMBLE
+    + """\
+## Role
+You are a Databricks platform expert analyzing Lakeflow Connect ingestion health.
+
+## Focus Areas
+- **Ingestion volume**: DBU consumption trends, workspace distribution
+- **Pipeline efficiency**: Per-pipeline cost, connector type breakdown
+- **Growth patterns**: Day-over-day consumption trends, spikes
+- **Configuration**: Connector type mix (ingestion pipeline, gateway, table sync)
+- **Cost governance**: Attribution to specific pipelines and creators
+
+## Grading Rubric
+- **A (90-100)**: Stable ingestion patterns, well-attributed costs, diverse connector usage, \
+no unexpected spikes
+- **B (75-89)**: Minor cost fluctuations, mostly attributed, reasonable growth
+- **C (60-74)**: Noticeable cost spikes, some unattributed usage, concentrated on few pipelines
+- **D (40-59)**: Volatile costs, poor attribution, growth concerns
+- **F (0-39)**: Uncontrolled consumption, no visibility into pipeline costs
+
+## Heuristic Findings (pre-screened)
+{heuristic_findings}
+
+## Query Results
+{query_results}
+
+Produce a DomainAnalysis JSON object with grade, score, summary, observations (include workload \
+breakdown details), patterns, findings (10-15, one per distinct issue), \
+recommended_actions (5-10), and data_coverage.
+"""
+)
+
 DOMAIN_PROMPT_TEMPLATES: dict[str, str] = {
     "billing": BILLING_ANALYSIS_PROMPT,
     "jobs": JOBS_ANALYSIS_PROMPT,
@@ -255,6 +387,11 @@ DOMAIN_PROMPT_TEMPLATES: dict[str, str] = {
     "query_perf": QUERY_PERF_ANALYSIS_PROMPT,
     "query_performance": QUERY_PERF_ANALYSIS_PROMPT,
     "governance": GOVERNANCE_ANALYSIS_PROMPT,
+    # Phase 4 additions
+    "dlt_pipelines": DLT_PIPELINES_ANALYSIS_PROMPT,
+    "ai_gateway": AI_GATEWAY_ANALYSIS_PROMPT,
+    "mlflow": MLFLOW_ANALYSIS_PROMPT,
+    "lakeflow_connect": LAKEFLOW_CONNECT_ANALYSIS_PROMPT,
 }
 
 

@@ -1,0 +1,11 @@
+
+===============================================================================
+TOOL EXECUTION GUIDELINES (CRITICAL)
+===============================================================================
+
+**NEVER use placeholder values when calling tools.**
+
+If a tool requires data from another tool's output:
+1. Call the data-producing tool FIRST
+2. WAIT for its results before calling dependent tools
+3. Use the ACTUAL returned data in subsequent calls

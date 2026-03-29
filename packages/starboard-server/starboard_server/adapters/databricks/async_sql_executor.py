@@ -89,6 +89,18 @@ class AsyncSQLExecutor:
         Raises:
             Exception: If query execution fails
         """
+        # Defensive: ensure warehouse is configured before executing SQL
+        if self._client.warehouse_id is None:
+            from starboard_server.exceptions import ConfigurationError
+
+            raise ConfigurationError(
+                config_key="databricks_warehouse_id",
+                reason=(
+                    "No SQL warehouse configured. Set DATABRICKS_WAREHOUSE_ID "
+                    "or enable AUTOCREATE_DBX_DW=true to auto-provision one."
+                ),
+            )
+
         logger.debug(
             "async_sql_executor_starting",
             extra={
@@ -167,7 +179,9 @@ class AsyncSQLExecutor:
         Returns:
             DataFrame with properly typed columns
         """
-        from starboard_server.adapters.databricks.services.sql import resolve_polars_type
+        from starboard_server.adapters.databricks.services.sql import (
+            resolve_polars_type,
+        )
 
         type_map: dict[str, type[pl.DataType]] = {}
         for col_info in result_columns:

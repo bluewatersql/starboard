@@ -54,6 +54,10 @@ class TestDomainPromptTemplates:
             "query_perf",
             "query_performance",
             "governance",
+            "dlt_pipelines",
+            "ai_gateway",
+            "mlflow",
+            "lakeflow_connect",
         }
 
     def test_all_prompts_contain_preamble(self) -> None:

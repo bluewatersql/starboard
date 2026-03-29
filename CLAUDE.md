@@ -12,6 +12,7 @@ This file provides guidance to AI coding assistants (Claude Code, Cursor, Codex)
 - Multi-package monorepo managed with `uv` workspace
 - Async-first architecture with streaming responses
 - Multi-agent system with domain-specialized agents
+- Jinja2-templated prompts with `StrictUndefined` safety
 - Type-safe with end-to-end Python type hints and Pydantic validation
 - Comprehensive test suite (unit, integration, golden, contract tests)
 
@@ -139,7 +140,7 @@ tools/       – tool implementations with explicit schemas
 
 ### Tool System
 
-45+ tools organized by category in three-layer architecture:
+50+ tools organized by category in three-layer architecture:
 
 ```
 Domain (Pure Logic) → Service (Orchestration) → Adapters (Tool Functions)
@@ -210,6 +211,7 @@ Every log entry must include `trace_id`, `span_id`, `user_id`, `session_id`, `mo
 ### Prompts & Schemas
 - **Constrain every LLM call** with JSON-mode/function-call schemas
 - **Centralized prompts** under `packages/starboard-server/starboard_server/prompts/`
+- **Prompt templates** use Jinja2 with `StrictUndefined`; `str.format()` is deprecated for new prompts
 - **Versioned prompts**: `PROMPT_VERSION = "1.0.0"` in each prompt module; never modify in place
 - **Golden tests** required for all prompt changes
 - **Default temperatures**: structural/tool calls ≤ 0.4; creative ≤ 0.9
@@ -242,10 +244,12 @@ Every log entry must include `trace_id`, `span_id`, `user_id`, `session_id`, `mo
 
 ### Modifying Prompts
 1. **Always version prompts**: Create `v2.py` alongside `v1.py` (never modify existing versions in production)
-2. Increment `PROMPT_VERSION` constant
-3. Update golden tests in `tests/golden/`
-4. Run `make test-golden` to verify changes
-5. Document changes in PR description
+2. Create Jinja2 template in `prompts/templates/{domain}/system.jinja2`
+3. Use `render_template()` from `prompts/jinja_env.py` — never `str.format()` for new prompts
+4. Increment `PROMPT_VERSION` constant
+5. Update golden tests in `tests/golden/`
+6. Run `make test-golden` to verify changes
+7. Document changes in PR description
 
 ## Important Files
 
@@ -260,6 +264,8 @@ Every log entry must include `trace_id`, `span_id`, `user_id`, `session_id`, `mo
 - `packages/starboard-server/starboard_server/agents/routing/intent_router.py` — Request routing
 - `packages/starboard-server/starboard_server/agents/domain/domain_agent.py` — Base domain agent
 - `packages/starboard-server/starboard_server/agents/agent_factory.py` — Agent creation and caching
+- `packages/starboard-server/starboard_server/prompts/jinja_env.py` — Jinja2 template environment
+- `packages/starboard-server/starboard_server/prompts/templates/` — Jinja2 prompt templates
 - `packages/starboard-server/starboard_server/prompts/` — Domain-specific prompts
 - `packages/starboard-server/starboard_server/tools/` — Tool implementations
 - `packages/starboard-server/starboard_server/infra/reliability/circuit_breaker.py` — Circuit breaker pattern
@@ -287,6 +293,7 @@ Every log entry must include `trace_id`, `span_id`, `user_id`, `session_id`, `mo
 - Skip type hints on public APIs
 - Parse free-form LLM text without schemas
 - Ignore rate limits or token budgets
+- Use `str.format()` for new prompts (use Jinja2 templates instead)
 
 ## Common Pitfalls
 

@@ -1,3 +1,4 @@
+
 """Compute and cluster health query pack for Databricks discovery.
 
 Cluster utilization, idle detection, SQL warehouse operational health.
@@ -7,7 +8,13 @@ no dollar computations.
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 C_C01_SQL = """\
 WITH latest_clusters AS (
@@ -203,6 +210,13 @@ COMPUTE_PACK = QueryPack(
                 "system.billing.usage",
             ),
             domain="compute",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="Cluster utilization and sizing analysis",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-C02",
@@ -215,6 +229,13 @@ COMPUTE_PACK = QueryPack(
                 "system.billing.usage",
             ),
             domain="compute",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Cluster idle time and auto-termination gaps",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-C03",
@@ -226,6 +247,13 @@ COMPUTE_PACK = QueryPack(
                 "system.query.history",
             ),
             domain="compute",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="SQL warehouse health overview",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset({"ALL_PURPOSE_COMPUTE", "JOB_COMPUTE"}),
