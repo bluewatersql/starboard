@@ -67,30 +67,27 @@ ANALYZE_DISCOVERY_DOMAIN: dict[str, Any] = {
         "Applies deterministic best-practice rules first, then uses the LLM "
         "for deeper analysis. Produces a letter grade (A-F), numeric score, "
         "findings with priority and impact, and actionable recommendations.\n"
-        "IMPORTANT: Use the 'domains' parameter to analyze ALL domains in a "
-        "single call. The tool handles parallelism and timeouts internally. "
-        "Do NOT call this tool multiple times in parallel.\n"
+        "BATCH MODE (preferred): Pass all domains from run_discovery_queries "
+        "'domains_with_data' via the 'domains' parameter. The server runs "
+        "all domain analyses in parallel internally.\n"
         "Must be called AFTER run_discovery_queries.\n"
-        "Cost: ~800-1500 tokens per domain | Duration: 30-120s for all domains"
+        "Cost: ~800-1500 tokens per domain | Duration: 5-7 min for full batch"
     ),
     "parameters": {
         "type": "object",
         "properties": {
+            "domain": {
+                "type": "string",
+                "description": (
+                    "Single domain to analyze (e.g. 'billing', 'jobs', 'compute')."
+                ),
+            },
             "domains": {
                 "type": "array",
                 "items": {"type": "string"},
                 "description": (
-                    "List of domains to analyze. Pass all domains from "
-                    "run_discovery_queries 'domains_with_data'. "
-                    "Preferred over single 'domain' — handles parallelism "
-                    "and timeouts internally."
-                ),
-            },
-            "domain": {
-                "type": "string",
-                "description": (
-                    "Single domain to analyze. Use 'domains' (array) instead "
-                    "for batch analysis of all domains in one call."
+                    "Batch mode (preferred) — analyze all domains in one call. "
+                    "Pass the 'domains_with_data' list from run_discovery_queries."
                 ),
             },
         },
@@ -109,6 +106,54 @@ SYNTHESIZE_DISCOVERY_REPORT: dict[str, Any] = {
         "Returns: Executive summary, report cards (domain grades), top findings, "
         "recommended actions, and output file paths.\n"
         "Cost: ~500-800 tokens | Duration: 10-20s"
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+}
+
+START_DISCOVERY_ANALYSIS: dict[str, Any] = {
+    "name": "start_discovery_analysis",
+    "description": (
+        "Phase 3 (async) — Start background domain analysis and return "
+        "immediately.\n"
+        "Launches LLM-powered analysis for all domains in parallel on the "
+        "server. Returns in under 1 second with status 'started'.\n"
+        "After calling this, poll get_discovery_analysis_progress every "
+        "30-60 seconds until status is 'completed', then call "
+        "synthesize_discovery_report.\n"
+        "Must be called AFTER run_discovery_queries.\n"
+        "Cost: ~800-1500 tokens per domain (background) | Duration: <1s"
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "domains": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": (
+                    "Domains to analyze. Defaults to all domains with data "
+                    "from run_discovery_queries."
+                ),
+            },
+        },
+        "required": [],
+    },
+}
+
+GET_DISCOVERY_ANALYSIS_PROGRESS: dict[str, Any] = {
+    "name": "get_discovery_analysis_progress",
+    "description": (
+        "Check progress of background domain analysis started by "
+        "start_discovery_analysis.\n"
+        "Returns instantly with current progress: how many domains are "
+        "complete, which are remaining, and elapsed time.\n"
+        "When status is 'completed', the response includes all domain "
+        "results and you should call synthesize_discovery_report.\n"
+        "When status is 'running', call again in 30-60 seconds.\n"
+        "Cost: 0 tokens | Duration: <1s"
     ),
     "parameters": {
         "type": "object",

@@ -50,10 +50,9 @@ Call `run_discovery_queries` to gather data from system tables.
 (more activity) vs. domains with failures.
 
 ### Phase 3: Analyze
-Call `analyze_discovery_domain` ONCE with the `domains` parameter set to all \
+Call `analyze_discovery_domain` with the `domains` parameter set to all \
 domains listed in `domains_with_data` from Phase 2.
-- The tool handles parallelism and timeouts internally.
-- Do NOT call this tool multiple times — pass all domains in a single call.
+- The tool handles parallelism internally.
 - Review the per-domain grades and top findings in the response.
 - Note any domains that scored poorly (D or F) as priority areas.
 - Domains with no data are automatically skipped.

@@ -156,6 +156,10 @@ class AsyncSQLExecutor:
     ) -> pl.DataFrame:
         """Apply type casting based on result column metadata.
 
+        Uses the shared :func:`resolve_polars_type` mapping from
+        :mod:`~starboard_server.adapters.databricks.services.sql` to
+        avoid duplicating the Databricks-SQL-type → Polars-type mapping.
+
         Args:
             df: Input DataFrame
             result_columns: Column metadata with data_type info
@@ -163,28 +167,17 @@ class AsyncSQLExecutor:
         Returns:
             DataFrame with properly typed columns
         """
-        # Build type mapping from result_columns
-        # Use PolarsDataType which accepts both DataType instances and DataTypeClass
+        from starboard_server.adapters.databricks.services.sql import resolve_polars_type
+
         type_map: dict[str, type[pl.DataType]] = {}
         for col_info in result_columns:
             col_name = col_info.get("name")
-            data_type = col_info.get("data_type", "").lower()
-
+            data_type = col_info.get("data_type", "")
             if col_name and col_name in df.columns:
-                if data_type in ("string", "varchar", "text"):
-                    type_map[col_name] = pl.Utf8
-                elif data_type in ("int", "integer", "bigint"):
-                    type_map[col_name] = pl.Int64
-                elif data_type in ("float", "double", "decimal", "number"):
-                    type_map[col_name] = pl.Float64
-                elif data_type in ("bool", "boolean"):
-                    type_map[col_name] = pl.Boolean
-                elif data_type in ("date",):
-                    type_map[col_name] = pl.Date
-                elif data_type in ("datetime", "timestamp"):
-                    type_map[col_name] = pl.Datetime
+                target = resolve_polars_type(data_type)
+                if target is not None:
+                    type_map[col_name] = target
 
-        # Apply type casting
         if type_map:
             try:
                 df = df.cast(type_map)  # type: ignore[arg-type]

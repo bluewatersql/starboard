@@ -15,7 +15,7 @@ Two modes are available. **Direct orchestration** gives you full control and avo
 
 1. Fetch MCP resource `starboard://prompts/discovery` — this returns the expert system prompt with workspace assessment workflows and cross-domain analysis patterns.
 2. Follow the returned prompt's guidance to call discovery tools directly.
-3. Start with `discover_active_products`, then `run_discovery_queries`, then `analyze_discovery_domain`, and finally `synthesize_discovery_report`.
+3. Use the 4-phase workflow below.
 
 ### Auto-Pilot
 
@@ -27,40 +27,43 @@ Wait for the result (this may take several minutes — discovery runs multiple p
 
 If the user provided a specific question, pass it as the `message` instead of the default above.
 
-## Manual Workflow (Individual Tools)
+## 4-Phase Workflow
 
-For targeted analysis or when you need specific data points:
+### Phase 1: Discover active products
+Call `discover_active_products` (no params required).
+- Returns: `available_domains` — the list of domains to analyze
 
-1. **Discover active products** -- Call `discover_active_products` (no params required)
-   - Returns: Audit of active Databricks products and features in the workspace
-   - Use when: You need an inventory of what products are deployed and in use
+### Phase 2: Run discovery queries
+Call `run_discovery_queries` (no params required).
+- Returns: `domains_with_data` and `parallel_calls` — a list of tool calls to make next.
 
-2. **Run discovery queries** -- Call `run_discovery_queries` (no params required)
-   - Returns: Results from discovery SQL query packs covering clusters, jobs, warehouses, and usage
-   - Use when: You need raw data about workspace resources and activity
+### Phase 3: Analyze all domains (batch)
+Call `analyze_discovery_domain` with `domains` set to the `domains_with_data` list from Phase 2.
+- The server runs all domain analyses **in parallel** internally.
+- This is a single call that takes 5-7 minutes for a typical workspace.
+- Returns complete results for all domains: grades, scores, findings, recommendations.
 
-3. **Analyze domain** -- Call `analyze_discovery_domain` (no params required)
-   - Returns: Domain-level analysis using heuristics and LLM-driven assessment
-   - Use when: You want interpreted findings rather than raw data
+Example:
+```
+analyze_discovery_domain(domains=["billing", "jobs", "compute", "governance", "query_perf", ...])
+```
 
-4. **Synthesize report** -- Call `synthesize_discovery_report` (no params required)
-   - Returns: Comprehensive report assembling domain analyses into a unified assessment
-   - Use when: You want a final, consolidated workspace health report
+**Note:** Requires `MCP_TOOL_TIMEOUT` set to at least `600000` (10 min) in Claude Code settings to avoid timeout.
 
-5. **Full discovery pipeline** -- Call `run_workspace_discovery` (no params required)
-   - Returns: End-to-end workspace assessment combining all discovery steps
-   - Use when: You want to run the complete discovery pipeline in a single call
+### Phase 4: Synthesize report
+After `analyze_discovery_domain` returns, call `synthesize_discovery_report` (no params required).
+- Assembles all domain analyses into a unified report with executive summary, grades, and prioritized findings.
 
 ## Available MCP Tools
 
-| Tool | Description | Required Params |
-|------|-------------|-----------------|
-| `discover_active_products` | Audit workspace for active Databricks products | (none) |
-| `run_discovery_queries` | Execute discovery SQL query packs | (none) |
-| `analyze_discovery_domain` | Analyze domains using heuristics and LLM | (none) |
+| Tool | Description | Key Params |
+|------|-------------|------------|
+| `discover_active_products` | Audit workspace for active Databricks products | `lookback_days` (optional) |
+| `run_discovery_queries` | Execute discovery SQL query packs | `domains` (optional filter) |
+| `analyze_discovery_domain` | Analyze domains (batch or single) — server parallelizes internally | `domains` (batch) or `domain` (single) |
 | `synthesize_discovery_report` | Assemble domain analyses into final report | (none) |
-| `run_workspace_discovery` | Run comprehensive workspace assessment | (none) |
-| `discovery_agent` | Full workspace discovery (agent) | `message` |
+| `run_workspace_discovery` | Legacy monolithic pipeline (not recommended) | `lookback_days`, `domains` |
+| `discovery_agent` | Full workspace discovery via server-side agent | `message` |
 
 ## Composite Tools
 

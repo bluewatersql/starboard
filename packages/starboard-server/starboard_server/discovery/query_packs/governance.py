@@ -18,29 +18,36 @@ FROM system.access.table_lineage
 WHERE event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
 GROUP BY ALL
 ORDER BY pipeline_references DESC
-LIMIT 5000
+LIMIT 500
 """
 
 N_L02_SQL = """\
 WITH cutoff AS (
-  SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt
+  SELECT
+    DATEADD(DAY, -90, CURRENT_DATE()) AS dt
 )
 SELECT
-  request_params.table_full_name           AS table_full_name,
+  request_params.full_name_arg AS table_full_name,
   action_name,
-  COUNT(*)                                 AS access_count,
-  COUNT(DISTINCT user_identity.email)      AS distinct_users,
-  COUNT(DISTINCT service_name)             AS distinct_services,
-  MIN(event_time)                          AS first_access,
-  MAX(event_time)                          AS last_access,
+  COUNT(*) AS access_count,
+  COUNT(DISTINCT user_identity.email) AS distinct_users,
+  COUNT(DISTINCT service_name) AS distinct_services,
+  MIN(event_time) AS first_access,
+  MAX(event_time) AS last_access,
   DATEDIFF(DAY, MAX(event_time), CURRENT_TIMESTAMP()) AS days_since_last_access
-FROM system.access.audit, cutoff
-WHERE event_time >= cutoff.dt
-  AND action_name IN ('getTable', 'queryTable', 'createTableAsSelect')
-  AND request_params.table_full_name IS NOT NULL
-GROUP BY ALL
-ORDER BY days_since_last_access DESC, access_count DESC
-LIMIT 5000
+FROM
+  system.access.audit,
+  cutoff
+WHERE
+  event_time >= cutoff.dt
+  AND action_name IN ('getTable', 'createTable', 'deleteTable')
+  AND request_params.full_name_arg IS NOT NULL
+GROUP BY
+  ALL
+ORDER BY
+  days_since_last_access DESC,
+  access_count DESC
+LIMIT 50
 """
 
 N_DT01_SQL = """\
@@ -65,7 +72,7 @@ FROM system.information_schema.tables, now
 WHERE table_catalog NOT IN ('system', '__databricks_internal')
   AND data_source_format = 'DELTA'
 ORDER BY days_since_modified DESC
-LIMIT 5000
+LIMIT 500
 """
 
 N_NB01_SQL = """\
@@ -83,6 +90,7 @@ WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   AND identity_metadata.run_as LIKE '%@%'
 GROUP BY ALL
 ORDER BY dbus DESC
+LIMIT 50
 """
 
 N_ST01_SQL = """\
@@ -101,6 +109,7 @@ WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   )
 GROUP BY ALL
 ORDER BY usage_quantity DESC
+LIMIT 50
 """
 
 GOVERNANCE_PACK = QueryPack(

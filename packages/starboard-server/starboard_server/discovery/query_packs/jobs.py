@@ -41,6 +41,7 @@ SELECT
 FROM dbu_per_job t1
 LEFT JOIN most_recent_jobs t2 USING (workspace_id, job_id)
 ORDER BY avg_dbus_per_run DESC
+LIMIT 50
 """
 
 C_J02_SQL = """\
@@ -88,7 +89,7 @@ FROM dbu_per_run r
 LEFT JOIN most_recent_jobs j  USING (workspace_id, job_id)
 LEFT JOIN run_states       rs USING (workspace_id, job_id, run_id)
 ORDER BY r.run_dbus DESC
-LIMIT 5000
+LIMIT 500
 """
 
 C_J03_SQL = """\
@@ -148,6 +149,7 @@ WHERE jrd.result_state = 'SUCCEEDED'
 GROUP BY j.name, jrd.job_id, jrd.workspace_id
 HAVING COUNT(*) >= 5
 ORDER BY max_min_ratio DESC, stddev_runtime_mins DESC
+LIMIT 50
 """
 
 C_J04_SQL = """\
@@ -224,6 +226,7 @@ FROM job_stats js
 LEFT JOIN latest_jobs  j  USING (workspace_id, job_id)
 LEFT JOIN dbu_by_state ds USING (workspace_id, job_id)
 ORDER BY (ds.failure_dbus + ds.retry_dbus) DESC
+LIMIT 50
 """
 
 C_J05_SQL = """\
@@ -244,6 +247,7 @@ WHERE period_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   AND result_state IS NOT NULL
 GROUP BY workspace_id, DATE(period_start_time)
 ORDER BY run_date DESC
+LIMIT 50
 """
 
 C_J06_SQL = """\
@@ -274,6 +278,7 @@ WHERE t.period_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
 GROUP BY ALL
 HAVING failures > 0
 ORDER BY failures DESC
+LIMIT 50
 """
 
 C_J07_SQL = """\
@@ -317,6 +322,7 @@ FROM update_stats us
 LEFT JOIN latest_pipelines p USING (workspace_id, pipeline_id)
 GROUP BY ALL
 ORDER BY avg_duration_mins DESC
+LIMIT 50
 """
 
 JOBS_PACK = QueryPack(

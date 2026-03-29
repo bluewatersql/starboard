@@ -304,6 +304,11 @@ def create_tool_registry(
         "discover_active_products": (discovery_tools, "discover_active_products"),
         "run_discovery_queries": (discovery_tools, "run_discovery_queries"),
         "analyze_discovery_domain": (discovery_tools, "analyze_discovery_domain"),
+        "start_discovery_analysis": (discovery_tools, "start_discovery_analysis"),
+        "get_discovery_analysis_progress": (
+            discovery_tools,
+            "get_discovery_analysis_progress",
+        ),
         "synthesize_discovery_report": (discovery_tools, "synthesize_discovery_report"),
         # Discovery tools (legacy monolithic)
         "run_workspace_discovery": (discovery_tools, "run_workspace_discovery"),

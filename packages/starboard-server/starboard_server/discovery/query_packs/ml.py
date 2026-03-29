@@ -45,6 +45,7 @@ SELECT
 FROM endpoint_classified
 GROUP BY ALL
 ORDER BY total_dbus DESC
+LIMIT 50
 """
 
 ML_PACK = QueryPack(

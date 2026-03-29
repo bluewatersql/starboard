@@ -15,6 +15,7 @@ programmatic/CLI-direct use.
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 import uuid
 from datetime import UTC, datetime
@@ -157,6 +158,13 @@ class DiscoveryTools(BaseToolAdapter):
         self._trace_id: str = ""
         self._lookback_days: int = self._env_config.discovery_lookback_days
         self._discovery_markdown: str | None = None
+
+        # Background analysis state for async polling pattern.
+        self._bg_task: asyncio.Task[None] | None = None
+        self._bg_completed: dict[str, DomainAnalysis] = {}
+        self._bg_failed: list[dict[str, str]] = []
+        self._bg_target_domains: list[str] = []
+        self._bg_start: float = 0.0
 
     def get_discovery_markdown(self) -> str | None:
         """Return the rendered discovery report markdown, if available.
@@ -327,6 +335,8 @@ class DiscoveryTools(BaseToolAdapter):
             1 for pr in self._pack_results for qr in pr.results if qr.succeeded
         )
 
+        domains_ready = list(domain_summaries.keys())
+
         return {
             "status": "completed",
             "trace_id": self._trace_id,
@@ -334,9 +344,26 @@ class DiscoveryTools(BaseToolAdapter):
             "total_queries": total_queries,
             "queries_succeeded": total_succeeded,
             "queries_failed": total_queries - total_succeeded,
-            "domains_with_data": list(domain_summaries.keys()),
+            "domains_with_data": domains_ready,
             "domain_summaries": domain_summaries,
             "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+            "next_step": (
+                "Call analyze_discovery_domain with "
+                "domains=<domains_with_data list> to analyze all "
+                "domains in a single batch call. The server runs all "
+                "domains in parallel internally."
+            ),
+            "next_tool": {
+                "tool": "analyze_discovery_domain",
+                "arguments": {"domains": domains_ready},
+            },
+            "parallel_calls": [
+                {
+                    "tool": "analyze_discovery_domain",
+                    "arguments": {"domain": d},
+                }
+                for d in domains_ready
+            ],
         }
 
     # ------------------------------------------------------------------
@@ -354,17 +381,15 @@ class DiscoveryTools(BaseToolAdapter):
         deeper analysis. Produces a grade (A-F), score, findings, and
         recommendations per domain.
 
-        Batch mode (``domains`` parameter) is **strongly preferred** — it uses
-        a single ``DomainAnalyzer`` with bounded parallelism and per-domain
-        timeouts, preventing resource exhaustion from concurrent LLM calls.
+        For batch mode, pass all domains from ``run_discovery_queries``
+        ``domains_with_data`` via ``domains``.  All domains are analyzed
+        in parallel (bounded by ``discovery_max_parallelism``).
 
         Must be called after ``run_discovery_queries``.
 
         Args:
-            domain: Single domain to analyze (e.g. ``billing``).  Mutually
-                exclusive with ``domains``.
-            domains: List of domains to analyze in a single call.  Preferred
-                over calling once per domain.
+            domain: Single domain to analyze (e.g. ``billing``).
+            domains: List of domains to analyze in one batch call.
 
         Returns:
             Dict with per-domain grades, scores, findings, and recommendations.
@@ -376,7 +401,6 @@ class DiscoveryTools(BaseToolAdapter):
                 "error_code": "tool_error",
             }
 
-        # Resolve which domains to analyze
         target_domains = self._resolve_target_domains(domain, domains)
         if isinstance(target_domains, dict):
             return target_domains  # error response
@@ -384,17 +408,16 @@ class DiscoveryTools(BaseToolAdapter):
 
         start = time.monotonic()
 
-        # Collect pack results per domain, noting domains with no data
-        domain_results: dict[str, list[PackResult]] = {}
+        domain_packs: dict[str, list[PackResult]] = {}
         skipped: list[str] = []
         for d in target_domains:
             packs = [pr for pr in self._pack_results if pr.domain == d]
             if packs:
-                domain_results[d] = packs
+                domain_packs[d] = packs
             else:
                 skipped.append(d)
 
-        if not domain_results:
+        if not domain_packs:
             resp: dict[str, Any] = {
                 "status": "no_data",
                 "message": "No query data available for any requested domain.",
@@ -405,8 +428,6 @@ class DiscoveryTools(BaseToolAdapter):
                 resp["domain"] = target_domains[0]
             return resp
 
-        # Single analyzer — its internal semaphore (max_parallelism) gates
-        # concurrent LLM calls, so we can safely launch all domains at once.
         if self._llm_client is None:
             return {
                 "status": "error",
@@ -427,14 +448,13 @@ class DiscoveryTools(BaseToolAdapter):
         failed_domains: list[dict[str, str]] = []
 
         async def _analyze_one(d: str, packs: list[PackResult]) -> None:
-            """Analyze a single domain, letting the analyzer handle its own LLM timeout."""
             try:
                 result = await analyzer.analyze_domain(
                     d, packs, trace_id=self._trace_id
                 )
                 analyses.append(result)
                 self._domain_analyses.append(result)
-            except (AdapterError, ValueError, TimeoutError) as exc:
+            except Exception as exc:  # noqa: BLE001 — must not leak to TaskGroup
                 logger.error(
                     "domain_analysis_failed_using_heuristic_fallback",
                     extra={"domain": d, "error": str(exc)},
@@ -453,20 +473,15 @@ class DiscoveryTools(BaseToolAdapter):
                 failed_domains.append(
                     {
                         "domain": d,
-                        "error": str(exc),
+                        "error": f"{type(exc).__name__}: {exc}",
                         "fallback": "heuristic_analysis",
                         "grade": fallback.grade,
                     }
                 )
 
-        # Handle TaskGroup exceptions gracefully so they don't break the agent
-        try:
-            async with asyncio.TaskGroup() as tg:
-                for d, packs in domain_results.items():
-                    tg.create_task(_analyze_one(d, packs))
-        except ExceptionGroup as eg:
-            for exc in eg.exceptions:
-                logger.error("domain_analysis_taskgroup_error", error=str(exc))
+        async with asyncio.TaskGroup() as tg:
+            for d, packs in domain_packs.items():
+                tg.create_task(_analyze_one(d, packs))
 
         if not analyses:
             return {
@@ -477,56 +492,9 @@ class DiscoveryTools(BaseToolAdapter):
                 "failed_domains": failed_domains,
             }
 
-        max_findings_per_domain = 10 if is_batch else 15
-        domain_results_out = []
-        for analysis in analyses:
-            findings_detail = [
-                {
-                    "finding_id": f.finding_id,
-                    "title": f.title,
-                    "priority": f.priority,
-                    "impact": f.impact,
-                    "domain": f.domain,
-                    "type": f.finding_type,
-                    "description": f.description,
-                    "evidence": [
-                        {
-                            "source_query_id": e.source_query_id,
-                            "excerpt": e.excerpt,
-                            "metric_name": e.metric_name,
-                            "metric_value": e.metric_value,
-                        }
-                        for e in f.evidence[:3]
-                    ],
-                    "remediation": {
-                        "immediate": f.remediation.immediate[:3],
-                        "medium_term": f.remediation.medium_term[:2],
-                    },
-                    "expected_outcome": f.expected_outcome,
-                }
-                for f in analysis.findings[:max_findings_per_domain]
-            ]
-            domain_results_out.append(
-                {
-                    "domain": analysis.domain,
-                    "grade": analysis.grade,
-                    "score": analysis.score,
-                    "summary": analysis.summary,
-                    "observations": analysis.observations[:10],
-                    "patterns": analysis.patterns[:5],
-                    "finding_count": len(analysis.findings),
-                    "findings": findings_detail,
-                    "recommended_actions": analysis.recommended_actions[:10],
-                    "data_coverage": {
-                        "queries_executed": analysis.data_coverage.queries_executed,
-                        "queries_succeeded": analysis.data_coverage.queries_succeeded,
-                        "queries_failed": (
-                            analysis.data_coverage.queries_executed
-                            - analysis.data_coverage.queries_succeeded
-                        ),
-                    },
-                }
-            )
+        domain_results_out = self._format_analysis_results(
+            analyses, is_batch=is_batch
+        )
 
         # Single-domain backward-compatible response
         if not is_batch and len(domain_results_out) == 1:
@@ -543,6 +511,369 @@ class DiscoveryTools(BaseToolAdapter):
             "domain_results": domain_results_out,
             "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
         }
+
+    _RESULT_BUDGET_CHARS = 90_000
+
+    @staticmethod
+    def _format_analysis_results(
+        analyses: list[DomainAnalysis],
+        *,
+        is_batch: bool,
+        budget: int = _RESULT_BUDGET_CHARS,
+    ) -> list[dict[str, Any]]:
+        """Format DomainAnalysis objects into serializable dicts.
+
+        Uses progressive detail shedding to keep the serialized response
+        under ``budget`` characters.  Full data is always preserved in
+        ``self._domain_analyses`` for the synthesize step.
+
+        Shedding levels (applied per domain, in order):
+          0 — full detail (10 findings in batch, 15 single)
+          1 — drop evidence & remediation from findings
+          2 — keep only top-5 CRITICAL/HIGH findings (title + priority only)
+          3 — findings replaced by count-only summary
+        """
+        detail_level = 0
+        max_levels = 4
+        while detail_level < max_levels:
+            results_out = DiscoveryTools._build_results_at_level(
+                analyses, is_batch=is_batch, detail_level=detail_level
+            )
+            size = len(json.dumps(results_out, separators=(",", ":")))
+            if size <= budget:
+                if detail_level > 0:
+                    logger.info(
+                        "analysis_results_detail_shed",
+                        extra={
+                            "detail_level": detail_level,
+                            "result_chars": size,
+                            "budget_chars": budget,
+                            "domains": len(analyses),
+                        },
+                    )
+                return results_out
+            detail_level += 1
+
+        return results_out  # type: ignore[possibly-undefined]
+
+    @staticmethod
+    def _build_results_at_level(
+        analyses: list[DomainAnalysis],
+        *,
+        is_batch: bool,
+        detail_level: int,
+    ) -> list[dict[str, Any]]:
+        """Build result list at a specific detail level."""
+        max_findings = 10 if is_batch else 15
+        results_out: list[dict[str, Any]] = []
+
+        for analysis in analyses:
+            entry: dict[str, Any] = {
+                "domain": analysis.domain,
+                "grade": analysis.grade,
+                "score": analysis.score,
+                "summary": analysis.summary,
+                "finding_count": len(analysis.findings),
+                "data_coverage": {
+                    "queries_executed": analysis.data_coverage.queries_executed,
+                    "queries_succeeded": analysis.data_coverage.queries_succeeded,
+                    "queries_failed": (
+                        analysis.data_coverage.queries_executed
+                        - analysis.data_coverage.queries_succeeded
+                    ),
+                },
+            }
+
+            if detail_level == 0:
+                entry["observations"] = analysis.observations[:10]
+                entry["patterns"] = analysis.patterns[:5]
+                entry["findings"] = [
+                    {
+                        "finding_id": f.finding_id,
+                        "title": f.title,
+                        "priority": f.priority,
+                        "impact": f.impact,
+                        "domain": f.domain,
+                        "type": f.finding_type,
+                        "description": f.description,
+                        "evidence": [
+                            {
+                                "source_query_id": e.source_query_id,
+                                "excerpt": e.excerpt,
+                                "metric_name": e.metric_name,
+                                "metric_value": e.metric_value,
+                            }
+                            for e in f.evidence[:3]
+                        ],
+                        "remediation": {
+                            "immediate": f.remediation.immediate[:3],
+                            "medium_term": f.remediation.medium_term[:2],
+                        },
+                        "expected_outcome": f.expected_outcome,
+                    }
+                    for f in analysis.findings[:max_findings]
+                ]
+                entry["recommended_actions"] = analysis.recommended_actions[:10]
+
+            elif detail_level == 1:
+                entry["observations"] = analysis.observations[:5]
+                entry["patterns"] = analysis.patterns[:3]
+                entry["findings"] = [
+                    {
+                        "finding_id": f.finding_id,
+                        "title": f.title,
+                        "priority": f.priority,
+                        "impact": f.impact,
+                        "type": f.finding_type,
+                        "description": f.description,
+                    }
+                    for f in analysis.findings[:max_findings]
+                ]
+                entry["recommended_actions"] = analysis.recommended_actions[:5]
+
+            elif detail_level == 2:
+                top_findings = [
+                    f
+                    for f in analysis.findings
+                    if f.priority in ("CRITICAL", "HIGH")
+                ][:5]
+                entry["findings"] = [
+                    {
+                        "finding_id": f.finding_id,
+                        "title": f.title,
+                        "priority": f.priority,
+                        "impact": f.impact,
+                    }
+                    for f in top_findings
+                ]
+                entry["recommended_actions"] = analysis.recommended_actions[:3]
+
+            else:
+                priority_counts: dict[str, int] = {}
+                for f in analysis.findings:
+                    priority_counts[f.priority] = priority_counts.get(f.priority, 0) + 1
+                entry["findings_by_priority"] = priority_counts
+                entry["top_action"] = (
+                    analysis.recommended_actions[0]
+                    if analysis.recommended_actions
+                    else None
+                )
+                entry["detail_note"] = (
+                    "Full findings preserved for synthesize_discovery_report"
+                )
+
+            results_out.append(entry)
+
+        return results_out
+
+    # ------------------------------------------------------------------
+    # Async polling pattern — start / check progress
+    # ------------------------------------------------------------------
+
+    async def start_discovery_analysis(
+        self,
+        domains: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Start background domain analysis and return immediately.
+
+        Launches all domain analyses in parallel on the server's event loop.
+        Poll ``get_discovery_analysis_progress`` to check completion.
+
+        Must be called after ``run_discovery_queries``.
+
+        Args:
+            domains: Domains to analyze.  Defaults to all domains with data.
+
+        Returns:
+            Dict with ``status: "started"`` and the list of target domains.
+        """
+        if self._pack_results is None:
+            return {
+                "status": "error",
+                "error": "Call run_discovery_queries first to gather data.",
+                "error_code": "tool_error",
+            }
+
+        if self._bg_task is not None and not self._bg_task.done():
+            completed = list(self._bg_completed.keys())
+            return {
+                "status": "already_running",
+                "domains": self._bg_target_domains,
+                "completed": completed,
+                "remaining": [
+                    d for d in self._bg_target_domains if d not in completed
+                ],
+                "instruction": (
+                    "Analysis is already running. "
+                    "Call get_discovery_analysis_progress to check status."
+                ),
+            }
+
+        if self._llm_client is None:
+            return {
+                "status": "error",
+                "error": "LLM client is required for domain analysis.",
+                "error_code": "tool_error",
+            }
+
+        # Determine target domains
+        all_domains_with_data = sorted(
+            {
+                pr.domain
+                for pr in self._pack_results
+                if pr.domain != "audit"
+            }
+        )
+        target = domains if domains else all_domains_with_data
+        skipped = [d for d in target if d not in all_domains_with_data]
+        target = [d for d in target if d in all_domains_with_data]
+
+        if not target:
+            return {
+                "status": "no_data",
+                "message": "No query data available for any requested domain.",
+            }
+
+        # Reset background state
+        self._bg_completed = {}
+        self._bg_failed = []
+        self._bg_target_domains = target
+        self._bg_start = time.monotonic()
+
+        # Build domain → packs mapping
+        domain_packs: dict[str, list[PackResult]] = {}
+        for d in target:
+            packs = [pr for pr in self._pack_results if pr.domain == d]
+            if packs:
+                domain_packs[d] = packs
+
+        # Launch background task
+        self._bg_task = asyncio.create_task(
+            self._run_background_analysis(domain_packs)
+        )
+
+        resp: dict[str, Any] = {
+            "status": "started",
+            "domains": target,
+            "domain_count": len(target),
+            "instruction": (
+                "Analysis is now running in the background. "
+                "Call get_discovery_analysis_progress every 30-60 seconds "
+                "to check completion. When status is 'completed', call "
+                "synthesize_discovery_report."
+            ),
+        }
+        if skipped:
+            resp["skipped"] = skipped
+        return resp
+
+    async def _run_background_analysis(
+        self,
+        domain_packs: dict[str, list[PackResult]],
+    ) -> None:
+        """Background coroutine that analyzes all domains in parallel."""
+        analyzer = DomainAnalyzer(
+            llm_client=self._llm_client,
+            heuristic_registry=self._heuristic_registry,
+            prompt_builder=self._prompt_builder,
+            max_parallelism=self._env_config.discovery_max_parallelism,
+            model=self._env_config.discovery_llm_model,
+            temperature=self._env_config.discovery_llm_temperature,
+        )
+
+        async def _analyze_one(d: str, packs: list[PackResult]) -> None:
+            try:
+                result = await analyzer.analyze_domain(
+                    d, packs, trace_id=self._trace_id
+                )
+            except Exception as exc:  # noqa: BLE001 — must not leak to TaskGroup
+                logger.error(
+                    "bg_domain_analysis_failed",
+                    extra={"domain": d, "error": str(exc)},
+                    exc_info=True,
+                )
+                query_results = [qr for pr in packs for qr in pr.results]
+                result_map = {
+                    qr.query_id: qr.data
+                    for qr in query_results
+                    if qr.succeeded and qr.data is not None
+                }
+                heuristic_findings = self._heuristic_registry.evaluate(
+                    d, result_map
+                )
+                result = build_fallback_analysis(
+                    d, query_results, heuristic_findings
+                )
+                self._bg_failed.append(
+                    {
+                        "domain": d,
+                        "error": f"{type(exc).__name__}: {exc}",
+                        "fallback": "heuristic_analysis",
+                    }
+                )
+            self._bg_completed[d] = result
+            self._domain_analyses.append(result)
+
+        async with asyncio.TaskGroup() as tg:
+            for d, packs in domain_packs.items():
+                tg.create_task(_analyze_one(d, packs))
+
+    async def get_discovery_analysis_progress(self) -> dict[str, Any]:
+        """Check progress of background domain analysis.
+
+        Returns completed domain results and remaining domains.
+        Each call completes instantly — no blocking.
+
+        Returns:
+            Dict with ``status`` (``running`` | ``completed`` | ``idle``),
+            completed domain results, and remaining domains.
+        """
+        if self._bg_task is None:
+            return {
+                "status": "idle",
+                "message": "No analysis in progress. Call start_discovery_analysis first.",
+            }
+
+        completed_domains = list(self._bg_completed.keys())
+        remaining = [
+            d for d in self._bg_target_domains if d not in self._bg_completed
+        ]
+        elapsed_s = round(time.monotonic() - self._bg_start, 1)
+        is_done = self._bg_task.done()
+
+        domain_results = self._format_analysis_results(
+            list(self._bg_completed.values()), is_batch=True
+        )
+
+        result: dict[str, Any] = {
+            "status": "completed" if is_done else "running",
+            "domains_completed": len(completed_domains),
+            "domains_total": len(self._bg_target_domains),
+            "domains_remaining": remaining,
+            "elapsed_s": elapsed_s,
+        }
+
+        if self._bg_failed:
+            result["domains_failed"] = self._bg_failed
+
+        if is_done:
+            result["domain_results"] = domain_results
+            result["instruction"] = (
+                "All domains analyzed. Call synthesize_discovery_report "
+                "to assemble the final report."
+            )
+            # Check for task exception
+            if self._bg_task.exception() is not None:
+                result["warning"] = str(self._bg_task.exception())
+        else:
+            result["completed_domains"] = completed_domains
+            result["instruction"] = (
+                f"{len(completed_domains)}/{len(self._bg_target_domains)} "
+                "domains complete. Call get_discovery_analysis_progress "
+                "again in 30-60 seconds."
+            )
+
+        return result
 
     def _resolve_target_domains(
         self,

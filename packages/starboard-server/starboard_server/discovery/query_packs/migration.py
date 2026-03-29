@@ -8,19 +8,25 @@ C_MG01_SQL = """\
 WITH cluster_usage AS (
   SELECT
     workspace_id,
-    usage_metadata.cluster_id          AS cluster_id,
-    ROUND(SUM(usage_quantity), 2)      AS total_dbus,
-    MAX(usage_end_time)                AS last_used
-  FROM system.billing.usage
-  WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-    AND sku_name IN ('ALL_PURPOSE_COMPUTE', 'JOBS_COMPUTE')  -- ⚠ verify exact values; see note
-  GROUP BY workspace_id, usage_metadata.cluster_id
+    usage_metadata.cluster_id AS cluster_id,
+    ROUND(SUM(usage_quantity), 2) AS total_dbus,
+    MAX(usage_end_time) AS last_used
+  FROM
+    system.billing.usage
+  WHERE
+    usage_date >= DATEADD(DAY, -30, CURRENT_DATE())
+    AND sku_name IN ('ENTERPRISE_ALL_PURPOSE_COMPUTE', 'ENTERPRISE_JOBS_COMPUTE')
+  GROUP BY
+    workspace_id,
+    usage_metadata.cluster_id
 ),
 latest_clusters AS (
-  SELECT *
-  FROM system.compute.clusters
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY workspace_id, cluster_id
-                              ORDER BY change_time DESC) = 1
+  SELECT
+    *
+  FROM
+    system.compute.clusters
+  QUALIFY
+    ROW_NUMBER() OVER (PARTITION BY workspace_id, cluster_id ORDER BY change_time DESC) = 1
 )
 SELECT
   c.workspace_id,
@@ -28,17 +34,20 @@ SELECT
   c.cluster_name,
   c.cluster_source,
   c.worker_node_type,
-  cu.total_dbus      AS non_photon_dbus,
+  cu.total_dbus AS non_photon_dbus,
   cu.last_used,
   CASE
     WHEN cu.total_dbus > 1000 THEN 'HIGH: >1000 DBUs on non-Photon'
-    WHEN cu.total_dbus > 100  THEN 'MEDIUM: 100-1000 DBUs on non-Photon'
-    ELSE                           'LOW: <100 DBUs'
-  END                AS migration_priority
-FROM cluster_usage cu
-LEFT JOIN latest_clusters c USING (workspace_id, cluster_id)
-WHERE c.delete_time IS NULL
-ORDER BY cu.total_dbus DESC
+    WHEN cu.total_dbus > 100 THEN 'MEDIUM: 100-1000 DBUs on non-Photon'
+    ELSE 'LOW: <100 DBUs'
+  END AS migration_priority
+FROM
+  cluster_usage cu LEFT JOIN latest_clusters c USING (workspace_id, cluster_id)
+WHERE
+  c.delete_time IS NULL
+ORDER BY
+  cu.total_dbus DESC
+LIMIT 50
 """
 
 C_MG02_SQL = """\
@@ -111,6 +120,7 @@ SELECT
 FROM user_usage uu
 WHERE uu.classic_all_purpose_dbus > 0
 ORDER BY est_serverless_savings_dbus DESC
+LIMIT 50
 """
 
 MIGRATION_PACK = QueryPack(

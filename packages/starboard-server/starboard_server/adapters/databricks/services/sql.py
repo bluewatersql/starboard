@@ -6,13 +6,19 @@ returning Polars DataFrames for efficient data processing.
 Supports two execution modes:
 - Streaming: Yields DataFrame batches as they download (memory efficient)
 - Collected: Returns full DataFrame with optional max_rows safety limit
+
+Result disposition strategy:
+- Defaults to INLINE (results embedded in API response — no cloud storage)
+- Falls back to EXTERNAL_LINKS when inline results are truncated
 """
 
 from __future__ import annotations
 
 import asyncio
+import base64
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -34,6 +40,42 @@ logger = get_logger(__name__)
 
 # Default safety limit for non-streaming queries
 DEFAULT_MAX_ROWS: int = 100_000
+
+# Canonical mapping: Databricks SQL type_name → Polars dtype.
+# Shared between SQLService (inline JSON_ARRAY parsing) and
+# AsyncSQLExecutor (result_columns metadata casting).
+DBSQL_TYPE_TO_POLARS: dict[str, type[pl.DataType]] = {
+    "BYTE": pl.Int64, "TINYINT": pl.Int64,
+    "SHORT": pl.Int64, "SMALLINT": pl.Int64,
+    "INT": pl.Int64, "INTEGER": pl.Int64,
+    "LONG": pl.Int64, "BIGINT": pl.Int64,
+    "FLOAT": pl.Float64, "REAL": pl.Float64,
+    "DOUBLE": pl.Float64,
+    "DECIMAL": pl.Float64, "DEC": pl.Float64, "NUMERIC": pl.Float64,
+    "NUMBER": pl.Float64,
+    "BOOLEAN": pl.Boolean,
+    "DATE": pl.Date,
+    "DATETIME": pl.Datetime, "TIMESTAMP": pl.Datetime,
+    "STRING": pl.Utf8, "VARCHAR": pl.Utf8, "TEXT": pl.Utf8,
+}
+
+
+def resolve_polars_type(sql_type: str | object) -> type[pl.DataType] | None:
+    """Map a Databricks SQL type name to the corresponding Polars DataType.
+
+    Handles parameterised types like ``DECIMAL(10,2)`` by stripping the
+    parenthesised suffix before lookup.  Accepts both plain strings and
+    Databricks SDK ``ColumnInfoTypeName`` enum instances.
+
+    Args:
+        sql_type: Databricks SQL type name (string or SDK enum).
+
+    Returns:
+        Polars DataType class, or ``None`` if the type is not mapped.
+    """
+    raw = sql_type.value if hasattr(sql_type, "value") else sql_type
+    base = (str(raw) if raw else "").upper().split("(")[0].strip()
+    return DBSQL_TYPE_TO_POLARS.get(base)
 
 
 class RowLimitExceededError(Exception):
@@ -106,11 +148,10 @@ class SQLService(BaseService):
         warehouse_id: str | None = None,
         wait_timeout: str = "50s",
     ) -> AsyncIterator[pl.DataFrame]:
-        """Execute SQL query and yield DataFrame batches as they download.
+        """Execute SQL query and yield DataFrame batches.
 
-        This is the memory-efficient streaming method. Each batch is yielded
-        as soon as it's downloaded and parsed, avoiding loading the entire
-        result set into memory.
+        Uses INLINE disposition by default (no S3 round-trip).  Falls back to
+        EXTERNAL_LINKS automatically when inline results are truncated.
 
         Args:
             query: SQL query to execute
@@ -118,37 +159,206 @@ class SQLService(BaseService):
             wait_timeout: Maximum time to wait for query completion
 
         Yields:
-            Polars DataFrame batches (one per external link chunk)
+            Polars DataFrame batches
 
         Raises:
             TimeoutError: If query exceeds wait timeout
             RuntimeError: If query execution fails
-
-        Example:
-            >>> total_rows = 0
-            >>> async for batch in service.execute_polars_streaming(
-            ...     "SELECT * FROM billion_row_table"
-            ... ):
-            ...     total_rows += len(batch)
-            ...     # Process batch without holding all data in memory
-            ...     save_to_parquet(batch, f"chunk_{total_rows}.parquet")
         """
-        # Execute and wait for statement completion
-        stmt = await self._execute_statement(query, warehouse_id, wait_timeout)
+        try:
+            stmt = await self._execute_statement(query, warehouse_id, wait_timeout)
+        except RuntimeError as exc:
+            if "Inline byte limit exceeded" in str(exc):
+                logger.info(
+                    "sql_inline_byte_limit_retrying_external",
+                    extra={"query_preview": query[:100]},
+                )
+                stmt = await self._execute_statement(
+                    query, warehouse_id, wait_timeout, disposition="EXTERNAL_LINKS"
+                )
+                if stmt.result and stmt.result.external_links:
+                    async for batch_df in self._stream_external_links(stmt):
+                        yield batch_df
+                return
+            raise
         statement_id = stmt.statement_id
 
-        # Handle empty results
+        # ── Try inline result first ──────────────────────────────────
+        inline_df = self._parse_inline_result(stmt)
+        if inline_df is not None:
+            truncated = getattr(stmt.result, "truncated", False) if stmt.result else False
+            if truncated:
+                logger.info(
+                    "sql_inline_truncated_falling_back",
+                    extra={
+                        "statement_id": statement_id,
+                        "inline_rows": len(inline_df),
+                        "query_preview": query[:100],
+                    },
+                )
+            else:
+                logger.debug(
+                    "sql_inline_result",
+                    extra={
+                        "statement_id": statement_id,
+                        "rows": len(inline_df),
+                        "columns": inline_df.columns,
+                    },
+                )
+                yield inline_df
+                return
+
+        # ── Check for external_links in the same response ───────────
+        has_external = (
+            stmt.result
+            and stmt.result.external_links
+            and len(stmt.result.external_links) > 0
+        )
+        if has_external:
+            async for batch_df in self._stream_external_links(stmt):
+                yield batch_df
+            return
+
+        # ── Fallback: re-execute with EXTERNAL_LINKS ─────────────────
+        logger.info(
+            "sql_no_inline_retrying_external",
+            extra={
+                "statement_id": statement_id,
+                "query_preview": query[:100],
+            },
+        )
+        stmt = await self._execute_statement(
+            query, warehouse_id, wait_timeout, disposition="EXTERNAL_LINKS"
+        )
+
         if not stmt.result or not stmt.result.external_links:
             logger.warning(
                 "sql_no_results",
                 extra={
-                    "statement_id": statement_id,
+                    "statement_id": stmt.statement_id,
                     "query_preview": query[:100],
                 },
             )
             return
 
-        # Stream batches as they download
+        async for batch_df in self._stream_external_links(stmt):
+            yield batch_df
+
+    # ── Inline result parsing ────────────────────────────────────────
+
+    @staticmethod
+    def _parse_inline_result(stmt: StatementResponse) -> pl.DataFrame | None:
+        """Extract a DataFrame from an INLINE statement response.
+
+        Handles both ARROW_STREAM chunks (base64-encoded IPC) and
+        JSON_ARRAY ``data_array`` payloads.
+
+        Returns:
+            DataFrame if inline data was present, else ``None``.
+        """
+        if not stmt.result:
+            return None
+
+        # ARROW_STREAM inline: result.chunk.data_array holds base64 Arrow IPC
+        chunk = getattr(stmt.result, "chunk", None)
+        if chunk is not None:
+            data_array = getattr(chunk, "data_array", None)
+            if data_array:
+                try:
+                    raw = base64.b64decode(data_array)
+                    table = pa.ipc.open_stream(BytesIO(raw)).read_all()
+                    result = pl.from_arrow(table)
+                    return result if isinstance(result, pl.DataFrame) else pl.DataFrame(result)
+                except Exception:  # noqa: BLE001
+                    logger.debug("sql_inline_arrow_parse_failed", exc_info=True)
+
+        # JSON_ARRAY inline: result.data_array holds list[list[str]]
+        data_array_json = getattr(stmt.result, "data_array", None)
+        if data_array_json:
+            manifest = getattr(stmt, "manifest", None)
+            columns: list[str] = []
+            col_types: list[str] = []
+            if manifest and hasattr(manifest, "schema") and manifest.schema:
+                schema_obj = manifest.schema
+                col_list = getattr(schema_obj, "columns", None)
+                if col_list:
+                    columns = [c.name for c in col_list if hasattr(c, "name")]
+                    col_types = [
+                        getattr(c, "type_name", "STRING") or "STRING"
+                        for c in col_list
+                        if hasattr(c, "name")
+                    ]
+            if not columns:
+                columns = [f"col_{i}" for i in range(len(data_array_json[0]))]
+
+            data: dict[str, list[Any]] = {col: [] for col in columns}
+            for row in data_array_json:
+                for i, col in enumerate(columns):
+                    data[col].append(row[i] if i < len(row) else None)
+            df = pl.DataFrame(data)
+
+            if col_types and len(col_types) == len(columns):
+                df = SQLService._apply_manifest_types(df, columns, col_types)
+
+            return df
+
+        return None
+
+    @staticmethod
+    def _apply_manifest_types(
+        df: pl.DataFrame,
+        columns: list[str],
+        col_types: list[str],
+    ) -> pl.DataFrame:
+        """Cast all-string columns to proper Polars types using manifest metadata.
+
+        JSON_ARRAY results arrive as strings. Uses the shared
+        :func:`resolve_polars_type` mapping to determine target types.
+        Boolean columns need special handling because Polars cannot
+        directly cast ``"true"``/``"false"`` strings via ``.cast(pl.Boolean)``.
+
+        Args:
+            df: DataFrame with all-string columns from JSON_ARRAY parsing.
+            columns: Ordered list of column names.
+            col_types: Corresponding Databricks SQL type names.
+
+        Returns:
+            DataFrame with properly typed columns.
+        """
+        cast_exprs: list[pl.Expr] = []
+        for col_name, type_name in zip(columns, col_types):
+            if col_name not in df.columns:
+                continue
+            target = resolve_polars_type(type_name)
+            if target is None or target == pl.Utf8:
+                continue
+            if target == pl.Boolean:
+                cast_exprs.append(
+                    pl.when(pl.col(col_name) == "true")
+                    .then(True)
+                    .when(pl.col(col_name) == "false")
+                    .then(False)
+                    .otherwise(None)
+                    .alias(col_name)
+                )
+            else:
+                cast_exprs.append(pl.col(col_name).cast(target, strict=False))
+
+        if cast_exprs:
+            df = df.with_columns(cast_exprs)
+        return df
+
+    # ── External-links streaming ─────────────────────────────────────
+
+    async def _stream_external_links(
+        self,
+        stmt: StatementResponse,
+    ) -> AsyncIterator[pl.DataFrame]:
+        """Download and yield batches from external links."""
+        statement_id = stmt.statement_id
+        if not stmt.result or not stmt.result.external_links:
+            return
+
         batch_count = 0
         total_rows = 0
         columns: list[str] = []
@@ -270,22 +480,27 @@ class SQLService(BaseService):
         query: str,
         warehouse_id: str | None,
         wait_timeout: str,
+        disposition: str | None = None,
     ) -> StatementResponse:
         """Execute statement and wait for completion.
 
-        Internal method that handles statement execution and polling.
+        Defaults to INLINE disposition (results in API response body,
+        no cloud storage round-trip).  Falls back to EXTERNAL_LINKS
+        when the caller explicitly requests it (e.g. for streaming
+        large result sets).
 
         Args:
-            query: SQL query to execute
-            warehouse_id: Override warehouse ID
-            wait_timeout: Maximum time to wait
+            query: SQL query to execute.
+            warehouse_id: Override warehouse ID.
+            wait_timeout: Maximum time to wait.
+            disposition: ``"INLINE"`` (default) or ``"EXTERNAL_LINKS"``.
 
         Returns:
-            Completed StatementResponse
+            Completed StatementResponse.
 
         Raises:
-            TimeoutError: If query exceeds timeout
-            RuntimeError: If query fails
+            TimeoutError: If query exceeds timeout.
+            RuntimeError: If query fails.
         """
         from databricks.sdk.service import sql
 
@@ -296,20 +511,26 @@ class SQLService(BaseService):
             )
         stmt_api = self._client.statement_execution
 
-        # Execute statement
+        use_inline = disposition != "EXTERNAL_LINKS"
+        if use_inline:
+            fmt = sql.Format.JSON_ARRAY
+            disp = sql.Disposition.INLINE
+        else:
+            fmt = sql.Format.ARROW_STREAM
+            disp = sql.Disposition.EXTERNAL_LINKS
+
         stmt = await self._run_sync(
             lambda: stmt_api.execute_statement(
                 statement=query,
                 warehouse_id=effective_warehouse_id,
                 wait_timeout=wait_timeout,
-                format=sql.Format.ARROW_STREAM,
-                disposition=sql.Disposition.EXTERNAL_LINKS,
+                format=fmt,
+                disposition=disp,
             )
         )
 
         statement_id = stmt.statement_id
 
-        # Poll until statement completes
         max_wait_seconds = 60
         poll_interval = 2
         elapsed = 0
@@ -331,7 +552,6 @@ class SQLService(BaseService):
 
                 stmt = await self._run_sync(get_stmt)
 
-        # Check for failure
         if not stmt.status or stmt.status.state != sql.StatementState.SUCCEEDED:
             error_msg = (
                 stmt.status.error.message
@@ -347,26 +567,36 @@ class SQLService(BaseService):
         http_client: httpx.AsyncClient,
         link_info: ExternalLink,
     ) -> pl.DataFrame | None:
-        """Download and parse a single Arrow chunk.
+        """Download and parse a single Arrow chunk from an external link.
 
         Args:
             http_client: Async HTTP client
-            link_info: External link info with URL
+            link_info: External link info with presigned URL
 
         Returns:
             Parsed Polars DataFrame, or None if no data
+
+        Raises:
+            DatabricksAPIError: On 403 (cloud storage permission denied).
         """
         external_url = link_info.external_link
         if external_url is None:
             return None
 
         response = await http_client.get(external_url)
+        if response.status_code == 403:
+            raise DatabricksAPIError(
+                message=(
+                    "403 Forbidden downloading query results from cloud storage. "
+                    "Check service principal / token storage permissions."
+                ),
+                details={"url_host": httpx.URL(external_url).host},
+            )
         response.raise_for_status()
 
         if not response.content:
             return None
 
-        # Parse Arrow data
         arrow_table = pa.ipc.open_stream(response.content).read_all()
         result = pl.from_arrow(arrow_table)
 

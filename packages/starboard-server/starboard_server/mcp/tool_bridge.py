@@ -51,7 +51,8 @@ PHASE_B_TOOLS: frozenset[str] = PHASE_A_TOOLS | frozenset({
     "generate_warehouse_chargeback", "generate_portfolio_chargeback",
     # Discovery
     "discover_active_products", "run_discovery_queries",
-    "analyze_discovery_domain", "synthesize_discovery_report",
+    "analyze_discovery_domain", "start_discovery_analysis",
+    "get_discovery_analysis_progress", "synthesize_discovery_report",
     "run_workspace_discovery",
     # Analytics
     "build_analytics_context", "build_sql_query",

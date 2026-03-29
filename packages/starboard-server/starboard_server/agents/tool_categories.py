@@ -191,13 +191,15 @@ TOOL_CATEGORIES: dict[str, list[str] | str] = {
         "discover_active_products",
         # Phase 2: Execute query packs
         "run_discovery_queries",
-        # Phase 3: Analyze domains (call per-domain)
+        # Phase 3: Analyze domains (sync or async)
         "analyze_discovery_domain",
+        "start_discovery_analysis",
+        "get_discovery_analysis_progress",
         # Phase 4: Assemble final report
         "synthesize_discovery_report",
         # Core tools
-        "request_user_input",  # Request clarification (pauses and waits)
-        "complete",  # Provide discovery results
+        "request_user_input",
+        "complete",
     ],
 }
 
@@ -247,6 +249,8 @@ ONLINE_TOOLS: set[str] = {
     "discover_active_products",
     "run_discovery_queries",
     "analyze_discovery_domain",
+    "start_discovery_analysis",
+    "get_discovery_analysis_progress",
     "synthesize_discovery_report",
     "run_workspace_discovery",
     # Warehouse tools - require warehouse API

@@ -69,6 +69,7 @@ LEFT JOIN node_metrics  nm ON c.cluster_id = nm.cluster_id
 LEFT JOIN billing_summary bs ON c.cluster_id = bs.cluster_id
 WHERE c.delete_time IS NULL
 ORDER BY bs.total_dbus DESC NULLS LAST
+LIMIT 50
 """
 
 C_C02_SQL = """\
@@ -123,6 +124,7 @@ LEFT JOIN billing_summary bs ON c.cluster_id = bs.cluster_id
 WHERE c.delete_time IS NULL
   AND c.cluster_source IN ('UI', 'API')
 ORDER BY it.idle_minutes DESC NULLS LAST
+LIMIT 50
 """
 
 C_C03_SQL = """\
@@ -181,6 +183,7 @@ LEFT JOIN scale_events se
       AND qp.query_date   = se.event_date
       AND qp.query_hour   = se.event_hour
 ORDER BY qp.warehouse_id, qp.query_date DESC, qp.query_hour
+LIMIT 50
 """
 
 COMPUTE_PACK = QueryPack(

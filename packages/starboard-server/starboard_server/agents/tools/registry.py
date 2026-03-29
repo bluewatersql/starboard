@@ -22,8 +22,10 @@ from starboard_server.agents.tools.schemas.diagnostic import EXPLORE_ARTIFACT
 from starboard_server.agents.tools.schemas.discovery import (
     ANALYZE_DISCOVERY_DOMAIN,
     DISCOVER_ACTIVE_PRODUCTS,
+    GET_DISCOVERY_ANALYSIS_PROGRESS,
     RUN_DISCOVERY_QUERIES,
     RUN_WORKSPACE_DISCOVERY,
+    START_DISCOVERY_ANALYSIS,
     SYNTHESIZE_DISCOVERY_REPORT,
 )
 from starboard_server.agents.tools.schemas.interaction import (
@@ -143,6 +145,8 @@ ALL_TOOL_METADATA: dict[str, dict[str, Any]] = {
     "discover_active_products": DISCOVER_ACTIVE_PRODUCTS,
     "run_discovery_queries": RUN_DISCOVERY_QUERIES,
     "analyze_discovery_domain": ANALYZE_DISCOVERY_DOMAIN,
+    "start_discovery_analysis": START_DISCOVERY_ANALYSIS,
+    "get_discovery_analysis_progress": GET_DISCOVERY_ANALYSIS_PROGRESS,
     "synthesize_discovery_report": SYNTHESIZE_DISCOVERY_REPORT,
     "run_workspace_discovery": RUN_WORKSPACE_DISCOVERY,
 }

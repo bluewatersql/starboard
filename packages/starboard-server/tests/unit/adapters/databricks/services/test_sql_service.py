@@ -1,6 +1,8 @@
 """Tests for SQLService streaming and collected execution.
 
 Tests cover:
+- Inline disposition (default, no S3 round-trip)
+- Fallback to external links when inline is truncated or absent
 - Streaming execution (execute_polars_streaming)
 - Collected execution with max_rows (execute_polars)
 - RowLimitExceededError behavior
@@ -9,7 +11,8 @@ Tests cover:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import base64
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import polars as pl
@@ -58,8 +61,24 @@ def create_mock_statement_response(
     external_links: list[str] | None = None,
     state: str = "SUCCEEDED",
     statement_id: str = "stmt-123",
+    inline_arrow_df: pl.DataFrame | None = None,
+    inline_json: list[list[Any]] | None = None,
+    inline_columns: list[str] | None = None,
+    inline_column_types: list[str] | None = None,
+    truncated: bool = False,
 ) -> MagicMock:
-    """Create a mock StatementResponse."""
+    """Create a mock StatementResponse.
+
+    Args:
+        external_links: URLs for EXTERNAL_LINKS disposition.
+        state: Statement state (default SUCCEEDED).
+        statement_id: ID for the statement.
+        inline_arrow_df: DataFrame to encode as inline ARROW_STREAM chunk.
+        inline_json: Raw JSON rows for inline JSON_ARRAY result.
+        inline_columns: Column names for inline JSON result manifest.
+        inline_column_types: Databricks SQL type names per column (e.g. "INT", "DOUBLE").
+        truncated: Whether inline results are truncated.
+    """
     from databricks.sdk.service.sql import StatementState
 
     response = MagicMock()
@@ -68,15 +87,51 @@ def create_mock_statement_response(
     response.status.state = getattr(StatementState, state)
     response.status.error = None
 
-    if external_links:
+    if inline_arrow_df is not None:
         response.result = MagicMock()
+        response.result.truncated = truncated
+        arrow_bytes = create_arrow_bytes(inline_arrow_df)
+        chunk = MagicMock()
+        chunk.data_array = base64.b64encode(arrow_bytes).decode()
+        response.result.chunk = chunk
+        response.result.data_array = None
+        response.result.external_links = None
+        response.manifest = None
+    elif inline_json is not None:
+        response.result = MagicMock()
+        response.result.truncated = truncated
+        response.result.chunk = None
+        response.result.data_array = inline_json
+        response.result.external_links = None
+        if inline_columns:
+            col_objs = []
+            types = inline_column_types or ["STRING"] * len(inline_columns)
+            for name, type_name in zip(inline_columns, types):
+                col_mock = MagicMock()
+                col_mock.name = name
+                col_mock.type_name = type_name
+                col_objs.append(col_mock)
+            schema_mock = MagicMock()
+            schema_mock.columns = col_objs
+            manifest_mock = MagicMock()
+            manifest_mock.schema = schema_mock
+            response.manifest = manifest_mock
+        else:
+            response.manifest = None
+    elif external_links:
+        response.result = MagicMock()
+        response.result.truncated = False
+        response.result.chunk = None
+        response.result.data_array = None
         response.result.external_links = []
         for url in external_links:
             link = MagicMock()
             link.external_link = url
             response.result.external_links.append(link)
+        response.manifest = None
     else:
         response.result = None
+        response.manifest = None
 
     return response
 
@@ -108,23 +163,172 @@ class TestRowLimitExceededError:
 
 
 # ============================================================================
-# Test: Streaming Execution
+# Test: Inline Result Parsing
+# ============================================================================
+
+
+class TestInlineResults:
+    """Tests for INLINE disposition (default path)."""
+
+    @pytest.mark.asyncio
+    async def test_inline_arrow_result(
+        self, sql_service: SQLService, mock_workspace_client: MagicMock
+    ) -> None:
+        """Inline ARROW_STREAM chunk is parsed without S3 download."""
+        expected = pl.DataFrame({"id": [1, 2, 3], "name": ["a", "b", "c"]})
+        mock_response = create_mock_statement_response(inline_arrow_df=expected)
+        mock_workspace_client.statement_execution.execute_statement.return_value = (
+            mock_response
+        )
+
+        batches: list[pl.DataFrame] = []
+        async for batch in sql_service.execute_polars_streaming("SELECT 1"):
+            batches.append(batch)
+
+        assert len(batches) == 1
+        assert batches[0]["id"].to_list() == [1, 2, 3]
+        assert batches[0]["name"].to_list() == ["a", "b", "c"]
+
+    @pytest.mark.asyncio
+    async def test_inline_json_result(
+        self, sql_service: SQLService, mock_workspace_client: MagicMock
+    ) -> None:
+        """Inline JSON_ARRAY data_array is parsed correctly with type casting."""
+        mock_response = create_mock_statement_response(
+            inline_json=[["1", "alpha"], ["2", "beta"]],
+            inline_columns=["id", "label"],
+            inline_column_types=["INT", "STRING"],
+        )
+        mock_workspace_client.statement_execution.execute_statement.return_value = (
+            mock_response
+        )
+
+        batches: list[pl.DataFrame] = []
+        async for batch in sql_service.execute_polars_streaming("SELECT 1"):
+            batches.append(batch)
+
+        assert len(batches) == 1
+        assert batches[0]["id"].to_list() == [1, 2]
+        assert batches[0]["id"].dtype == pl.Int64
+        assert batches[0]["label"].to_list() == ["alpha", "beta"]
+        assert batches[0]["label"].dtype == pl.String
+
+    @pytest.mark.asyncio
+    async def test_inline_json_numeric_types_cast(
+        self, sql_service: SQLService, mock_workspace_client: MagicMock
+    ) -> None:
+        """JSON_ARRAY numeric columns are cast via manifest type_name metadata."""
+        mock_response = create_mock_statement_response(
+            inline_json=[
+                ["cluster-1", "120", "5000", "15.3", "42.7", "true"],
+                ["cluster-2", "60", "1200", "88.1", None, "false"],
+            ],
+            inline_columns=[
+                "cluster_id", "auto_termination_minutes",
+                "idle_minutes", "avg_cpu_pct", "avg_mem_pct", "is_running",
+            ],
+            inline_column_types=[
+                "STRING", "INT", "BIGINT", "DOUBLE", "DECIMAL(10,2)", "BOOLEAN",
+            ],
+        )
+        mock_workspace_client.statement_execution.execute_statement.return_value = (
+            mock_response
+        )
+
+        batches: list[pl.DataFrame] = []
+        async for batch in sql_service.execute_polars_streaming("SELECT *"):
+            batches.append(batch)
+
+        assert len(batches) == 1
+        df = batches[0]
+        assert df["cluster_id"].dtype == pl.String
+        assert df["auto_termination_minutes"].dtype == pl.Int64
+        assert df["idle_minutes"].dtype == pl.Int64
+        assert df["avg_cpu_pct"].dtype == pl.Float64
+        assert df["avg_mem_pct"].dtype == pl.Float64
+        assert df["is_running"].dtype == pl.Boolean
+        assert df["auto_termination_minutes"].to_list() == [120, 60]
+        assert df["avg_mem_pct"].to_list() == [42.7, None]
+        assert df["is_running"].to_list() == [True, False]
+
+    @pytest.mark.asyncio
+    async def test_inline_truncated_falls_back_to_external(
+        self, sql_service: SQLService, mock_workspace_client: MagicMock
+    ) -> None:
+        """Truncated inline result triggers EXTERNAL_LINKS re-execution."""
+        truncated_inline = create_mock_statement_response(
+            inline_arrow_df=pl.DataFrame({"x": [1]}),
+            truncated=True,
+        )
+        full_external = create_mock_statement_response(
+            external_links=["http://link1"],
+        )
+        mock_workspace_client.statement_execution.execute_statement.side_effect = [
+            truncated_inline,
+            full_external,
+        ]
+
+        full_batch = pl.DataFrame({"x": [1, 2, 3, 4, 5]})
+        mock_http_response = MagicMock()
+        mock_http_response.content = create_arrow_bytes(full_batch)
+        mock_http_response.status_code = 200
+        mock_http_response.raise_for_status = MagicMock()
+
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.get = AsyncMock(return_value=mock_http_response)
+            mock_client_class.return_value = mock_client
+
+            batches: list[pl.DataFrame] = []
+            async for batch in sql_service.execute_polars_streaming("SELECT *"):
+                batches.append(batch)
+
+        assert len(batches) == 1
+        assert batches[0]["x"].to_list() == [1, 2, 3, 4, 5]
+        assert mock_workspace_client.statement_execution.execute_statement.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_inline_disposition_used_by_default(
+        self, sql_service: SQLService, mock_workspace_client: MagicMock
+    ) -> None:
+        """Verify _execute_statement defaults to INLINE + JSON_ARRAY."""
+        from databricks.sdk.service.sql import Disposition, Format
+
+        mock_response = create_mock_statement_response(
+            inline_json=[["42"]],
+            inline_columns=["v"],
+        )
+        mock_workspace_client.statement_execution.execute_statement.return_value = (
+            mock_response
+        )
+
+        batches: list[pl.DataFrame] = []
+        async for batch in sql_service.execute_polars_streaming("SELECT 42"):
+            batches.append(batch)
+
+        call_kwargs = mock_workspace_client.statement_execution.execute_statement.call_args
+        assert call_kwargs.kwargs.get("disposition") == Disposition.INLINE
+        assert call_kwargs.kwargs.get("format") == Format.JSON_ARRAY
+
+
+# ============================================================================
+# Test: External Links Streaming
 # ============================================================================
 
 
 class TestExecutePolarsStreaming:
-    """Tests for execute_polars_streaming method."""
+    """Tests for execute_polars_streaming via external links fallback."""
 
     @pytest.mark.asyncio
     async def test_streaming_yields_batches(
         self, sql_service: SQLService, mock_workspace_client: MagicMock
     ) -> None:
-        """Test that streaming yields DataFrame batches."""
-        # Create test data
+        """Test that streaming yields DataFrame batches via external links."""
         batch1 = pl.DataFrame({"id": [1, 2, 3], "value": ["a", "b", "c"]})
         batch2 = pl.DataFrame({"id": [4, 5, 6], "value": ["d", "e", "f"]})
 
-        # Mock statement execution
         mock_response = create_mock_statement_response(
             external_links=["http://link1", "http://link2"]
         )
@@ -132,13 +336,14 @@ class TestExecutePolarsStreaming:
             mock_response
         )
 
-        # Mock HTTP responses
         mock_http_response1 = MagicMock()
         mock_http_response1.content = create_arrow_bytes(batch1)
+        mock_http_response1.status_code = 200
         mock_http_response1.raise_for_status = MagicMock()
 
         mock_http_response2 = MagicMock()
         mock_http_response2.content = create_arrow_bytes(batch2)
+        mock_http_response2.status_code = 200
         mock_http_response2.raise_for_status = MagicMock()
 
         with patch("httpx.AsyncClient") as mock_client_class:
@@ -150,7 +355,6 @@ class TestExecutePolarsStreaming:
             )
             mock_client_class.return_value = mock_client
 
-            # Collect batches
             batches: list[pl.DataFrame] = []
             async for batch in sql_service.execute_polars_streaming("SELECT 1"):
                 batches.append(batch)
@@ -181,7 +385,7 @@ class TestExecutePolarsStreaming:
     async def test_streaming_single_batch(
         self, sql_service: SQLService, mock_workspace_client: MagicMock
     ) -> None:
-        """Test streaming with single batch."""
+        """Test streaming with single external-links batch."""
         batch = pl.DataFrame({"x": [1, 2, 3]})
         mock_response = create_mock_statement_response(external_links=["http://link1"])
         mock_workspace_client.statement_execution.execute_statement.return_value = (
@@ -190,6 +394,7 @@ class TestExecutePolarsStreaming:
 
         mock_http_response = MagicMock()
         mock_http_response.content = create_arrow_bytes(batch)
+        mock_http_response.status_code = 200
         mock_http_response.raise_for_status = MagicMock()
 
         with patch("httpx.AsyncClient") as mock_client_class:
@@ -221,6 +426,34 @@ class TestExecutePolarsStreaming:
         with pytest.raises(RuntimeError, match="Query failed: Syntax error"):
             async for _ in sql_service.execute_polars_streaming("INVALID SQL"):
                 pass
+
+    @pytest.mark.asyncio
+    async def test_403_on_external_link_raises(
+        self, sql_service: SQLService, mock_workspace_client: MagicMock
+    ) -> None:
+        """403 from cloud storage raises DatabricksAPIError."""
+        from starboard_server.infra.reliability.exceptions import DatabricksAPIError
+
+        mock_response = create_mock_statement_response(
+            external_links=["https://s3.example.com/chunk0"]
+        )
+        mock_workspace_client.statement_execution.execute_statement.return_value = (
+            mock_response
+        )
+
+        mock_http_response = MagicMock()
+        mock_http_response.status_code = 403
+
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.get = AsyncMock(return_value=mock_http_response)
+            mock_client_class.return_value = mock_client
+
+            with pytest.raises(DatabricksAPIError, match="403 Forbidden"):
+                async for _ in sql_service.execute_polars_streaming("SELECT 1"):
+                    pass
 
 
 # ============================================================================

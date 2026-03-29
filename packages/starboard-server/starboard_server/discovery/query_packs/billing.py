@@ -29,6 +29,7 @@ WHERE u.usage_date BETWEEN DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
                        AND CURRENT_DATE()
 GROUP BY ALL
 ORDER BY dbus_consumed DESC
+LIMIT 50
 """
 
 C_B02_SQL = """\
@@ -44,6 +45,7 @@ WHERE u.usage_date BETWEEN DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
                        AND CURRENT_DATE()
 GROUP BY ALL
 ORDER BY year_month DESC, dbus DESC
+LIMIT 50
 """
 
 C_B03_SQL = """\
@@ -100,27 +102,7 @@ CROSS JOIN date_bounds d
 LEFT JOIN most_recent_jobs t2 USING (workspace_id, job_id)
 GROUP BY ALL
 ORDER BY wow_dbu_growth DESC
-LIMIT 100
-"""
-
-C_B04_SQL = """\
-SELECT
-  u.workspace_id,
-  u.billing_origin_product,
-  u.custom_tags['team']             AS team_tag,
-  u.custom_tags['project']          AS project_tag,
-  u.custom_tags['environment']      AS environment_tag,
-  u.custom_tags['cost_center']      AS cost_center_tag,
-  ROUND(SUM(u.usage_quantity), 2)   AS dbus,
-  COUNT(DISTINCT u.usage_metadata.job_id) AS distinct_jobs,
-  ROUND(SUM(CASE WHEN u.custom_tags IS NULL
-                   OR CARDINALITY(u.custom_tags) = 0
-                 THEN u.usage_quantity ELSE 0 END), 2) AS untagged_dbus
-FROM system.billing.usage u
-WHERE u.usage_date BETWEEN DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-                       AND CURRENT_DATE()
-GROUP BY ALL
-ORDER BY dbus DESC
+LIMIT 50
 """
 
 BILLING_PACK = QueryPack(
@@ -154,14 +136,6 @@ BILLING_PACK = QueryPack(
             required_tables=("system.billing.usage", "system.lakeflow.jobs"),
             domain="billing",
             lookback_override=14,
-        ),
-        SystemQuery(
-            query_id="C-B04",
-            name="Tag-Based Consumption Attribution",
-            description="DBU by custom tags (team, project, environment, cost_center) and untagged usage",
-            sql_template=C_B04_SQL,
-            required_tables=("system.billing.usage",),
-            domain="billing",
         ),
     ),
     gating_products=frozenset(),

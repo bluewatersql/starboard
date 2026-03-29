@@ -11,6 +11,8 @@ out of the box.
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import json
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
@@ -391,8 +393,8 @@ class StarboardMCPServer:
         """Register one MCP tool backed by the execution pipeline."""
         tool_name = tool_def["name"]
 
-        async def _handler(**kwargs: Any) -> str:
-            return await self._execute_tool(tool_name, kwargs)
+        async def _handler(ctx: Context, **kwargs: Any) -> str:
+            return await self._execute_tool(tool_name, kwargs, ctx=ctx)
 
         _handler.__name__ = tool_name
         _handler.__qualname__ = f"StarboardMCPServer._handler.{tool_name}"
@@ -430,7 +432,7 @@ class StarboardMCPServer:
             tool_def.get("parameters", {}).get("properties", {}).keys()
         ) - {"workspace_id"}
 
-        async def _handler(**kwargs: Any) -> str:
+        async def _handler(ctx: Context, **kwargs: Any) -> str:
             workspace_id = (
                 kwargs.pop("workspace_id", None) or self._config.default_workspace_id
             )
@@ -439,9 +441,10 @@ class StarboardMCPServer:
             async def _executor(
                 inner_tool_name: str, **inner_kwargs: Any
             ) -> dict[str, Any]:
-                """Adapter that routes composite sub-calls through _execute_tool."""
                 result_json = await self._execute_tool(
-                    inner_tool_name, {"workspace_id": workspace_id, **inner_kwargs}
+                    inner_tool_name,
+                    {"workspace_id": workspace_id, **inner_kwargs},
+                    ctx=ctx,
                 )
                 parsed = json.loads(result_json)
                 if parsed.get("isError") or parsed.get("status") == "error":
@@ -452,7 +455,7 @@ class StarboardMCPServer:
                     )
                 return parsed.get("data", parsed)
 
-            try:
+            async def _run() -> str:
                 result = await composite_fn(_executor, **kwargs)
                 return json.dumps(
                     {
@@ -460,6 +463,11 @@ class StarboardMCPServer:
                         "data": result.data,
                         "errors": result.errors,
                     }
+                )
+
+            try:
+                return await self._with_progress_heartbeat(
+                    _run(), ctx=ctx, tool_name=tool_name
                 )
             except Exception as exc:  # noqa: BLE001 - MCP error boundary
                 return json.dumps(
@@ -642,10 +650,57 @@ class StarboardMCPServer:
 
         return json.dumps(response_dict)
 
+    _HEARTBEAT_INTERVAL_S = 30
+    """Interval between MCP progress heartbeats (seconds).
+
+    MCP clients (Claude Code, Cursor) reset their tool-call timeout each
+    time a progress notification arrives.  30 s is well under the typical
+    60–300 s default timeout.
+    """
+
+    @staticmethod
+    async def _with_progress_heartbeat(
+        coro: Any,
+        *,
+        ctx: Context | None = None,
+        tool_name: str = "",
+    ) -> Any:
+        """Run *coro* while sending periodic MCP progress heartbeats.
+
+        If *ctx* is ``None`` or the client didn't supply a progress token,
+        the coroutine runs without heartbeats.
+        """
+        if ctx is None:
+            return await coro
+
+        async def _heartbeat() -> None:
+            elapsed = 0
+            while True:
+                await asyncio.sleep(StarboardMCPServer._HEARTBEAT_INTERVAL_S)
+                elapsed += StarboardMCPServer._HEARTBEAT_INTERVAL_S
+                try:
+                    await ctx.report_progress(
+                        progress=elapsed,
+                        total=0,
+                        message=f"{tool_name} running ({elapsed}s)…",
+                    )
+                except Exception:  # noqa: BLE001
+                    return
+
+        heartbeat_task = asyncio.create_task(_heartbeat())
+        try:
+            return await coro
+        finally:
+            heartbeat_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await heartbeat_task
+
     async def _execute_tool(
         self,
         tool_name: str,
         arguments: dict[str, Any],
+        *,
+        ctx: Context | None = None,
     ) -> str:
         """Execute the full tool pipeline with observability.
 
@@ -659,6 +714,9 @@ class StarboardMCPServer:
         Args:
             tool_name: MCP tool name.
             arguments: Caller-supplied arguments (may include ``workspace_id``).
+            ctx: Optional FastMCP ``Context`` for sending progress heartbeats
+                that keep the MCP client connection alive during long-running
+                tool calls.
 
         Returns:
             JSON string of the sanitised ``MCPToolResponse`` or an error dict
@@ -779,16 +837,19 @@ class StarboardMCPServer:
 
             try:
                 if breaker is not None:
-                    result = await breaker.call(
+                    exec_coro = breaker.call(
                         self._tool_registry.execute_tool,
                         tool_name,
                         agent_context=agent_context,
                         **arguments,
                     )
                 else:
-                    result = await self._tool_registry.execute_tool(
+                    exec_coro = self._tool_registry.execute_tool(
                         tool_name, agent_context=agent_context, **arguments
                     )
+                result = await self._with_progress_heartbeat(
+                    exec_coro, ctx=ctx, tool_name=tool_name
+                )
                 exec_span.close()
             except Exception as exc:  # noqa: BLE001 - MCP error boundary
                 exec_span.close(status="error")

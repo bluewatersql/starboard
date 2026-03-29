@@ -26,13 +26,8 @@ WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   )
 GROUP BY workspace_id, usage_metadata.app_name, usage_metadata.endpoint_name, sku_name, usage_date, usage_start_time, usage_end_time, ts
 ORDER BY dbus DESC
+LIMIT 50
 """
-
-# Changes vs original:
-#   • INTERVAL → DATEADD.
-#   • now CTE: CURRENT_TIMESTAMP() called once and broadcast rather than
-#     re-evaluated per row inside DATEDIFF.
-
 
 P_APP02_SQL = """\
 WITH cutoff AS (
@@ -89,6 +84,7 @@ LEFT JOIN app_access aa
        ON ab.workspace_id    = aa.workspace_id
       AND ab.app_identifier  = aa.app_identifier
 ORDER BY ab.total_dbus DESC
+LIMIT 50
 """
 
 APPS_PACK = QueryPack(
@@ -156,6 +152,7 @@ SELECT
 FROM lakebase_classified
 GROUP BY ALL
 ORDER BY year_month DESC, usage_quantity DESC
+LIMIT 50
 """
 
 LAKEBASE_PACK = QueryPack(
@@ -213,6 +210,7 @@ SELECT
 FROM vs_classified
 GROUP BY ALL
 ORDER BY year_month DESC, usage_quantity DESC
+LIMIT 50
 """
 
 VECTOR_SEARCH_PACK = QueryPack(
@@ -266,6 +264,7 @@ SELECT
 FROM ds_classified
 GROUP BY ALL
 ORDER BY year_month DESC, usage_quantity DESC
+LIMIT 50
 """
 
 DELTA_SHARING_PACK = QueryPack(
@@ -305,6 +304,7 @@ WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
        OR sku_name LIKE '%LAKEHOUSE_MONITORING%')
 GROUP BY ALL
 ORDER BY usage_quantity DESC
+LIMIT 50
 """
 
 MONITORING_PACK = QueryPack(
@@ -354,6 +354,7 @@ SELECT
 FROM sql_classified
 GROUP BY ALL
 ORDER BY year_month DESC, dbus DESC
+LIMIT 50
 """
 
 P_SQL02_SQL = """\
@@ -382,6 +383,7 @@ WHERE start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
 GROUP BY workspace_id, compute.warehouse_id, DATE(start_time)
 HAVING COUNT(*) > 10
 ORDER BY warehouse_id, query_date DESC
+LIMIT 50
 """
 
 SERVERLESS_SQL_PACK = QueryPack(
@@ -452,7 +454,7 @@ FROM task_stats ts
 LEFT JOIN latest_jobs j USING (workspace_id, job_id)
 GROUP BY ALL
 ORDER BY total_task_failures DESC, total_executions DESC
-LIMIT 5000
+LIMIT 100
 """
 
 P_WF02_SQL = """\
@@ -491,7 +493,7 @@ FROM duration_base
 GROUP BY workspace_id, job_id, run_id, task_key
 HAVING COUNT(*) > 1
 ORDER BY iteration_count DESC, total_cpu_mins DESC
-LIMIT 5000
+LIMIT 100
 """
 
 WORKFLOW_PACK = QueryPack(
@@ -548,6 +550,7 @@ WHERE start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   )
 GROUP BY ALL
 ORDER BY query_date DESC, genie_queries DESC
+LIMIT 50
 """
 
 P_AIBI02_SQL = """\
@@ -568,6 +571,7 @@ WHERE event_time >= DATEADD(DAY, -30, CURRENT_DATE())
                       'runDashboard', 'refreshDashboard')
 GROUP BY ALL
 ORDER BY access_events DESC
+LIMIT 50
 """
 
 AIBI_PACK = QueryPack(

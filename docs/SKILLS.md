@@ -604,9 +604,11 @@ Runs comprehensive workspace health assessment and product usage discovery.
 |------|---------|
 | `discover_active_products` | Audit workspace for active Databricks products |
 | `run_discovery_queries` | Execute discovery SQL query packs |
-| `analyze_discovery_domain` | Domain-level analysis with heuristics and LLM |
+| `analyze_discovery_domain` | Analyze domains (batch or single) — server parallelizes internally |
 | `synthesize_discovery_report` | Assemble domains into a final report |
-| `run_workspace_discovery` | End-to-end workspace assessment in one call |
+| `run_workspace_discovery` | Legacy monolithic pipeline (not recommended) |
+
+**Batch analysis (preferred):** After `run_discovery_queries`, call `analyze_discovery_domain` with `domains` set to the `domains_with_data` list. The server runs all domain analyses in parallel internally. Takes 5-7 minutes for a typical workspace. Requires `MCP_TOOL_TIMEOUT >= 600000` in Claude Code settings.
 
 **Key signals to watch:** product adoption gaps, workload distribution across compute, unused/idle resources, governance posture, optimization opportunities ranked by impact.
 
@@ -750,8 +752,10 @@ Claude fetches → starboard://prompts/discovery
               ↓
 Claude calls  → discover_active_products { }
               → run_discovery_queries { }
-              → analyze_discovery_domain { }
-              → synthesize_discovery_report { }
+              ↓ response includes domains_with_data + next_tool
+Claude calls  → analyze_discovery_domain { domains: [...all domains...] }
+              ↓ server runs all domains in parallel (~5-7 min)
+Claude calls  → synthesize_discovery_report { }
               ↓
 Claude presents findings domain by domain with the prompt's grading framework
 ```
