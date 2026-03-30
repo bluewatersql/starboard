@@ -1,6 +1,6 @@
 name: starboard-workspace
-description: Switch between Databricks workspaces or check which workspace is active. Use when user mentions workspace switching, different environment, production vs staging, or changing workspace.
-  Triggers on: switch workspace, change workspace, which workspace, production, staging, workspace list, environments.
+description: Switch between Databricks workspaces or check which workspace is active. Use when user mentions workspace switching, different environment, production vs staging, or changing workspace. Do NOT use for "workspace discovery" or "workspace health" — those belong to starboard-discovery.
+  Triggers on: switch workspace, change workspace, which workspace, production, staging, workspace list, environments, list workspaces.
 
 ## Prerequisites
 

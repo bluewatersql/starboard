@@ -80,6 +80,15 @@ class TestGetMCPTools:
         for internal in _INTERNAL_TOOLS:
             assert internal not in names
 
+    def test_full_scope_excludes_internal_tools(self) -> None:
+        tools = get_mcp_tools(safe_mode=False, tool_scope="full")
+        names = {t["name"] for t in tools}
+        for internal in _INTERNAL_TOOLS:
+            assert internal not in names
+
+    def test_run_workspace_discovery_is_internal(self) -> None:
+        assert "run_workspace_discovery" in _INTERNAL_TOOLS
+
     def test_all_tools_have_input_schema(self) -> None:
         tools = get_mcp_tools(safe_mode=False)
         for tool in tools:

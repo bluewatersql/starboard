@@ -56,6 +56,12 @@ AGENT_DOMAINS: tuple[AgentDomain, ...] = (
     "discovery",
 )
 
+# Domains whose server-side agents should NOT be exposed as MCP tools.
+# The discovery agent runs the full pipeline server-side; MCP callers
+# should use the granular 4-phase tools (discover_active_products,
+# run_discovery_queries, analyze_discovery_domain, synthesize_discovery_report).
+_MCP_EXCLUDED_AGENT_DOMAINS: frozenset[str] = frozenset({"discovery"})
+
 _AGENT_DESCRIPTIONS: dict[str, str] = {
     "query_agent": (
         "Analyze SQL query performance, execution plans, and suggest "
@@ -147,9 +153,10 @@ AGENT_TOOL_METADATA: list[dict[str, Any]] = [
         "parameters": _AGENT_TOOL_PARAMS,
     }
     for domain in AGENT_DOMAINS
+    if domain not in _MCP_EXCLUDED_AGENT_DOMAINS
 ]
 
-# Map tool names to domains
+# Map tool names to domains (includes all domains for internal routing)
 TOOL_NAME_TO_DOMAIN: dict[str, AgentDomain] = {
     f"{domain}_agent": domain for domain in AGENT_DOMAINS
 }

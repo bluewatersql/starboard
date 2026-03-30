@@ -5,6 +5,7 @@
 
 from starboard_server.mcp.agent_bridge import (
     _AGENT_DESCRIPTIONS,
+    _MCP_EXCLUDED_AGENT_DOMAINS,
     AGENT_DOMAINS,
     AGENT_TOOL_METADATA,
     TOOL_NAME_TO_DOMAIN,
@@ -14,8 +15,10 @@ from starboard_server.mcp.agent_bridge import (
 class TestAgentToolSchemas:
     """Tests for agent tool parameter schemas."""
 
-    def test_all_eight_agent_tools_registered(self) -> None:
-        assert len(AGENT_TOOL_METADATA) == 8
+    def test_mcp_exposed_agent_tools_registered(self) -> None:
+        """Only non-excluded agents should appear in AGENT_TOOL_METADATA."""
+        expected_count = len(AGENT_DOMAINS) - len(_MCP_EXCLUDED_AGENT_DOMAINS)
+        assert len(AGENT_TOOL_METADATA) == expected_count
         names = {t["name"] for t in AGENT_TOOL_METADATA}
         expected = {
             "query_agent",
@@ -25,9 +28,14 @@ class TestAgentToolSchemas:
             "analytics_agent",
             "warehouse_agent",
             "diagnostic_agent",
-            "discovery_agent",
         }
         assert names == expected
+
+    def test_excluded_agents_not_in_metadata(self) -> None:
+        """Excluded domains must not appear in AGENT_TOOL_METADATA."""
+        names = {t["name"] for t in AGENT_TOOL_METADATA}
+        for domain in _MCP_EXCLUDED_AGENT_DOMAINS:
+            assert f"{domain}_agent" not in names
 
     def test_each_tool_has_required_message(self) -> None:
         for tool in AGENT_TOOL_METADATA:
@@ -123,5 +131,6 @@ class TestAgentToolDomainMapping:
                 f"{tool_name} maps to invalid domain {domain}"
             )
 
-    def test_metadata_count_matches_domain_count(self) -> None:
-        assert len(AGENT_TOOL_METADATA) == len(AGENT_DOMAINS)
+    def test_metadata_count_matches_exposed_domain_count(self) -> None:
+        expected = len(AGENT_DOMAINS) - len(_MCP_EXCLUDED_AGENT_DOMAINS)
+        assert len(AGENT_TOOL_METADATA) == expected

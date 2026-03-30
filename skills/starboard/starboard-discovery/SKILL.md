@@ -1,6 +1,6 @@
 name: starboard-discovery
-description: Run comprehensive workspace health assessment and product usage discovery for Databricks. Use when user mentions workspace health, discovery, assessment, audit, or inventory.
-  Triggers on: workspace health, discovery, assessment, audit, overview, inventory, what's running.
+description: Run workspace discovery, comprehensive workspace health assessment and product usage discovery for Databricks. Use when user mentions discovery, workspace discovery, workspace health, assessment, audit, or inventory. This is the primary skill for "run discovery" or "run workspace discovery".
+  Triggers on: run discovery, run workspace discovery, workspace discovery, workspace health, discovery, assessment, audit, overview, inventory, what's running, health check.
 
 ## Prerequisites
 
@@ -9,23 +9,9 @@ description: Run comprehensive workspace health assessment and product usage dis
 
 ## Quick Path
 
-Two modes are available. **Direct orchestration** gives you full control and avoids double-LLM cost. **Auto-pilot** delegates everything to the server-side agent (may take several minutes).
-
-### Direct Orchestration (Recommended)
-
 1. Fetch MCP resource `starboard://prompts/discovery` — this returns the expert system prompt with workspace assessment workflows and cross-domain analysis patterns.
 2. Follow the returned prompt's guidance to call discovery tools directly.
 3. Use the 4-phase workflow below.
-
-### Auto-Pilot
-
-Call MCP tool `discovery_agent` with:
-```json
-{ "message": "Run a full workspace health assessment and identify optimization opportunities" }
-```
-Wait for the result (this may take several minutes — discovery runs multiple phases).
-
-If the user provided a specific question, pass it as the `message` instead of the default above.
 
 ## 4-Phase Workflow
 
@@ -37,21 +23,21 @@ Call `discover_active_products` (no params required).
 Call `run_discovery_queries` (no params required).
 - Returns: `domains_with_data` and `parallel_calls` — a list of tool calls to make next.
 
-### Phase 3: Analyze all domains (batch)
-Call `analyze_discovery_domain` with `domains` set to the `domains_with_data` list from Phase 2.
-- The server runs all domain analyses **in parallel** internally.
-- This is a single call that takes 5-7 minutes for a typical workspace.
-- Returns complete results for all domains: grades, scores, findings, recommendations.
+### Phase 3: Start domain analysis (async)
+Call `start_discovery_analysis` (no params required — it uses all domains from Phase 2).
+- The server launches all domain analyses **in parallel** in the background.
+- Returns immediately with `status: "started"` and the list of target domains.
 
-Example:
-```
-analyze_discovery_domain(domains=["billing", "jobs", "compute", "governance", "query_perf", ...])
-```
+### Phase 3b: Poll for completion
+Call `get_discovery_analysis_progress` every 30-60 seconds until `status` is `"completed"`.
+- Each poll returns instantly with the count of completed vs remaining domains.
+- Typical workspace takes 3-7 minutes to finish all domains.
+- When `status` is `"completed"`, proceed to Phase 4.
 
-**Note:** Requires `MCP_TOOL_TIMEOUT` set to at least `600000` (10 min) in Claude Code settings to avoid timeout.
+**IMPORTANT:** Do NOT use `analyze_discovery_domain` with all domains at once — it will timeout. Always use the async `start_discovery_analysis` + `get_discovery_analysis_progress` pattern instead.
 
 ### Phase 4: Synthesize report
-After `analyze_discovery_domain` returns, call `synthesize_discovery_report` (no params required).
+After analysis is complete, call `synthesize_discovery_report` (no params required).
 - Assembles all domain analyses into a unified report with executive summary, grades, and prioritized findings.
 
 ## Available MCP Tools
@@ -60,9 +46,9 @@ After `analyze_discovery_domain` returns, call `synthesize_discovery_report` (no
 |------|-------------|------------|
 | `discover_active_products` | Audit workspace for active Databricks products | `lookback_days` (optional) |
 | `run_discovery_queries` | Execute discovery SQL query packs | `domains` (optional filter) |
-| `analyze_discovery_domain` | Analyze domains (batch or single) — server parallelizes internally | `domains` (batch) or `domain` (single) |
+| `start_discovery_analysis` | Start background domain analysis (async) | `domains` (optional filter) |
+| `get_discovery_analysis_progress` | Poll background analysis progress | (none) |
 | `synthesize_discovery_report` | Assemble domain analyses into final report | (none) |
-| `discovery_agent` | Full workspace discovery via server-side agent | `message` |
 
 ## Composite Tools
 

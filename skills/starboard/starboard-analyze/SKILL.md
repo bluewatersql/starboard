@@ -23,7 +23,7 @@ When this skill is triggered, IMMEDIATELY match the user's message against the r
 1. Match the user's input against the routing table.
 2. Call the matched `*_agent` MCP tool with `{ "message": "<the user's original request>" }`.
 3. If the request spans multiple domains, call multiple `*_agent` MCP tools in parallel.
-4. If no clear match, call `discovery_agent` with the user's message for a workspace-level overview.
+4. If no clear match, use the `starboard-discovery` skill for a workspace-level overview.
 
 ## Manual Workflow (Intent Routing)
 
@@ -78,7 +78,6 @@ This meta-routing skill does not call tools directly. It routes to domain skills
 | `analytics_agent` | Full FinOps/cost analysis | `message` |
 | `warehouse_agent` | Full SQL warehouse analysis | `message` |
 | `diagnostic_agent` | Full troubleshooting analysis | `message` |
-| `discovery_agent` | Full workspace discovery | `message` |
 
 ## Composite Tools
 
@@ -109,5 +108,5 @@ This skill produces routing decisions, not analysis results. After routing:
 
 - **Single domain match**: The domain skill handles the full analysis. Review its output for actionable findings.
 - **Multi-domain match**: Results arrive from multiple agent tools in parallel. Synthesize findings across domains — look for correlations (e.g., a failing job may be caused by a misconfigured cluster or a slow query).
-- **No clear match**: Start with `starboard-discovery` to get a workspace overview, then drill into specific domains based on what the discovery reveals.
+- **No clear match**: Start with the `starboard-discovery` skill (4-phase workflow) to get a workspace overview, then drill into specific domains based on what the discovery reveals.
 - **Cross-cutting concerns**: Cost issues often span multiple domains. A "why is this expensive?" question may need warehouse + cluster + job analysis to fully answer.

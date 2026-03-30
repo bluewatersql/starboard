@@ -594,11 +594,9 @@ Troubleshoots Databricks issues with cross-domain error detection, log analysis,
 
 **Triggers:** workspace health, discovery, assessment, audit, overview, inventory, what's running
 
-Runs comprehensive workspace health assessment and product usage discovery.
+Runs comprehensive workspace health assessment and product usage discovery using the 4-phase workflow.
 
-**Agent tool:** `discovery_agent` — full workspace assessment
-
-**Individual tools:**
+**Tools:**
 
 | Tool | Purpose |
 |------|---------|
@@ -730,19 +728,7 @@ check the task logs, and tell me what changed.
 
 > "Give me a full health assessment of our Databricks workspace before the quarterly review."
 
-#### Auto-Pilot Mode
-
-```
-You: Run a full workspace health assessment.
-
-Claude calls → discovery_agent { "message": "Run a full workspace health assessment..." }
-              ↓ (may take several minutes — discovery runs multiple phases)
-Server-side agent discovers products → runs queries → analyzes domains → synthesizes report
-              ↓
-Returns: Product adoption, utilization, idle resources, governance gaps, ranked optimizations
-```
-
-#### Direct Orchestration Mode
+#### 4-Phase Workflow
 
 ```
 You: Run a full workspace health assessment.
@@ -1267,15 +1253,7 @@ If you still hit timeouts, increase the server-level default:
 }
 ```
 
-Or pass a per-call override:
-
-```
-Call MCP tool: discovery_agent
-Arguments: {
-  "message": "Run full workspace discovery",
-  "config_overrides": { "agent_timeout": 1200 }
-}
-```
+Or set `MCP_TOOL_TIMEOUT` to at least `600000` (10 min) in your IDE settings to avoid timeouts during the `analyze_discovery_domain` phase.
 
 ### Discovery tools not appearing
 

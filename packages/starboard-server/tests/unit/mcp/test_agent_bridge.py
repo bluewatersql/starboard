@@ -102,8 +102,11 @@ class TestAgentToolMetadata:
     def test_all_8_domains_defined(self) -> None:
         assert len(AGENT_DOMAINS) == 8
 
-    def test_all_8_tool_metadata_entries(self) -> None:
-        assert len(AGENT_TOOL_METADATA) == 8
+    def test_mcp_exposed_agents_exclude_discovery(self) -> None:
+        """AGENT_TOOL_METADATA should only contain MCP-exposed agents (not discovery)."""
+        assert len(AGENT_TOOL_METADATA) == 7
+        names = {t["name"] for t in AGENT_TOOL_METADATA}
+        assert "discovery_agent" not in names
 
     def test_tool_name_to_domain_mapping(self) -> None:
         assert TOOL_NAME_TO_DOMAIN["query_agent"] == "query"
