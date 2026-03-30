@@ -210,7 +210,9 @@ class DiscoveryEngine:
                     domain_results = self._group_by_domain(pack_results)
                     domains = list(domain_results.keys())
                     _emit("analysis_start", {"domains": domains})
-                    domain_analyses = await self._run_analysis(domain_results, trace_id)
+                    domain_analyses = await self._run_analysis(
+                        domain_results, trace_id, on_progress=on_progress
+                    )
                     result.domain_analyses = domain_analyses
                     _emit(
                         "analysis_done",
@@ -346,12 +348,14 @@ class DiscoveryEngine:
         self,
         domain_results: dict[str, list[PackResult]],
         trace_id: str,
+        on_progress: ProgressCallback | None = None,
     ) -> list[DomainAnalysis]:
         """Phase 3: Run heuristic + LLM analysis per domain.
 
         Args:
             domain_results: Pack results grouped by domain.
             trace_id: Trace ID for observability.
+            on_progress: Optional callback for per-domain progress.
 
         Returns:
             List of domain analyses.
@@ -373,7 +377,11 @@ class DiscoveryEngine:
             temperature=self._config.llm_temperature,
         )
 
-        return await analyzer.analyze_all_domains(domain_results, trace_id=trace_id)
+        return await analyzer.analyze_all_domains(
+            domain_results,
+            trace_id=trace_id,
+            on_domain_complete=on_progress,
+        )
 
     async def _run_synthesis(
         self,

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import ValidationError
@@ -32,6 +33,29 @@ from starboard_server.discovery.prompts.domain_analysis import PromptBuilder
 from starboard_server.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
+
+DomainProgressCallback = Callable[[str, dict[str, Any]], None]
+
+
+def _normalize_domain(analysis: DomainAnalysis, canonical: str) -> DomainAnalysis:
+    """Ensure ``analysis.domain`` and all finding domains use the canonical pack domain.
+
+    LLMs may rewrite the domain to a human-friendly variant (e.g. "Billing & Attribution"
+    instead of "billing"). This function forces consistency so filenames, keys, and
+    cross-references always use the canonical pack domain identifier.
+    """
+    updates: dict[str, Any] = {}
+    if analysis.domain != canonical:
+        updates["domain"] = canonical
+    mismatched = [f for f in analysis.findings if f.domain != canonical]
+    if mismatched:
+        updates["findings"] = [
+            f.model_copy(update={"domain": canonical}) if f.domain != canonical else f
+            for f in analysis.findings
+        ]
+    if updates:
+        return analysis.model_copy(update=updates)
+    return analysis
 
 
 class DomainAnalyzer:
@@ -124,6 +148,7 @@ class DomainAnalyzer:
                     temperature=self._temperature,
                 )
                 analysis = DomainAnalysis.model_validate(raw)
+                analysis = _normalize_domain(analysis, domain)
             except (ValidationError, ValueError, TypeError) as exc:
                 logger.warning(
                     "llm_analysis_failed",
@@ -152,19 +177,45 @@ class DomainAnalyzer:
         self,
         domain_results: dict[str, list[PackResult]],
         trace_id: str | None = None,
+        on_domain_complete: DomainProgressCallback | None = None,
     ) -> list[DomainAnalysis]:
         """Analyze all domains concurrently with bounded parallelism.
 
         Args:
             domain_results: Map of domain name to its pack results.
             trace_id: Optional trace ID for observability.
+            on_domain_complete: Optional callback fired after each domain
+                finishes. Receives ``(event_name, details_dict)``.
 
         Returns:
             List of DomainAnalysis objects, one per domain.
         """
+        total = len(domain_results)
+        completed_count = 0
+        _emit = on_domain_complete or (lambda _e, _d: None)
+
+        async def _analyze_and_report(
+            domain: str, results: list[PackResult]
+        ) -> DomainAnalysis:
+            nonlocal completed_count
+            analysis = await self.analyze_domain(domain, results, trace_id=trace_id)
+            completed_count += 1
+            _emit(
+                "domain_analysis_done",
+                {
+                    "domain": domain,
+                    "grade": analysis.grade,
+                    "score": analysis.score,
+                    "finding_count": len(analysis.findings),
+                    "completed": completed_count,
+                    "total": total,
+                },
+            )
+            return analysis
+
         async with asyncio.TaskGroup() as tg:
             tasks = [
-                tg.create_task(self.analyze_domain(domain, results, trace_id=trace_id))
+                tg.create_task(_analyze_and_report(domain, results))
                 for domain, results in domain_results.items()
             ]
         return [t.result() for t in tasks]

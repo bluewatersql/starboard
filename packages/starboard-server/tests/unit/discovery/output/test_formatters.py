@@ -241,5 +241,5 @@ class TestOutputFormatter:
         assert "## Report Cards" in md
         assert "| Domain | Grade | Score | Discussion |" in md
         assert "|--------|-------|-------|------------|" in md
-        assert "| billing | B | 75 |" in md
-        assert "| jobs | A | 90 |" in md
+        assert "| Resource Consumption & Attribution | B | 75 |" in md
+        assert "| Job Workload & Reliability | A | 90 |" in md

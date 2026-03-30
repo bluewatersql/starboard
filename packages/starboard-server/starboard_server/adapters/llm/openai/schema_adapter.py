@@ -47,6 +47,37 @@ def is_gpt5_model(model: str) -> bool:
     return "gpt-5" in model_lower or "gpt5" in model_lower
 
 
+_NO_STRUCTURED_OUTPUT_PATTERNS = (
+    "claude",
+    "anthropic",
+    "llama",
+    "mistral",
+    "mixtral",
+    "dbrx",
+    "command",
+    "cohere",
+)
+
+
+def supports_structured_output(model: str) -> bool:
+    """Check whether a model supports the ``response_format: json_schema`` API.
+
+    OpenAI GPT-4o/GPT-5 and compatible fine-tunes support it.
+    Databricks-hosted external models (Claude, Llama, Mistral, etc.)
+    and Gemini do not.
+
+    Args:
+        model: Model identifier or Databricks serving endpoint name.
+
+    Returns:
+        ``True`` if the model is expected to accept ``response_format``.
+    """
+    model_lower = model.lower()
+    if is_gemini_model(model):
+        return False
+    return not any(pat in model_lower for pat in _NO_STRUCTURED_OUTPUT_PATTERNS)
+
+
 def flatten_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
     """Flatten a JSON schema by resolving $ref and inlining $defs.
 

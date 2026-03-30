@@ -40,12 +40,18 @@ WHERE p.delete_time IS NULL
   AND (u.last_update_start IS NULL OR u.last_update_start < DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP()))
 ORDER BY u.last_update_start NULLS FIRST
 LIMIT {result_limit}""",
-        required_tables=("system.lakeflow.pipelines", "system.lakeflow.pipeline_update_timeline"),
+        required_tables=(
+            "system.lakeflow.pipelines",
+            "system.lakeflow.pipeline_update_timeline",
+        ),
         domain="dlt_pipelines",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.OPTIMIZATION,
-        metadata=QueryMetadata(summary="Pipelines with no updates in 30+ days — cleanup candidates", output_hint="Top pipelines ranked by staleness"),
+        metadata=QueryMetadata(
+            summary="Pipelines with no updates in 30+ days — cleanup candidates",
+            output_hint="Top pipelines ranked by staleness",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT02",
@@ -74,7 +80,10 @@ LIMIT {result_limit}""",
         required=False,
         discovery_mode=DiscoveryMode.DEEP_DIVE,
         category=QueryCategory.OPTIMIZATION,
-        metadata=QueryMetadata(summary="CPU/memory utilization of pipeline compute nodes", output_hint="Nodes ranked by CPU utilization"),
+        metadata=QueryMetadata(
+            summary="CPU/memory utilization of pipeline compute nodes",
+            output_hint="Nodes ranked by CPU utilization",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT03",
@@ -108,7 +117,10 @@ LIMIT {result_limit}""",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="Per-pipeline update volume and failure rate", output_hint="Pipelines ranked by failure rate"),
+        metadata=QueryMetadata(
+            summary="Per-pipeline update volume and failure rate",
+            output_hint="Pipelines ranked by failure rate",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT04",
@@ -145,12 +157,18 @@ FROM pipeline_tables t JOIN pipeline_perf p USING (pipeline_id)
 LEFT JOIN latest_pipelines lp USING (pipeline_id)
 ORDER BY p.p95_duration_sec DESC
 LIMIT {result_limit}""",
-        required_tables=("system.access.table_lineage", "system.lakeflow.pipeline_update_timeline"),
+        required_tables=(
+            "system.access.table_lineage",
+            "system.lakeflow.pipeline_update_timeline",
+        ),
         domain="dlt_pipelines",
         required=False,
         discovery_mode=DiscoveryMode.DEEP_DIVE,
         category=QueryCategory.OPTIMIZATION,
-        metadata=QueryMetadata(summary="Pipelines ranked by p95 update duration per target table", output_hint="Slowest pipelines with target table context"),
+        metadata=QueryMetadata(
+            summary="Pipelines ranked by p95 update duration per target table",
+            output_hint="Slowest pipelines with target table context",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT05",
@@ -167,8 +185,7 @@ pipeline_billing AS (
   GROUP BY workspace_id, usage_metadata.dlt_pipeline_id, product_features.is_serverless
 ),
 latest_pipelines AS (
-  SELECT workspace_id, pipeline_id, name AS pipeline_name, created_by, edition,
-    settings.serverless AS is_serverless_config, settings.photon AS photon_enabled
+  SELECT workspace_id, pipeline_id, name AS pipeline_name, created_by, settings.edition AS edition,settings.serverless AS is_serverless_config, settings.photon AS photon_enabled
   FROM system.lakeflow.pipelines
   QUALIFY ROW_NUMBER() OVER (PARTITION BY workspace_id, pipeline_id ORDER BY change_time DESC) = 1
 )
@@ -182,7 +199,10 @@ LIMIT {result_limit}""",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.OPTIMIZATION,
-        metadata=QueryMetadata(summary="Pipelines on classic compute that could migrate to serverless", output_hint="Classic pipelines ranked by DBU consumption"),
+        metadata=QueryMetadata(
+            summary="Pipelines on classic compute that could migrate to serverless",
+            output_hint="Classic pipelines ranked by DBU consumption",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT06",
@@ -214,12 +234,18 @@ LEFT JOIN update_timeline ut USING (workspace_id, pipeline_id, update_id)
 LEFT JOIN latest_pipelines lp USING (workspace_id, pipeline_id)
 ORDER BY ub.dbus DESC
 LIMIT {result_limit}""",
-        required_tables=("system.billing.usage", "system.lakeflow.pipeline_update_timeline"),
+        required_tables=(
+            "system.billing.usage",
+            "system.lakeflow.pipeline_update_timeline",
+        ),
         domain="dlt_pipelines",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.BILLING,
-        metadata=QueryMetadata(summary="DBU cost per individual pipeline update", output_hint="Updates ranked by DBU consumption"),
+        metadata=QueryMetadata(
+            summary="DBU cost per individual pipeline update",
+            output_hint="Updates ranked by DBU consumption",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT07",
@@ -252,7 +278,10 @@ LIMIT {result_limit}""",
         required=True,
         discovery_mode=DiscoveryMode.DEEP_DIVE,
         category=QueryCategory.BILLING,
-        metadata=QueryMetadata(summary="Daily pipeline cost with edition, serverless, and Photon metadata", output_hint="Daily cost breakdown per pipeline"),
+        metadata=QueryMetadata(
+            summary="Daily pipeline cost with edition, serverless, and Photon metadata",
+            output_hint="Daily cost breakdown per pipeline",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT08",
@@ -278,7 +307,10 @@ LIMIT {result_limit}""",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.BILLING,
-        metadata=QueryMetadata(summary="Daily DBU consumption per pipeline", output_hint="Daily DBU trend per pipeline"),
+        metadata=QueryMetadata(
+            summary="Daily DBU consumption per pipeline",
+            output_hint="Daily DBU trend per pipeline",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT09",
@@ -310,7 +342,10 @@ LIMIT {result_limit}""",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.OPTIMIZATION,
-        metadata=QueryMetadata(summary="Pipelines ranked by p95 update duration", output_hint="Top pipelines by p95 duration"),
+        metadata=QueryMetadata(
+            summary="Pipelines ranked by p95 update duration",
+            output_hint="Top pipelines by p95 duration",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT10",
@@ -342,7 +377,10 @@ LIMIT {result_limit}""",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="Pipelines with 3+ failures in the lookback period", output_hint="Pipelines ranked by failure count"),
+        metadata=QueryMetadata(
+            summary="Pipelines with 3+ failures in the lookback period",
+            output_hint="Pipelines ranked by failure count",
+        ),
     ),
     SystemQuery(
         query_id="P-DLT11",
@@ -365,7 +403,10 @@ LIMIT {result_limit}""",
         required=True,
         discovery_mode=DiscoveryMode.GENERAL,
         category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="Count of continuous vs triggered pipelines per workspace", output_hint="Pipeline type breakdown by workspace"),
+        metadata=QueryMetadata(
+            summary="Count of continuous vs triggered pipelines per workspace",
+            output_hint="Pipeline type breakdown by workspace",
+        ),
     ),
 ]
 

@@ -42,6 +42,7 @@ from starboard_server.adapters.llm.openai.schema_adapter import (
     make_schema_strict,
     prepare_json_schema,
     prepare_tools_for_model,
+    supports_structured_output,
 )
 from starboard_server.adapters.llm.openai.streaming_handler import (
     build_streaming_usage,
@@ -556,33 +557,31 @@ class OpenAIProvider(BaseLLMClient):
                         )
                         messages[idx] = {**msg, "content": str(msg["content"])}
 
-                if json_schema_def is None:
-                    system_msg = {
-                        "role": "system",
-                        "content": "Return ONLY valid JSON for the requested structure. Do not include any explanatory text before or after the JSON.",
-                    }
-                    request_messages = [system_msg] + messages
-                    params = self._build_request_params(
-                        messages=request_messages,
-                        model=model,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                        phase=phase,
-                        stream=False,
-                    )
-                else:
-                    params = self._build_request_params(
-                        messages=messages,
-                        model=model,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                        phase=phase,
-                        stream=False,
-                    )
+                params = self._build_request_params(
+                    messages=messages,
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    phase=phase,
+                    stream=False,
+                )
+
+                use_schema = (
+                    json_schema_def is not None
+                    and supports_structured_output(params["model"])
+                )
+
+                if use_schema:
                     params["response_format"] = {
                         "type": "json_schema",
                         "json_schema": json_schema_def,
                     }
+                else:
+                    system_msg = {
+                        "role": "system",
+                        "content": "Return ONLY valid JSON for the requested structure. Do not include any explanatory text before or after the JSON.",
+                    }
+                    params["messages"] = [system_msg] + list(params["messages"])
 
                 resp = await self.async_client.chat.completions.create(**params)
 
@@ -688,15 +687,16 @@ class OpenAIProvider(BaseLLMClient):
                 raise
             except APIError as e:
                 status_code = getattr(e, "status_code", None)
+                error_str = str(e)
                 logger.error(
                     "llm_api_error",
                     trace_id=trace_id,
                     phase=phase,
-                    error=str(e),
+                    error=error_str,
                     status_code=status_code,
                 )
                 if status_code == 400:
-                    return {"error": "invalid_request", "raw": str(e)}
+                    return {"error": "invalid_request", "raw": error_str}
                 raise
             except ValidationError:
                 raise
@@ -744,33 +744,31 @@ class OpenAIProvider(BaseLLMClient):
         chunk_count = 0
 
         try:
-            if json_schema_def is None:
-                system_msg = {
-                    "role": "system",
-                    "content": "Return ONLY valid JSON for the requested structure. Do not include any explanatory text before or after the JSON.",
-                }
-                request_messages = [system_msg] + messages
-                params = self._build_request_params(
-                    messages=request_messages,
-                    model=model,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    phase=phase,
-                    stream=True,
-                )
-            else:
-                params = self._build_request_params(
-                    messages=messages,
-                    model=model,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    phase=phase,
-                    stream=True,
-                )
+            params = self._build_request_params(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                phase=phase,
+                stream=True,
+            )
+
+            use_schema = (
+                json_schema_def is not None
+                and supports_structured_output(params["model"])
+            )
+
+            if use_schema:
                 params["response_format"] = {
                     "type": "json_schema",
                     "json_schema": json_schema_def,
                 }
+            else:
+                system_msg = {
+                    "role": "system",
+                    "content": "Return ONLY valid JSON for the requested structure. Do not include any explanatory text before or after the JSON.",
+                }
+                params["messages"] = [system_msg] + list(params["messages"])
 
             stream = await self.async_client.chat.completions.create(**params)
 
@@ -842,12 +840,14 @@ class OpenAIProvider(BaseLLMClient):
             logger.warning("llm_timeout", trace_id=trace_id, phase=phase, error=str(e))
             raise
         except APIError as e:
+            status_code = getattr(e, "status_code", None)
+            error_str = str(e)
             logger.error(
                 "llm_api_error",
                 trace_id=trace_id,
                 phase=phase,
-                error=str(e),
-                status_code=getattr(e, "status_code", None),
+                error=error_str,
+                status_code=status_code,
             )
             raise
         except ValidationError:
