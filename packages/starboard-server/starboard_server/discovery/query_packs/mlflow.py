@@ -12,19 +12,42 @@ from starboard_core.domain.models.discovery.query import (
 
 _QUERIES = [
     SystemQuery(
-        query_id="P-MLF01", name="Experiments with Run Counts",
-        description="All experiments with run counts and timestamps",
+        query_id="P-MLF01", name="Experiment Activity Overview",
+        description=(
+            "Experiment inventory with run counts, timestamps, and daily "
+            "run volume within the lookback window. Consolidates former "
+            "P-MLF03 (daily run volume by workspace) into one query."
+        ),
         sql_template="""\
-SELECT e.workspace_id, e.experiment_id, e.name AS experiment_name, e.create_time, e.update_time,
-  e.delete_time, COUNT(r.run_id) AS run_count
-FROM system.mlflow.experiments_latest e
-LEFT JOIN system.mlflow.runs_latest r USING (experiment_id)
-GROUP BY e.workspace_id, e.experiment_id, e.name, e.create_time, e.update_time, e.delete_time
+WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP()) AS dt),
+experiment_info AS (
+  SELECT workspace_id, experiment_id, name AS experiment_name,
+    create_time, update_time, delete_time
+  FROM system.mlflow.experiments_latest
+),
+run_stats AS (
+  SELECT experiment_id, workspace_id,
+    COUNT(*) AS run_count,
+    COUNT_IF(status = 'FINISHED') AS finished_runs,
+    COUNT_IF(status = 'FAILED') AS failed_runs,
+    MIN(start_time) AS first_run, MAX(start_time) AS last_run
+  FROM system.mlflow.runs_latest, cutoff
+  WHERE start_time >= cutoff.dt
+  GROUP BY experiment_id, workspace_id
+)
+SELECT e.workspace_id, e.experiment_id, e.experiment_name,
+  e.create_time, e.update_time, e.delete_time,
+  COALESCE(rs.run_count, 0) AS run_count,
+  COALESCE(rs.finished_runs, 0) AS finished_runs,
+  COALESCE(rs.failed_runs, 0) AS failed_runs,
+  rs.first_run, rs.last_run
+FROM experiment_info e
+LEFT JOIN run_stats rs USING (workspace_id, experiment_id)
 ORDER BY e.update_time DESC
 LIMIT {result_limit}""",
         required_tables=("system.mlflow.experiments_latest", "system.mlflow.runs_latest",), domain="mlflow", required=False,
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="All experiments with run counts and timestamps", output_hint="Experiments ranked by last update"),
+        metadata=QueryMetadata(summary="Experiment inventory with run counts and health metrics", output_hint="Experiments ranked by last update with run stats"),
     ),
     SystemQuery(
         query_id="P-MLF02", name="Active vs Soft-Deleted Experiments",
@@ -39,30 +62,20 @@ GROUP BY IF(delete_time IS NULL, 'ACTIVE', 'SOFT_DELETED')""",
         metadata=QueryMetadata(summary="Active vs soft-deleted experiment summary", output_hint="Experiment state counts"),
     ),
     SystemQuery(
-        query_id="P-MLF03", name="Runs by Workspace and Day",
-        description="Daily run volume by workspace",
-        sql_template="""\
-WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP()) AS dt)
-SELECT workspace_id, DATE(start_time) AS run_date, COUNT(*) AS runs_started,
-  COUNT_IF(status = 'FINISHED') AS finished_runs, COUNT_IF(status = 'FAILED') AS failed_runs
-FROM system.mlflow.runs_latest, cutoff
-WHERE start_time >= cutoff.dt
-GROUP BY workspace_id, DATE(start_time)
-ORDER BY run_date DESC, workspace_id
-LIMIT {result_limit}""",
-        required_tables=("system.mlflow.runs_latest",), domain="mlflow", required=False,
-        discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="Daily run volume by workspace", output_hint="Daily run counts"),
-    ),
-    SystemQuery(
-        query_id="P-MLF04", name="Experiment Reliability (Success Ratio)",
-        description="Top experiments by run count with success ratio",
+        query_id="P-MLF04", name="Experiment Reliability and Noise",
+        description=(
+            "Top experiments by run count with success ratio. Includes "
+            "an is_noisy flag for experiments with 50+ runs and <90% success. "
+            "Consolidates former P-MLF05 into one query."
+        ),
         sql_template="""\
 WITH latest_experiments AS (
   SELECT experiment_id, name AS experiment_name FROM system.mlflow.experiments_latest
 )
 SELECT le.experiment_name, r.experiment_id,
-  ROUND(AVG(IF(r.status = 'FINISHED', 1.0, 0.0)), 4) AS success_ratio, COUNT(*) AS run_count
+  ROUND(AVG(IF(r.status = 'FINISHED', 1.0, 0.0)), 4) AS success_ratio,
+  COUNT(*) AS run_count,
+  IF(COUNT(*) >= 50 AND AVG(IF(r.status = 'FINISHED', 1.0, 0.0)) < 0.9, true, false) AS is_noisy
 FROM system.mlflow.runs_latest r
 LEFT JOIN latest_experiments le USING (experiment_id)
 WHERE r.status IS NOT NULL
@@ -71,27 +84,7 @@ ORDER BY run_count DESC
 LIMIT 100""",
         required_tables=("system.mlflow.runs_latest",), domain="mlflow", required=False,
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="Top experiments by run count with success ratio", output_hint="Experiments ranked by run count"),
-    ),
-    SystemQuery(
-        query_id="P-MLF05", name="Noisy Experiments (Low Success, Many Runs)",
-        description="Experiments with 50+ runs and less than 90 pct success",
-        sql_template="""\
-WITH latest_experiments AS (
-  SELECT experiment_id, name AS experiment_name FROM system.mlflow.experiments_latest
-)
-SELECT le.experiment_name, r.experiment_id,
-  ROUND(AVG(IF(r.status = 'FINISHED', 1.0, 0.0)), 4) AS success_ratio, COUNT(*) AS run_count
-FROM system.mlflow.runs_latest r
-LEFT JOIN latest_experiments le USING (experiment_id)
-WHERE r.status IS NOT NULL
-GROUP BY le.experiment_name, r.experiment_id
-HAVING run_count >= 50 AND AVG(IF(r.status = 'FINISHED', 1.0, 0.0)) < 0.9
-ORDER BY success_ratio ASC, run_count DESC
-LIMIT {result_limit}""",
-        required_tables=("system.mlflow.runs_latest",), domain="mlflow", required=False,
-        discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.OPTIMIZATION,
-        metadata=QueryMetadata(summary="Experiments with 50+ runs and less than 90% success rate", output_hint="Noisy experiments ranked by success ratio"),
+        metadata=QueryMetadata(summary="Top experiments by run count with success ratio and noise flag", output_hint="Experiments ranked by run count with noisy flag"),
     ),
     SystemQuery(
         query_id="P-MLF06", name="Long-Running Runs",
@@ -124,7 +117,7 @@ GROUP BY created_by
 ORDER BY num_runs DESC
 LIMIT {result_limit}""",
         required_tables=("system.mlflow.runs_latest",), domain="mlflow", required=False,
-        discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
+        discovery_mode=DiscoveryMode.DEEP_DIVE, category=QueryCategory.PROFILE,
         metadata=QueryMetadata(summary="Most active users by run volume and avg duration", output_hint="Users ranked by run count"),
     ),
     SystemQuery(

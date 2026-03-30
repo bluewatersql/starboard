@@ -606,7 +606,6 @@ Runs comprehensive workspace health assessment and product usage discovery.
 | `run_discovery_queries` | Execute discovery SQL query packs |
 | `analyze_discovery_domain` | Analyze domains (batch or single) — server parallelizes internally |
 | `synthesize_discovery_report` | Assemble domains into a final report |
-| `run_workspace_discovery` | Legacy monolithic pipeline (not recommended) |
 
 **Batch analysis (preferred):** After `run_discovery_queries`, call `analyze_discovery_domain` with `domains` set to the `domains_with_data` list. The server runs all domain analyses in parallel internally. Takes 5-7 minutes for a typical workspace. Requires `MCP_TOOL_TIMEOUT >= 600000` in Claude Code settings.
 
@@ -1280,7 +1279,7 @@ Arguments: {
 
 ### Discovery tools not appearing
 
-If discovery tools like `run_workspace_discovery` or `discover_active_products` are not
+If discovery tools like `discover_active_products` are not
 visible, your `tool_scope` may be set to `phase_a`. Discovery tools require `phase_b`
 (the default) or `full`. Check your MCP config for an explicit `tool_scope` override:
 

@@ -28,22 +28,28 @@ LIMIT {result_limit}""",
         metadata=QueryMetadata(summary="All Vector Search endpoints with first/last billed dates", output_hint="Endpoints ranked by last billed date"),
     ),
     SystemQuery(
-        query_id="P-VS02", name="Usage by Workload Type",
-        description="Daily usage broken down by serving, ingest, and storage",
+        query_id="P-VS02", name="Usage by Workload Type and Month",
+        description=(
+            "Daily and monthly usage broken down by serving, ingest, and storage. "
+            "Consolidates former P-VS06 (monthly cost trend) into one query."
+        ),
         sql_template="""\
 WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt)
-SELECT workspace_id, usage_date, usage_metadata.endpoint_name AS endpoint_name,
+SELECT workspace_id, usage_date,
+  DATE_TRUNC('MONTH', usage_date) AS year_month,
+  usage_metadata.endpoint_name AS endpoint_name,
   CASE WHEN usage_metadata.endpoint_name IS NULL THEN 'ingest' WHEN usage_type = 'STORAGE_SPACE' THEN 'storage' ELSE 'serving' END AS workload_type,
-  ROUND(SUM(usage_quantity), 4) AS total_quantity
+  ROUND(SUM(usage_quantity), 4) AS total_quantity,
+  usage_unit
 FROM system.billing.usage, cutoff
-WHERE billing_origin_product = 'VECTOR_SEARCH' AND usage_date >= cutoff.dt
-GROUP BY workspace_id, usage_date, usage_metadata.endpoint_name,
-  CASE WHEN usage_metadata.endpoint_name IS NULL THEN 'ingest' WHEN usage_type = 'STORAGE_SPACE' THEN 'storage' ELSE 'serving' END
+WHERE (billing_origin_product = 'VECTOR_SEARCH' OR sku_name LIKE '%VECTOR_SEARCH%') AND usage_date >= cutoff.dt
+GROUP BY workspace_id, usage_date, DATE_TRUNC('MONTH', usage_date), usage_metadata.endpoint_name,
+  CASE WHEN usage_metadata.endpoint_name IS NULL THEN 'ingest' WHEN usage_type = 'STORAGE_SPACE' THEN 'storage' ELSE 'serving' END, usage_unit
 ORDER BY usage_date DESC, endpoint_name, workload_type
 LIMIT {result_limit}""",
         required_tables=("system.billing.usage",), domain="vector_search", required=True,
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.BILLING,
-        metadata=QueryMetadata(summary="Daily usage broken down by serving, ingest, and storage", output_hint="Daily usage by workload type"),
+        metadata=QueryMetadata(summary="Daily and monthly usage by workload type per endpoint", output_hint="Daily usage with monthly rollup columns"),
     ),
     SystemQuery(
         query_id="P-VS03", name="Idle Endpoints (No Queries)",
@@ -114,25 +120,8 @@ GROUP BY lp.pipeline_name, pu.dlt_pipeline_id
 ORDER BY total_quantity DESC
 LIMIT {result_limit}""",
         required_tables=("system.billing.usage", "system.lakeflow.pipelines",), domain="vector_search", required=False,
-        discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.BILLING,
+        discovery_mode=DiscoveryMode.DEEP_DIVE, category=QueryCategory.BILLING,
         metadata=QueryMetadata(summary="Index sync cost attributed to DLT pipelines", output_hint="Pipelines ranked by indexing cost"),
-    ),
-    SystemQuery(
-        query_id="P-VS06", name="Endpoint Cost Trend",
-        description="Monthly DBU trend per endpoint",
-        sql_template="""\
-WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt)
-SELECT workspace_id, usage_metadata.endpoint_name AS endpoint_name,
-  DATE_TRUNC('MONTH', usage_date) AS year_month, ROUND(SUM(usage_quantity), 4) AS usage_quantity,
-  usage_unit, COUNT(DISTINCT DATE(usage_date)) AS active_days
-FROM system.billing.usage, cutoff
-WHERE usage_date >= cutoff.dt AND (billing_origin_product = 'VECTOR_SEARCH' OR sku_name LIKE '%VECTOR_SEARCH%')
-GROUP BY workspace_id, usage_metadata.endpoint_name, DATE_TRUNC('MONTH', usage_date), usage_unit
-ORDER BY year_month DESC, usage_quantity DESC
-LIMIT {result_limit}""",
-        required_tables=("system.billing.usage",), domain="vector_search", required=True,
-        discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.BILLING,
-        metadata=QueryMetadata(summary="Monthly DBU trend per endpoint", output_hint="Monthly cost trend"),
     ),
 ]
 

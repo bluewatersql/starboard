@@ -148,7 +148,7 @@ Enable by setting `tool_scope` to `"phase_b"` or `"full"` in your configuration 
 `get_warehouse_fingerprint`, `configure_warehouse_slo`, `analyze_warehouse_topology`, `get_warehouse_user_activity`, `generate_warehouse_chargeback`, `generate_portfolio_chargeback`
 
 **Discovery:**
-`discover_active_products`, `run_discovery_queries`, `analyze_discovery_domain`, `synthesize_discovery_report`, `run_workspace_discovery`
+`discover_active_products`, `run_discovery_queries`, `analyze_discovery_domain`, `synthesize_discovery_report`
 
 **Analytics:**
 `build_analytics_context`, `build_sql_query`, `validate_sql_query`, `execute_sql_query`

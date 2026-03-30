@@ -184,6 +184,9 @@ class EnvConfig(BaseSettings):
     discovery_llm_model: str | None = None
     """LLM model override for discovery analysis. Falls back to llm_model."""
     discovery_llm_temperature: float = 0.3
+    discovery_min_dbu_threshold: float = 10.0
+    """Minimum DBUs for a product to trigger its domain pack. Products below
+    this threshold are treated as inactive. Set to 0 to disable filtering."""
 
     # --- Field validators ---
 
@@ -361,6 +364,11 @@ class EnvConfig(BaseSettings):
             errors.append(
                 f"discovery_max_parallelism must be 1-16, "
                 f"got {self.discovery_max_parallelism}"
+            )
+        if self.discovery_min_dbu_threshold < 0:
+            errors.append(
+                f"discovery_min_dbu_threshold must be >= 0, "
+                f"got {self.discovery_min_dbu_threshold}"
             )
 
         if errors:
@@ -594,6 +602,9 @@ class EnvConfig(BaseSettings):
         if self.discovery_llm_model is not None:
             os.environ["DISCOVERY_LLM_MODEL"] = self.discovery_llm_model
         os.environ["DISCOVERY_LLM_TEMPERATURE"] = str(self.discovery_llm_temperature)
+        os.environ["DISCOVERY_MIN_DBU_THRESHOLD"] = str(
+            self.discovery_min_dbu_threshold
+        )
 
         # Register cleanup handler to remove sensitive env vars on process exit.
         # This limits the window in which secrets are exposed in the process environment.

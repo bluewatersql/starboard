@@ -74,7 +74,8 @@ class QueryPackRegistry:
 
     def get_packs_for_products(
         self,
-        active_products: set[str],
+        active_products: set[str] | dict[str, float],
+        min_dbu_threshold: float = 0.0,
         include: list[str] | None = None,
         exclude: list[str] | None = None,
         target_domains: list[str] | None = None,
@@ -82,16 +83,20 @@ class QueryPackRegistry:
         """Return packs that should run given active products.
 
         Selection logic:
-            1. Start with all packs
-            2. Keep packs where ``gating_products`` is empty (always-run)
-               OR ``gating_products`` intersects ``active_products``
-            3. Apply include override (force-add specific packs)
-            4. Apply exclude override (force-remove specific packs)
-            5. If target_domains is set, filter to only packs whose domain
-               is in the target list. Always-run packs are still included.
+            1. If ``active_products`` is a ``dict[str, float]``, filter out
+               products whose DBU total is below ``min_dbu_threshold``.
+            2. Map remaining products to pack IDs via ``PRODUCT_TO_DOMAIN_PACKS``.
+            3. Always include ``ALWAYS_RUN_PACKS``.
+            4. Apply include/exclude overrides.
+            5. If ``target_domains`` is set, keep only matching domains
+               (always-run packs are still preserved).
 
         Args:
             active_products: ``billing_origin_product`` values from audit.
+                Accepts ``set[str]`` (legacy) or ``dict[str, float]``
+                (product -> total_dbus) for threshold-based filtering.
+            min_dbu_threshold: Products below this DBU total are skipped.
+                Only applied when ``active_products`` is a dict.
             include: Pack IDs to force-include.
             exclude: Pack IDs to force-exclude.
             target_domains: If provided, only return packs for these domains.
@@ -99,9 +104,27 @@ class QueryPackRegistry:
         Returns:
             Ordered list of packs to execute.
         """
+        skipped_products: dict[str, float] = {}
+
+        if isinstance(active_products, dict):
+            product_names: set[str] = set()
+            for product, dbus in active_products.items():
+                if dbus >= min_dbu_threshold:
+                    product_names.add(product)
+                else:
+                    skipped_products[product] = dbus
+            if skipped_products:
+                logger.info(
+                    "products_below_dbu_threshold",
+                    threshold=min_dbu_threshold,
+                    skipped={k: round(v, 2) for k, v in skipped_products.items()},
+                )
+        else:
+            product_names = active_products
+
         eligible_pack_ids: set[str] = set()
 
-        for product in active_products:
+        for product in product_names:
             for pack_id in PRODUCT_TO_DOMAIN_PACKS.get(product, []):
                 eligible_pack_ids.add(pack_id)
 
@@ -119,7 +142,6 @@ class QueryPackRegistry:
             if pack_id in eligible_pack_ids
         ]
 
-        # Domain targeting: filter to specific domains (always-run packs preserved)
         if target_domains is not None:
             target_set = set(target_domains)
             result = [
@@ -130,12 +152,13 @@ class QueryPackRegistry:
 
         logger.info(
             "query_pack_selection",
-            active_products=sorted(active_products),
+            active_products=sorted(product_names),
             eligible_packs=sorted(eligible_pack_ids),
             selected_packs=[p.pack_id for p in result],
             include_override=include,
             exclude_override=exclude,
             target_domains=target_domains,
+            skipped_products=sorted(skipped_products.keys()) if skipped_products else None,
         )
 
         return result

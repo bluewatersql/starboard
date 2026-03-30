@@ -77,11 +77,17 @@ LIMIT {result_limit}""",
         metadata=QueryMetadata(summary="Genie spaces with conversation and message counts", output_hint="Genie spaces ranked by activity"),
     ),
     SystemQuery(
-        query_id="P-AIBI04", name="Per-Dashboard Query Performance",
-        description="Query latency metrics aggregated per dashboard",
+        query_id="P-AIBI04", name="AI/BI Query Performance",
+        description=(
+            "Query latency metrics aggregated per dashboard and Genie space. "
+            "Consolidates former P-AIBI05 (per-Genie space) into one query."
+        ),
         sql_template="""\
 WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP()) AS dt)
-SELECT query_source.dashboard_id AS dashboard_id, COUNT(*) AS query_count,
+SELECT
+  CASE WHEN query_source.dashboard_id IS NOT NULL THEN 'dashboard' ELSE 'genie' END AS source_type,
+  COALESCE(query_source.dashboard_id, query_source.genie_space_id) AS source_id,
+  COUNT(*) AS query_count,
   COUNT_IF(execution_status = 'FAILED') AS failed_queries,
   ROUND(AVG(total_duration_ms), 0) AS avg_total_ms,
   ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY total_duration_ms), 0) AS p50_total_ms,
@@ -90,35 +96,15 @@ SELECT query_source.dashboard_id AS dashboard_id, COUNT(*) AS query_count,
   ROUND(AVG(execution_duration_ms), 0) AS avg_exec_ms,
   ROUND(AVG(read_rows), 0) AS avg_rows_read, ROUND(AVG(read_bytes / 1048576.0), 2) AS avg_read_mb
 FROM system.query.history, cutoff
-WHERE query_source.dashboard_id IS NOT NULL AND start_time >= cutoff.dt
-GROUP BY query_source.dashboard_id
+WHERE (query_source.dashboard_id IS NOT NULL OR query_source.genie_space_id IS NOT NULL) AND start_time >= cutoff.dt
+GROUP BY
+  CASE WHEN query_source.dashboard_id IS NOT NULL THEN 'dashboard' ELSE 'genie' END,
+  COALESCE(query_source.dashboard_id, query_source.genie_space_id)
 ORDER BY p95_total_ms DESC
 LIMIT {result_limit}""",
         required_tables=("system.query.history",), domain="aibi", required=False,
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="Query latency metrics aggregated per dashboard", output_hint="Dashboards ranked by p95 latency"),
-    ),
-    SystemQuery(
-        query_id="P-AIBI05", name="Per-Genie Space Query Performance",
-        description="Query latency metrics aggregated per Genie space",
-        sql_template="""\
-WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP()) AS dt)
-SELECT query_source.genie_space_id AS genie_space_id, COUNT(*) AS query_count,
-  COUNT_IF(execution_status = 'FAILED') AS failed_queries,
-  ROUND(AVG(total_duration_ms), 0) AS avg_total_ms,
-  ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY total_duration_ms), 0) AS p50_total_ms,
-  ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY total_duration_ms), 0) AS p95_total_ms,
-  ROUND(AVG(waiting_at_capacity_duration_ms), 0) AS avg_queue_wait_ms,
-  ROUND(AVG(execution_duration_ms), 0) AS avg_exec_ms,
-  ROUND(AVG(read_rows), 0) AS avg_rows_read, ROUND(AVG(read_bytes / 1048576.0), 2) AS avg_read_mb
-FROM system.query.history, cutoff
-WHERE query_source.genie_space_id IS NOT NULL AND start_time >= cutoff.dt
-GROUP BY query_source.genie_space_id
-ORDER BY p95_total_ms DESC
-LIMIT {result_limit}""",
-        required_tables=("system.query.history",), domain="aibi", required=False,
-        discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="Query latency metrics aggregated per Genie space", output_hint="Genie spaces ranked by p95 latency"),
+        metadata=QueryMetadata(summary="Query performance per dashboard and Genie space", output_hint="AI/BI sources ranked by p95 latency"),
     ),
 ]
 

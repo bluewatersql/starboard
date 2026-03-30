@@ -53,7 +53,6 @@ PHASE_B_TOOLS: frozenset[str] = PHASE_A_TOOLS | frozenset({
     "discover_active_products", "run_discovery_queries",
     "analyze_discovery_domain", "start_discovery_analysis",
     "get_discovery_analysis_progress", "synthesize_discovery_report",
-    "run_workspace_discovery",
     # Analytics
     "build_analytics_context", "build_sql_query",
     "validate_sql_query", "execute_sql_query",
@@ -75,6 +74,7 @@ _INTERNAL_TOOLS: frozenset[str] = frozenset(
         "request_user_input",
         "complete",
         "resolve_user_intent",
+        "run_workspace_discovery",
     }
 )
 

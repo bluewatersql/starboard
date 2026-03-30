@@ -9,6 +9,7 @@ Thin facade that delegates to extracted sub-modules:
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import AsyncIterator
 from typing import Any, override
@@ -67,6 +68,31 @@ _tracer = get_tracer("starboard.llm")
 TEMPERATURE_STRUCTURAL = 0.2  # Planning, validation, schema generation
 TEMPERATURE_ANALYTICAL = 0.4  # Analysis, recommendations
 TEMPERATURE_CREATIVE = 0.7  # Report generation, explanations
+
+
+def _prepend_schema_hint(
+    messages: list[dict[str, Any]],
+    json_schema_def: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Prepend a system message with the expected JSON schema.
+
+    When ``response_format`` is unavailable, the LLM still needs to know
+    what structure to produce.  This embeds the full JSON schema from the
+    Pydantic model into the system prompt so the model can comply.
+    """
+    if json_schema_def is not None and "schema" in json_schema_def:
+        schema_json = json.dumps(json_schema_def["schema"], indent=2)
+        hint = (
+            "Return ONLY valid JSON matching the following JSON Schema. "
+            "Do not include any explanatory text before or after the JSON.\n\n"
+            f"```json\n{schema_json}\n```"
+        )
+    else:
+        hint = (
+            "Return ONLY valid JSON for the requested structure. "
+            "Do not include any explanatory text before or after the JSON."
+        )
+    return [{"role": "system", "content": hint}] + messages
 
 
 class OpenAIProvider(BaseLLMClient):
@@ -577,11 +603,9 @@ class OpenAIProvider(BaseLLMClient):
                         "json_schema": json_schema_def,
                     }
                 else:
-                    system_msg = {
-                        "role": "system",
-                        "content": "Return ONLY valid JSON for the requested structure. Do not include any explanatory text before or after the JSON.",
-                    }
-                    params["messages"] = [system_msg] + list(params["messages"])
+                    params["messages"] = _prepend_schema_hint(
+                        list(params["messages"]), json_schema_def
+                    )
 
                 resp = await self.async_client.chat.completions.create(**params)
 
@@ -764,11 +788,9 @@ class OpenAIProvider(BaseLLMClient):
                     "json_schema": json_schema_def,
                 }
             else:
-                system_msg = {
-                    "role": "system",
-                    "content": "Return ONLY valid JSON for the requested structure. Do not include any explanatory text before or after the JSON.",
-                }
-                params["messages"] = [system_msg] + list(params["messages"])
+                params["messages"] = _prepend_schema_hint(
+                    list(params["messages"]), json_schema_def
+                )
 
             stream = await self.async_client.chat.completions.create(**params)
 

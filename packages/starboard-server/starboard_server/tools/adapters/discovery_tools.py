@@ -142,6 +142,7 @@ class DiscoveryTools(BaseToolAdapter):
         # The agent calls tools sequentially within one reasoning loop, so
         # these are safe to share without locking.
         self._active_products: list[str] | None = None
+        self._product_dbus: dict[str, float] | None = None
         self._pack_results: list[PackResult] | None = None
         self._domain_analyses: list[DomainAnalysis] = []
         self._trace_id: str = ""
@@ -266,20 +267,44 @@ class DiscoveryTools(BaseToolAdapter):
             }
 
         col = "billing_origin_product"
+        dbu_col = "total_dbus"
         if col in audit_result.data.columns:
-            self._active_products = audit_result.data[col].unique().to_list()
+            if dbu_col in audit_result.data.columns:
+                product_dbus: dict[str, float] = {}
+                for row in audit_result.data.iter_rows(named=True):
+                    product = row[col]
+                    dbus = float(row.get(dbu_col, 0.0) or 0.0)
+                    product_dbus[product] = product_dbus.get(product, 0.0) + dbus
+                self._product_dbus = product_dbus
+            else:
+                self._product_dbus = {
+                    p: 0.0
+                    for p in audit_result.data[col].unique().to_list()
+                }
         else:
-            self._active_products = []
+            self._product_dbus = {}
 
-        # Determine which domains will be analyzed
+        threshold = self._env_config.discovery_min_dbu_threshold
+        skipped_products: list[dict[str, Any]] = []
+        active_list: list[str] = []
+        for product, dbus in self._product_dbus.items():
+            if dbus >= threshold:
+                active_list.append(product)
+            else:
+                skipped_products.append(
+                    {"product": product, "total_dbus": round(dbus, 2), "reason": "below_threshold"}
+                )
+        self._active_products = active_list
+
         selected_packs = self._query_registry.get_packs_for_products(
-            active_products=set(self._active_products),
+            active_products=self._product_dbus,
+            min_dbu_threshold=threshold,
         )
         available_domains = sorted(
             {p.domain for p in selected_packs if p.domain != "audit"}
         )
 
-        return {
+        response: dict[str, Any] = {
             "status": "completed",
             "trace_id": self._trace_id,
             "lookback_days": lookback_days,
@@ -287,8 +312,12 @@ class DiscoveryTools(BaseToolAdapter):
             "product_count": len(self._active_products),
             "available_domains": available_domains,
             "pack_count": len(selected_packs),
+            "min_dbu_threshold": threshold,
             "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
         }
+        if skipped_products:
+            response["skipped_products"] = skipped_products
+        return response
 
     # ------------------------------------------------------------------
     # Phase 2: Query — execute discovery query packs
@@ -327,7 +356,8 @@ class DiscoveryTools(BaseToolAdapter):
         )
 
         packs = self._query_registry.get_packs_for_products(
-            active_products=set(self._active_products),
+            active_products=self._product_dbus or set(self._active_products),
+            min_dbu_threshold=self._env_config.discovery_min_dbu_threshold,
             include=domains,
         )
 
@@ -1106,6 +1136,7 @@ class DiscoveryTools(BaseToolAdapter):
 
         # Reset shared state for next run
         self._active_products = None
+        self._product_dbus = None
         self._pack_results = None
         self._domain_analyses = []
         self._domain_file_paths = {}
@@ -1145,6 +1176,7 @@ class DiscoveryTools(BaseToolAdapter):
             output_dir=self._discovery_output_path,
             llm_model=env.discovery_llm_model,
             llm_temperature=env.discovery_llm_temperature,
+            min_dbu_threshold=env.discovery_min_dbu_threshold,
         )
 
         engine = DiscoveryEngine(

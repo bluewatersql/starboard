@@ -62,7 +62,6 @@ After `analyze_discovery_domain` returns, call `synthesize_discovery_report` (no
 | `run_discovery_queries` | Execute discovery SQL query packs | `domains` (optional filter) |
 | `analyze_discovery_domain` | Analyze domains (batch or single) — server parallelizes internally | `domains` (batch) or `domain` (single) |
 | `synthesize_discovery_report` | Assemble domain analyses into final report | (none) |
-| `run_workspace_discovery` | Legacy monolithic pipeline (not recommended) | `lookback_days`, `domains` |
 | `discovery_agent` | Full workspace discovery via server-side agent | `message` |
 
 ## Composite Tools

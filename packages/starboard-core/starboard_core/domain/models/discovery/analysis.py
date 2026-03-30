@@ -136,21 +136,19 @@ _BULLET_PREFIX = re.compile(r"^\s*[-*•]\s+")
 
 
 def _coerce_str_to_list(value: Any) -> list[str] | Any:
-    """Coerce a markdown bullet-point string into a list of strings.
+    """Coerce a single markdown bullet-point string into ``list[str]``.
 
-    LLMs sometimes return ``list[str]`` fields as a single string with
-    embedded bullet points (e.g. ``"\\n- item one\\n- item two"``).
-    This helper splits on newlines, strips bullet prefixes from each
-    line, and filters blanks so Pydantic validation succeeds without
-    losing data.
+    Some LLMs return a single string with bullet points rather than
+    a proper JSON array.  This validator splits on newlines and strips
+    leading bullet markers (``-``, ``*``, ``•``).
 
     Returns the value unchanged if it is not a string.
     """
-    if not isinstance(value, str):
-        return value
-    lines = value.strip().splitlines()
-    items = [_BULLET_PREFIX.sub("", line).strip() for line in lines]
-    return [item for item in items if item]
+    if isinstance(value, str):
+        lines = value.strip().splitlines()
+        items = [_BULLET_PREFIX.sub("", line).strip() for line in lines]
+        return [item for item in items if item]
+    return value
 
 
 class DomainAnalysis(BaseModel):

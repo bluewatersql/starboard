@@ -12,44 +12,38 @@ from starboard_core.domain.models.discovery.query import (
 
 _QUERIES = [
     SystemQuery(
-        query_id="P-LB01", name="Usage by Instance",
-        description="All Lakebase instances with total usage and workspace context",
+        query_id="P-LB01", name="Instance Usage and Staleness",
+        description=(
+            "All Lakebase instances with total usage, workspace context, "
+            "and staleness metrics. Consolidates former P-LB02 (idle "
+            "instance detection) into one query."
+        ),
         sql_template="""\
-WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt)
+WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt),
+all_time_usage AS (
+  SELECT workspace_id, usage_metadata.database_instance_id AS database_instance_id,
+    MAX(usage_end_time) AS last_seen_time_all, SUM(usage_quantity) AS total_units_all
+  FROM system.billing.usage WHERE billing_origin_product = 'DATABASE'
+  GROUP BY workspace_id, usage_metadata.database_instance_id HAVING total_units_all != 0
+)
 SELECT u.account_id, u.workspace_id, w.workspace_name,
   u.usage_metadata.database_instance_id AS database_instance_id,
   MIN(u.usage_start_time) AS first_seen_time, MAX(u.usage_end_time) AS last_seen_time,
-  ROUND(SUM(u.usage_quantity), 4) AS total_units, MAX(u.usage_unit) AS usage_unit
+  ROUND(SUM(u.usage_quantity), 4) AS total_units, MAX(u.usage_unit) AS usage_unit,
+  DATEDIFF(DAY, atu.last_seen_time_all, CURRENT_TIMESTAMP()) AS days_since_last_activity
 FROM system.billing.usage u, cutoff
 LEFT JOIN system.access.workspaces_latest w USING (workspace_id)
+LEFT JOIN all_time_usage atu ON u.workspace_id = atu.workspace_id
+  AND u.usage_metadata.database_instance_id = atu.database_instance_id
 WHERE u.billing_origin_product = 'DATABASE' AND u.usage_date >= cutoff.dt
-GROUP BY u.account_id, u.workspace_id, w.workspace_name, u.usage_metadata.database_instance_id
+GROUP BY u.account_id, u.workspace_id, w.workspace_name, u.usage_metadata.database_instance_id,
+  atu.last_seen_time_all
 HAVING total_units != 0
 ORDER BY total_units DESC
 LIMIT {result_limit}""",
         required_tables=("system.billing.usage", "system.access.workspaces_latest",), domain="lakebase", required=False,
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
-        metadata=QueryMetadata(summary="All Lakebase instances with total usage and workspace context", output_hint="Instances ranked by usage"),
-    ),
-    SystemQuery(
-        query_id="P-LB02", name="Idle Instance Detection",
-        description="Instances ranked by staleness (oldest activity first)",
-        sql_template="""\
-SELECT p.workspace_id, w.workspace_name, p.database_instance_id, p.last_seen_time,
-  ROUND(p.total_units, 4) AS total_units,
-  DATEDIFF(DAY, p.last_seen_time, CURRENT_TIMESTAMP()) AS days_since_last_activity
-FROM (
-  SELECT workspace_id, usage_metadata.database_instance_id AS database_instance_id,
-    MAX(usage_end_time) AS last_seen_time, SUM(usage_quantity) AS total_units
-  FROM system.billing.usage WHERE billing_origin_product = 'DATABASE'
-  GROUP BY workspace_id, usage_metadata.database_instance_id HAVING total_units != 0
-) p
-LEFT JOIN system.access.workspaces_latest w USING (workspace_id)
-ORDER BY last_seen_time ASC
-LIMIT {result_limit}""",
-        required_tables=("system.billing.usage", "system.access.workspaces_latest",), domain="lakebase", required=False,
-        discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.OPTIMIZATION,
-        metadata=QueryMetadata(summary="Instances ranked by staleness (oldest activity first)", output_hint="Idle instances ranked by staleness"),
+        metadata=QueryMetadata(summary="Lakebase instances with usage, workspace context, and staleness", output_hint="Instances ranked by usage with idle detection"),
     ),
     SystemQuery(
         query_id="P-LB03", name="Daily Cost Trend",
