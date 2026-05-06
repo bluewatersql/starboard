@@ -40,6 +40,7 @@ from starboard_server.adapters.llm.openai.schema_adapter import (
     flatten_json_schema,
     is_gemini_model,
     is_gpt5_model,
+    is_no_temperature_model,
     make_schema_strict,
     prepare_json_schema,
     prepare_tools_for_model,
@@ -225,11 +226,20 @@ class OpenAIProvider(BaseLLMClient):
 
         params: dict[str, Any] = {
             "model": call_model,
-            "temperature": call_temperature,
             "max_tokens": max_tokens or self.max_tokens,
             "messages": messages,
             "stream": stream,
         }
+
+        # Provider constraint: Claude Opus 4+ rejects the temperature parameter entirely
+        if is_no_temperature_model(call_model):
+            logger.debug(
+                "temperature_omitted_by_provider_constraint",
+                model=call_model,
+                reason="Claude Opus 4 does not support the temperature parameter",
+            )
+        else:
+            params["temperature"] = call_temperature
 
         if self.seed is not None:
             params["seed"] = self.seed
@@ -383,7 +393,7 @@ class OpenAIProvider(BaseLLMClient):
                     call_type="text_call",
                     trace_id=trace_id,
                     model=params["model"],
-                    temperature=params["temperature"],
+                    temperature=params.get("temperature", 0.0),
                     input_tokens=normalized_usage["prompt_tokens"],
                     output_tokens=normalized_usage["completion_tokens"],
                     latency_ms=latency_ms,
@@ -471,7 +481,7 @@ class OpenAIProvider(BaseLLMClient):
                     call_type="text_stream",
                     trace_id=trace_id,
                     model=params["model"],
-                    temperature=params["temperature"],
+                    temperature=params.get("temperature", 0.0),
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     latency_ms=latency_ms,
@@ -670,7 +680,7 @@ class OpenAIProvider(BaseLLMClient):
                         call_type="json_call",
                         trace_id=trace_id,
                         model=params["model"],
-                        temperature=params["temperature"],
+                        temperature=params.get("temperature", 0.0),
                         input_tokens=normalized_usage["prompt_tokens"],
                         output_tokens=normalized_usage["completion_tokens"],
                         latency_ms=latency_ms,
@@ -823,7 +833,7 @@ class OpenAIProvider(BaseLLMClient):
                     call_type="json_stream",
                     trace_id=trace_id,
                     model=params["model"],
-                    temperature=params["temperature"],
+                    temperature=params.get("temperature", 0.0),
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     latency_ms=latency_ms,
@@ -966,7 +976,7 @@ class OpenAIProvider(BaseLLMClient):
                     call_type="tool_call",
                     trace_id=trace_id,
                     model=params["model"],
-                    temperature=params["temperature"],
+                    temperature=params.get("temperature", 0.0),
                     input_tokens=normalized["prompt_tokens"],
                     output_tokens=normalized["completion_tokens"],
                     latency_ms=latency_ms,
@@ -1144,7 +1154,7 @@ class OpenAIProvider(BaseLLMClient):
                     call_type="tool_call_stream",
                     trace_id=trace_id,
                     model=params["model"],
-                    temperature=params["temperature"],
+                    temperature=params.get("temperature", 0.0),
                     input_tokens=usage_data["prompt_tokens"],
                     output_tokens=usage_data["completion_tokens"],
                     latency_ms=latency_ms,
