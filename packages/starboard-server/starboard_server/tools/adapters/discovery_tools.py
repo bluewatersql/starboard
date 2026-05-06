@@ -205,7 +205,7 @@ class DiscoveryTools(BaseToolAdapter):
 
     async def discover_active_products(
         self,
-        lookback_days: int = 30,
+        lookback_days: int | str = 30,
     ) -> dict[str, Any]:
         """Audit the workspace to discover active Databricks products.
 
@@ -220,13 +220,13 @@ class DiscoveryTools(BaseToolAdapter):
             Dict with ``active_products``, ``available_domains``, and metadata.
         """
         self._trace_id = str(uuid.uuid4())
-        self._lookback_days = lookback_days
+        self._lookback_days = int(lookback_days)
         start = time.monotonic()
 
         pack_executor = QueryPackExecutor(
             sql_executor=self._sql_executor,
             max_parallelism=self._env_config.discovery_max_parallelism,
-            default_lookback_days=lookback_days,
+            default_lookback_days=self._lookback_days,
         )
 
         audit_packs = [
@@ -1149,7 +1149,7 @@ class DiscoveryTools(BaseToolAdapter):
 
     async def run_workspace_discovery(
         self,
-        lookback_days: int = 30,
+        lookback_days: int | str = 30,
         domains: list[str] | None = None,
         data_only: bool = False,
     ) -> dict[str, Any]:
@@ -1169,7 +1169,7 @@ class DiscoveryTools(BaseToolAdapter):
         env = self._env_config
 
         config = EngineConfig(
-            lookback_days=lookback_days,
+            lookback_days=int(lookback_days),
             max_parallelism=env.discovery_max_parallelism,
             domains=domains,
             data_only=data_only,
