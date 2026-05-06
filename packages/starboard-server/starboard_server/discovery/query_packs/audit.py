@@ -1,3 +1,4 @@
+
 """Platform audit query pack for Databricks discovery.
 
 Determines which product surfaces are active in the workspace by aggregating
@@ -7,7 +8,13 @@ This pack runs first and gates which domain packs execute.
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 P_AUDIT01_SQL = """\
 SELECT
@@ -36,6 +43,13 @@ AUDIT_PACK = QueryPack(
             sql_template=P_AUDIT01_SQL,
             required_tables=("system.billing.usage",),
             domain="audit",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="Billing origin product surface audit",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset(),

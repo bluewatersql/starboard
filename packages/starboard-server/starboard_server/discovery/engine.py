@@ -54,6 +54,7 @@ class EngineConfig:
         output_dir: Directory for report output.
         llm_model: Optional LLM model override.
         llm_temperature: LLM temperature for analysis/synthesis.
+        min_dbu_threshold: Minimum DBUs for a product to be considered active.
     """
 
     lookback_days: int = 30
@@ -63,6 +64,7 @@ class EngineConfig:
     output_dir: str = "./discovery_output"
     llm_model: str | None = None
     llm_temperature: float = 0.3
+    min_dbu_threshold: float = 10.0
 
 
 @dataclass
@@ -158,14 +160,15 @@ class DiscoveryEngine:
             _emit(
                 "audit_done",
                 {
-                    "products": active_products,
+                    "products": list(active_products.keys()),
                     "succeeded": audit_result.succeeded,
                 },
             )
 
             # Phase 2: Query execution
             selected_packs = self._query_registry.get_packs_for_products(
-                active_products=set(active_products),
+                active_products=active_products,
+                min_dbu_threshold=self._config.min_dbu_threshold,
                 include=list(self._config.domains)
                 if self._config.domains is not None
                 else None,
@@ -210,7 +213,9 @@ class DiscoveryEngine:
                     domain_results = self._group_by_domain(pack_results)
                     domains = list(domain_results.keys())
                     _emit("analysis_start", {"domains": domains})
-                    domain_analyses = await self._run_analysis(domain_results, trace_id)
+                    domain_analyses = await self._run_analysis(
+                        domain_results, trace_id, on_progress=on_progress
+                    )
                     result.domain_analyses = domain_analyses
                     _emit(
                         "analysis_done",
@@ -293,35 +298,44 @@ class DiscoveryEngine:
             error="Audit query not found in results",
         )
 
-    def _extract_products(self, audit_result: QueryResult) -> list[str]:
-        """Extract active product names from the audit result.
+    def _extract_products(self, audit_result: QueryResult) -> dict[str, float]:
+        """Extract active products with DBU totals from the audit result.
 
         Args:
             audit_result: Result of the P-AUDIT01 query.
 
         Returns:
-            List of active product names. Empty if audit failed.
+            Mapping of product name to total DBUs. Empty if audit failed.
         """
         if not audit_result.succeeded or audit_result.data is None:
             logger.warning(
                 "audit_failed_running_all_packs",
                 error=audit_result.error,
             )
-            return []
+            return {}
 
         col = "billing_origin_product"
+        dbu_col = "total_dbus"
         if col not in audit_result.data.columns:
-            return []
+            return {}
 
-        return audit_result.data[col].unique().to_list()
+        if dbu_col not in audit_result.data.columns:
+            return {p: 0.0 for p in audit_result.data[col].unique().to_list()}
+
+        product_dbus: dict[str, float] = {}
+        for row in audit_result.data.iter_rows(named=True):
+            product = row[col]
+            dbus = float(row.get(dbu_col, 0.0) or 0.0)
+            product_dbus[product] = product_dbus.get(product, 0.0) + dbus
+        return product_dbus
 
     async def _run_queries(
-        self, active_products: list[str], trace_id: str
+        self, active_products: dict[str, float], trace_id: str
     ) -> list[PackResult]:
         """Phase 2: Execute conditional query packs.
 
         Args:
-            active_products: Products detected by the audit.
+            active_products: Products with DBU totals from audit.
             trace_id: Trace ID for observability.
 
         Returns:
@@ -334,7 +348,8 @@ class DiscoveryEngine:
         )
 
         packs = self._query_registry.get_packs_for_products(
-            active_products=set(active_products),
+            active_products=active_products,
+            min_dbu_threshold=self._config.min_dbu_threshold,
             include=list(self._config.domains)
             if self._config.domains is not None
             else None,
@@ -346,12 +361,14 @@ class DiscoveryEngine:
         self,
         domain_results: dict[str, list[PackResult]],
         trace_id: str,
+        on_progress: ProgressCallback | None = None,
     ) -> list[DomainAnalysis]:
         """Phase 3: Run heuristic + LLM analysis per domain.
 
         Args:
             domain_results: Pack results grouped by domain.
             trace_id: Trace ID for observability.
+            on_progress: Optional callback for per-domain progress.
 
         Returns:
             List of domain analyses.
@@ -373,7 +390,11 @@ class DiscoveryEngine:
             temperature=self._config.llm_temperature,
         )
 
-        return await analyzer.analyze_all_domains(domain_results, trace_id=trace_id)
+        return await analyzer.analyze_all_domains(
+            domain_results,
+            trace_id=trace_id,
+            on_domain_complete=on_progress,
+        )
 
     async def _run_synthesis(
         self,

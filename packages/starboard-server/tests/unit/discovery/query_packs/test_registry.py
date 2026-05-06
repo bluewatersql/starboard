@@ -109,6 +109,85 @@ class TestConditionalFiltering:
         assert "governance" not in pack_ids
 
 
+class TestThresholdFiltering:
+    @pytest.fixture()
+    def registry(self) -> QueryPackRegistry:
+        return QueryPackRegistry(
+            packs=(
+                _make_pack("audit"),
+                _make_pack("billing"),
+                _make_pack("governance"),
+                _make_pack("migration"),
+                _make_pack("jobs", frozenset({"JOBS"})),
+                _make_pack("apps", frozenset({"APPS"})),
+                _make_pack("ml", frozenset({"MODEL_SERVING"})),
+            )
+        )
+
+    def test_dict_products_above_threshold(self, registry: QueryPackRegistry):
+        """Products above threshold are included."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 500.0, "APPS": 200.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" in pack_ids
+
+    def test_dict_products_below_threshold_skipped(self, registry: QueryPackRegistry):
+        """Products below threshold are excluded from pack selection."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 500.0, "APPS": 5.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" not in pack_ids
+
+    def test_dict_product_at_exact_threshold(self, registry: QueryPackRegistry):
+        """Product exactly at threshold is included."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 10.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+
+    def test_all_products_below_threshold(self, registry: QueryPackRegistry):
+        """All products below threshold still returns always-run packs."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 1.0, "APPS": 2.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" not in pack_ids
+        assert "apps" not in pack_ids
+        for always_id in ALWAYS_RUN_PACKS:
+            if registry.get_pack(always_id):
+                assert always_id in pack_ids
+
+    def test_threshold_zero_disables_filtering(self, registry: QueryPackRegistry):
+        """Threshold of 0 means no filtering."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 0.001, "APPS": 0.001}, min_dbu_threshold=0.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" in pack_ids
+
+    def test_set_input_ignores_threshold(self, registry: QueryPackRegistry):
+        """Legacy set input works and ignores threshold."""
+        result = registry.get_packs_for_products(
+            {"JOBS", "APPS"}, min_dbu_threshold=99999.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" in pack_ids
+
+    def test_empty_dict_only_always_run(self, registry: QueryPackRegistry):
+        """Empty dict returns only always-run packs."""
+        result = registry.get_packs_for_products({}, min_dbu_threshold=10.0)
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" not in pack_ids
+        assert "apps" not in pack_ids
+
+
 class TestProductMapping:
     def test_all_products_have_packs(self):
         for product, packs in PRODUCT_TO_DOMAIN_PACKS.items():
@@ -130,7 +209,7 @@ class TestProductMapping:
 class TestDefaultRegistry:
     def test_creates_all_packs(self):
         registry = create_default_registry()
-        assert registry.pack_count == 16
+        assert registry.pack_count == 20
 
     def test_audit_pack_present(self):
         registry = create_default_registry()

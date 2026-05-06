@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import time
 import uuid
 from datetime import UTC, datetime
@@ -29,11 +30,13 @@ from starboard_server.discovery.analyzer import DomainAnalyzer, build_fallback_a
 from starboard_server.discovery.engine import DiscoveryEngine, EngineConfig
 from starboard_server.discovery.executor import QueryPackExecutor, SQLExecutor
 from starboard_server.discovery.heuristics import create_default_heuristic_registry
-from starboard_server.discovery.output.formatters import OutputFormatter
+from starboard_server.discovery.output.formatters import (
+    OutputFormatter,
+    domain_display_name,
+)
 from starboard_server.discovery.prompts.domain_analysis import PromptBuilder
 from starboard_server.discovery.query_packs.registry import create_default_registry
 from starboard_server.discovery.synthesizer import ReportAssembler
-from starboard_server.exceptions import AdapterError
 from starboard_server.infra.core.config import EnvConfig, get_config
 from starboard_server.infra.observability.logging import get_logger
 from starboard_server.tools.adapters.base import BaseToolAdapter
@@ -44,66 +47,53 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-def _build_report_summary(report: DiscoveryReport) -> dict[str, Any]:
-    """Build a detailed report summary dict from a DiscoveryReport.
+def _build_report_summary(
+    report: DiscoveryReport,
+    domain_file_paths: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Build a compact report summary dict from a DiscoveryReport.
 
-    Shared between the granular Phase 4 tool and the legacy monolithic tool
-    to avoid duplicating the serialisation logic.
+    Designed to stay well under tool-response size limits. Full detail
+    for each domain is available in the per-domain Markdown files
+    written during Phase 3.
 
     Args:
         report: Completed discovery report with executive summary.
+        domain_file_paths: Map of domain name to detail file path.
 
     Returns:
-        Dict with overview, per-domain report cards with findings,
-        top priorities, and recommended actions.
+        Dict with overview, compact report cards, top priorities,
+        and recommended actions.
     """
+    file_paths = domain_file_paths or {}
+
     return {
         "overview": report.executive_summary.overview,
         "primary_risks": report.executive_summary.primary_risks,
         "report_cards": [
             {
                 "domain": rc.domain,
+                "display_name": domain_display_name(rc.domain),
                 "grade": rc.grade,
                 "score": rc.score,
                 "discussion": rc.discussion,
                 "finding_count": len(rc.top_findings),
-                "top_findings": [
+                "critical_high_findings": [
                     {
-                        "finding_id": f.finding_id,
                         "title": f.title,
                         "priority": f.priority,
                         "impact": f.impact,
-                        "description": f.description,
-                        "evidence": [
-                            {
-                                "source_query_id": e.source_query_id,
-                                "excerpt": e.excerpt,
-                                "metric_name": e.metric_name,
-                                "metric_value": e.metric_value,
-                            }
-                            for e in f.evidence[:3]
-                        ],
-                        "remediation": {
-                            "immediate": f.remediation.immediate[:3],
-                            "medium_term": f.remediation.medium_term[:2],
-                        },
                     }
-                    for f in rc.top_findings[:15]
-                ],
+                    for f in rc.top_findings
+                    if f.priority in ("CRITICAL", "HIGH")
+                ][:5],
+                **(
+                    {"detail_file": file_paths[rc.domain]}
+                    if rc.domain in file_paths
+                    else {}
+                ),
             }
             for rc in report.executive_summary.report_cards
-        ],
-        "domain_summaries": [
-            {
-                "domain": da.domain,
-                "grade": da.grade,
-                "score": da.score,
-                "summary": da.summary,
-                "observations": da.observations[:10],
-                "patterns": da.patterns[:5],
-                "recommended_actions": da.recommended_actions[:10],
-            }
-            for da in report.domain_analyses
         ],
         "top_findings": [
             {
@@ -112,10 +102,9 @@ def _build_report_summary(report: DiscoveryReport) -> dict[str, Any]:
                 "priority": f.priority,
                 "impact": f.impact,
                 "domain": f.domain,
-                "description": f.description,
-                "expected_outcome": f.expected_outcome,
+                "description": f.description[:200],
             }
-            for f in report.top_priorities[:20]
+            for f in report.top_priorities[:15]
         ],
         "top_actions": report.executive_summary.top_actions[:10],
     }
@@ -153,11 +142,15 @@ class DiscoveryTools(BaseToolAdapter):
         # The agent calls tools sequentially within one reasoning loop, so
         # these are safe to share without locking.
         self._active_products: list[str] | None = None
+        self._product_dbus: dict[str, float] | None = None
         self._pack_results: list[PackResult] | None = None
         self._domain_analyses: list[DomainAnalysis] = []
         self._trace_id: str = ""
         self._lookback_days: int = self._env_config.discovery_lookback_days
         self._discovery_markdown: str | None = None
+
+        # Per-domain output file paths from Phase 3 analysis.
+        self._domain_file_paths: dict[str, str] = {}
 
         # Background analysis state for async polling pattern.
         self._bg_task: asyncio.Task[None] | None = None
@@ -165,6 +158,37 @@ class DiscoveryTools(BaseToolAdapter):
         self._bg_failed: list[dict[str, str]] = []
         self._bg_target_domains: list[str] = []
         self._bg_start: float = 0.0
+
+    @property
+    def _workspace_slug(self) -> str:
+        """Derive a filesystem-safe workspace identifier from the host URL.
+
+        Examples:
+            ``https://adb-123456789.7.azuredatabricks.net`` → ``adb-123456789``
+            ``https://e2-demo-field-eng.cloud.databricks.com`` → ``e2-demo-field-eng``
+            ``https://my-workspace.databricks.com`` → ``my-workspace``
+
+        Falls back to ``"default"`` when no host is configured.
+        """
+        host = self._env_config.databricks_host
+        if not host:
+            return "default"
+        # Strip scheme
+        bare = re.sub(r"^https?://", "", host).rstrip("/")
+        # Take the first subdomain segment (before .cloud., .azuredatabricks., etc.)
+        slug = bare.split(".")[0]
+        # Ensure filesystem safety
+        slug = re.sub(r"[^\w\-]", "_", slug)
+        return slug or "default"
+
+    @property
+    def _discovery_output_path(self) -> str:
+        """Workspace-specific discovery output directory.
+
+        Resolves to ``{discovery_output_dir}/{workspace_slug}``.
+        """
+        base = self._env_config.discovery_output_dir
+        return f"{base}/{self._workspace_slug}"
 
     def get_discovery_markdown(self) -> str | None:
         """Return the rendered discovery report markdown, if available.
@@ -181,7 +205,7 @@ class DiscoveryTools(BaseToolAdapter):
 
     async def discover_active_products(
         self,
-        lookback_days: int = 30,
+        lookback_days: int | str = 30,
     ) -> dict[str, Any]:
         """Audit the workspace to discover active Databricks products.
 
@@ -196,13 +220,13 @@ class DiscoveryTools(BaseToolAdapter):
             Dict with ``active_products``, ``available_domains``, and metadata.
         """
         self._trace_id = str(uuid.uuid4())
-        self._lookback_days = lookback_days
+        self._lookback_days = int(lookback_days)
         start = time.monotonic()
 
         pack_executor = QueryPackExecutor(
             sql_executor=self._sql_executor,
             max_parallelism=self._env_config.discovery_max_parallelism,
-            default_lookback_days=lookback_days,
+            default_lookback_days=self._lookback_days,
         )
 
         audit_packs = [
@@ -243,20 +267,44 @@ class DiscoveryTools(BaseToolAdapter):
             }
 
         col = "billing_origin_product"
+        dbu_col = "total_dbus"
         if col in audit_result.data.columns:
-            self._active_products = audit_result.data[col].unique().to_list()
+            if dbu_col in audit_result.data.columns:
+                product_dbus: dict[str, float] = {}
+                for row in audit_result.data.iter_rows(named=True):
+                    product = row[col]
+                    dbus = float(row.get(dbu_col, 0.0) or 0.0)
+                    product_dbus[product] = product_dbus.get(product, 0.0) + dbus
+                self._product_dbus = product_dbus
+            else:
+                self._product_dbus = {
+                    p: 0.0
+                    for p in audit_result.data[col].unique().to_list()
+                }
         else:
-            self._active_products = []
+            self._product_dbus = {}
 
-        # Determine which domains will be analyzed
+        threshold = self._env_config.discovery_min_dbu_threshold
+        skipped_products: list[dict[str, Any]] = []
+        active_list: list[str] = []
+        for product, dbus in self._product_dbus.items():
+            if dbus >= threshold:
+                active_list.append(product)
+            else:
+                skipped_products.append(
+                    {"product": product, "total_dbus": round(dbus, 2), "reason": "below_threshold"}
+                )
+        self._active_products = active_list
+
         selected_packs = self._query_registry.get_packs_for_products(
-            active_products=set(self._active_products),
+            active_products=self._product_dbus,
+            min_dbu_threshold=threshold,
         )
         available_domains = sorted(
             {p.domain for p in selected_packs if p.domain != "audit"}
         )
 
-        return {
+        response: dict[str, Any] = {
             "status": "completed",
             "trace_id": self._trace_id,
             "lookback_days": lookback_days,
@@ -264,8 +312,12 @@ class DiscoveryTools(BaseToolAdapter):
             "product_count": len(self._active_products),
             "available_domains": available_domains,
             "pack_count": len(selected_packs),
+            "min_dbu_threshold": threshold,
             "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
         }
+        if skipped_products:
+            response["skipped_products"] = skipped_products
+        return response
 
     # ------------------------------------------------------------------
     # Phase 2: Query — execute discovery query packs
@@ -304,7 +356,8 @@ class DiscoveryTools(BaseToolAdapter):
         )
 
         packs = self._query_registry.get_packs_for_products(
-            active_products=set(self._active_products),
+            active_products=self._product_dbus or set(self._active_products),
+            min_dbu_threshold=self._env_config.discovery_min_dbu_threshold,
             include=domains,
         )
 
@@ -446,14 +499,27 @@ class DiscoveryTools(BaseToolAdapter):
 
         analyses: list[DomainAnalysis] = []
         failed_domains: list[dict[str, str]] = []
+        total_domains = len(domain_packs)
+        completed_count = 0
 
         async def _analyze_one(d: str, packs: list[PackResult]) -> None:
+            nonlocal completed_count
             try:
                 result = await analyzer.analyze_domain(
                     d, packs, trace_id=self._trace_id
                 )
                 analyses.append(result)
                 self._domain_analyses.append(result)
+                completed_count += 1
+                logger.info(
+                    "domain_analysis_done",
+                    domain=d,
+                    grade=result.grade,
+                    score=result.score,
+                    finding_count=len(result.findings),
+                    completed=completed_count,
+                    total=total_domains,
+                )
             except Exception as exc:  # noqa: BLE001 — must not leak to TaskGroup
                 logger.error(
                     "domain_analysis_failed_using_heuristic_fallback",
@@ -470,6 +536,17 @@ class DiscoveryTools(BaseToolAdapter):
                 fallback = build_fallback_analysis(d, query_results, heuristic_findings)
                 analyses.append(fallback)
                 self._domain_analyses.append(fallback)
+                completed_count += 1
+                logger.info(
+                    "domain_analysis_done",
+                    domain=d,
+                    grade=fallback.grade,
+                    score=fallback.score,
+                    finding_count=len(fallback.findings),
+                    completed=completed_count,
+                    total=total_domains,
+                    fallback=True,
+                )
                 failed_domains.append(
                     {
                         "domain": d,
@@ -492,15 +569,25 @@ class DiscoveryTools(BaseToolAdapter):
                 "failed_domains": failed_domains,
             }
 
-        domain_results_out = self._format_analysis_results(
-            analyses, is_batch=is_batch
+        # Write per-domain detail files so full depth is preserved on disk
+        # regardless of tool-response size constraints.
+        output_dir = self._discovery_output_path
+        domain_file_paths = await self._output_formatter.write_domain_analyses(
+            analyses, output_dir
         )
+        self._domain_file_paths = domain_file_paths
+
+        domain_results_out = self._build_compact_analysis_results(
+            analyses, domain_file_paths
+        )
+
+        elapsed_ms = round((time.monotonic() - start) * 1000, 1)
 
         # Single-domain backward-compatible response
         if not is_batch and len(domain_results_out) == 1:
             result_out = domain_results_out[0]
             result_out["status"] = "completed"
-            result_out["elapsed_ms"] = round((time.monotonic() - start) * 1000, 1)
+            result_out["elapsed_ms"] = elapsed_ms
             return result_out
 
         return {
@@ -509,7 +596,13 @@ class DiscoveryTools(BaseToolAdapter):
             "domains_skipped": skipped,
             "domains_failed": failed_domains,
             "domain_results": domain_results_out,
-            "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+            "elapsed_ms": elapsed_ms,
+            "discovery_output_path": output_dir,
+            "detail_note": (
+                f"The full Workspace Discovery details can be found at "
+                f"`{output_dir}`. Per-domain findings with evidence and "
+                f"remediation are in the `domains/` subdirectory."
+            ),
         }
 
     _RESULT_BUDGET_CHARS = 90_000
@@ -666,6 +759,52 @@ class DiscoveryTools(BaseToolAdapter):
 
         return results_out
 
+    @staticmethod
+    def _build_compact_analysis_results(
+        analyses: list[DomainAnalysis],
+        domain_file_paths: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        """Build compact per-domain scorecards for the tool response.
+
+        Full detail is persisted to per-domain Markdown files; this method
+        returns only the scorecard (grade, score, summary, top finding
+        titles, and file path) so the tool response stays well under
+        size limits regardless of domain count.
+        """
+        results: list[dict[str, Any]] = []
+        for analysis in analyses:
+            critical_high = [
+                f for f in analysis.findings
+                if f.priority in ("CRITICAL", "HIGH")
+            ]
+            entry: dict[str, Any] = {
+                "domain": analysis.domain,
+                "display_name": domain_display_name(analysis.domain),
+                "grade": analysis.grade,
+                "score": analysis.score,
+                "summary": analysis.summary,
+                "finding_count": len(analysis.findings),
+                "critical_high_count": len(critical_high),
+                "top_findings": [
+                    {
+                        "title": f.title,
+                        "priority": f.priority,
+                        "impact": f.impact,
+                        "type": f.finding_type,
+                    }
+                    for f in critical_high[:5]
+                ],
+                "recommended_actions": analysis.recommended_actions[:3],
+                "data_coverage": {
+                    "queries_executed": analysis.data_coverage.queries_executed,
+                    "queries_succeeded": analysis.data_coverage.queries_succeeded,
+                },
+            }
+            if analysis.domain in domain_file_paths:
+                entry["detail_file"] = domain_file_paths[analysis.domain]
+            results.append(entry)
+        return results
+
     # ------------------------------------------------------------------
     # Async polling pattern — start / check progress
     # ------------------------------------------------------------------
@@ -780,8 +919,10 @@ class DiscoveryTools(BaseToolAdapter):
             model=self._env_config.discovery_llm_model,
             temperature=self._env_config.discovery_llm_temperature,
         )
+        total_domains = len(domain_packs)
 
         async def _analyze_one(d: str, packs: list[PackResult]) -> None:
+            fallback = False
             try:
                 result = await analyzer.analyze_domain(
                     d, packs, trace_id=self._trace_id
@@ -804,6 +945,7 @@ class DiscoveryTools(BaseToolAdapter):
                 result = build_fallback_analysis(
                     d, query_results, heuristic_findings
                 )
+                fallback = True
                 self._bg_failed.append(
                     {
                         "domain": d,
@@ -813,10 +955,26 @@ class DiscoveryTools(BaseToolAdapter):
                 )
             self._bg_completed[d] = result
             self._domain_analyses.append(result)
+            logger.info(
+                "domain_analysis_done",
+                domain=d,
+                grade=result.grade,
+                score=result.score,
+                finding_count=len(result.findings),
+                completed=len(self._bg_completed),
+                total=total_domains,
+                fallback=fallback,
+            )
 
         async with asyncio.TaskGroup() as tg:
             for d, packs in domain_packs.items():
                 tg.create_task(_analyze_one(d, packs))
+
+        # Write per-domain detail files after all analyses complete.
+        output_dir = self._discovery_output_path
+        self._domain_file_paths = await self._output_formatter.write_domain_analyses(
+            list(self._bg_completed.values()), output_dir
+        )
 
     async def get_discovery_analysis_progress(self) -> dict[str, Any]:
         """Check progress of background domain analysis.
@@ -841,10 +999,6 @@ class DiscoveryTools(BaseToolAdapter):
         elapsed_s = round(time.monotonic() - self._bg_start, 1)
         is_done = self._bg_task.done()
 
-        domain_results = self._format_analysis_results(
-            list(self._bg_completed.values()), is_batch=True
-        )
-
         result: dict[str, Any] = {
             "status": "completed" if is_done else "running",
             "domains_completed": len(completed_domains),
@@ -857,7 +1011,9 @@ class DiscoveryTools(BaseToolAdapter):
             result["domains_failed"] = self._bg_failed
 
         if is_done:
-            result["domain_results"] = domain_results
+            result["domain_results"] = self._build_compact_analysis_results(
+                list(self._bg_completed.values()), self._domain_file_paths
+            )
             result["instruction"] = (
                 "All domains analyzed. Call synthesize_discovery_report "
                 "to assemble the final report."
@@ -952,7 +1108,7 @@ class DiscoveryTools(BaseToolAdapter):
             trace_id=self._trace_id,
         )
 
-        output_dir = self._env_config.discovery_output_dir
+        output_dir = self._discovery_output_path
         output_files = await self._output_formatter.write_to_directory(
             report, output_dir
         )
@@ -964,14 +1120,26 @@ class DiscoveryTools(BaseToolAdapter):
             "trace_id": self._trace_id,
             "domains_analyzed": len(self._domain_analyses),
             "output_files": [str(p) for p in output_files],
-            "report_summary": _build_report_summary(report),
+            "report_summary": _build_report_summary(
+                report, domain_file_paths=self._domain_file_paths
+            ),
+            "domain_detail_files": self._domain_file_paths,
+            "discovery_output_path": output_dir,
+            "detail_note": (
+                f"The full Workspace Discovery details can be found at "
+                f"`{output_dir}`. This includes the complete report, "
+                f"executive summary, top priorities, and per-domain "
+                f"analysis files in the `domains/` subdirectory."
+            ),
             "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
         }
 
         # Reset shared state for next run
         self._active_products = None
+        self._product_dbus = None
         self._pack_results = None
         self._domain_analyses = []
+        self._domain_file_paths = {}
 
         return response
 
@@ -981,7 +1149,7 @@ class DiscoveryTools(BaseToolAdapter):
 
     async def run_workspace_discovery(
         self,
-        lookback_days: int = 30,
+        lookback_days: int | str = 30,
         domains: list[str] | None = None,
         data_only: bool = False,
     ) -> dict[str, Any]:
@@ -1001,13 +1169,14 @@ class DiscoveryTools(BaseToolAdapter):
         env = self._env_config
 
         config = EngineConfig(
-            lookback_days=lookback_days,
+            lookback_days=int(lookback_days),
             max_parallelism=env.discovery_max_parallelism,
             domains=domains,
             data_only=data_only,
-            output_dir=env.discovery_output_dir,
+            output_dir=self._discovery_output_path,
             llm_model=env.discovery_llm_model,
             llm_temperature=env.discovery_llm_temperature,
+            min_dbu_threshold=env.discovery_min_dbu_threshold,
         )
 
         engine = DiscoveryEngine(
@@ -1031,11 +1200,11 @@ class DiscoveryTools(BaseToolAdapter):
         if result.report is not None:
             report = result.report
             response["report_summary"] = _build_report_summary(report)
-            response["markdown_report"] = self._output_formatter.to_markdown(report)
         elif result.domain_analyses:
             response["domain_summaries"] = [
                 {
                     "domain": a.domain,
+                    "display_name": domain_display_name(a.domain),
                     "grade": a.grade,
                     "score": a.score,
                     "summary": a.summary,

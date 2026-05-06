@@ -1,8 +1,15 @@
+
 """Machine learning and model serving pack."""
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 C_ML01_SQL = """\
 WITH endpoint_classified AS (
@@ -61,6 +68,13 @@ ML_PACK = QueryPack(
             sql_template=C_ML01_SQL,
             required_tables=("system.billing.usage",),
             domain="ml",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Model serving DBU consumption by endpoint",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset({"MODEL_SERVING", "FEATURE_ENGINEERING"}),

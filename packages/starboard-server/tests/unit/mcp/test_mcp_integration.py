@@ -13,7 +13,11 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from starboard_server.mcp.agent_bridge import AGENT_DOMAINS, AGENT_TOOL_METADATA
+from starboard_server.mcp.agent_bridge import (
+    AGENT_DOMAINS,
+    AGENT_TOOL_METADATA,
+    _MCP_EXCLUDED_AGENT_DOMAINS,
+)
 from starboard_server.mcp.config import MCPServerConfig, WorkspaceProfile
 from starboard_server.mcp.prompt_bridge import PROMPT_METADATA
 from starboard_server.mcp.server import StarboardMCPServer
@@ -101,8 +105,14 @@ class TestServerToolRegistration:
         tools = await server_with_agents.mcp.list_tools()
         names = {t.name for t in tools}
         for domain in AGENT_DOMAINS:
-            tool_name = f"{domain}_agent"
-            assert tool_name in names, f"Agent tool {tool_name!r} not registered"
+            if domain in _MCP_EXCLUDED_AGENT_DOMAINS:
+                assert f"{domain}_agent" not in names, (
+                    f"Excluded agent tool '{domain}_agent' should not be registered"
+                )
+            else:
+                assert f"{domain}_agent" in names, (
+                    f"Agent tool '{domain}_agent' not registered"
+                )
 
     async def test_total_tool_count_with_agents(
         self, server_with_agents: StarboardMCPServer
@@ -110,7 +120,7 @@ class TestServerToolRegistration:
         from starboard_server.mcp.tool_bridge import PHASE_A_TOOLS
 
         tools = await server_with_agents.mcp.list_tools()
-        # ping + Phase A + 8 agent tools
+        # ping + Phase A + MCP-exposed agent tools (excludes discovery)
         expected_min = 1 + len(PHASE_A_TOOLS) + len(AGENT_TOOL_METADATA)
         assert len(tools) >= expected_min
 

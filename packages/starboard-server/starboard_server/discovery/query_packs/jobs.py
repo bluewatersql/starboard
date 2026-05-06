@@ -1,3 +1,4 @@
+
 """Job workload and reliability query pack for Databricks discovery.
 
 Job DBU consumption, reliability scoring, failure analysis, DLT pipeline performance.
@@ -6,7 +7,13 @@ Gated on JOBS product. All queries use DBU metrics only; no dollar computations.
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 C_J01_SQL = """\
 WITH dbu_per_job AS (
@@ -338,6 +345,13 @@ JOBS_PACK = QueryPack(
             sql_template=C_J01_SQL,
             required_tables=("system.billing.usage", "system.lakeflow.jobs"),
             domain="jobs",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Job DBU leaderboard ranked by consumption",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-J02",
@@ -350,6 +364,13 @@ JOBS_PACK = QueryPack(
                 "system.lakeflow.job_run_timeline",
             ),
             domain="jobs",
+
+            discovery_mode=DiscoveryMode.DEEP_DIVE,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="Detailed job run execution data",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-J03",
@@ -362,6 +383,13 @@ JOBS_PACK = QueryPack(
                 "system.billing.usage",
             ),
             domain="jobs",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Runtime variance and DBU efficiency per job",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-J04",
@@ -374,6 +402,13 @@ JOBS_PACK = QueryPack(
                 "system.billing.usage",
             ),
             domain="jobs",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Compound reliability scorecard for jobs",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-J05",
@@ -382,6 +417,13 @@ JOBS_PACK = QueryPack(
             sql_template=C_J05_SQL,
             required_tables=("system.lakeflow.job_run_timeline",),
             domain="jobs",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="Daily failure rate trend for jobs",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-J06",
@@ -393,18 +435,15 @@ JOBS_PACK = QueryPack(
                 "system.lakeflow.jobs",
             ),
             domain="jobs",
-        ),
-        SystemQuery(
-            query_id="C-J07",
-            name="DLT Pipeline Performance",
-            description="DLT pipeline update counts, duration, and failure rates",
-            sql_template=C_J07_SQL,
-            required_tables=(
-                "system.lakeflow.pipeline_update_timeline",
-                "system.lakeflow.pipelines",
+
+            discovery_mode=DiscoveryMode.DEEP_DIVE,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Task-level failure analysis",
+                output_hint="",
             ),
-            domain="jobs",
         ),
+        # C-J07 removed — DLT pipeline queries moved to DLT_PIPELINES_PACK
     ),
     gating_products=frozenset({"JOBS"}),
 )

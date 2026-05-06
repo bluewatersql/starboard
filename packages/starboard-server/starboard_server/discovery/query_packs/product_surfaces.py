@@ -1,235 +1,14 @@
+
 """Product-surface query packs for modern Databricks features."""
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
-
-# --- APPS_PACK ---
-P_APP01_SQL = """\
-WITH now AS (SELECT CURRENT_TIMESTAMP() AS ts)
-SELECT
-  workspace_id,
-  COALESCE(usage_metadata.app_name,
-           usage_metadata.endpoint_name)  AS app_name,
-  sku_name,
-  ROUND(SUM(usage_quantity), 2)           AS dbus,
-  COUNT(DISTINCT DATE(usage_date))        AS active_days,
-  MIN(usage_start_time)                   AS first_seen,
-  MAX(usage_end_time)                     AS last_seen,
-  DATEDIFF(DAY, MAX(usage_end_time), now.ts) AS days_since_last_activity
-FROM system.billing.usage, now
-WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-  AND (
-    billing_origin_product = 'APPS'
-    OR sku_name LIKE '%DATABRICKS_APPS%'
-    OR sku_name LIKE '%APPS_SERVERLESS%'
-  )
-GROUP BY workspace_id, usage_metadata.app_name, usage_metadata.endpoint_name, sku_name, usage_date, usage_start_time, usage_end_time, ts
-ORDER BY dbus DESC
-LIMIT 50
-"""
-
-P_APP02_SQL = """\
-WITH cutoff AS (
-  SELECT
-    DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt,
-    CURRENT_TIMESTAMP()                            AS ts
-),
-app_billing AS (
-  SELECT
-    workspace_id,
-    COALESCE(usage_metadata.app_name,
-             usage_metadata.endpoint_name)         AS app_identifier,
-    ROUND(SUM(usage_quantity), 2)                  AS total_dbus
-  FROM system.billing.usage, cutoff
-  WHERE (billing_origin_product = 'APPS'
-         OR sku_name LIKE '%DATABRICKS_APPS%')
-    AND usage_date >= cutoff.dt
-  GROUP BY workspace_id,
-           COALESCE(usage_metadata.app_name, usage_metadata.endpoint_name)
-),
-app_access AS (
-  SELECT
-    workspace_id,
-    request_params['appName']                      AS app_identifier,
-    COUNT(*)                                       AS access_events,
-    COUNT(DISTINCT user_identity.email)            AS distinct_users,
-    MAX(event_time)                                AS last_user_access
-  FROM system.access.audit, cutoff
-  WHERE event_time >= cutoff.dt
-    AND action_name IN ('appAccessed', 'getApp', 'openApp')
-    AND service_name = 'apps'
-  GROUP BY workspace_id, request_params['appName']
-)
-SELECT
-  ab.workspace_id,
-  ab.app_identifier,
-  ab.total_dbus,
-  COALESCE(aa.access_events, 0)                   AS user_access_events,
-  COALESCE(aa.distinct_users, 0)                  AS distinct_users,
-  aa.last_user_access,
-  DATEDIFF(DAY, aa.last_user_access, c.ts)        AS days_since_accessed,
-  CASE
-    WHEN aa.access_events IS NULL
-         THEN 'ZOMBIE: Never accessed'
-    WHEN DATEDIFF(DAY, aa.last_user_access, c.ts) > 14
-         THEN 'IDLE: No access > 14 days'
-    WHEN DATEDIFF(DAY, aa.last_user_access, c.ts) > 7
-         THEN 'STALE: No access > 7 days'
-    ELSE 'ACTIVE'
-  END                                             AS status
-FROM app_billing ab
-CROSS JOIN cutoff c
-LEFT JOIN app_access aa
-       ON ab.workspace_id    = aa.workspace_id
-      AND ab.app_identifier  = aa.app_identifier
-ORDER BY ab.total_dbus DESC
-LIMIT 50
-"""
-
-APPS_PACK = QueryPack(
-    pack_id="apps",
-    domain="apps",
-    name="Apps",
-    description="Apps DBU usage and idle detection",
-    queries=(
-        SystemQuery(
-            query_id="P-APP01",
-            name="Apps DBU Leaderboard",
-            description="Apps ranked by DBU consumption",
-            sql_template=P_APP01_SQL,
-            required_tables=("system.billing.usage",),
-            domain="apps",
-        ),
-        SystemQuery(
-            query_id="P-APP02",
-            name="Apps Idle Detection",
-            description="Apps with billing but no recent user access (requires audit)",
-            sql_template=P_APP02_SQL,
-            required_tables=("system.billing.usage", "system.access.audit"),
-            domain="apps",
-            required=False,
-        ),
-    ),
-    gating_products=frozenset({"APPS"}),
-)
-
-# --- LAKEBASE_PACK ---
-P_LB01_SQL = """\
-WITH lakebase_classified AS (
-  SELECT
-    workspace_id,
-    COALESCE(usage_metadata.database_instance_id,
-             usage_metadata.endpoint_name,
-             'unknown')                            AS lakebase_instance,
-    sku_name,
-    CASE
-      WHEN sku_name LIKE '%COMPUTE%'
-        OR sku_name LIKE '%CU%'                   THEN 'Compute (CUs)'
-      WHEN sku_name LIKE '%STORAGE%'              THEN 'Storage'
-      WHEN sku_name LIKE '%IO%'
-        OR sku_name LIKE '%READ%'
-        OR sku_name LIKE '%WRITE%'                THEN 'I/O Operations'
-      ELSE                                             'Other'
-    END                                           AS dimension,
-    usage_unit,
-    DATE_TRUNC('MONTH', usage_date)               AS year_month,
-    usage_quantity
-  FROM system.billing.usage
-  WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-    AND (billing_origin_product = 'LAKEBASE'
-         OR sku_name LIKE '%LAKEBASE%'
-         OR sku_name LIKE '%MANAGED_POSTGRES%')
-)
-SELECT
-  workspace_id,
-  lakebase_instance,
-  sku_name,
-  dimension,
-  usage_unit,
-  year_month,
-  ROUND(SUM(usage_quantity), 4)                  AS usage_quantity
-FROM lakebase_classified
-GROUP BY ALL
-ORDER BY year_month DESC, usage_quantity DESC
-LIMIT 50
-"""
-
-LAKEBASE_PACK = QueryPack(
-    pack_id="lakebase",
-    domain="lakebase",
-    name="Lakebase",
-    description="Lakebase DBU consumption by dimension",
-    queries=(
-        SystemQuery(
-            query_id="P-LB01",
-            name="Lakebase DBU by Dimension",
-            description="Lakebase usage by compute, storage, and I/O",
-            sql_template=P_LB01_SQL,
-            required_tables=("system.billing.usage",),
-            domain="lakebase",
-            lookback_override=90,
-        ),
-    ),
-    gating_products=frozenset({"LAKEBASE"}),
-)
-
-# --- VECTOR_SEARCH_PACK ---
-P_VS01_SQL = """\
-WITH vs_classified AS (
-  SELECT
-    workspace_id,
-    usage_metadata.endpoint_name                  AS endpoint_name,
-    CASE
-      WHEN sku_name LIKE '%VECTOR_SEARCH_INDEX_CREATION%'
-        OR sku_name LIKE '%VECTOR_SEARCH_SYNC%'   THEN 'Index Creation / Sync'
-      WHEN sku_name LIKE '%VECTOR_SEARCH_SERVING%'
-        OR sku_name LIKE '%VECTOR_SEARCH_QUERY%'  THEN 'Index Serving / Queries'
-      WHEN sku_name LIKE '%VECTOR_SEARCH%'        THEN 'Vector Search (unclassified)'
-      ELSE                                             sku_name
-    END                                           AS operation_type,
-    sku_name,
-    DATE_TRUNC('MONTH', usage_date)               AS year_month,
-    usage_quantity,
-    usage_unit,
-    usage_date
-  FROM system.billing.usage
-  WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-    AND (billing_origin_product = 'VECTOR_SEARCH'
-         OR sku_name LIKE '%VECTOR_SEARCH%')
-)
-SELECT
-  workspace_id,
-  endpoint_name,
-  operation_type,
-  sku_name,
-  year_month,
-  ROUND(SUM(usage_quantity), 4)                  AS usage_quantity,
-  usage_unit,
-  COUNT(DISTINCT DATE(usage_date))               AS active_days
-FROM vs_classified
-GROUP BY ALL
-ORDER BY year_month DESC, usage_quantity DESC
-LIMIT 50
-"""
-
-VECTOR_SEARCH_PACK = QueryPack(
-    pack_id="vector_search",
-    domain="vector_search",
-    name="Vector Search",
-    description="Vector Search DBU consumption by index and operation",
-    queries=(
-        SystemQuery(
-            query_id="P-VS01",
-            name="Vector Search DBU by Index and Operation",
-            description="Vector Search usage by operation type",
-            sql_template=P_VS01_SQL,
-            required_tables=("system.billing.usage",),
-            domain="vector_search",
-            lookback_override=90,
-        ),
-    ),
-    gating_products=frozenset({"VECTOR_SEARCH"}),
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
 )
 
 # --- DELTA_SHARING_PACK ---
@@ -281,6 +60,13 @@ DELTA_SHARING_PACK = QueryPack(
             required_tables=("system.billing.usage",),
             domain="delta_sharing",
             lookback_override=90,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Delta sharing DBU consumption",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset({"DELTA_SHARING"}),
@@ -321,6 +107,13 @@ MONITORING_PACK = QueryPack(
             required_tables=("system.billing.usage",),
             domain="monitoring",
             lookback_override=90,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Lakehouse monitoring DBU consumption",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset({"LAKEHOUSE_MONITORING"}),
@@ -400,6 +193,13 @@ SERVERLESS_SQL_PACK = QueryPack(
             required_tables=("system.billing.usage",),
             domain="serverless_sql",
             lookback_override=90,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Serverless vs classic warehouse comparison",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="P-SQL02",
@@ -408,6 +208,13 @@ SERVERLESS_SQL_PACK = QueryPack(
             sql_template=P_SQL02_SQL,
             required_tables=("system.query.history",),
             domain="serverless_sql",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Per-query efficiency for serverless",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset({"SQL"}),
@@ -512,6 +319,13 @@ WORKFLOW_PACK = QueryPack(
                 "system.lakeflow.jobs",
             ),
             domain="workflow",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="Task type distribution",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="P-WF02",
@@ -520,94 +334,14 @@ WORKFLOW_PACK = QueryPack(
             sql_template=P_WF02_SQL,
             required_tables=("system.lakeflow.job_task_run_timeline",),
             domain="workflow",
+
+            discovery_mode=DiscoveryMode.DEEP_DIVE,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="ForEach task overhead analysis",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset({"JOBS"}),
 )
-
-# --- AIBI_PACK ---
-P_AIBI01_SQL = """\
-SELECT
-  workspace_id,
-  compute.warehouse_id                            AS warehouse_id,
-  executed_by,
-  DATE(start_time)                                AS query_date,
-  COUNT(*)                                        AS genie_queries,
-  ROUND(AVG(total_duration_ms)        / 1000.0, 2) AS avg_duration_secs,
-  ROUND(SUM(total_duration_ms)        / 1000.0, 2) AS total_duration_secs,
-  ROUND(PERCENTILE(total_duration_ms, 0.95) / 1000.0, 2) AS p95_duration_secs,
-  SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed_queries,
-  SUM(CASE WHEN from_result_cache = 'true'  THEN 1 ELSE 0 END) AS cache_hits,
-  ROUND(SUM(read_bytes) / (1024.0 * 1024 * 1024), 2) AS total_read_gb
-FROM system.query.history
-WHERE start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-  AND compute.warehouse_id IS NOT NULL
-  AND (
-    executed_by LIKE '%genie%'
-    OR executed_by LIKE '%ai-bi%'
-    OR executed_by LIKE '%aibi%'
-    OR client_application LIKE '%Genie%'
-  )
-GROUP BY ALL
-ORDER BY query_date DESC, genie_queries DESC
-LIMIT 50
-"""
-
-P_AIBI02_SQL = """\
-WITH now AS (SELECT CURRENT_TIMESTAMP() AS ts)
-SELECT
-  workspace_id,
-  request_params['dashboardId']                   AS dashboard_id,
-  request_params['dashboardName']                 AS dashboard_name,
-  DATE(event_time)                                AS access_date,
-  COUNT(*)                                        AS access_events,
-  COUNT(DISTINCT user_identity.email)             AS distinct_viewers,
-  MAX(event_time)                                 AS last_accessed,
-  DATEDIFF(DAY, MAX(event_time), any_value(now.ts)) AS days_since_accessed
-FROM system.access.audit, now
-WHERE event_time >= DATEADD(DAY, -30, CURRENT_DATE())
-  AND service_name IN ('dashboards', 'sql/dashboards', 'lakeview')
-  AND action_name IN ('getDashboard', 'viewDashboard',
-                      'runDashboard', 'refreshDashboard')
-GROUP BY ALL
-ORDER BY access_events DESC
-LIMIT 50
-"""
-
-AIBI_PACK = QueryPack(
-    pack_id="aibi",
-    domain="aibi",
-    name="AI/BI",
-    description="Genie query activity and dashboard usage patterns",
-    queries=(
-        SystemQuery(
-            query_id="P-AIBI01",
-            name="Genie Query Activity",
-            description="Genie/AI-BI query volume and performance",
-            sql_template=P_AIBI01_SQL,
-            required_tables=("system.query.history",),
-            domain="aibi",
-        ),
-        SystemQuery(
-            query_id="P-AIBI02",
-            name="AI/BI Dashboard Usage Patterns",
-            description="Dashboard access patterns (requires audit)",
-            sql_template=P_AIBI02_SQL,
-            required_tables=("system.access.audit",),
-            domain="aibi",
-            required=False,
-        ),
-    ),
-    gating_products=frozenset({"SQL"}),
-)
-
-__all__ = [
-    "AIBI_PACK",
-    "APPS_PACK",
-    "DELTA_SHARING_PACK",
-    "LAKEBASE_PACK",
-    "MONITORING_PACK",
-    "SERVERLESS_SQL_PACK",
-    "VECTOR_SEARCH_PACK",
-    "WORKFLOW_PACK",
-]

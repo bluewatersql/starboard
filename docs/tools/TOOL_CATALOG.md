@@ -289,8 +289,7 @@ UC:         list_uc_assets, get_table_metadata, get_table_lineage,
             analyze_query_impact, get_table_fingerprint, analyze_table_costs,
             generate_schema_diff, analyze_policy_coverage
 Discovery:  discover_active_products, run_discovery_queries,
-            analyze_discovery_domain, synthesize_discovery_report,
-            run_workspace_discovery
+            analyze_discovery_domain, synthesize_discovery_report
 Warehouse:  get_warehouse_portfolio, get_warehouse_fingerprint,
             get_warehouse_health, configure_warehouse_slo,
             analyze_warehouse_topology, get_warehouse_user_activity,

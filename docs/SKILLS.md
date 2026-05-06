@@ -594,11 +594,9 @@ Troubleshoots Databricks issues with cross-domain error detection, log analysis,
 
 **Triggers:** workspace health, discovery, assessment, audit, overview, inventory, what's running
 
-Runs comprehensive workspace health assessment and product usage discovery.
+Runs comprehensive workspace health assessment and product usage discovery using the 4-phase workflow.
 
-**Agent tool:** `discovery_agent` — full workspace assessment
-
-**Individual tools:**
+**Tools:**
 
 | Tool | Purpose |
 |------|---------|
@@ -606,7 +604,6 @@ Runs comprehensive workspace health assessment and product usage discovery.
 | `run_discovery_queries` | Execute discovery SQL query packs |
 | `analyze_discovery_domain` | Analyze domains (batch or single) — server parallelizes internally |
 | `synthesize_discovery_report` | Assemble domains into a final report |
-| `run_workspace_discovery` | Legacy monolithic pipeline (not recommended) |
 
 **Batch analysis (preferred):** After `run_discovery_queries`, call `analyze_discovery_domain` with `domains` set to the `domains_with_data` list. The server runs all domain analyses in parallel internally. Takes 5-7 minutes for a typical workspace. Requires `MCP_TOOL_TIMEOUT >= 600000` in Claude Code settings.
 
@@ -731,19 +728,7 @@ check the task logs, and tell me what changed.
 
 > "Give me a full health assessment of our Databricks workspace before the quarterly review."
 
-#### Auto-Pilot Mode
-
-```
-You: Run a full workspace health assessment.
-
-Claude calls → discovery_agent { "message": "Run a full workspace health assessment..." }
-              ↓ (may take several minutes — discovery runs multiple phases)
-Server-side agent discovers products → runs queries → analyzes domains → synthesizes report
-              ↓
-Returns: Product adoption, utilization, idle resources, governance gaps, ranked optimizations
-```
-
-#### Direct Orchestration Mode
+#### 4-Phase Workflow
 
 ```
 You: Run a full workspace health assessment.
@@ -1268,19 +1253,11 @@ If you still hit timeouts, increase the server-level default:
 }
 ```
 
-Or pass a per-call override:
-
-```
-Call MCP tool: discovery_agent
-Arguments: {
-  "message": "Run full workspace discovery",
-  "config_overrides": { "agent_timeout": 1200 }
-}
-```
+Or set `MCP_TOOL_TIMEOUT` to at least `600000` (10 min) in your IDE settings to avoid timeouts during the `analyze_discovery_domain` phase.
 
 ### Discovery tools not appearing
 
-If discovery tools like `run_workspace_discovery` or `discover_active_products` are not
+If discovery tools like `discover_active_products` are not
 visible, your `tool_scope` may be set to `phase_a`. Discovery tools require `phase_b`
 (the default) or `full`. Check your MCP config for an explicit `tool_scope` override:
 

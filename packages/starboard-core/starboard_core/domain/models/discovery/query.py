@@ -7,10 +7,60 @@ and their execution results. No I/O or side effects.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import polars as pl
+
+
+class DiscoveryMode(str, Enum):
+    """Controls which queries are included in a discovery run.
+
+    Attributes:
+        GENERAL: Standard profiling queries that run by default.
+        DEEP_DIVE: Additional detailed queries that run only when
+            the caller explicitly requests deeper analysis.
+    """
+
+    GENERAL = "GENERAL"
+    DEEP_DIVE = "DEEP_DIVE"
+
+
+class QueryCategory(str, Enum):
+    """Classifies the analytical purpose of a discovery query.
+
+    Attributes:
+        PROFILE: Resource inventory and configuration snapshots.
+        BILLING: DBU consumption, cost attribution, and trends.
+        OPTIMIZATION: Performance bottlenecks and tuning opportunities.
+        GOVERNANCE: Access patterns, lineage, compliance, and data health.
+    """
+
+    PROFILE = "PROFILE"
+    BILLING = "BILLING"
+    OPTIMIZATION = "OPTIMIZATION"
+    GOVERNANCE = "GOVERNANCE"
+
+
+@dataclass(frozen=True)
+class QueryMetadata:
+    """LLM-facing metadata that describes a query's intent and output.
+
+    Attached to each SystemQuery so the agent can make informed
+    decisions about which queries to inspect or cite in findings.
+
+    Args:
+        summary: One-sentence plain-English description of the insight
+            this query produces.
+        output_hint: Brief description of the result shape
+            (e.g., "Top 50 jobs ranked by DBU per run").
+        tags: Freeform tags for secondary filtering.
+    """
+
+    summary: str
+    output_hint: str
+    tags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -21,12 +71,15 @@ class SystemQuery:
         query_id: Unique identifier (e.g., "C-B01", "P-AUDIT01").
         name: Human-readable name.
         description: What this query measures and why.
-        sql_template: SQL with ``{lookback_days}`` placeholder.
+        sql_template: SQL with ``{lookback_days}`` and optional ``{result_limit}`` placeholders.
         required_tables: System tables this query reads from.
         domain: Which domain this query belongs to.
         required: If True, query failure marks the domain as degraded.
         lookback_override: Per-query override of the global lookback_days.
         output_columns: Expected column names in the result (for validation).
+        discovery_mode: Filter queries by run depth.
+        category: Classify analytical purpose.
+        metadata: LLM context metadata.
     """
 
     query_id: str
@@ -38,6 +91,9 @@ class SystemQuery:
     required: bool = True
     lookback_override: int | None = None
     output_columns: tuple[str, ...] | None = None
+    discovery_mode: DiscoveryMode = DiscoveryMode.GENERAL
+    category: QueryCategory = QueryCategory.PROFILE
+    metadata: QueryMetadata | None = None
 
 
 @dataclass(frozen=True)

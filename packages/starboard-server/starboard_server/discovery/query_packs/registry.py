@@ -18,21 +18,25 @@ PRODUCT_TO_DOMAIN_PACKS: dict[str, list[str]] = {
     "SQL": ["query_perf", "serverless_sql", "aibi"],
     "ALL_PURPOSE": ["compute"],
     "INTERACTIVE": ["compute"],
-    "DLT": ["jobs"],
-    "LAKEFLOW_CONNECT": ["jobs"],
+    "BASE_ENVIRONMENTS": ["compute"],
+    # DLT / Pipelines
+    "DLT": ["dlt_pipelines"],
+    "LAKEFLOW_CONNECT": ["lakeflow_connect"],
     # AI / ML
-    "MODEL_SERVING": ["ml"],
-    "AI_GATEWAY": ["ml"],
-    "AI_RUNTIME": ["ml"],
-    "AI_FUNCTIONS": ["ml"],
+    "MODEL_SERVING": ["ml", "ai_gateway"],
+    "AI_GATEWAY": ["ai_gateway"],
+    "AI_RUNTIME": ["mlflow"],
+    "AI_FUNCTIONS": ["aibi"],
     "FOUNDATION_MODEL_TRAINING": ["ml"],
-    "AGENT_EVALUATION": ["ml"],
-    "AGENT_BRICKS": ["ml"],
-    "SUPERVISOR_AGENT": ["ml"],
-    "ONLINE_TABLES": ["ml"],
+    "AGENT_EVALUATION": ["mlflow"],
+    "AGENT_BRICKS": ["ai_gateway"],
+    "SUPERVISOR_AGENT": ["ai_gateway"],
+    "ONLINE_TABLES": ["vector_search"],
+    "FEATURE_ENGINEERING": ["ml", "mlflow"],
     # Platform features
     "APPS": ["apps"],
     "LAKEBASE": ["lakebase"],
+    "DATABASE": ["lakebase"],
     "VECTOR_SEARCH": ["vector_search"],
     "DATA_SHARING": ["delta_sharing"],
     "LAKEHOUSE_MONITORING": ["monitoring"],
@@ -41,6 +45,8 @@ PRODUCT_TO_DOMAIN_PACKS: dict[str, list[str]] = {
     "PREDICTIVE_OPTIMIZATION": ["governance"],
     "DATA_CLASSIFICATION": ["governance"],
     "FINE_GRAINED_ACCESS_CONTROL": ["governance"],
+    "DEFAULT_STORAGE": ["governance"],
+    "NETWORKING": ["governance"],
 }
 
 ALWAYS_RUN_PACKS: frozenset[str] = frozenset(
@@ -68,30 +74,57 @@ class QueryPackRegistry:
 
     def get_packs_for_products(
         self,
-        active_products: set[str],
+        active_products: set[str] | dict[str, float],
+        min_dbu_threshold: float = 0.0,
         include: list[str] | None = None,
         exclude: list[str] | None = None,
+        target_domains: list[str] | None = None,
     ) -> list[QueryPack]:
         """Return packs that should run given active products.
 
         Selection logic:
-            1. Start with all packs
-            2. Keep packs where ``gating_products`` is empty (always-run)
-               OR ``gating_products`` intersects ``active_products``
-            3. Apply include override (force-add specific packs)
-            4. Apply exclude override (force-remove specific packs)
+            1. If ``active_products`` is a ``dict[str, float]``, filter out
+               products whose DBU total is below ``min_dbu_threshold``.
+            2. Map remaining products to pack IDs via ``PRODUCT_TO_DOMAIN_PACKS``.
+            3. Always include ``ALWAYS_RUN_PACKS``.
+            4. Apply include/exclude overrides.
+            5. If ``target_domains`` is set, keep only matching domains
+               (always-run packs are still preserved).
 
         Args:
             active_products: ``billing_origin_product`` values from audit.
+                Accepts ``set[str]`` (legacy) or ``dict[str, float]``
+                (product -> total_dbus) for threshold-based filtering.
+            min_dbu_threshold: Products below this DBU total are skipped.
+                Only applied when ``active_products`` is a dict.
             include: Pack IDs to force-include.
             exclude: Pack IDs to force-exclude.
+            target_domains: If provided, only return packs for these domains.
 
         Returns:
             Ordered list of packs to execute.
         """
+        skipped_products: dict[str, float] = {}
+
+        if isinstance(active_products, dict):
+            product_names: set[str] = set()
+            for product, dbus in active_products.items():
+                if dbus >= min_dbu_threshold:
+                    product_names.add(product)
+                else:
+                    skipped_products[product] = dbus
+            if skipped_products:
+                logger.info(
+                    "products_below_dbu_threshold",
+                    threshold=min_dbu_threshold,
+                    skipped={k: round(v, 2) for k, v in skipped_products.items()},
+                )
+        else:
+            product_names = active_products
+
         eligible_pack_ids: set[str] = set()
 
-        for product in active_products:
+        for product in product_names:
             for pack_id in PRODUCT_TO_DOMAIN_PACKS.get(product, []):
                 eligible_pack_ids.add(pack_id)
 
@@ -109,13 +142,23 @@ class QueryPackRegistry:
             if pack_id in eligible_pack_ids
         ]
 
+        if target_domains is not None:
+            target_set = set(target_domains)
+            result = [
+                pack for pack in result
+                if pack.domain in target_set
+                or pack.pack_id in ALWAYS_RUN_PACKS
+            ]
+
         logger.info(
             "query_pack_selection",
-            active_products=sorted(active_products),
+            active_products=sorted(product_names),
             eligible_packs=sorted(eligible_pack_ids),
             selected_packs=[p.pack_id for p in result],
             include_override=include,
             exclude_override=exclude,
+            target_domains=target_domains,
+            skipped_products=sorted(skipped_products.keys()) if skipped_products else None,
         )
 
         return result
@@ -148,25 +191,33 @@ def create_default_registry() -> QueryPackRegistry:
     Returns:
         QueryPackRegistry with all domain and product-surface packs.
     """
+    from starboard_server.discovery.query_packs.ai_gateway import AI_GATEWAY_PACK
+    from starboard_server.discovery.query_packs.aibi import AIBI_PACK
+    from starboard_server.discovery.query_packs.apps import APPS_PACK
     from starboard_server.discovery.query_packs.audit import AUDIT_PACK
     from starboard_server.discovery.query_packs.billing import BILLING_PACK
     from starboard_server.discovery.query_packs.compute import COMPUTE_PACK
+    from starboard_server.discovery.query_packs.dlt_pipelines import DLT_PIPELINES_PACK
     from starboard_server.discovery.query_packs.governance import GOVERNANCE_PACK
     from starboard_server.discovery.query_packs.jobs import JOBS_PACK
+    from starboard_server.discovery.query_packs.lakebase import LAKEBASE_PACK
+    from starboard_server.discovery.query_packs.lakeflow_connect import (
+        LAKEFLOW_CONNECT_PACK,
+    )
     from starboard_server.discovery.query_packs.migration import MIGRATION_PACK
     from starboard_server.discovery.query_packs.ml import ML_PACK
+    from starboard_server.discovery.query_packs.mlflow import MLFLOW_PACK
     from starboard_server.discovery.query_packs.product_surfaces import (
-        AIBI_PACK,
-        APPS_PACK,
         DELTA_SHARING_PACK,
-        LAKEBASE_PACK,
         MONITORING_PACK,
         SERVERLESS_SQL_PACK,
-        VECTOR_SEARCH_PACK,
         WORKFLOW_PACK,
     )
     from starboard_server.discovery.query_packs.query_performance import (
         QUERY_PERF_PACK,
+    )
+    from starboard_server.discovery.query_packs.vector_search import (
+        VECTOR_SEARCH_PACK,
     )
 
     return QueryPackRegistry(
@@ -179,13 +230,20 @@ def create_default_registry() -> QueryPackRegistry:
             ML_PACK,
             MIGRATION_PACK,
             GOVERNANCE_PACK,
+            # Expanded packs (replacing product_surfaces originals)
             APPS_PACK,
             LAKEBASE_PACK,
             VECTOR_SEARCH_PACK,
+            AIBI_PACK,
+            # Retained from product_surfaces
             DELTA_SHARING_PACK,
             MONITORING_PACK,
             SERVERLESS_SQL_PACK,
             WORKFLOW_PACK,
-            AIBI_PACK,
+            # Net-new packs
+            DLT_PIPELINES_PACK,
+            MLFLOW_PACK,
+            AI_GATEWAY_PACK,
+            LAKEFLOW_CONNECT_PACK,
         )
     )

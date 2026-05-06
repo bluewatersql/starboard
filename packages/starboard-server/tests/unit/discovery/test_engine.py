@@ -103,7 +103,8 @@ class MinimalQueryRegistry:
 
     def get_packs_for_products(
         self,
-        active_products: set[str] | list[str],
+        active_products: set[str] | dict[str, float],
+        min_dbu_threshold: float = 0.0,
         include: list[str] | None = None,
         exclude: list[str] | None = None,
     ) -> list[QueryPack]:
@@ -181,7 +182,7 @@ async def test_run_no_llm_client() -> None:
 
 @pytest.mark.asyncio
 async def test_extract_products_success() -> None:
-    """_extract_products returns product names from successful audit."""
+    """_extract_products returns product -> dbu dict from successful audit."""
     executor = MockSQLExecutor()
     registry = MinimalQueryRegistry()
     engine = DiscoveryEngine(
@@ -204,12 +205,16 @@ async def test_extract_products_success() -> None:
 
     products = engine._extract_products(audit_result)
 
-    assert sorted(products) == ["JOBS", "NOTEBOOKS", "SQL"]
+    assert isinstance(products, dict)
+    assert sorted(products.keys()) == ["JOBS", "NOTEBOOKS", "SQL"]
+    assert products["JOBS"] == 180.0  # 100 + 80
+    assert products["SQL"] == 50.0
+    assert products["NOTEBOOKS"] == 25.0
 
 
 @pytest.mark.asyncio
 async def test_extract_products_failed_audit() -> None:
-    """_extract_products returns empty list when audit failed."""
+    """_extract_products returns empty dict when audit failed."""
     executor = MockSQLExecutor()
     registry = MinimalQueryRegistry()
     engine = DiscoveryEngine(
@@ -227,7 +232,7 @@ async def test_extract_products_failed_audit() -> None:
 
     products = engine._extract_products(audit_result)
 
-    assert products == []
+    assert products == {}
 
 
 @pytest.mark.asyncio
@@ -265,3 +270,4 @@ def test_engine_config_defaults() -> None:
     assert config.lookback_days == 30
     assert config.max_parallelism == 4
     assert config.data_only is False
+    assert config.min_dbu_threshold == 10.0

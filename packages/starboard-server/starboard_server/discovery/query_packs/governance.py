@@ -1,8 +1,15 @@
+
 """Governance and data management pack."""
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 N_L01_SQL = """\
 SELECT
@@ -127,6 +134,13 @@ GOVERNANCE_PACK = QueryPack(
             domain="governance",
             required=False,
             lookback_override=90,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.GOVERNANCE,
+            metadata=QueryMetadata(
+                summary="Table lineage downstream impact analysis",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="N-L02",
@@ -137,6 +151,13 @@ GOVERNANCE_PACK = QueryPack(
             domain="governance",
             required=False,
             lookback_override=90,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.GOVERNANCE,
+            metadata=QueryMetadata(
+                summary="Table access frequency audit",
+                output_hint="",
+            ),
         ),
         # N-L03 disabled — see comment above N_L03_SQL
         SystemQuery(
@@ -147,6 +168,13 @@ GOVERNANCE_PACK = QueryPack(
             required_tables=("system.information_schema.tables",),
             domain="governance",
             required=False,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.GOVERNANCE,
+            metadata=QueryMetadata(
+                summary="Delta table health and freshness check",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="N-NB01",
@@ -156,6 +184,13 @@ GOVERNANCE_PACK = QueryPack(
             required_tables=("system.billing.usage",),
             domain="governance",
             required=False,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Notebook and interactive compute attribution",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="N-ST01",
@@ -166,6 +201,13 @@ GOVERNANCE_PACK = QueryPack(
             domain="governance",
             required=False,
             lookback_override=90,
+
+            discovery_mode=DiscoveryMode.DEEP_DIVE,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Storage I/O attribution analysis",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset(),

@@ -179,8 +179,54 @@ class AsyncDatabricksClient:
             timeout=httpx.Timeout(30.0, connect=5.0),
         )
 
+        # Auto-create warehouse if needed
+        if (
+            not self._cfg.databricks_warehouse_id
+            and self._cfg.autocreate_dbx_dw
+            and not self._cfg.offline_mode
+        ):
+            import os
+
+            from starboard_server.adapters.databricks.warehouse_provisioner import (
+                WarehouseProvisioner,
+            )
+
+            provisioner = WarehouseProvisioner(
+                client=self._sdk_client,
+                warehouse_name=self._cfg.databricks_warehouse_name,
+                warehouse_size=self._cfg.databricks_warehouse_size,
+            )
+            new_warehouse_id = await provisioner.provision()
+
+            self._cfg = self._cfg.model_copy(
+                update={"databricks_warehouse_id": new_warehouse_id}
+            )
+            os.environ["DATABRICKS_WAREHOUSE_ID"] = new_warehouse_id
+
+            logger.info(
+                "auto_created_warehouse_configured",
+                extra={"warehouse_id": new_warehouse_id},
+            )
+
         # Resolve warehouse ID
         self._warehouse_id = await self._resolve_warehouse_id()
+
+        # Support mode grants
+        if self._cfg.is_dbx_support and not self._cfg.offline_mode:
+            if self._warehouse_id:
+                from starboard_server.adapters.databricks.support_mode import (
+                    SupportModeInitializer,
+                )
+
+                initializer = SupportModeInitializer(sql_service=self._sql)
+                await initializer.initialize()
+            else:
+                logger.warning(
+                    "support_mode_skipped_no_warehouse",
+                    extra={
+                        "reason": "No warehouse ID available for executing grants",
+                    },
+                )
 
         self._initialized = True
 

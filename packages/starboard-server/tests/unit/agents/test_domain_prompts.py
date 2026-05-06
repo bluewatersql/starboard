@@ -115,7 +115,7 @@ def test_get_system_prompt_query():
 def test_get_system_prompt_default_goal():
     """get_system_prompt() should use default goal if not provided."""
     prompt = get_system_prompt("query", token_budget=100_000)
-    assert "Optimize the provided workload" in prompt or "workload" in prompt
+    assert "Optimize" in prompt or "optimize" in prompt
 
 
 def test_get_system_prompt_all_domains():
@@ -141,8 +141,8 @@ def test_get_system_prompt_invalid_domain():
 def test_get_system_prompt_with_empty_goal():
     """get_system_prompt() should handle empty goal string."""
     prompt = get_system_prompt("query", goal="", token_budget=100_000)
-    # Should use default goal
-    assert "Optimize the provided workload" in prompt or "workload" in prompt
+    # Should use default goal (domain-specific)
+    assert "Optimize" in prompt or "optimize" in prompt
 
 
 def test_prompts_have_tool_lists():

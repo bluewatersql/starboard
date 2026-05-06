@@ -1,8 +1,15 @@
+
 """Query performance analysis pack."""
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 C_Q01_SQL = """\
 SELECT
@@ -187,6 +194,13 @@ QUERY_PERF_PACK = QueryPack(
             sql_template=C_Q01_SQL,
             required_tables=("system.query.history",),
             domain="query_performance",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="Comprehensive query performance profile",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-Q02",
@@ -196,6 +210,13 @@ QUERY_PERF_PACK = QueryPack(
             required_tables=("system.query.history",),
             domain="query_performance",
             lookback_override=7,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Multi-signal optimization candidates",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-Q03",
@@ -204,6 +225,13 @@ QUERY_PERF_PACK = QueryPack(
             sql_template=C_Q03_SQL,
             required_tables=("system.query.history",),
             domain="query_performance",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Repeated queries and caching opportunity",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-Q04",
@@ -212,6 +240,13 @@ QUERY_PERF_PACK = QueryPack(
             sql_template=C_Q04_SQL,
             required_tables=("system.query.history",),
             domain="query_performance",
+
+            discovery_mode=DiscoveryMode.DEEP_DIVE,
+            category=QueryCategory.OPTIMIZATION,
+            metadata=QueryMetadata(
+                summary="Warehouse failure and error patterns",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-Q05",
@@ -220,6 +255,13 @@ QUERY_PERF_PACK = QueryPack(
             sql_template=C_Q05_SQL,
             required_tables=("system.query.history",),
             domain="query_performance",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.PROFILE,
+            metadata=QueryMetadata(
+                summary="Warehouse concurrency peaks",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset({"SQL"}),

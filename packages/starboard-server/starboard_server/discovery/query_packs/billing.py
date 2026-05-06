@@ -1,3 +1,4 @@
+
 """Billing and resource consumption query pack for Databricks discovery.
 
 DBU consumption attribution, trends, growth detection, and chargeback.
@@ -7,7 +8,13 @@ no dollar/cost computations.
 
 from __future__ import annotations
 
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+from starboard_core.domain.models.discovery.query import (
+    DiscoveryMode,
+    QueryCategory,
+    QueryMetadata,
+    QueryPack,
+    SystemQuery,
+)
 
 C_B01_SQL = """\
 SELECT
@@ -118,6 +125,13 @@ BILLING_PACK = QueryPack(
             sql_template=C_B01_SQL,
             required_tables=("system.billing.usage",),
             domain="billing",
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="DBU consumption by workspace, product, and identity",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-B02",
@@ -127,6 +141,13 @@ BILLING_PACK = QueryPack(
             required_tables=("system.billing.usage",),
             domain="billing",
             lookback_override=90,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Monthly SKU trend analysis",
+                output_hint="",
+            ),
         ),
         SystemQuery(
             query_id="C-B03",
@@ -136,6 +157,13 @@ BILLING_PACK = QueryPack(
             required_tables=("system.billing.usage", "system.lakeflow.jobs"),
             domain="billing",
             lookback_override=14,
+
+            discovery_mode=DiscoveryMode.GENERAL,
+            category=QueryCategory.BILLING,
+            metadata=QueryMetadata(
+                summary="Week-over-week DBU growth by job",
+                output_hint="",
+            ),
         ),
     ),
     gating_products=frozenset(),

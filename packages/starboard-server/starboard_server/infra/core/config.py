@@ -10,7 +10,7 @@ from __future__ import annotations
 import atexit
 import json
 import os
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -40,6 +40,22 @@ class EnvConfig(BaseSettings):
     databricks_warehouse_id: str | None = None
     default_catalog: str = "main"
     default_schema: str = "default"
+
+    # Warehouse Auto-Creation
+    autocreate_dbx_dw: bool = True
+    """When True and DATABRICKS_WAREHOUSE_ID is not set, auto-create a
+    serverless SQL warehouse on startup. Env var: AUTOCREATE_DBX_DW"""
+
+    databricks_warehouse_name: str = "STARBOARD_AGENT_DW"
+    """Name for the auto-created warehouse. Env var: DATABRICKS_WAREHOUSE_NAME"""
+
+    databricks_warehouse_size: str = "X-Large"
+    """T-shirt size for the auto-created warehouse. Env var: DATABRICKS_WAREHOUSE_SIZE"""
+
+    # Databricks Support Mode
+    is_dbx_support: bool = False
+    """When True, execute system catalog grants for the Databricks
+    support principal before any workloads. Env var: IS_DBX_SUPPORT"""
 
     # LLM Configuration
     llm_provider: str = "openai"
@@ -168,8 +184,39 @@ class EnvConfig(BaseSettings):
     discovery_llm_model: str | None = None
     """LLM model override for discovery analysis. Falls back to llm_model."""
     discovery_llm_temperature: float = 0.3
+    discovery_min_dbu_threshold: float = 10.0
+    """Minimum DBUs for a product to trigger its domain pack. Products below
+    this threshold are treated as inactive. Set to 0 to disable filtering."""
 
     # --- Field validators ---
+
+    _VALID_WAREHOUSE_SIZES: ClassVar[frozenset[str]] = frozenset({
+        "2X-Small", "X-Small", "Small", "Medium", "Large", "X-Large",
+        "2X-Large", "3X-Large", "4X-Large",
+    })
+
+    @field_validator("databricks_warehouse_size", mode="before")
+    @classmethod
+    def _validate_warehouse_size(cls, v: Any) -> str:
+        """Validate warehouse size is a recognized Databricks T-shirt size."""
+        normalized = str(v).strip()
+        size_map = {s.lower(): s for s in cls._VALID_WAREHOUSE_SIZES}
+        canonical = size_map.get(normalized.lower())
+        if canonical is None:
+            raise ValueError(
+                f"Invalid warehouse size '{normalized}'. "
+                f"Must be one of: {', '.join(sorted(cls._VALID_WAREHOUSE_SIZES))}"
+            )
+        return canonical
+
+    @field_validator("databricks_warehouse_name", mode="before")
+    @classmethod
+    def _validate_warehouse_name(cls, v: Any) -> str:
+        """Validate warehouse name is not empty."""
+        name = str(v).strip()
+        if not name:
+            raise ValueError("Warehouse name cannot be empty")
+        return name
 
     @field_validator("disabled_agent_domains", mode="before")
     @classmethod
@@ -317,6 +364,11 @@ class EnvConfig(BaseSettings):
             errors.append(
                 f"discovery_max_parallelism must be 1-16, "
                 f"got {self.discovery_max_parallelism}"
+            )
+        if self.discovery_min_dbu_threshold < 0:
+            errors.append(
+                f"discovery_min_dbu_threshold must be >= 0, "
+                f"got {self.discovery_min_dbu_threshold}"
             )
 
         if errors:
@@ -532,6 +584,14 @@ class EnvConfig(BaseSettings):
         os.environ["ENABLE_REFLEXION"] = str(self.enable_reflexion).lower()
         os.environ["ENABLE_SEMANTIC_CACHE"] = str(self.enable_semantic_cache).lower()
 
+        # Warehouse Auto-Creation
+        os.environ["AUTOCREATE_DBX_DW"] = str(self.autocreate_dbx_dw).lower()
+        os.environ["DATABRICKS_WAREHOUSE_NAME"] = self.databricks_warehouse_name
+        os.environ["DATABRICKS_WAREHOUSE_SIZE"] = self.databricks_warehouse_size
+
+        # Databricks Support Mode
+        os.environ["IS_DBX_SUPPORT"] = str(self.is_dbx_support).lower()
+
         # Discovery Configuration
         os.environ["DISCOVERY_LOOKBACK_DAYS"] = str(self.discovery_lookback_days)
         os.environ["DISCOVERY_MAX_PARALLELISM"] = str(self.discovery_max_parallelism)
@@ -542,6 +602,9 @@ class EnvConfig(BaseSettings):
         if self.discovery_llm_model is not None:
             os.environ["DISCOVERY_LLM_MODEL"] = self.discovery_llm_model
         os.environ["DISCOVERY_LLM_TEMPERATURE"] = str(self.discovery_llm_temperature)
+        os.environ["DISCOVERY_MIN_DBU_THRESHOLD"] = str(
+            self.discovery_min_dbu_threshold
+        )
 
         # Register cleanup handler to remove sensitive env vars on process exit.
         # This limits the window in which secrets are exposed in the process environment.

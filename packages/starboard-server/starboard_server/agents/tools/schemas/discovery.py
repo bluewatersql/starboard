@@ -20,10 +20,10 @@ DISCOVER_ACTIVE_PRODUCTS: dict[str, Any] = {
         "type": "object",
         "properties": {
             "lookback_days": {
-                "type": "integer",
-                "description": "Time window for the audit in days",
-                "default": 30,
-                "enum": [30, 60, 90],
+                "type": "string",
+                "description": "Time window for the audit in days (30, 60, or 90)",
+                "default": "30",
+                "enum": ["30", "60", "90"],
             },
         },
         "required": [],
@@ -184,10 +184,10 @@ RUN_WORKSPACE_DISCOVERY: dict[str, Any] = {
         "type": "object",
         "properties": {
             "lookback_days": {
-                "type": "integer",
-                "description": "Time window for analysis in days",
-                "default": 30,
-                "enum": [30, 60, 90],
+                "type": "string",
+                "description": "Time window for analysis in days (30, 60, or 90)",
+                "default": "30",
+                "enum": ["30", "60", "90"],
             },
             "domains": {
                 "type": "array",

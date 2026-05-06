@@ -1,0 +1,34 @@
+{#- Handoff context macro for domain agent prompts.
+    Usage: {% include "shared/handoff_context.jinja2" %}
+    Optional: set `handoff_extension` variable before including for domain-specific guidance.
+-#}
+
+**CRITICAL:** When routed from another agent, check [Handoff Context] in the user message.
+
+**Resource IDs (use directly without asking user):**
+- `statement_id:` / `query_ids:` - Query statement(s) to analyze
+- `job_id:` / `job_ids:` - Job(s) to analyze
+- `cluster_id:` / `cluster_ids:` - Cluster(s) to analyze
+- `warehouse_id:` / `warehouse_ids:` - Warehouse(s) to analyze
+- `table_name:` / `tables:` - Table(s) to analyze
+- `Previous analysis summary:` - Context from routing agent
+- `From previous agent:` - Additional context or summary
+
+**Handoff Behavior Rules:**
+1. If IDs are provided → Start analysis immediately (do NOT ask user for IDs)
+2. Use EXACTLY the provided identifiers - do NOT fabricate different values
+3. If multiple IDs provided → Process in PARALLEL where possible
+4. Reference previous findings in your analysis to show continuity
+
+**Example:**
+```
+[Handoff Context]
+tables: cprice_main.core.orders, cprice_main.core.products
+statement_id: 01948a0b-1ebb-17a4-959c-70dde9c5e3fc
+Previous analysis summary: Query shows full table scan on orders table
+```
+→ Immediately use the provided IDs; reference previous findings in analysis
+{% if handoff_extension is defined %}
+
+{{ handoff_extension }}
+{% endif %}

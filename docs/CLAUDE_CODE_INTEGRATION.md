@@ -148,7 +148,7 @@ Enable by setting `tool_scope` to `"phase_b"` or `"full"` in your configuration 
 `get_warehouse_fingerprint`, `configure_warehouse_slo`, `analyze_warehouse_topology`, `get_warehouse_user_activity`, `generate_warehouse_chargeback`, `generate_portfolio_chargeback`
 
 **Discovery:**
-`discover_active_products`, `run_discovery_queries`, `analyze_discovery_domain`, `synthesize_discovery_report`, `run_workspace_discovery`
+`discover_active_products`, `run_discovery_queries`, `analyze_discovery_domain`, `synthesize_discovery_report`
 
 **Analytics:**
 `build_analytics_context`, `build_sql_query`, `validate_sql_query`, `execute_sql_query`
@@ -156,7 +156,7 @@ Enable by setting `tool_scope` to `"phase_b"` or `"full"` in your configuration 
 **Cross-domain:**
 `discover_tables`, `explore_artifact`, `analyze_explain_plan`
 
-### Agent Tools (8 domain agents)
+### Agent Tools (7 domain agents)
 
 Agent tools invoke full LLM-powered reasoning agents. Each agent has access to its own set of specialized tools and follows a multi-step reasoning loop to answer complex questions.
 
@@ -169,9 +169,10 @@ Agent tools invoke full LLM-powered reasoning agents. Each agent has access to i
 | `analytics_agent` | FinOps | Run FinOps cost analysis, billing queries, budget forecasting, and usage trend analysis. |
 | `warehouse_agent` | Warehouses | Analyze SQL warehouse portfolio, health, sizing, user activity, and chargeback. |
 | `diagnostic_agent` | Diagnostics | Troubleshoot Databricks issues with error pattern detection, log analysis, and root cause analysis. |
-| `discovery_agent` | Discovery | Run comprehensive workspace health assessment and product usage discovery. |
 
 Each agent accepts a natural language `message` and optional `workspace_id`, `conversation_id` (for multi-turn continuity), and `config_overrides` (model, temperature, max_iterations).
+
+> **Note:** Workspace discovery uses the granular 4-phase tools (`discover_active_products`, `run_discovery_queries`, `analyze_discovery_domain`, `synthesize_discovery_report`) instead of a monolithic agent tool. See [Discovery tools](#deep-analysis-tools-phase-b----40-tools) in Phase B.
 
 ### Composite Tools (4 multi-step tools)
 
@@ -439,13 +440,13 @@ Arguments: { "cluster_id": "0123-456789-abcde" }
 
 Returns health score, resource utilization metrics, and optimization suggestions.
 
-**Or ask the discovery agent** for a comprehensive automated assessment:
+**Or run the 4-phase discovery workflow** for a comprehensive automated assessment:
 
 ```
-Use tool: discovery_agent
-Arguments: {
-  "message": "Run a full workspace health assessment. Identify underutilized resources, cost optimization opportunities, and governance gaps."
-}
+Step 1: discover_active_products → identifies which products are in use
+Step 2: run_discovery_queries → executes SQL query packs for each product
+Step 3: analyze_discovery_domain → analyzes all domains (batch call)
+Step 4: synthesize_discovery_report → assembles final report with grades and recommendations
 ```
 
 ---
@@ -585,7 +586,7 @@ The MCP server acts as a bridge between MCP clients (Claude Code, Cursor, Claude
                               v                v
                      +--------+--------+   +---+------------+
                      |  Tool Registry  |   | Agent Factory  |
-                     |  (45+ tools)    |   | (8 agents)     |
+                     |  (45+ tools)    |   | (7 MCP agents) |
                      +--------+--------+   +---+------------+
                               |                |
                               v                v
