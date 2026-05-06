@@ -47,6 +47,22 @@ def is_gpt5_model(model: str) -> bool:
     return "gpt-5" in model_lower or "gpt5" in model_lower
 
 
+def is_no_temperature_model(model: str) -> bool:
+    """Check if a model rejects the temperature parameter entirely.
+
+    Claude Opus 4 and later Anthropic models (claude-opus-4-x, global.anthropic.claude-opus-4-x)
+    return a 400 BAD_REQUEST when temperature is included in the request.
+
+    Args:
+        model: Model identifier
+
+    Returns:
+        True if temperature must be omitted from the API request
+    """
+    model_lower = model.lower()
+    return "claude-opus-4" in model_lower or "claude_opus_4" in model_lower
+
+
 _NO_STRUCTURED_OUTPUT_PATTERNS = (
     "claude",
     "anthropic",
