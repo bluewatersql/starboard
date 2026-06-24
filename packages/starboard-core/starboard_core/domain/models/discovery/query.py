@@ -7,14 +7,14 @@ and their execution results. No I/O or side effects.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import polars as pl
 
 
-class DiscoveryMode(str, Enum):
+class DiscoveryMode(StrEnum):
     """Controls which queries are included in a discovery run.
 
     Attributes:
@@ -27,7 +27,7 @@ class DiscoveryMode(str, Enum):
     DEEP_DIVE = "DEEP_DIVE"
 
 
-class QueryCategory(str, Enum):
+class QueryCategory(StrEnum):
     """Classifies the analytical purpose of a discovery query.
 
     Attributes:

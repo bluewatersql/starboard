@@ -14,9 +14,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from starboard_server.mcp.agent_bridge import (
+    _MCP_EXCLUDED_AGENT_DOMAINS,
     AGENT_DOMAINS,
     AGENT_TOOL_METADATA,
-    _MCP_EXCLUDED_AGENT_DOMAINS,
 )
 from starboard_server.mcp.config import MCPServerConfig, WorkspaceProfile
 from starboard_server.mcp.prompt_bridge import PROMPT_METADATA

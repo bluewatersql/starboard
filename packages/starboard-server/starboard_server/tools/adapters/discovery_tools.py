@@ -277,10 +277,7 @@ class DiscoveryTools(BaseToolAdapter):
                     product_dbus[product] = product_dbus.get(product, 0.0) + dbus
                 self._product_dbus = product_dbus
             else:
-                self._product_dbus = {
-                    p: 0.0
-                    for p in audit_result.data[col].unique().to_list()
-                }
+                self._product_dbus = dict.fromkeys(audit_result.data[col].unique().to_list(), 0.0)
         else:
             self._product_dbus = {}
 
@@ -911,6 +908,13 @@ class DiscoveryTools(BaseToolAdapter):
         domain_packs: dict[str, list[PackResult]],
     ) -> None:
         """Background coroutine that analyzes all domains in parallel."""
+        if self._llm_client is None:
+            logger.error(
+                "bg_analysis_skipped",
+                extra={"reason": "LLM client not configured; domain analysis requires LLM."},
+            )
+            return
+
         analyzer = DomainAnalyzer(
             llm_client=self._llm_client,
             heuristic_registry=self._heuristic_registry,

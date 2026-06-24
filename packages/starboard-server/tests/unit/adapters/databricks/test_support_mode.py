@@ -6,10 +6,9 @@ import os
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from starboard_server.adapters.databricks.support_mode import (
-    SupportModeInitializer,
     _SUPPORT_ENV_KEY,
+    SupportModeInitializer,
 )
 from starboard_server.exceptions import DatabricksAPIError, PermissionDeniedError
 

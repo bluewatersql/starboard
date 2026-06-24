@@ -19,8 +19,8 @@ from starboard_server.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
     from starboard_core.domain.models.discovery.analysis import (
-        DomainAnalysis,
         DiscoveryFinding,
+        DomainAnalysis,
     )
     from starboard_core.domain.models.discovery.report import DiscoveryReport
 

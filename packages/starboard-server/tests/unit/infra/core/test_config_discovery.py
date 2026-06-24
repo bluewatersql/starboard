@@ -21,7 +21,7 @@ class TestEnvConfigDiscoveryDefaults:
 
     def test_default_parallelism(self):
         cfg = EnvConfig()
-        assert cfg.discovery_max_parallelism == 4
+        assert cfg.discovery_max_parallelism == 8
 
     def test_default_domains(self):
         cfg = EnvConfig()

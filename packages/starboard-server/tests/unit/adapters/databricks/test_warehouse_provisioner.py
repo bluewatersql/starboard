@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-
 from starboard_server.adapters.databricks.warehouse_provisioner import (
     WarehouseProvisioner,
 )
-from starboard_server.exceptions import ConfigurationError, DatabricksAPIError
+from starboard_server.exceptions import ConfigurationError
 
 
 @pytest.fixture

@@ -320,7 +320,7 @@ class DiscoveryEngine:
             return {}
 
         if dbu_col not in audit_result.data.columns:
-            return {p: 0.0 for p in audit_result.data[col].unique().to_list()}
+            return dict.fromkeys(audit_result.data[col].unique().to_list(), 0.0)
 
         product_dbus: dict[str, float] = {}
         for row in audit_result.data.iter_rows(named=True):

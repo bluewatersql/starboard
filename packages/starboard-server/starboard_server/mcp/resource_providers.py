@@ -16,9 +16,12 @@ Implements ``list_resources`` / ``read_resource`` with resources:
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from starboard_server.agents.tool_categories import TOOL_CATEGORIES
+
+if TYPE_CHECKING:
+    from starboard_server.agents.routing.routing_models import AgentDomain
 from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
 from starboard_server.mcp.agent_bridge import AGENT_DOMAINS
 from starboard_server.mcp.circuit_breaker_registry import MCPCircuitBreakerRegistry
@@ -232,7 +235,7 @@ class StarboardResourceProvider:
         from starboard_server.prompts.factories import get_system_prompt
 
         prompt_text = get_system_prompt(
-            domain=domain,
+            domain=cast("AgentDomain", domain),
             goal="{goal}",
             token_budget=120_000,
             mode="online",

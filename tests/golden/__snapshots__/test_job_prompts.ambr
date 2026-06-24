@@ -105,11 +105,11 @@
   **Example Workflow:**
   ```
   # Step 1: Get cluster_id from job history
-  result = analyze_job_history(job_id="266829928906781")
-  # result contains: {..."cluster_id": "1201-090640-dwj7ygpe"...}
+  result = analyze_job_history(job_id=<JOB_ID_FROM_USER>)
+  # result contains: {..."cluster_id": "1201-090640-abc1def2"...}
   
   # Step 2: Fetch Spark logs using cluster_id
-  get_spark_logs(cluster_id="1201-090640-dwj7ygpe")
+  get_spark_logs(cluster_id="1201-090640-abc1def2")
   ```
   
   **Response Handling:**
@@ -158,7 +158,7 @@
   7. analyze_code_quality → Detect anti-patterns (if source available) [~400 tokens]
   8. complete → Recommendations with code rewrites, config changes [0 tokens]
   
-  **IMPORTANT:** If user provides a job ID (e.g., "266829928906781" or "slow job 12345"), proceed directly with analysis. Do NOT ask what issue they're experiencing - provide a comprehensive optimization review of the job (performance, failures, configuration, code quality).
+  **IMPORTANT:** If user provides a job ID or job name, proceed directly with analysis. Do NOT ask what issue they're experiencing - provide a comprehensive optimization review of the job (performance, failures, configuration, code quality).
   
   **SPARK LOGS GUIDANCE (STANDARD JOBS ONLY):**
   - ONLY call get_spark_logs for standard jobs (cluster.type = "job_cluster")
@@ -349,7 +349,7 @@
            "action_type": "route",
            "target_agent": "cluster",
            "tool_name": null,
-           "parameters": {"cluster_id": "1201-090640-dwj7ygpe", "job_id": "266829928906781"}
+           "parameters": {"cluster_id": "<cluster_id_from_analyze_job_history>", "job_id": "<job_id_from_user>"}
          }},
          {{
            "id": "investigate_tables_3",
@@ -369,7 +369,7 @@
            "action_type": "tool_call",
            "target_agent": null,
            "tool_name": "get_spark_logs",
-           "parameters": {"cluster_id": "1201-090640-dwj7ygpe"}
+           "parameters": {"cluster_id": "<cluster_id_from_analyze_job_history>"}
          }}
        ]
      }}
@@ -404,17 +404,17 @@
   
      **CORRECT format for routing to compute (cluster analysis):**
      ```json
-     {"cluster_id": "1201-090640-dwj7ygpe", "job_id": "266829928906781"}
+     {"cluster_id": "<cluster_id_from_analyze_job_history>", "job_id": "<job_id_from_user>"}
      ```
   
      **WRONG (do NOT do this):**
      ```json
-     {"context": "cluster running job 266829928906781"}  // ❌ Missing cluster_id!
+     {"context": "cluster running job <job_id>"}  // ❌ Missing cluster_id!
      ```
   
      * Only use "context" field when you genuinely don't have the ID (rare for job analysis)
      * Example for tables when you don't have table names yet:
-       {"context": "tables written by job 266829928906781"}
+       {"context": "tables written by job <job_id>"}
   
      Each step includes:
      - rank: 1-3 (1 = highest priority)
@@ -695,11 +695,11 @@
   **Example Workflow:**
   ```
   # Step 1: Get cluster_id from job history
-  result = analyze_job_history(job_id="266829928906781")
-  # result contains: {..."cluster_id": "1201-090640-dwj7ygpe"...}
+  result = analyze_job_history(job_id=<JOB_ID_FROM_USER>)
+  # result contains: {..."cluster_id": "1201-090640-abc1def2"...}
   
   # Step 2: Fetch Spark logs using cluster_id
-  get_spark_logs(cluster_id="1201-090640-dwj7ygpe")
+  get_spark_logs(cluster_id="1201-090640-abc1def2")
   ```
   
   **Response Handling:**
@@ -748,7 +748,7 @@
   7. analyze_code_quality → Detect anti-patterns (if source available) [~400 tokens]
   8. complete → Recommendations with code rewrites, config changes [0 tokens]
   
-  **IMPORTANT:** If user provides a job ID (e.g., "266829928906781" or "slow job 12345"), proceed directly with analysis. Do NOT ask what issue they're experiencing - provide a comprehensive optimization review of the job (performance, failures, configuration, code quality).
+  **IMPORTANT:** If user provides a job ID or job name, proceed directly with analysis. Do NOT ask what issue they're experiencing - provide a comprehensive optimization review of the job (performance, failures, configuration, code quality).
   
   **SPARK LOGS GUIDANCE (STANDARD JOBS ONLY):**
   - ONLY call get_spark_logs for standard jobs (cluster.type = "job_cluster")
@@ -939,7 +939,7 @@
            "action_type": "route",
            "target_agent": "cluster",
            "tool_name": null,
-           "parameters": {"cluster_id": "1201-090640-dwj7ygpe", "job_id": "266829928906781"}
+           "parameters": {"cluster_id": "<cluster_id_from_analyze_job_history>", "job_id": "<job_id_from_user>"}
          }},
          {{
            "id": "investigate_tables_3",
@@ -959,7 +959,7 @@
            "action_type": "tool_call",
            "target_agent": null,
            "tool_name": "get_spark_logs",
-           "parameters": {"cluster_id": "1201-090640-dwj7ygpe"}
+           "parameters": {"cluster_id": "<cluster_id_from_analyze_job_history>"}
          }}
        ]
      }}
@@ -994,17 +994,17 @@
   
      **CORRECT format for routing to compute (cluster analysis):**
      ```json
-     {"cluster_id": "1201-090640-dwj7ygpe", "job_id": "266829928906781"}
+     {"cluster_id": "<cluster_id_from_analyze_job_history>", "job_id": "<job_id_from_user>"}
      ```
   
      **WRONG (do NOT do this):**
      ```json
-     {"context": "cluster running job 266829928906781"}  // ❌ Missing cluster_id!
+     {"context": "cluster running job <job_id>"}  // ❌ Missing cluster_id!
      ```
   
      * Only use "context" field when you genuinely don't have the ID (rare for job analysis)
      * Example for tables when you don't have table names yet:
-       {"context": "tables written by job 266829928906781"}
+       {"context": "tables written by job <job_id>"}
   
      Each step includes:
      - rank: 1-3 (1 = highest priority)
@@ -1288,11 +1288,11 @@
   **Example Workflow:**
   ```
   # Step 1: Get cluster_id from job history
-  result = analyze_job_history(job_id="266829928906781")
-  # result contains: {{..."cluster_id": "1201-090640-dwj7ygpe"...}}
+  result = analyze_job_history(job_id=<JOB_ID_FROM_USER>)
+  # result contains: {{..."cluster_id": "1201-090640-abc1def2"...}}
   
   # Step 2: Fetch Spark logs using cluster_id
-  get_spark_logs(cluster_id="1201-090640-dwj7ygpe")
+  get_spark_logs(cluster_id="1201-090640-abc1def2")
   ```
   
   **Response Handling:**
@@ -1341,7 +1341,7 @@
   7. analyze_code_quality → Detect anti-patterns (if source available) [~400 tokens]
   8. complete → Recommendations with code rewrites, config changes [0 tokens]
   
-  **IMPORTANT:** If user provides a job ID (e.g., "266829928906781" or "slow job 12345"), proceed directly with analysis. Do NOT ask what issue they're experiencing - provide a comprehensive optimization review of the job (performance, failures, configuration, code quality).
+  **IMPORTANT:** If user provides a job ID or job name, proceed directly with analysis. Do NOT ask what issue they're experiencing - provide a comprehensive optimization review of the job (performance, failures, configuration, code quality).
   
   **SPARK LOGS GUIDANCE (STANDARD JOBS ONLY):**
   - ONLY call get_spark_logs for standard jobs (cluster.type = "job_cluster")
@@ -1532,7 +1532,7 @@
            "action_type": "route",
            "target_agent": "cluster",
            "tool_name": null,
-           "parameters": {{"cluster_id": "1201-090640-dwj7ygpe", "job_id": "266829928906781"}}
+           "parameters": {{"cluster_id": "<cluster_id_from_analyze_job_history>", "job_id": "<job_id_from_user>"}}
          }}}},
          {{{{
            "id": "investigate_tables_3",
@@ -1552,7 +1552,7 @@
            "action_type": "tool_call",
            "target_agent": null,
            "tool_name": "get_spark_logs",
-           "parameters": {{"cluster_id": "1201-090640-dwj7ygpe"}}
+           "parameters": {{"cluster_id": "<cluster_id_from_analyze_job_history>"}}
          }}}}
        ]
      }}}}
@@ -1587,17 +1587,17 @@
   
      **CORRECT format for routing to compute (cluster analysis):**
      ```json
-     {{"cluster_id": "1201-090640-dwj7ygpe", "job_id": "266829928906781"}}
+     {{"cluster_id": "<cluster_id_from_analyze_job_history>", "job_id": "<job_id_from_user>"}}
      ```
   
      **WRONG (do NOT do this):**
      ```json
-     {{"context": "cluster running job 266829928906781"}}  // ❌ Missing cluster_id!
+     {{"context": "cluster running job <job_id>"}}  // ❌ Missing cluster_id!
      ```
   
      * Only use "context" field when you genuinely don't have the ID (rare for job analysis)
      * Example for tables when you don't have table names yet:
-       {{"context": "tables written by job 266829928906781"}}
+       {{"context": "tables written by job <job_id>"}}
   
      Each step includes:
      - rank: 1-3 (1 = highest priority)

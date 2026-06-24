@@ -120,7 +120,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         try:
             from starboard_server.api.dependencies import get_multi_agent_manager
 
-            manager = await get_multi_agent_manager()
+            manager = await get_multi_agent_manager(container=get_container())
             factory = manager.agent_factory
             router = manager.intent_router
 
