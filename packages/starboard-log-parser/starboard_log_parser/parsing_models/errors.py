@@ -42,10 +42,7 @@ class ParserErrorMessages:
         + "-- (3) Resubmit the next log produced with this application."
     )
 
-    SUPPORT_MESSAGE = (
-        "If you have questions or would like assistance in resolving the issue "
-        + "please contact our support at support@synccomputing.com."
-    )
+    SUPPORT_MESSAGE = "Support is available through our GitHub channels."
 
 
 class ParserErrorTypes:

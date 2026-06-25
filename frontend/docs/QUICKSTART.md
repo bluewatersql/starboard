@@ -27,7 +27,7 @@ python --version # Should be 3.10+
 In a **separate terminal** (leave this running):
 
 ```bash
-cd /Users/c.price/Work/github/job-agent/packages/starboard-server
+cd /<<PATH>>/job-agent/packages/starboard-server
 uvicorn starboard_server.main:app --reload --port 8000
 ```
 
@@ -75,7 +75,7 @@ curl http://localhost:8000/health/ready
 In a **new terminal**:
 
 ```bash
-cd /Users/c.price/Work/github/job-agent/frontend
+cd /<<PATH>>/job-agent/frontend
 ```
 
 ### 3. Install Dependencies
