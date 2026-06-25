@@ -67,7 +67,7 @@ graph TD
 | **[Cluster](domain/cluster.md)** | `cluster` | Cluster configuration, health, sizing, autoscaling | 8 | `compute` |
 | **[Analytics](domain/analytics.md)** | `analytics` | FinOps cost analysis via agentic RAG and SQL generation | 6 | `analytics` |
 | **[Warehouse](domain/warehouse.md)** | `warehouse` | SQL warehouse portfolio optimization, SLO, chargeback | 11 | `compute` |
-| **[Discovery](domain/discovery.md)** | `discovery` | Workspace-wide health assessment (4-phase pipeline) | 6 | `discovery` |
+| **[Discovery](domain/discovery.md)** | `discovery` | Workspace-wide health assessment (4-phase pipeline) | 6 | `advisor` |
 | **[Diagnostic](domain/diagnostic.md)** | `diagnostic` | Cross-domain troubleshooting, root cause analysis | ALL | `advisor` |
 
 Tool counts are from `packages/starboard-server/starboard_server/agents/tool_categories.py` and include core tools (`request_user_input`, `complete`).
@@ -156,10 +156,9 @@ See: [Tool Architecture](../TOOL_ARCHITECTURE.md)
 
 | Report Type | Primary UI Components | Used By |
 |-------------|----------------------|---------|
-| `advisor` | FindingCard, RecommendationCard, CodeBlock | Query, Job, UC, Diagnostic |
+| `advisor` | FindingCard, RecommendationCard, CodeBlock | Query, Job, UC, Diagnostic, Discovery |
 | `analytics` | CostSummary, ChartVisualization, SavingsCard | Analytics, UC (cost-focused), Cluster (cost-focused) |
 | `compute` | PortfolioOverview, HealthGauge, TopologyCard | Cluster, Warehouse |
-| `discovery` | HealthScore, DomainSummary, PriorityList | Discovery |
 
 ---
 

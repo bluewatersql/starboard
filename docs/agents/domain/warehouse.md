@@ -16,7 +16,6 @@ The Warehouse Agent is a specialized domain agent focused on **SQL warehouse por
 - Warehouse fingerprinting (workload patterns, latency baselines)
 - Health scoring and SLO management (0-100 scale)
 - Cost attribution and chargeback (user-level)
-- What-if analysis (cost/performance prediction)
 - Topology analysis (consolidation opportunities)
 
 ### Key Strengths
@@ -44,7 +43,7 @@ The Warehouse Agent's behavior is defined by a comprehensive system prompt that 
 
 ### Tool Budget & Efficiency
 
-**Token Budget**: 75,000 tokens (default, configurable)  
+**Token Budget**: 72,000 tokens (default, configurable)  
 **Target**: 3-5 tool calls  
 **Completion Strategy**: Complete after 3-5 tool calls or 1-2 failures
 

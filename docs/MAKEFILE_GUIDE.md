@@ -103,30 +103,6 @@ make install-dev
 
 **Use case:** Full development environment (recommended).
 
-#### `make install-test`
-Install only test dependencies.
-
-```bash
-make install-test
-```
-
-**Use case:** CI/CD environments, testing-focused setup.
-
-### Verify Installation
-
-```bash
-make verify-install
-```
-
-**Checks:**
-- Python version (must be 3.12+)
-- All three packages are installed
-- Test tools are available (pytest, ruff, mypy)
-
-**Exit codes:**
-- `0`: All checks passed
-- `1`: Critical dependency missing
-
 ---
 
 ## Development Workflow
@@ -196,6 +172,7 @@ make test-unit
 - `packages/starboard-server/tests/unit/`
 - `packages/starboard-core/tests/unit/`
 - `packages/starboard-cli/tests/unit/`
+- `packages/starboard-log-parser/tests/unit/`
 
 **Characteristics:**
 - Fast (<1 second per test)
@@ -244,19 +221,6 @@ make test-coverage
 ```bash
 open packages/starboard-server/htmlcov/index.html
 ```
-
-#### Parallel Test Execution
-
-```bash
-make test-parallel
-```
-
-**Benefits:**
-- Runs tests in parallel using all CPU cores
-- 2-4x faster than sequential execution
-- Automatically detects optimal worker count
-
-**Use case:** Fast feedback during development.
 
 ---
 
@@ -452,14 +416,10 @@ sudo apt install python3.12
 
 #### "pytest: command not found"
 
-```bash
-make verify-install
-```
-
 If pytest is missing:
 
 ```bash
-make install-test
+make install-dev
 ```
 
 #### Tests Failing with Import Errors
@@ -468,7 +428,6 @@ Ensure packages are installed in editable mode:
 
 ```bash
 make install-dev
-make verify-install
 ```
 
 #### "No such file or directory" when running `make dev-server`
@@ -503,14 +462,6 @@ make help
 ```
 
 ### Performance Tips
-
-#### Slow Test Execution
-
-Use parallel testing:
-
-```bash
-make test-parallel
-```
 
 #### Slow Package Installation
 
@@ -630,7 +581,7 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       
       - name: Install dependencies
-        run: make install-test
+        run: make install-dev
       
       - name: Run checks
         run: make check
@@ -651,7 +602,6 @@ jobs:
    ```bash
    git pull
    make install-dev  # Update dependencies if needed
-   make verify-install
    ```
 
 2. **During development:**
@@ -680,17 +630,15 @@ When dependencies change:
 ```bash
 make clean
 make install-dev
-make verify-install
 make test
 ```
 
 ### Debugging Setup Issues
 
 ```bash
-make info           # Check environment
-make verify-install # Check packages
-make clean          # Clear caches
-make install-dev    # Reinstall
+make info        # Check environment
+make clean       # Clear caches
+make install-dev # Reinstall
 ```
 
 ---
@@ -743,7 +691,6 @@ If you encounter issues with the Makefile:
 1. Run diagnostics:
    ```bash
    make info
-   make verify-install
    ```
 
 2. Clean and retry:

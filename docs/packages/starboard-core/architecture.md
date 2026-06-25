@@ -34,9 +34,13 @@ starboard-core/
 │   │   │   ├── llm.py              # LLM types and enums
 │   │   │   ├── recommendations.py  # Recommendation types
 │   │   │   └── report_types.py     # Report generation types
-│   │   ├── services/        # Domain services (pure logic)
-│   │   │   └── admin.py            # Admin operations
+│   │   ├── analyzers/       # Domain analyzers
+│   │   ├── transformers/    # Data transformers
+│   │   ├── services/        # Domain services (pure logic, minimal)
 │   │   └── utils/           # Domain utilities
+│   ├── foundations/         # Core foundation types
+│   │   ├── models.py               # Foundation model types
+│   │   └── protocols.py            # Foundation protocols
 │   ├── models/              # Shared data models
 │   │   ├── conversation.py         # Conversation, Episode, Message
 │   │   └── memory.py               # Facts, UserProfile, memory types
@@ -44,6 +48,7 @@ starboard-core/
 │   │   ├── cache_store.py          # Cache abstraction
 │   │   ├── memory_store.py         # Memory storage abstraction
 │   │   └── state_store.py          # State persistence abstraction
+│   ├── rag/                 # RAG utilities
 │   └── repositories/        # Repository pattern implementations
 │       ├── cache.py                # Cache manager
 │       ├── conversation.py         # Conversation repository

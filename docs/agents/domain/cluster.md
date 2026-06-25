@@ -2,7 +2,7 @@
 
 > **Domain**: Cluster Configuration  
 > **Version**: 1.0.0  
-> **Report Type**: `cluster`  
+> **Report Type**: `compute`  
 > **Prompt Version**: 1.0.0
 
 ---

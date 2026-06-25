@@ -54,6 +54,9 @@ The CLI automatically routes to the appropriate domain agent:
 - **Job Agent**: Job performance, task analysis
 - **UC Agent**: Unity Catalog - schema, lineage, metadata, governance
 - **Cluster Agent**: Cluster configuration and optimization
+- **Analytics Agent**: FinOps cost analysis, billing, and usage trends
+- **Warehouse Agent**: SQL warehouse portfolio optimization and chargeback
+- **Discovery Agent**: Workspace health assessment (4-phase pipeline)
 - **Diagnostic Agent**: Troubleshooting and debugging
 
 ### Streaming Progress

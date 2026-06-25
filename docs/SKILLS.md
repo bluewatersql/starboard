@@ -256,7 +256,7 @@ Copy skills into the Claude Code skills directory:
 cp -r skills/starboard ~/.claude/skills/starboard
 ```
 
-This copies all 9 skills into `~/.claude/skills/starboard/`, making them available in every Claude Code session.
+This copies all 10 skills into `~/.claude/skills/starboard/`, making them available in every Claude Code session.
 
 #### Install from Git without cloning the full repo
 
@@ -306,7 +306,7 @@ npx degit YOUR_ORG/job-agent/skills/starboard ~/.claude/skills/starboard
 # Check the skill files are in place
 ls ~/.claude/skills/starboard/*/SKILL.md
 
-# Expected output (9 skills):
+# Expected output (10 skills):
 # ~/.claude/skills/starboard/starboard-analyze/SKILL.md
 # ~/.claude/skills/starboard/starboard-cluster/SKILL.md
 # ~/.claude/skills/starboard/starboard-diagnostic/SKILL.md
@@ -316,6 +316,7 @@ ls ~/.claude/skills/starboard/*/SKILL.md
 # ~/.claude/skills/starboard/starboard-query/SKILL.md
 # ~/.claude/skills/starboard/starboard-uc/SKILL.md
 # ~/.claude/skills/starboard/starboard-warehouse/SKILL.md
+# ~/.claude/skills/starboard/starboard-workspace/SKILL.md
 ```
 
 ### 6. Auto-Approve MCP Tool Permissions (Claude Code)

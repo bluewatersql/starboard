@@ -333,9 +333,8 @@ for file_info in files:
 
 ## See Also
 
-- [Cloud Authentication Guide](./CLOUD_AUTHENTICATION.md) - Credential configuration
-- [Log Parser Architecture](./ARCHITECTURE.md) - System overview
-- [API Reference](./API_REFERENCE.md) - Complete API documentation
+- [Log Parser Architecture](packages/starboard-log-parser/architecture.md) - System overview
+- [API Reference](api/API_REFERENCE.md) - Complete API documentation
 
 ---
 

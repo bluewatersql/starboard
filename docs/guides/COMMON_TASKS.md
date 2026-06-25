@@ -440,12 +440,14 @@ Agents are domain specialists. Follow this process to add a new agent.
 
 ### Step 1: Define Prompts
 
-Create system prompts in core package.
+Create system prompts in the server package under the prompts directory.
 
-**File**: `packages/starboard-core/starboard_core/prompts/security_agent.py`
+**File**: `packages/starboard-server/starboard_server/prompts/security/v1.py`
 
 ```python
 """Prompts for security agent."""
+
+PROMPT_VERSION = "1.0.0"
 
 SECURITY_AGENT_SYSTEM_PROMPT = """
 You are a Databricks security and governance specialist.
@@ -485,8 +487,8 @@ Analyze the security implications and provide recommendations.
 ```python
 """Security and governance agent."""
 
-from starboard_server.agents.domain.base import DomainAgent
-from starboard_core.prompts.security_agent import (
+from starboard_server.agents.domain.domain_agent import DomainAgent
+from starboard_server.prompts.security.v1 import (
     SECURITY_AGENT_SYSTEM_PROMPT,
     SECURITY_AGENT_USER_PROMPT_TEMPLATE,
 )
@@ -516,7 +518,7 @@ class SecurityAgent(DomainAgent):
 
 ### Step 3: Register in AgentFactory
 
-**File**: `packages/starboard-server/starboard_server/agents/factory.py`
+**File**: `packages/starboard-server/starboard_server/agents/agent_factory.py`
 
 ```python
 class AgentFactory:

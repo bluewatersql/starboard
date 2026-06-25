@@ -42,7 +42,7 @@ The Intent Agent's behavior is defined by a focused routing prompt that includes
 
 ### Tool Budget & Efficiency
 
-**Token Budget**:75 tokens (default, configurable)  
+**Token Budget**: 30,000 tokens (default, configurable)  
 **Target**: 1-3 tool calls (fast routing)  
 **Completion Strategy**: Complete after 1 clarification attempt maximum
 
@@ -426,7 +426,7 @@ graph TD
 ## Related Documentation
 
 - [Agent Implementation Guide](../../developer/agent/IMPLEMENTATION_GUIDE.md)
-- [Intent Routing Architecture](../../architecture/intent-routing.md)
+- [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
 - [Router Prompt Source](../../../packages/starboard-server/starboard_server/prompts/router/v1.py)
 - [Domain Intents Source](../../../packages/starboard-server/starboard_server/agents/routing/domain_intents.py)

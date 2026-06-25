@@ -11,20 +11,9 @@ Every agent reasoning step consumes tokens from two sources:
 
 The token budget system tracks cumulative usage per agent turn and enforces soft and hard limits.
 
-## Budget Tiers
+## Per-Domain Budgets
 
-| Tier | Soft Limit | Hard Limit | Use Case |
-|------|-----------|------------|----------|
-| `default` | 8,000 tokens | 16,000 tokens | Standard chat turns |
-| `deep` | 24,000 tokens | 48,000 tokens | Complex multi-step analysis |
-| `streaming` | 8,000 tokens | 32,000 tokens | SSE streaming with incremental output |
-
-Limits are configurable via environment variables:
-
-```bash
-STARBOARD_TOKEN_BUDGET_SOFT=8000
-STARBOARD_TOKEN_BUDGET_HARD=16000
-```
+Token budgets are configured per domain in `agents/config/agent_config.py` (`DEFAULT_TOKEN_BUDGETS`). Each domain agent has its own budget tuned to the complexity of its workflows. Budget enforcement is implemented in `tools/domain/diagnostic/tool_governance.py`.
 
 ## How It Works
 
@@ -81,6 +70,7 @@ Token efficiency is also affected by output verbosity. Starboard uses conservati
 
 ## Relevant Source Files
 
-- `packages/starboard-server/starboard_server/agents/domain/domain_agent.py` — reasoning loop with budget checks
-- `packages/starboard-server/starboard_server/infra/config.py` — `STARBOARD_TOKEN_BUDGET_*` env vars
+- `packages/starboard-server/starboard_server/agents/config/agent_config.py` — `DEFAULT_TOKEN_BUDGETS` per-domain budget configuration
+- `packages/starboard-server/starboard_server/tools/domain/diagnostic/tool_governance.py` — budget enforcement logic
+- `packages/starboard-server/starboard_server/infra/core/config.py` — environment variable configuration
 - `packages/starboard-server/starboard_server/adapters/llm/` — token counting and cost calculation

@@ -38,7 +38,7 @@ Domain (Pure Logic) --> Service (Orchestration) --> Adapters (Tools)
 
 - **Tool Adapters**: Direct tool implementations (signature: `async def tool(**kwargs) -> dict[str, Any]`)
 - **NativeToolAdapter**: Registry adapter for LLM function calling
-- **MCP Adapters** (future): For MCP server exposure
+- **MCP Adapters**: For MCP server exposure (live via `starboard-mcp`)
 
 **Thread-Isolated Execution** (`agents/tools/tool_registry.py`)
 
@@ -67,13 +67,14 @@ packages/starboard-server/starboard_server/tools/
 |   +-- utils.py                # Shared utilities
 |
 |-- services/                   # Orchestration + I/O
-|   |-- query_service.py
-|   |-- job_service.py
-|   |-- uc_service.py
 |   |-- cluster_service.py
+|   |-- uc_service.py
 |   |-- warehouse_service.py
+|   |-- warehouse_portfolio_service.py
 |   |-- chart_renderer.py
 |   |-- query_result_cache.py
+|   |-- query_workload_service.py
+|   |-- validation.py
 |   +-- ...
 |
 +-- adapters/                   # Tool implementations
@@ -122,14 +123,12 @@ The 80/20 strategy means:
 ### Query Tools
 
 - **Domain**: `QueryResolver`, `QueryAnalyzer`
-- **Service**: `QueryService` with `QueryHistoryProvider`, `ExplainPlanProvider` protocols
 - **Adapter**: `QueryTools`
 - **Tools**: `resolve_query`, `analyze_query_plan`, `get_query_runtime_metrics`, `discover_tables`, `get_table_metadata`, `get_table_history`
 
 ### Job Tools
 
 - **Domain**: `JobResolver`, `JobAnalyzer`
-- **Service**: `JobService` with `JobDataProvider` protocol
 - **Adapter**: `JobTools`
 - **Tools**: `resolve_job`, `get_job_config`, `analyze_job_history`, `get_run_output`, `get_task_logs`, `get_source_code`, `analyze_code_quality`
 

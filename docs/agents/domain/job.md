@@ -43,7 +43,7 @@ The Job Agent's behavior is defined by a comprehensive system prompt that includ
 
 ### Tool Budget & Efficiency
 
-**Token Budget**: 75,000 tokens (default, configurable)  
+**Token Budget**: 95,000 tokens (default, configurable)  
 **Target**: 6-8 tool calls, ~3,000-5,000 tokens  
 **Completion Strategy**: Complete after 6-8 tool calls or 1-2 failures  
 **Focus**: Code quality over metrics (code issues are #1 root cause)

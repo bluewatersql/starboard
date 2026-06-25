@@ -344,7 +344,7 @@ cp /var/lib/redis/dump.rdb /backups/starboard/redis_$(date +%Y%m%d).rdb
 
 ## Next Steps
 
-- [Upgrade Guide](upgrade-guide.md) -- Always back up before upgrading
+- Always back up before upgrading
 - [State Backends](state-backends.md) -- Backend configuration and migration
 - [Capacity Planning](capacity-planning.md) -- Storage growth estimates
 - [Monitoring and Observability](monitoring.md) -- Monitor backup job success

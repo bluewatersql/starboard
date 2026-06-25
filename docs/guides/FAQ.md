@@ -99,7 +99,7 @@ DATABRICKS_TOKEN=dapi...
 LLM_API_KEY=sk-...
 ```
 
-See the [Configuration Guide](../../CONFIGURATION.md) for the complete reference.
+See the [Configuration Guide](../CONFIGURATION.md) for the complete reference.
 
 ---
 
@@ -199,10 +199,10 @@ Or set `LOG_LEVEL=DEBUG` in your `.env` file.
 
 ## Next Steps
 
-- [Quickstart](../../QUICKSTART.md) -- Get running in 5 minutes
-- [Configuration Guide](../../CONFIGURATION.md) -- Complete environment variable reference
-- [What is Starboard?](../../overview/what-is-starboard.md) -- Architecture overview
-- [Agent Catalog](../../overview/agents.md) -- Deep dive into each agent
+- [Quickstart](../QUICKSTART.md) -- Get running in 5 minutes
+- [Configuration Guide](../CONFIGURATION.md) -- Complete environment variable reference
+- [What is Starboard?](../overview/what-is-starboard.md) -- Architecture overview
+- [Agent Catalog](../overview/agents.md) -- Deep dive into each agent
 
 ---
 

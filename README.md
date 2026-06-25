@@ -230,8 +230,8 @@ See [Deployment Guide](docs/DEPLOYMENT.md) for all deployment options.
 - [Configuration](docs/CONFIGURATION.md) — Configuration guide
 
 ### Architecture & Design
-- [System Architecture](docs/ARCHITECTURE.md) — Complete system design
-- [API Reference](docs/API_REFERENCE.md) — REST & Chat APIs
+- [System Architecture](docs/architecture/SYSTEM_ARCHITECTURE.md) — Complete system design
+- [API Reference](docs/api/API_REFERENCE.md) — REST & Chat APIs
 - [Tool Architecture](docs/TOOL_ARCHITECTURE.md) — Tool system design
 - [Frontend Architecture](docs/FRONTEND_ARCHITECTURE.md) — Frontend patterns
 - [Interruptible Reasoning](docs/INTERRUPTIBLE_REASONING.md) — Agent reasoning patterns

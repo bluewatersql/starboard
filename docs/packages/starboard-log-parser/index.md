@@ -12,7 +12,7 @@ High-performance Spark event log parser with multi-cloud support.
 
 - **[Complete Architecture](./architecture.md)** - Detailed architecture guide
 - **[S3 Guide](../../S3_CONNECTOR_GUIDE.md)** - S3 integration
-- **[Cloud Auth](../../CLOUD_AUTHENTICATION.md)** - Authentication setup
+- **[S3 Connector Guide](../../S3_CONNECTOR_GUIDE.md)** - Authentication setup
 
 ## Key Features
 

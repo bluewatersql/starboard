@@ -45,7 +45,7 @@ The Diagnostic Agent's behavior is defined by a comprehensive system prompt that
 
 ### Tool Budget & Efficiency
 
-**Token Budget**: 75,000 tokens (default, configurable)  
+**Token Budget**: 120,000 tokens (default, configurable)  
 **Tool Budget**: Stop after 5-6 focused calls or when confidence ≥ 80%  
 **Completion Strategy**: Complete after sufficient evidence or 1-2 tool failures
 

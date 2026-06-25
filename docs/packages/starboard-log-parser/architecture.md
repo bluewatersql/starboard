@@ -693,7 +693,7 @@ app = create_spark_application(
 ## Related Documentation
 
 - [S3 Connector Guide](../../S3_CONNECTOR_GUIDE.md) - S3 setup
-- [Cloud Authentication](../../CLOUD_AUTHENTICATION.md) - Auth setup
+- [S3 Connector Guide](../../S3_CONNECTOR_GUIDE.md) - Auth setup
 
 ---
 

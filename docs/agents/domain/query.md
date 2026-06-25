@@ -40,7 +40,7 @@ The Query Agent's behavior is defined by a comprehensive system prompt that incl
 
 ### Tool Budget & Efficiency
 
-**Token Budget**: 75,000 tokens (default, configurable)  
+**Token Budget**: 60,000 tokens (default, configurable)  
 **Target**: 4-6 tool calls, ~1,000-1,500 tokens  
 **Completion Strategy**: Complete after 4-6 tool calls or 1-2 failures
 

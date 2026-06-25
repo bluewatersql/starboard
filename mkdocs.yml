@@ -173,8 +173,6 @@ nav:
   - Operations:
       - Deployment: DEPLOYMENT.md
       - Runbook: RUNBOOK.md
-      - Cloud Authentication: CLOUD_AUTHENTICATION.md
       - Makefile Guide: MAKEFILE_GUIDE.md
       - S3 Connector: S3_CONNECTOR_GUIDE.md
-      - Template Usage: TEMPLATE_USAGE_GUIDE.md
 

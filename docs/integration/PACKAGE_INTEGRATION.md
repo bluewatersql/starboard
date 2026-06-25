@@ -229,7 +229,6 @@ User Input
 - [System Architecture](../architecture/SYSTEM_ARCHITECTURE.md) -- Full system design
 - [starboard-core](../packages/starboard-core/index.md) -- Core package docs
 - [starboard-server](../packages/starboard-server/index.md) -- Server package docs
-- [starboard-sdk](../packages/starboard-sdk/index.md) -- SDK package docs
 - [Configuration Guide](../CONFIGURATION.md) -- Environment variables
 
 ---

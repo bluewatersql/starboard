@@ -97,9 +97,13 @@
 starboard-cli/
 ├── starboard_cli/
 │   ├── __init__.py
-│   └── cli/
-│       ├── __init__.py
-│       └── main.py              # Main CLI entry point (1130 lines)
+│   ├── cli/
+│   │   ├── __init__.py
+│   │   ├── main.py              # Main CLI entry point (1664 lines)
+│   │   ├── chat.py              # Interactive chat mode (284 lines)
+│   │   └── exit_codes.py        # Exit code definitions
+│   └── sessions/
+│       └── session_manager.py   # Session persistence (294 lines)
 │
 ├── tests/
 │   └── test_cli.py              # CLI tests
@@ -628,7 +632,7 @@ Varies by task:
 ## Related Documentation
 
 - [Multi-Agent Architecture](../starboard-server/architecture.md) - Agent system
-- [API Reference](../../API_REFERENCE.md) - Backend API
+- [API Reference](../../api/API_REFERENCE.md) - Backend API
 - [Configuration](../../CONFIGURATION.md) - Environment setup
 
 ---

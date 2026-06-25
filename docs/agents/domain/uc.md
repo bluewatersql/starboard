@@ -44,7 +44,7 @@ The UC Agent's behavior is defined by a comprehensive system prompt that include
 
 ### Tool Budget & Efficiency
 
-**Token Budget**: 75,000 tokens (default, configurable)  
+**Token Budget**: 120,000 tokens (default, configurable)  
 **Target**: 4-6 tool calls, ~500-1,000 tokens  
 **Completion Strategy**: Complete after 4-6 tool calls or 1-2 failures
 

@@ -234,6 +234,8 @@ Core tools (`request_user_input`, `complete`) are also available.
 |------|-------|-------------|
 | `discover_active_products` | 1 - Audit | Discover active Databricks products in the workspace |
 | `run_discovery_queries` | 2 - Query | Execute query packs against system tables |
+| `start_discovery_analysis` | 3 - Analyze | Start an async domain analysis job |
+| `get_discovery_analysis_progress` | 3 - Analyze | Poll progress of an in-flight domain analysis |
 | `analyze_discovery_domain` | 3 - Analyze | Analyze a specific domain's health (called per-domain) |
 | `synthesize_discovery_report` | 4 - Report | Assemble the final discovery report |
 
@@ -341,6 +343,8 @@ This matrix shows which domains have access to each shared tool. The Diagnostic 
 | `get_warehouse_user_activity` | warehouse only |
 | `generate_warehouse_chargeback` | warehouse only |
 | `generate_portfolio_chargeback` | warehouse only |
+| `start_discovery_analysis` | discovery only |
+| `get_discovery_analysis_progress` | discovery only |
 | `request_user_input` | all 9 domains |
 | `complete` | all 9 domains |
 
