@@ -1,0 +1,37 @@
+# TODO: enable after F-1-pkg-001 resolved (internal PyPI proxy → public PyPI).
+# Until then this workflow is manually triggered only to avoid broken CI on push/PR.
+name: CI
+on:
+  workflow_dispatch:
+
+jobs:
+  python:
+    name: Python (lint + type + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv sync --all-extras
+      - run: make lint
+      - run: make type-check
+      - run: make test-unit
+
+  frontend:
+    name: Frontend (lint + typecheck + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test -- --ci --passWithNoTests
