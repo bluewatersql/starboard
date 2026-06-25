@@ -42,6 +42,9 @@ from uuid import uuid4
 
 from starboard_core.domain.models.llm import OptimizationMode
 
+from starboard_server.adapters.conversation.event_converter import (
+    convert_streaming_event_to_chat_event,
+)
 from starboard_server.agents.events import (
     UserInputRequestEvent,
 )
@@ -50,7 +53,6 @@ from starboard_server.domain.conversation.api_types import (
     EventType,
     MessageResponse,
     MessageStatus,
-    convert_streaming_event_to_chat_event,
 )
 from starboard_server.infra.observability.logging import get_logger
 

@@ -812,7 +812,7 @@ class MultiAgentConversationManager:
                     attachment["detected_type"] = detected_type
 
                     # Emit metadata event (not full processing)
-                    from starboard_server.domain.conversation.api_types import (
+                    from starboard_server.adapters.conversation.event_converter import (
                         convert_streaming_event_to_chat_event,
                     )
 

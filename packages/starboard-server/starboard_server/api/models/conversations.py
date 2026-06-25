@@ -1,13 +1,11 @@
 """
 API conversation models.
 
-Models for conversation management:
-- CreateConversationRequest: Request to create a conversation
-- ConversationResponse: Response after creating a conversation
-- ConversationMetadata: Metadata about a conversation
-- ConversationHistory: Complete conversation history
-
-Extracted from models.py for better organization.
+The canonical ``ConversationResponse``, ``ConversationMetadata``, and
+``ConversationHistory`` definitions live in the domain layer
+(``starboard_server.domain.conversation.models``) and are re-exported here.
+``CreateConversationRequest`` and ``ConversationListItem`` are API-only request
+models and remain defined locally.
 """
 
 from datetime import datetime
@@ -15,8 +13,20 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .config import ConversationConfig, DomainModelConfig
-from .messages import Message
+from starboard_server.domain.conversation.models import (
+    ConversationConfig,
+    ConversationHistory,
+    ConversationMetadata,
+    ConversationResponse,
+)
+
+__all__ = [
+    "ConversationHistory",
+    "ConversationListItem",
+    "ConversationMetadata",
+    "ConversationResponse",
+    "CreateConversationRequest",
+]
 
 
 class CreateConversationRequest(BaseModel):
@@ -117,136 +127,4 @@ class ConversationListItem(BaseModel):
         default=0,
         ge=0,
         description="Total number of messages",
-    )
-
-
-class ConversationResponse(BaseModel):
-    """
-    Response after creating a conversation.
-
-    Args:
-        conversation_id: Unique conversation identifier.
-        friendly_name: Human-readable conversation title.
-        created_at: UTC timestamp when conversation was created.
-        config: Conversation configuration.
-
-    Examples:
-        >>> response = ConversationResponse(
-        ...     conversation_id="conv_abc123",
-        ...     friendly_name="New Conversation 2025-11-17 02:30PM",
-        ...     created_at=datetime.utcnow(),
-        ...     config=ConversationConfig()
-        ... )
-    """
-
-    conversation_id: str = Field(
-        ...,
-        description="Unique conversation identifier",
-    )
-    user_id: str | None = Field(
-        None,
-        description="User who owns the conversation",
-    )
-    friendly_name: str = Field(
-        ...,
-        description="Human-readable conversation title",
-    )
-    created_at: datetime = Field(
-        ...,
-        description="UTC timestamp when conversation was created",
-    )
-    config: ConversationConfig = Field(
-        ...,
-        description="Conversation configuration",
-    )
-    domain_models: list[DomainModelConfig] = Field(
-        default_factory=list,
-        description="Domain-specific model configurations (non-default models)",
-    )
-
-
-class ConversationMetadata(BaseModel):
-    """
-    Metadata about a conversation.
-
-    Args:
-        total_messages: Total number of messages in the conversation.
-        total_tokens: Total tokens used across all messages.
-        total_cost: Total cost in USD across all messages.
-        created_at: UTC timestamp when conversation was created.
-        updated_at: UTC timestamp when conversation was last updated.
-        friendly_name: Human-readable conversation title.
-
-    Examples:
-        >>> metadata = ConversationMetadata(
-        ...     total_messages=10,
-        ...     total_tokens=1500,
-        ...     total_cost=0.015,
-        ...     created_at=datetime.utcnow(),
-        ...     updated_at=datetime.utcnow(),
-        ...     friendly_name="Query Optimization Session"
-        ... )
-    """
-
-    total_messages: int = Field(
-        ...,
-        ge=0,
-        description="Total number of messages",
-    )
-    total_tokens: int = Field(
-        default=0,
-        ge=0,
-        description="Total tokens used",
-    )
-    total_cost: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="Total cost in USD",
-    )
-    created_at: datetime = Field(
-        ...,
-        description="UTC timestamp when conversation was created",
-    )
-    updated_at: datetime = Field(
-        ...,
-        description="UTC timestamp when conversation was last updated",
-    )
-    friendly_name: str = Field(
-        ...,
-        description="Human-readable conversation title",
-    )
-
-
-class ConversationHistory(BaseModel):
-    """
-    Complete conversation history.
-
-    Args:
-        conversation_id: Unique conversation identifier.
-        messages: List of all messages in the conversation.
-        metadata: Conversation metadata (totals, timestamps).
-
-    Examples:
-        >>> history = ConversationHistory(
-        ...     conversation_id="conv_abc123",
-        ...     messages=[message1, message2],
-        ...     metadata=metadata
-        ... )
-    """
-
-    conversation_id: str = Field(
-        ...,
-        description="Unique conversation identifier",
-    )
-    messages: list[Message] = Field(
-        ...,
-        description="List of all messages in the conversation",
-    )
-    metadata: ConversationMetadata = Field(
-        ...,
-        description="Conversation metadata",
-    )
-    domain_models: list[DomainModelConfig] = Field(
-        default_factory=list,
-        description="Domain-specific model configurations (non-default models)",
     )

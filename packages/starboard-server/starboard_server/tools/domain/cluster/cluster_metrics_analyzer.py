@@ -31,6 +31,7 @@ from starboard_server.tools.domain.cluster.cluster_metrics_models import (
     NetworkUsage,
     ResourceSummary,
 )
+from starboard_server.tools.domain.utils import safe_float, safe_int
 
 # =============================================================================
 # Constants
@@ -52,19 +53,15 @@ MIB_PER_GIB = 1024.0
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
-    """Safely convert value to float, returning default on failure."""
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
+    """Delegate to canonical utils.safe_float (identical default semantics)."""
+    return safe_float(value, default=default)
 
 
 def _safe_int(value: Any) -> int | None:
-    """Safely convert value to int, returning None on failure."""
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
+    """Delegate to canonical utils.safe_int with default=None to preserve the
+    None-on-failure semantics this module's callers rely on (e.g. the walrus
+    `is not None` filters in the network-aggregation paths)."""
+    return safe_int(value, default=None)
 
 
 def _is_nan(value: Any) -> bool:

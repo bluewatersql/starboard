@@ -1,11 +1,28 @@
-"""API message models."""
+"""API message models.
 
-from datetime import datetime
+The canonical ``ToolCall``, ``Message``, and ``MessageResponse`` definitions
+live in the domain layer (``starboard_server.domain.conversation.models``) and
+are re-exported here. ``FileAttachment`` and ``SendMessageRequest`` are API-only
+request models and remain defined locally.
+"""
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import MessageRole, MessageStatus
+from starboard_server.domain.conversation.models import (
+    Message,
+    MessageResponse,
+    ToolCall,
+)
+
+__all__ = [
+    "FileAttachment",
+    "Message",
+    "MessageResponse",
+    "SendMessageRequest",
+    "ToolCall",
+]
 
 # =============================================================================
 # FILE ATTACHMENT MODELS
@@ -50,37 +67,6 @@ class FileAttachment(BaseModel):
     )
 
 
-class ToolCall(BaseModel):
-    """Tool call information for display."""
-
-    tool_call_id: str = Field(..., description="Unique tool call identifier")
-    tool_name: str = Field(..., description="Internal tool name")
-    friendly_name: str | None = Field(None, description="Display name for tool")
-    status: str = Field(..., description="Tool call status (running/completed/failed)")
-    arguments: dict[str, Any] | None = Field(None, description="Tool input arguments")
-    output: str | None = Field(None, description="Tool result summary")
-    error: str | None = Field(None, description="Error message if failed")
-    duration_ms: int | None = Field(None, description="Execution time in milliseconds")
-
-
-class Message(BaseModel):
-    """API message model."""
-
-    id: str
-    conversation_id: str
-    role: MessageRole
-    content: str
-    timestamp: datetime = Field(default_factory=datetime.now)
-    status: MessageStatus = MessageStatus.COMPLETED
-    metadata: dict = Field(default_factory=dict)
-    tool_calls: list[ToolCall] = Field(
-        default_factory=list, description="Tool calls executed in this message"
-    )
-    next_steps: list[Any] | None = Field(
-        None, description="Next step options for interactive conversation flow"
-    )
-
-
 class SendMessageRequest(BaseModel):
     """Request to send a message in a conversation.
 
@@ -93,12 +79,3 @@ class SendMessageRequest(BaseModel):
         None, description="Optional file attachments"
     )
     metadata: dict[str, Any] | None = Field(None, description="Optional metadata")
-
-
-class MessageResponse(BaseModel):
-    """Response after submitting a message."""
-
-    message_id: str
-    conversation_id: str
-    status: MessageStatus
-    trace_id: str | None = None

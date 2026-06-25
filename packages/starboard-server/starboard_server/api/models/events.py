@@ -1,12 +1,10 @@
 """
 API event models.
 
-Models for Server-Sent Events (SSE) streaming:
-- ChatEvent: Single SSE event in conversation stream
-- StreamingChatEvent: Streaming chat update event
-- ErrorResponse: Standard error response format
-
-Extracted from models.py for better organization.
+The canonical ``ChatEvent`` definition lives in the domain layer
+(``starboard_server.domain.conversation.models``) and is re-exported here.
+``StreamingChatEvent`` and ``ErrorResponse`` are API-only models and remain
+defined locally.
 """
 
 from datetime import UTC, datetime
@@ -14,46 +12,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .enums import EventType
+from starboard_server.domain.conversation.models import ChatEvent
 
-
-class ChatEvent(BaseModel):
-    """
-    A single Server-Sent Event in a conversation stream.
-
-    Args:
-        event_id: Unique event identifier (for resumption with Last-Event-ID).
-        type: Type of event (message.start, message.delta, etc.).
-        data: Event payload (varies by event type).
-        timestamp: UTC timestamp when event was emitted.
-
-    Examples:
-        >>> event = ChatEvent(
-        ...     event_id="evt_001",
-        ...     type=EventType.MESSAGE_DELTA,
-        ...     data={"message_id": "msg_abc", "delta": {"content": "Hello"}},
-        ...     timestamp=datetime.utcnow()
-        ... )
-    """
-
-    event_id: str = Field(
-        ...,
-        min_length=1,
-        max_length=100,
-        description="Unique event identifier",
-    )
-    type: EventType = Field(
-        ...,
-        description="Type of event",
-    )
-    data: dict[str, Any] = Field(
-        ...,
-        description="Event payload",
-    )
-    timestamp: datetime = Field(
-        ...,
-        description="UTC timestamp when event was emitted",
-    )
+__all__ = ["ChatEvent", "ErrorResponse", "StreamingChatEvent"]
 
 
 class StreamingChatEvent(BaseModel):

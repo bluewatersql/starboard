@@ -20,7 +20,7 @@ class EmbeddingService:
     - Configurable model
 
     Example:
-        service = EmbeddingService(api_key="sk-...", container=container)
+        service = EmbeddingService(api_key="<your-llm-api-key>", container=container)
         embedding = await service.embed("Hello world")
         # Returns 1536-dimensional vector
 
