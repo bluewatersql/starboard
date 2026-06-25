@@ -2,9 +2,6 @@
 
 Standards for structured logging, distributed tracing, cost attribution, and performance optimization in the Starboard AI Agent project.
 
-!!! info "Source of truth"
-    These standards are mirrored from `.cursor/05_observability_and_cost.md`.
-
 ---
 
 ## Structured Logging

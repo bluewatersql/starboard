@@ -2,9 +2,6 @@
 
 Standards for testing practices, coverage requirements, and evaluation pipelines in the Starboard AI Agent project.
 
-!!! info "Source of truth"
-    These standards are mirrored from `.cursor/04_testing_and_evals.md`.
-
 ---
 
 ## Testing Requirements

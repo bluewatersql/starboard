@@ -4,6 +4,8 @@ FastAPI authentication middleware.
 Extracts authenticated user from requests and makes it available throughout the request lifecycle.
 """
 
+from collections.abc import Callable
+
 from fastapi import Request, Response
 from starboard_core.domain.models.auth import User
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -55,6 +57,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         auth_service: AuthenticationService | None = None,
+        auth_service_factory: Callable[[], AuthenticationService] | None = None,
         exclude_paths: list[str] | None = None,
     ) -> None:
         """
@@ -62,22 +65,45 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         Args:
             app: ASGI application
-            auth_service: Authentication service for user lookup (lazy-loaded if None)
+            auth_service: Pre-built authentication service for user lookup. Use
+                this when the instance already exists at middleware-construction
+                time.
+            auth_service_factory: Zero-arg callable returning the authentication
+                service, resolved lazily on the first authenticated request. Use
+                this when the service is created after middleware registration
+                (e.g. during lifespan startup), so infrastructure need not import
+                the composition root (main.py). Supply ``auth_service`` OR
+                ``auth_service_factory``; if neither is given, the first
+                authenticated request raises RuntimeError.
             exclude_paths: Optional list of paths to exclude from auth (e.g., /health)
         """
         super().__init__(app)
         self._auth_service = auth_service
+        self._auth_service_factory = auth_service_factory
         self.exclude_paths = set(
             exclude_paths or ["/health", "/health/live", "/health/ready"]
         )
 
     def _get_auth_service(self) -> AuthenticationService:
-        """Get auth service, lazy-loading from main module if needed."""
-        if self._auth_service is None:
-            from starboard_server.main import get_auth_service
+        """Resolve the auth service.
 
-            self._auth_service = get_auth_service()
-        return self._auth_service
+        Resolution order: an instance injected at construction time, then a
+        factory callable supplied by the composition root. The factory
+        indirection lets the middleware be registered at app-creation time
+        while the service itself is created later (during lifespan startup),
+        without infrastructure importing the application entry point (main.py)
+        — which would create a circular-import risk.
+        """
+        if self._auth_service is not None:
+            return self._auth_service
+        if self._auth_service_factory is not None:
+            return self._auth_service_factory()
+        raise RuntimeError(
+            "AuthMiddleware: neither auth_service nor auth_service_factory was "
+            "provided at construction time. Pass one when calling "
+            "app.add_middleware(AuthMiddleware, ...) in your application entry "
+            "point (e.g. main.py)."
+        )
 
     async def dispatch(
         self,

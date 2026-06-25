@@ -45,7 +45,16 @@ try:
     from botocore.exceptions import ClientError
 except ImportError:
     boto3 = None  # type: ignore
-    ClientError = None  # type: ignore
+    # Provide a never-matching sentinel so `except ClientError` clauses remain
+    # syntactically valid when botocore is not installed.  S3Adapter.__post_init__
+    # raises ImportError before any method is called, so this branch is unreachable
+    # at runtime when boto3 is absent.
+    class ClientError(Exception):  # type: ignore[no-redef]
+        """Stub for botocore.exceptions.ClientError when boto3 is not installed."""
+
+        def __init__(self, *args: object) -> None:
+            self.response: dict = {}
+            super().__init__(*args)
 
 
 @dataclass

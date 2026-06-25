@@ -2,9 +2,6 @@
 
 Security and privacy rules for the Starboard AI Agent project. These apply to all code that handles user data, credentials, LLM interactions, or external service calls.
 
-!!! info "Source of truth"
-    These standards are mirrored from `.cursor/06_security_and_privacy.md`.
-
 ---
 
 ## Secrets Management

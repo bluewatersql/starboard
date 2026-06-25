@@ -35,24 +35,13 @@ from starboard_server.tools.domain.warehouse.chargeback import (
 from starboard_server.tools.domain.warehouse.topology import (
     TopologyAnalyzer,
 )
+from starboard_server.tools.protocols import WarehousePortfolioDataProvider
 
 if TYPE_CHECKING:
     from starboard_server.adapters.databricks.async_sql_executor import AsyncSQLExecutor
     from starboard_server.infra.observability.events import EventEmitter
 
 logger = get_logger(__name__)
-
-
-class WarehouseDataProvider(Protocol):
-    """Protocol for accessing warehouse configuration data."""
-
-    async def list_warehouses(self) -> list[dict[str, Any]]:
-        """List all SQL warehouses."""
-        ...
-
-    async def get_warehouse(self, warehouse_id: str) -> dict[str, Any] | None:
-        """Get a specific warehouse configuration."""
-        ...
 
 
 class SLOConfigStore(Protocol):
@@ -117,7 +106,7 @@ class WarehousePortfolioService:
     def __init__(
         self,
         sql_executor: AsyncSQLExecutor,
-        warehouse_data: WarehouseDataProvider,
+        warehouse_data: WarehousePortfolioDataProvider,
         slo_store: SLOConfigStore | None = None,
         events: EventEmitter | None = None,
     ) -> None:

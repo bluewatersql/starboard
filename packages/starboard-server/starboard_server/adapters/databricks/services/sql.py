@@ -695,6 +695,7 @@ class SQLService(BaseService):
                 history = self._client.query_history.list(
                     include_metrics=True,
                     filter_by=query_filter,
+                    max_results=1000,  # cap pages to avoid exhausting all history
                 )
                 result = history.as_dict().get("res", [])
                 return list(result) if result else []

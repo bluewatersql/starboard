@@ -9,9 +9,17 @@ dependencies = [
     "starboard-core", # Workspace dependency
     "starboard-log-parser[databricks,http]", # Workspace dependency - Log parser
     # FastAPI stack
-    "fastapi>=0.104.0,<1.0.0",
+    # >=0.128.0 ensures starlette>=1.3.1, fixing CVE batch: GHSA-82w8-qh3p-5jfq (DoS, CVSS 7.5),
+    # GHSA-86qp-5c8j-p5mr (host header poisoning), GHSA-wqp7-x3pw-xc5r (SSRF/NTLM),
+    # GHSA-jp82-jpqv-5vv3 (URL hostname poisoning), GHSA-x746-7m8f-x49c (arbitrary HTTP methods),
+    # PYSEC-2026-161 (BadHost) — see F-3-1b-002; takes effect after uv lock --refresh
+    "fastapi>=0.128.0,<1.0.0",
     "uvicorn[standard]>=0.24.0,<1.0.0",
-    "python-multipart>=0.0.6",
+    # >=0.0.31 fixes GHSA-wp53-j4wj-2cfg (arbitrary file write, CVSS 8.2),
+    # GHSA-5rvq-cxj2-64vf (CPU DoS), GHSA-pp6c-gr5w-3c5g (DoS via multipart headers),
+    # GHSA-6jv3-5f52-599m (parameter smuggling), GHSA-mj87-hwqh-73pj (DoS preamble),
+    # GHSA-v9pg-7xvm-68hf (negative Content-Length) — see F-3-1b-003; takes effect after uv lock --refresh
+    "python-multipart>=0.0.31",
     # Databricks & LLM
     "databricks-sdk>=0.73.0,<1.0.0",
     "databricks-sql-connector>=3.0.0",

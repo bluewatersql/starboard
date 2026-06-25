@@ -2,9 +2,6 @@
 
 Rules for prompt design, schema discipline, and prompt testing in the Starboard AI Agent project.
 
-!!! info "Source of truth"
-    These standards are mirrored from `.cursor/03_prompts_and_schemas.md`.
-
 ---
 
 ## Schema Discipline

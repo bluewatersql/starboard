@@ -52,7 +52,7 @@ class SQLiteMultiCollectionStore(MultiCollectionStore):
         # With EmbeddingService
         from starboard_server.services.memory import EmbeddingService
 
-        embedding_service = EmbeddingService(api_key="sk-...", container=container)
+        embedding_service = EmbeddingService(api_key="<your-llm-api-key>", container=container)
         store = SQLiteMultiCollectionStore(
             db_path="vectors.db",
             embedding_provider=embedding_service,

@@ -234,15 +234,21 @@ curl http://localhost:8000/health/ready
 **Expected response**:
 ```json
 {
-  "status": "healthy",
-  "version": "1.0.0",
-  "dependencies": {
-    "databricks_api": "healthy",
-    "llm_provider": "healthy",
-    "database": "healthy"
+  "status": "ready",
+  "checks": {
+    "database": {
+      "healthy": true,
+      "latency_ms": 1.2
+    },
+    "cache": {
+      "healthy": true,
+      "latency_ms": 0.5
+    }
   }
 }
 ```
+
+Note: the `checks` object contains only the probes that are configured (database, cache, compute, ai, backpressure). A response with no configured probes returns `{"status": "ready", "checks": {}}`. When any probe is unhealthy the top-level `status` becomes `"degraded"`. The endpoint returns HTTP 200 in both cases; a `503` is only returned when the service itself has not yet initialised.
 
 **Frontend**:
 - Open http://localhost:3000

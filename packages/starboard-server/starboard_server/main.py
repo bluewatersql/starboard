@@ -268,11 +268,15 @@ def create_app() -> FastAPI:
         max_age=600,  # Cache preflight requests for 10 minutes
     )
 
-    # Add authentication middleware (lazy-loads auth service from lifespan)
+    # Add authentication middleware. The auth service is created during
+    # lifespan startup (after this call), so we pass a factory callable that
+    # resolves it lazily on the first authenticated request — this avoids the
+    # middleware importing main.py (circular-import risk, F-3-1a-003).
     from starboard_server.infra.auth.middleware import AuthMiddleware
 
     app.add_middleware(
         AuthMiddleware,
+        auth_service_factory=get_auth_service,
         exclude_paths=[
             "/health/live",
             "/health/ready",

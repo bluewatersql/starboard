@@ -55,9 +55,9 @@ INFO:     Application startup complete.
 - Missing environment variables: Create `.env` file in `packages/starboard-server/`:
   ```bash
   # Required
-  OPENAI_API_KEY=sk-...
+  LLM_API_KEY=<your-llm-api-key>
   LLM_PROVIDER=openai
-  LLM_MODEL=gpt-4
+  LLM_MODEL=databricks-claude-sonnet-4-5
   ```
 
 **Verify backend is running**:
@@ -636,9 +636,9 @@ fi
 if [ ! -f .env ]; then
     echo "⚠️  Backend .env not found"
     echo "   Create packages/starboard-server/.env with:"
-    echo "   OPENAI_API_KEY=sk-..."
+    echo "   LLM_API_KEY=<your-llm-api-key>"
     echo "   LLM_PROVIDER=openai"
-    echo "   LLM_MODEL=gpt-4"
+    echo "   LLM_MODEL=databricks-claude-sonnet-4-5"
 fi
 
 echo ""

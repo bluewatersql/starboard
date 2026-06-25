@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any, Protocol
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.domain.utils import safe_int as _utils_safe_int
 from starboard_server.tools.services.query_workload_service import (
     QueryWorkloadService,
 )
@@ -134,13 +135,19 @@ def parse_timestamp(value: Any) -> datetime | None:
 
 
 def safe_int(value: Any) -> int | None:
-    """Safely convert to int."""
-    if value is None:
-        return None
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return None
+    """Safely convert to int, returning None on failure.
+
+    Delegates to the canonical implementation in tools.domain.utils with
+    default=None to preserve the original None-on-failure semantics that
+    UC sub-service callers rely on.
+
+    Args:
+        value: Value to convert to int.
+
+    Returns:
+        Integer value or None if conversion fails.
+    """
+    return _utils_safe_int(value, default=None)
 
 
 def classify_table_type(table_dict: dict[str, Any]) -> str:

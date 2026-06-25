@@ -2,9 +2,6 @@
 
 These standards apply to all Python code in the Starboard AI Agent project. They are enforced through code review, linting (ruff), type checking (mypy), and pre-commit hooks.
 
-!!! info "Source of truth"
-    These standards are mirrored from `.cursor/01_engineering_standards.md` and `.cursor/02_agents_and_architecture.md`. When in doubt, the `.cursor/` files are authoritative.
-
 ---
 
 ## Functions & Methods

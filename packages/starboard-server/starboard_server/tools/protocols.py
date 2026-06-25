@@ -157,6 +157,45 @@ class WarehouseDataProvider(Protocol):
         """
         ...
 
+    async def get_warehouse(self, warehouse_id: str) -> dict[str, Any] | None:
+        """Get a specific warehouse configuration by ID (used by WarehousePortfolioService).
+
+        Args:
+            warehouse_id: Warehouse ID to fetch configuration for.
+
+        Returns:
+            Warehouse configuration dict, or None if not found.
+        """
+        ...
+
+
+class WarehousePortfolioDataProvider(Protocol):
+    """Narrow protocol for warehouse data access used by WarehousePortfolioService.
+
+    Concrete implementers (e.g. WarehouseDataAdapter) only need these two
+    methods. The broader WarehouseDataProvider above is used by WarehouseService
+    which accesses transformed metrics through the shared context layer.
+    """
+
+    async def list_warehouses(self) -> list[dict[str, Any]]:
+        """List all SQL warehouses.
+
+        Returns:
+            List of warehouse configuration dicts.
+        """
+        ...
+
+    async def get_warehouse(self, warehouse_id: str) -> dict[str, Any] | None:
+        """Get a specific warehouse configuration by ID.
+
+        Args:
+            warehouse_id: Warehouse ID to fetch configuration for.
+
+        Returns:
+            Warehouse configuration dict, or None if not found.
+        """
+        ...
+
 
 class TableDataProvider(Protocol):
     """Protocol for table/UC data access.
