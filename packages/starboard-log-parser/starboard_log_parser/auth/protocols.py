@@ -9,8 +9,8 @@ Examples:
     >>>
     >>> # Create basic credentials
     >>> creds = Credentials(
-    ...     access_key="AKIAIOSFODNN7EXAMPLE",
-    ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    ...     access_key="MY_AWS_ACCESS_KEY_ID",
+    ...     secret_key="MY_AWS_SECRET_ACCESS_KEY"
     ... )
     >>>
     >>> # Check if credentials are expired
@@ -49,8 +49,8 @@ class Credentials:
     Examples:
         >>> # Permanent credentials
         >>> creds = Credentials(
-        ...     access_key="AKIAIOSFODNN7EXAMPLE",
-        ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        ...     access_key="MY_AWS_ACCESS_KEY_ID",
+        ...     secret_key="MY_AWS_SECRET_ACCESS_KEY"
         ... )
         >>> assert not creds.is_expired()  # Permanent credentials never expire
         >>>
@@ -193,10 +193,10 @@ class CredentialProvider(Protocol):
         ...             secret_key=self.secret_key
         ...         )
         >>>
-        >>> provider = StaticProvider("AKIAIOSFODNN7EXAMPLE", "secret")
+        >>> provider = StaticProvider("MY_AWS_ACCESS_KEY_ID", "secret")
         >>> assert isinstance(provider, CredentialProvider)  # Structural subtyping
         >>> creds = provider.get_credentials()
-        >>> assert creds.access_key == "AKIAIOSFODNN7EXAMPLE"
+        >>> assert creds.access_key == "MY_AWS_ACCESS_KEY_ID"
     """
 
     @abstractmethod

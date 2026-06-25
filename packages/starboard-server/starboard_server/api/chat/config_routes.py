@@ -86,8 +86,8 @@ async def health_check() -> JSONResponse:
                 "application/json": {
                     "example": {
                         "user_id": "b822cc87-fae3-4192-abd4-89ce0ea19c87",
-                        "username": "c.price@databricks.com",
-                        "display_name": "Chris Price",
+                        "username": "user@example.com",
+                        "display_name": "Example User",
                     }
                 }
             },
@@ -117,8 +117,8 @@ async def get_current_user(request: Request) -> dict[str, Any]:
         ```json
         {
           "user_id": "b822cc87-fae3-4192-abd4-89ce0ea19c87",
-          "username": "c.price@databricks.com",
-          "display_name": "Chris Price"
+          "username": "user@example.com",
+          "display_name": "Example User"
         }
         ```
     """

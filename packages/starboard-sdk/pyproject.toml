@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Starboard AI Agent - Python SDK for notebooks and programmatic access"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = {text = "DBRX"}
 dependencies = [
     "starboard-core",
     "starboard-server",

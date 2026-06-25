@@ -41,8 +41,8 @@ class TestS3AdapterProtocol:
         from starboard_log_parser.adapters.cloud.s3 import S3Adapter
 
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         adapter = S3Adapter(credential_provider=provider)
 

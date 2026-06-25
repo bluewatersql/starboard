@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Starboard AI
-# Licensed under the MIT License (see LICENSE file in the root directory)
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 
 """
 Pydantic v2 schema models for YAML pattern validation.

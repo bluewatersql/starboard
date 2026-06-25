@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Starboard AI Agent - FastAPI Backend Server"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = {text = "DBRX"}
 dependencies = [
     "starboard-core", # Workspace dependency
     "starboard-log-parser[databricks,http]", # Workspace dependency - Log parser
@@ -43,6 +43,8 @@ dependencies = [
     "pgvector>=0.3.0,<1.0.0", # Vector similarity search extension
     "aiosqlite>=0.19.0,<1.0.0", # Async SQLite driver for dev/testing
     "sqlite-vec>=0.1.1,<1.0.0", # Vector similarity search for SQLite
+    # Security: pin cryptography to avoid PYSEC-2026-36 RCE (CVSS 9.8)
+    "cryptography>=48.0.1,<49.0.0",  # pinned for PYSEC-2026-36 RCE — see changes/oss_readiness/
     # MCP protocol
     "mcp>=1.19.0,<2.0.0",
     "orjson>=3.11.4",

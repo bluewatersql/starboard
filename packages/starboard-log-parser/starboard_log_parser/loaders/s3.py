@@ -11,8 +11,8 @@ Examples:
     >>> from starboard_log_parser.loaders.s3 import S3FileLinesDataLoader
     >>>
     >>> provider = StaticCredentialProvider(
-    ...     access_key="AKIAIOSFODNN7EXAMPLE",
-    ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    ...     access_key="MY_AWS_ACCESS_KEY_ID",
+    ...     secret_key="MY_AWS_SECRET_ACCESS_KEY",
     ...     region="us-west-2",
     ... )
     >>> adapter = S3Adapter(credential_provider=provider)
@@ -159,8 +159,8 @@ class S3FileLinesDataLoader(LinesFileReaderMixin, AbstractS3FileDataLoader):
         >>> from starboard_log_parser.adapters.cloud.s3 import S3Adapter
         >>>
         >>> provider = StaticCredentialProvider(
-        ...     access_key="AKIAIOSFODNN7EXAMPLE",
-        ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        ...     access_key="MY_AWS_ACCESS_KEY_ID",
+        ...     secret_key="MY_AWS_SECRET_ACCESS_KEY",
         ... )
         >>> adapter = S3Adapter(credential_provider=provider)
         >>> loader = S3FileLinesDataLoader(s3_adapter=adapter)

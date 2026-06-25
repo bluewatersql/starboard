@@ -10,8 +10,8 @@ Examples:
     >>> from starboard_log_parser.adapters.cloud.s3 import S3Adapter
     >>>
     >>> provider = StaticCredentialProvider(
-    ...     access_key="AKIAIOSFODNN7EXAMPLE",
-    ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    ...     access_key="MY_AWS_ACCESS_KEY_ID",
+    ...     secret_key="MY_AWS_SECRET_ACCESS_KEY",
     ...     region="us-west-2",
     ... )
     >>> adapter = S3Adapter(credential_provider=provider)
@@ -67,8 +67,8 @@ class S3Adapter(CloudStorageClient):
         >>> from starboard_log_parser.auth.providers import StaticCredentialProvider
         >>>
         >>> provider = StaticCredentialProvider(
-        ...     access_key="AKIAIOSFODNN7EXAMPLE",
-        ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        ...     access_key="MY_AWS_ACCESS_KEY_ID",
+        ...     secret_key="MY_AWS_SECRET_ACCESS_KEY",
         ...     region="us-west-2",
         ... )
         >>> adapter = S3Adapter(credential_provider=provider)
@@ -76,8 +76,8 @@ class S3Adapter(CloudStorageClient):
         >>>
         >>> # With environment credentials
         >>> import os
-        >>> os.environ["AWS_ACCESS_KEY_ID"] = "AKIAIOSFODNN7EXAMPLE"
-        >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "wJalr..."
+        >>> os.environ["AWS_ACCESS_KEY_ID"] = "MY_AWS_ACCESS_KEY_ID"
+        >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "MY_AWS_SECRET_ACCESS_KEY"
         >>> os.environ["AWS_REGION"] = "us-west-2"
         >>>
         >>> from starboard_log_parser.auth.providers import EnvironmentCredentialProvider

@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Starboard AI
-# Licensed under the MIT License (see LICENSE file in the root directory)
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 
 """Unit tests for MCPSanitizer."""
 
@@ -38,7 +38,7 @@ class TestRedactAWSKeys:
 
     def test_redacts_aws_keys(self) -> None:
         sanitizer = MCPSanitizer()
-        data = {"key": "Access key: AKIAIOSFODNN7EXAMPLE"}
+        data = {"key": "Access key: AKIAIOSFODNN7EXAMPLE"}  # pragma: allowlist secret
         result = sanitizer.redact_output(data)
         assert "[AWS_KEY]" in result["key"]
         assert "AKIAIOSFODNN7EXAMPLE" not in result["key"]

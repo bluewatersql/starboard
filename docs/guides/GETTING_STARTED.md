@@ -532,7 +532,6 @@ Ready to contribute? Check out:
 **Community**:
 - GitHub Issues - Report bugs
 - GitHub Discussions - Ask questions
-- Team Slack - Internal communication
 
 ---
 

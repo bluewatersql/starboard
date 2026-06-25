@@ -7,8 +7,8 @@ connectors, supporting multiple credential providers and credential vending.
 Examples:
     >>> from starboard_log_parser.auth.providers import StaticCredentialProvider
     >>> provider = StaticCredentialProvider(
-    ...     access_key="AKIAIOSFODNN7EXAMPLE",
-    ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    ...     access_key="MY_AWS_ACCESS_KEY_ID",
+    ...     secret_key="MY_AWS_SECRET_ACCESS_KEY"
     ... )
     >>> credentials = provider.get_credentials()
 """

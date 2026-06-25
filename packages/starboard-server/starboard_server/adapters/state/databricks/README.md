@@ -439,5 +439,5 @@ pytest tests/integration/adapters/test_databricks_lakebase.py -v
 
 ## License
 
-MIT License - See LICENSE file for details
+Databricks Open Model License - See LICENSE file for details
 

@@ -25,11 +25,11 @@ class TestCredentials:
     def test_basic_credentials(self) -> None:
         """Should create credentials with access and secret keys."""
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
-        assert creds.access_key == "AKIAIOSFODNN7EXAMPLE"
-        assert creds.secret_key == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        assert creds.access_key == "MY_AWS_ACCESS_KEY_ID"
+        assert creds.secret_key == "MY_AWS_SECRET_ACCESS_KEY"
         assert creds.session_token is None
         assert creds.expires_at is None
         assert creds.region is None
@@ -38,8 +38,8 @@ class TestCredentials:
     def test_credentials_with_session_token(self) -> None:
         """Should support optional session token."""
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             session_token="session123",
         )
         assert creds.session_token == "session123"
@@ -48,8 +48,8 @@ class TestCredentials:
         """Should support optional expiration timestamp."""
         expires = datetime.now(UTC) + timedelta(hours=1)
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             expires_at=expires,
         )
         assert creds.expires_at == expires
@@ -57,8 +57,8 @@ class TestCredentials:
     def test_credentials_with_region(self) -> None:
         """Should support optional region hint."""
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             region="us-west-2",
         )
         assert creds.region == "us-west-2"
@@ -67,8 +67,8 @@ class TestCredentials:
         """Should support optional metadata dictionary."""
         metadata = {"provider": "aws", "account_id": "123456789012"}
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             metadata=metadata,
         )
         assert creds.metadata == metadata
@@ -76,8 +76,8 @@ class TestCredentials:
     def test_credentials_frozen(self) -> None:
         """Credentials should be immutable (frozen dataclass)."""
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         with pytest.raises(AttributeError):
             creds.access_key = "new_key"  # type: ignore
@@ -85,8 +85,8 @@ class TestCredentials:
     def test_is_expired_permanent_credentials(self) -> None:
         """Permanent credentials (no expires_at) should never expire."""
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         assert not creds.is_expired()
 
@@ -94,8 +94,8 @@ class TestCredentials:
         """Credentials with future expiration should not be expired."""
         expires = datetime.now(UTC) + timedelta(hours=1)
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             expires_at=expires,
         )
         assert not creds.is_expired()
@@ -104,8 +104,8 @@ class TestCredentials:
         """Credentials with past expiration should be expired."""
         expires = datetime.now(UTC) - timedelta(hours=1)
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             expires_at=expires,
         )
         assert creds.is_expired()
@@ -113,8 +113,8 @@ class TestCredentials:
     def test_needs_refresh_permanent_credentials(self) -> None:
         """Permanent credentials should never need refresh."""
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         assert not creds.needs_refresh()
         assert not creds.needs_refresh(buffer_seconds=600)
@@ -124,8 +124,8 @@ class TestCredentials:
         # Expires in 4 minutes (240 seconds)
         expires = datetime.now(UTC) + timedelta(minutes=4)
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             expires_at=expires,
         )
 
@@ -142,8 +142,8 @@ class TestCredentials:
         """Should work with zero buffer (refresh only when expired)."""
         expires = datetime.now(UTC) + timedelta(seconds=10)
         creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             expires_at=expires,
         )
 
@@ -157,8 +157,8 @@ class TestDatabricksVendedCredentials:
     def test_inherits_from_credentials(self) -> None:
         """DatabricksVendedCredentials should inherit from Credentials."""
         vended = DatabricksVendedCredentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         assert isinstance(vended, Credentials)
         assert isinstance(vended, DatabricksVendedCredentials)
@@ -166,19 +166,19 @@ class TestDatabricksVendedCredentials:
     def test_basic_vended_credentials(self) -> None:
         """Should create vended credentials with basic fields."""
         vended = DatabricksVendedCredentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
-        assert vended.access_key == "AKIAIOSFODNN7EXAMPLE"
-        assert vended.secret_key == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        assert vended.access_key == "MY_AWS_ACCESS_KEY_ID"
+        assert vended.secret_key == "MY_AWS_SECRET_ACCESS_KEY"
         assert vended.vending_endpoint is None
         assert vended.request_id is None
 
     def test_vended_credentials_with_endpoint(self) -> None:
         """Should support optional vending endpoint."""
         vended = DatabricksVendedCredentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             vending_endpoint="https://databricks.com/api/2.0/credentials/temporary",
         )
         assert (
@@ -189,8 +189,8 @@ class TestDatabricksVendedCredentials:
     def test_vended_credentials_with_request_id(self) -> None:
         """Should support optional request ID."""
         vended = DatabricksVendedCredentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             request_id="req-123-456",
         )
         assert vended.request_id == "req-123-456"
@@ -199,8 +199,8 @@ class TestDatabricksVendedCredentials:
         """Should support all fields including expiration."""
         expires = datetime.now(UTC) + timedelta(hours=1)
         vended = DatabricksVendedCredentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             session_token="session123",
             expires_at=expires,
             region="us-west-2",
@@ -221,8 +221,8 @@ class TestDatabricksVendedCredentials:
     def test_vended_credentials_frozen(self) -> None:
         """DatabricksVendedCredentials should be immutable."""
         vended = DatabricksVendedCredentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         with pytest.raises(AttributeError):
             vended.access_key = "new_key"  # type: ignore
@@ -231,8 +231,8 @@ class TestDatabricksVendedCredentials:
         """Should inherit is_expired() and needs_refresh() methods."""
         expires = datetime.now(UTC) + timedelta(hours=1)
         vended = DatabricksVendedCredentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             expires_at=expires,
         )
         assert not vended.is_expired()
@@ -248,8 +248,8 @@ class TestCredentialProviderProtocol:
         class SimpleProvider:
             def get_credentials(self) -> Credentials:
                 return Credentials(
-                    access_key="AKIAIOSFODNN7EXAMPLE",
-                    secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    access_key="MY_AWS_ACCESS_KEY_ID",
+                    secret_key="MY_AWS_SECRET_ACCESS_KEY",
                 )
 
             def refresh_credentials(self) -> Credentials:
@@ -278,8 +278,8 @@ class TestCredentialProviderProtocol:
         class ProviderWithRefresh:
             def get_credentials(self) -> Credentials:
                 return Credentials(
-                    access_key="AKIAIOSFODNN7EXAMPLE",
-                    secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    access_key="MY_AWS_ACCESS_KEY_ID",
+                    secret_key="MY_AWS_SECRET_ACCESS_KEY",
                 )
 
             def refresh_credentials(self) -> Credentials:
@@ -298,15 +298,15 @@ class TestCredentialProviderProtocol:
         """Should be able to mock CredentialProvider."""
         mock_provider = Mock(spec=CredentialProvider)
         mock_creds = Credentials(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         mock_provider.get_credentials.return_value = mock_creds
 
         # Should work as protocol
         assert isinstance(mock_provider, CredentialProvider)
         result = mock_provider.get_credentials()
-        assert result.access_key == "AKIAIOSFODNN7EXAMPLE"
+        assert result.access_key == "MY_AWS_ACCESS_KEY_ID"
 
     def test_protocol_type_checking(self) -> None:
         """Protocol should enable type checking."""
@@ -318,12 +318,12 @@ class TestCredentialProviderProtocol:
         class MyProvider:
             def get_credentials(self) -> Credentials:
                 return Credentials(
-                    access_key="AKIAIOSFODNN7EXAMPLE",
-                    secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    access_key="MY_AWS_ACCESS_KEY_ID",
+                    secret_key="MY_AWS_SECRET_ACCESS_KEY",
                 )
 
         provider = MyProvider()
 
         # Should work with any class that implements the protocol
         creds = use_provider(provider)
-        assert creds.access_key == "AKIAIOSFODNN7EXAMPLE"
+        assert creds.access_key == "MY_AWS_ACCESS_KEY_ID"

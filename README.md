@@ -84,7 +84,7 @@ make setup
 
 # Configure environment
 cp examples/env.example .env
-# Edit .env with your Databricks and OpenAI credentials
+# Edit .env with your Databricks and LLM credentials
 ```
 
 ### Development
@@ -108,11 +108,10 @@ Starboard can be used as an MCP server inside Claude Code, Cursor, or Claude Des
 ```bash
 # Quick setup
 pip install -e "packages/starboard-server"
-cp examples/cursor-mcp.json .cursor/mcp.json
-# Edit .cursor/mcp.json with your Databricks and LLM credentials
-# Restart your IDE — Starboard tools appear in the MCP tool list
+# Copy the example MCP config to your IDE's MCP config location and edit credentials
+cp examples/cursor-mcp.json <ide-mcp-config-path>
 
-# Or use the interactive setup wizard:
+# Or use the interactive setup wizard (handles config placement automatically):
 ./scripts/setup-mcp.sh
 ```
 
@@ -143,10 +142,27 @@ make pre-commit         # Run pre-commit hooks
 
 ### CLI Usage
 
+The primary interface is a single natural-language goal. The intent router
+automatically selects the right specialist agent.
+
 ```bash
-starboard query --sql "SELECT * FROM large_table WHERE date > '2024-01-01'"
-starboard job --job-id 12345 --mode offline
-starboard pipeline --table catalog.schema.table
+# Query optimization
+starboard --goal "Optimize the query with statement_id abc123"
+
+# Job performance analysis
+starboard --goal "Analyze job 456 for performance issues and suggest tuning"
+
+# Unity Catalog governance
+starboard --goal "Show lineage and access patterns for catalog.schema.my_table"
+
+# Warehouse cost analysis
+starboard --goal "Review warehouse portfolio for cost savings opportunities"
+
+# Interactive multi-turn session
+starboard --chat
+
+# See all available flags
+starboard --help
 ```
 
 ## Project Structure
@@ -156,9 +172,7 @@ job-agent/
 ├── pyproject.toml              # Root workspace config (uv, ruff, mypy, pytest)
 ├── uv.lock                     # Unified lockfile
 ├── Makefile                    # Development workflow commands
-├── CLAUDE.md                   # AI assistant project context
-├── .cursorrules                # Cursor workspace behavior rules
-├── .cursor/                    # Detailed engineering standards (8 files)
+├── CONTRIBUTING.md             # Contribution guide
 ├── packages/                   # Python packages
 │   ├── starboard-core/
 │   ├── starboard-log-parser/
@@ -185,8 +199,8 @@ DATABRICKS_TOKEN="dapi..."
 DATABRICKS_WAREHOUSE_ID="warehouse-id"
 
 # LLM configuration
-OPENAI_API_KEY="sk-..."
-LLM_MODEL="gpt-4"
+LLM_API_KEY="..."
+LLM_MODEL="databricks-claude-sonnet-4-5"
 LLM_TEMPERATURE="0.4"
 
 # Server configuration
@@ -243,7 +257,7 @@ make docs-serve         # Serve docs at http://localhost:8000
 
 ## Engineering Standards
 
-This project follows strict Python engineering standards documented in `.cursor/`:
+This project follows strict Python engineering standards:
 
 - **Simple, readable code** over cleverness
 - **Type hints** on all public functions (mypy)
@@ -252,7 +266,8 @@ This project follows strict Python engineering standards documented in `.cursor/
 - **Golden tests** for all prompts (versioned, never modified in place)
 - **Domain-driven design** with clear architectural layers
 
-See [CLAUDE.md](CLAUDE.md) for a detailed summary or `.cursor/` for the full standards.
+Full standards are documented in [`docs/developer/standards/`](docs/developer/standards/).
+Contribution workflow is described in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Contributing
 
@@ -267,7 +282,7 @@ See [CLAUDE.md](CLAUDE.md) for a detailed summary or `.cursor/` for the full sta
 
 ## License
 
-MIT
+Licensed under the [Databricks Open Model License](LICENSE).
 
 ## Acknowledgments
 

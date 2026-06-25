@@ -140,13 +140,13 @@ Why is my nightly ETL job taking 3 hours? Job ID: 12345
 
 ```bash
 # Optimize a SQL query
-starboard "Optimize query with statement_id 01948a0b-1ebb-17a4-959c-70dde9c5e3fc"
+starboard --goal "Optimize query with statement_id 01948a0b-1ebb-17a4-959c-70dde9c5e3fc"
 
 # Analyze a Databricks job
-starboard "Analyze job 12345 for performance issues"
+starboard --goal "Analyze job 12345 for performance issues"
 
 # Run a workspace health assessment
-starboard "Run a discovery assessment of my workspace"
+starboard --goal "Run a discovery assessment of my workspace"
 ```
 
 ### Using the REST API

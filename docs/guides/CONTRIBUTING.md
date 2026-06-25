@@ -134,7 +134,7 @@ git clone https://github.com/YOUR_USERNAME/job-agent.git
 cd job-agent
 
 # Add upstream remote
-git remote add upstream https://github.com/original-org/job-agent.git
+git remote add upstream https://github.com/<your-org>/job-agent.git
 
 # Verify remotes
 git remote -v

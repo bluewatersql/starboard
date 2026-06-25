@@ -5,7 +5,7 @@
 # This root pyproject.toml serves dual purposes:
 #   1. uv workspace root for local development (uv sync)
 #   2. Installable meta-package for remote installs:
-#        pip install "starboard[cli] @ git+https://github.com/databricks-field-eng/starboard.git"
+#        pip install "starboard[cli] @ git+https://github.com/<your-org>/starboard.git"
 #
 # During local dev, uv ignores the [project] section because package = false.
 # During pip install, hatchling bundles all sub-packages into a single wheel
@@ -19,7 +19,7 @@ version = "0.1.0"
 description = "Starboard AI Agent - AI-powered Databricks workload analysis and optimization"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = {text = "DBRX"}
 dependencies = []
 
 [project.optional-dependencies]

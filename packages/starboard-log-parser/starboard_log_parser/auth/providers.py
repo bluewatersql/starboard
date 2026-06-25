@@ -8,15 +8,15 @@ Examples:
     >>> # Static credentials (development/testing)
     >>> from starboard_log_parser.auth.providers import StaticCredentialProvider
     >>> provider = StaticCredentialProvider(
-    ...     access_key="AKIAIOSFODNN7EXAMPLE",
-    ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    ...     access_key="MY_AWS_ACCESS_KEY_ID",
+    ...     secret_key="MY_AWS_SECRET_ACCESS_KEY"
     ... )
     >>> creds = provider.get_credentials()
     >>>
     >>> # Environment variables (12-factor apps)
     >>> import os
-    >>> os.environ["AWS_ACCESS_KEY_ID"] = "AKIAIOSFODNN7EXAMPLE"
-    >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "wJalr..."
+    >>> os.environ["AWS_ACCESS_KEY_ID"] = "MY_AWS_ACCESS_KEY_ID"
+    >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "MY_AWS_SECRET_ACCESS_KEY"
     >>> provider = EnvironmentCredentialProvider(cloud="aws")
     >>> creds = provider.get_credentials()
 """
@@ -50,16 +50,16 @@ class StaticCredentialProvider:
 
     Examples:
         >>> provider = StaticCredentialProvider(
-        ...     access_key="AKIAIOSFODNN7EXAMPLE",
-        ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        ...     access_key="MY_AWS_ACCESS_KEY_ID",
+        ...     secret_key="MY_AWS_SECRET_ACCESS_KEY"
         ... )
         >>> creds = provider.get_credentials()
-        >>> assert creds.access_key == "AKIAIOSFODNN7EXAMPLE"
+        >>> assert creds.access_key == "MY_AWS_ACCESS_KEY_ID"
         >>>
         >>> # With optional region
         >>> provider = StaticCredentialProvider(
-        ...     access_key="AKIAIOSFODNN7EXAMPLE",
-        ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        ...     access_key="MY_AWS_ACCESS_KEY_ID",
+        ...     secret_key="MY_AWS_SECRET_ACCESS_KEY",
         ...     region="us-west-2"
         ... )
         >>> creds = provider.get_credentials()
@@ -82,8 +82,8 @@ class StaticCredentialProvider:
 
         Examples:
             >>> provider = StaticCredentialProvider(
-            ...     access_key="AKIAIOSFODNN7EXAMPLE",
-            ...     secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+            ...     access_key="MY_AWS_ACCESS_KEY_ID",
+            ...     secret_key="MY_AWS_SECRET_ACCESS_KEY"
             ... )
             >>> creds = provider.get_credentials()
             >>> assert not creds.is_expired()  # Static credentials don't expire
@@ -134,8 +134,8 @@ class EnvironmentCredentialProvider:
         >>> import os
         >>>
         >>> # AWS credentials
-        >>> os.environ["AWS_ACCESS_KEY_ID"] = "AKIAIOSFODNN7EXAMPLE"
-        >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "wJalr..."
+        >>> os.environ["AWS_ACCESS_KEY_ID"] = "MY_AWS_ACCESS_KEY_ID"
+        >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "MY_AWS_SECRET_ACCESS_KEY"
         >>> provider = EnvironmentCredentialProvider(cloud="aws")
         >>> creds = provider.get_credentials()
         >>>
@@ -165,13 +165,13 @@ class EnvironmentCredentialProvider:
 
         Examples:
             >>> import os
-            >>> os.environ["AWS_ACCESS_KEY_ID"] = "AKIAIOSFODNN7EXAMPLE"
-            >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "wJalr..."
+            >>> os.environ["AWS_ACCESS_KEY_ID"] = "MY_AWS_ACCESS_KEY_ID"
+            >>> os.environ["AWS_SECRET_ACCESS_KEY"] = "MY_AWS_SECRET_ACCESS_KEY"
             >>> os.environ["AWS_REGION"] = "us-west-2"
             >>>
             >>> provider = EnvironmentCredentialProvider(cloud="aws")
             >>> creds = provider.get_credentials()
-            >>> assert creds.access_key == "AKIAIOSFODNN7EXAMPLE"
+            >>> assert creds.access_key == "MY_AWS_ACCESS_KEY_ID"
             >>> assert creds.region == "us-west-2"
         """
         if self.cloud == "aws":

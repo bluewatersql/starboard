@@ -26,22 +26,22 @@ class TestStaticCredentialProvider:
     def test_inherits_from_credential_provider(self) -> None:
         """StaticCredentialProvider should satisfy CredentialProvider protocol."""
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         assert isinstance(provider, CredentialProvider)
 
     def test_basic_credentials(self) -> None:
         """Should provide static credentials."""
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
         creds = provider.get_credentials()
 
         assert isinstance(creds, Credentials)
-        assert creds.access_key == "AKIAIOSFODNN7EXAMPLE"
-        assert creds.secret_key == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        assert creds.access_key == "MY_AWS_ACCESS_KEY_ID"
+        assert creds.secret_key == "MY_AWS_SECRET_ACCESS_KEY"
         assert creds.session_token is None
         assert creds.region is None
         assert creds.expires_at is None  # Static credentials don't expire
@@ -49,8 +49,8 @@ class TestStaticCredentialProvider:
     def test_credentials_with_session_token(self) -> None:
         """Should support optional session token."""
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             session_token="session123",
         )
         creds = provider.get_credentials()
@@ -60,8 +60,8 @@ class TestStaticCredentialProvider:
     def test_credentials_with_region(self) -> None:
         """Should support optional region."""
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
             region="us-west-2",
         )
         creds = provider.get_credentials()
@@ -72,7 +72,7 @@ class TestStaticCredentialProvider:
         """Should raise AuthenticationError if access_key is empty."""
         provider = StaticCredentialProvider(
             access_key="",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
 
         with pytest.raises(AuthenticationError) as exc_info:
@@ -82,7 +82,7 @@ class TestStaticCredentialProvider:
     def test_missing_secret_key(self) -> None:
         """Should raise AuthenticationError if secret_key is empty."""
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
+            access_key="MY_AWS_ACCESS_KEY_ID",
             secret_key="",
         )
 
@@ -93,8 +93,8 @@ class TestStaticCredentialProvider:
     def test_frozen_dataclass(self) -> None:
         """StaticCredentialProvider should be immutable."""
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
 
         with pytest.raises(AttributeError):
@@ -103,8 +103,8 @@ class TestStaticCredentialProvider:
     def test_refresh_credentials_returns_same(self) -> None:
         """refresh_credentials() should return same static credentials."""
         provider = StaticCredentialProvider(
-            access_key="AKIAIOSFODNN7EXAMPLE",
-            secret_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            access_key="MY_AWS_ACCESS_KEY_ID",
+            secret_key="MY_AWS_SECRET_ACCESS_KEY",
         )
 
         creds1 = provider.get_credentials()
@@ -127,16 +127,16 @@ class TestEnvironmentCredentialProvider:
         with patch.dict(
             os.environ,
             {
-                "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE",
-                "AWS_SECRET_ACCESS_KEY": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                "AWS_ACCESS_KEY_ID": "MY_AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY": "MY_AWS_SECRET_ACCESS_KEY",
             },
             clear=False,
         ):
             provider = EnvironmentCredentialProvider(cloud="aws")
             creds = provider.get_credentials()
 
-            assert creds.access_key == "AKIAIOSFODNN7EXAMPLE"
-            assert creds.secret_key == "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+            assert creds.access_key == "MY_AWS_ACCESS_KEY_ID"
+            assert creds.secret_key == "MY_AWS_SECRET_ACCESS_KEY"
             assert creds.session_token is None
             assert creds.region is None
 
@@ -161,8 +161,8 @@ class TestEnvironmentCredentialProvider:
         with patch.dict(
             os.environ,
             {
-                "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE",
-                "AWS_SECRET_ACCESS_KEY": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                "AWS_ACCESS_KEY_ID": "MY_AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY": "MY_AWS_SECRET_ACCESS_KEY",
                 "AWS_REGION": "us-west-2",
             },
             clear=False,
@@ -177,8 +177,8 @@ class TestEnvironmentCredentialProvider:
         with patch.dict(
             os.environ,
             {
-                "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE",
-                "AWS_SECRET_ACCESS_KEY": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                "AWS_ACCESS_KEY_ID": "MY_AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY": "MY_AWS_SECRET_ACCESS_KEY",
                 "AWS_DEFAULT_REGION": "eu-west-1",
             },
             clear=False,
@@ -207,7 +207,7 @@ class TestEnvironmentCredentialProvider:
         """Should raise AuthenticationError if AWS_SECRET_ACCESS_KEY not set."""
         with patch.dict(
             os.environ,
-            {"AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE"},
+            {"AWS_ACCESS_KEY_ID": "MY_AWS_ACCESS_KEY_ID"},
             clear=True,
         ):
             provider = EnvironmentCredentialProvider(cloud="aws")
