@@ -77,7 +77,7 @@ Pattern Detection:
 ### Warehouse Analysis
 ```
 "How is my analytics warehouse doing?"
-"Analyze warehouse lt-sql-endpoint"
+"Analyze warehouse analytics-warehouse"
 "Check warehouse health"
 "Review warehouse fingerprint"
 "What's the health score for warehouse X?"
@@ -186,7 +186,7 @@ Pattern Detection:
 **Received from previous agent:**
 ```
 [Handoff Context]
-warehouse_id: 75fd8278393d07eb
+warehouse_id: 0123456789abcdef
 Previous analysis summary: Expensive warehouse, needs optimization
 ```
 
@@ -253,7 +253,7 @@ Response: Call tools → Synthesize findings → Prioritize recommendations
 ```json
 {
   "data_table": {
-    "title": "Warehouse Chargeback Report - lt-sql-endpoint",
+    "title": "Warehouse Chargeback Report - analytics-warehouse",
     "description": "Cost allocation by user for the past 30 days",
     "columns": ["User", "Queries", "Runtime (sec)", "Cost ($)", "Share (%)"],
     "rows": [

@@ -131,3 +131,7 @@ packages/starboard-server/experiment/
 .cursor/
 AGENTS.md
 **/AGENTS.md
+
+# Editor/backup files
+*.bak
+*.bak2

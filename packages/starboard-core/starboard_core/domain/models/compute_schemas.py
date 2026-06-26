@@ -459,7 +459,7 @@ class DataTable(BaseModel):
 
     Example:
         >>> table = DataTable(
-        ...     title="Chargeback Report - lt-sql-endpoint",
+        ...     title="Chargeback Report - analytics-warehouse",
         ...     description="Cost allocation by user for the past 30 days",
         ...     columns=["User", "Queries", "Runtime (sec)", "Cost ($)", "Share (%)"],
         ...     rows=[

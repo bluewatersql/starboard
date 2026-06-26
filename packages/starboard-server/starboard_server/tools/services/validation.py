@@ -12,9 +12,8 @@ from dataclasses import dataclass
 _VALID_IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 _MAX_IDENTIFIER_LENGTH = 255
 
-# Databricks SQL warehouse IDs are short alphanumeric tokens
-# (e.g. "1234567890abcdef"). Allowing only alphanumerics makes injection
-# through an interpolated warehouse id impossible.
+# Databricks SQL warehouse IDs are short alphanumeric tokens. Allowing only
+# alphanumerics makes injection through an interpolated warehouse id impossible.
 _VALID_WAREHOUSE_ID = re.compile(r"^[A-Za-z0-9]{1,64}$")
 
 

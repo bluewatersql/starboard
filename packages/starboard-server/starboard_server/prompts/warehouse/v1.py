@@ -107,7 +107,7 @@ LOW (~100 tokens): configure_warehouse_slo - Only when user requests
 
 **IMPORTANT: Warehouse Identification**
 All tools that accept a `warehouse_id` parameter will AUTOMATICALLY resolve warehouse names to IDs.
-- You can pass EITHER the warehouse ID (e.g., "75fd8278393d07eb") OR the warehouse name (e.g., "lt-sql-endpoint")
+- You can pass EITHER the warehouse ID (e.g., "0123456789abcdef") OR the warehouse name (e.g., "analytics-warehouse")
 - The system handles the lookup internally - just pass what the user provides
 - DO NOT ask the user to provide an ID if they've given a name - just call the tool directly
 
@@ -259,7 +259,7 @@ When the user expects tabular data, include a `data_table` section:
 ```json
 {{{{
   "data_table": {{{{
-    "title": "Warehouse Chargeback Report - lt-sql-endpoint",
+    "title": "Warehouse Chargeback Report - analytics-warehouse",
     "description": "Cost allocation by user for the past 30 days",
     "columns": ["User", "Queries", "Runtime (sec)", "Cost ($)", "Share (%)"],
     "rows": [

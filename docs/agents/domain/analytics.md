@@ -210,7 +210,7 @@ IF validate_sql_query fails:
 **Received from previous agent:**
 ```
 [Handoff Context]
-warehouse_id: 75fd8278393d07eb
+warehouse_id: 0123456789abcdef
 Previous analysis summary: Warehouse is top cost driver at $5,400/month
 ```
 
@@ -220,7 +220,7 @@ Previous analysis summary: Warehouse is top cost driver at $5,400/month
   "action_type": "route",
   "target_agent": "warehouse",
   "parameters": {
-    "warehouse_id": "75fd8278393d07eb",
+    "warehouse_id": "0123456789abcdef",
     "context": "Cost analysis shows 40% over-provisioning"
   }
 }

@@ -502,7 +502,7 @@ class WarehouseTools(BaseToolAdapter):
 
         Example:
             >>> cb = await tools.generate_warehouse_chargeback(
-            ...     warehouse_id="lt-sql-endpoint"  # Name works too!
+            ...     warehouse_id="analytics-warehouse"  # Name works too!
             ... )
             >>> print(f"Total: ${cb['total_cost_usd']:.2f}")
             >>> for alloc in cb["allocations"][:3]:
