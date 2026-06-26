@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-009: Safe prompt construction.
 
 Prompt files must not interpolate runtime/user-supplied variables directly via

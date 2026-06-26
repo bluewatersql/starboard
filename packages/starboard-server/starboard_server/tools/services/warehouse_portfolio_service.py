@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Warehouse Portfolio Service.
 
 Orchestrates warehouse portfolio analysis by coordinating:
@@ -36,6 +38,7 @@ from starboard_server.tools.domain.warehouse.topology import (
     TopologyAnalyzer,
 )
 from starboard_server.tools.protocols import WarehousePortfolioDataProvider
+from starboard_server.tools.services.validation import validate_warehouse_id
 
 if TYPE_CHECKING:
     from starboard_server.adapters.databricks.async_sql_executor import AsyncSQLExecutor
@@ -383,6 +386,14 @@ LIMIT {limit}
         start_date, end_date = self._calculate_date_range(window_days)
         limit = 10000
 
+        # SECURITY: resolved_id is interpolated into a string-literal filter
+        # (compute.warehouse_id = '<id>'). Warehouse ids are not bindable as SQL
+        # parameter markers in these system-table queries, so the value is
+        # validated to be a plain alphanumeric token (rejects quotes/semicolons/
+        # whitespace) before interpolation. start_date/end_date are derived
+        # internally from an int window and limit is a literal int.
+        safe_warehouse_id = validate_warehouse_id(resolved_id)
+
         # Build SQL (from warehouse/fingerprint.py template)
         sql = f"""
 SELECT
@@ -397,7 +408,7 @@ SELECT
     COALESCE(read_rows, 0) AS read_rows,
     executed_by
 FROM system.query.history
-WHERE compute.warehouse_id = '{resolved_id}'
+WHERE compute.warehouse_id = '{safe_warehouse_id}'
   AND compute.type = 'WAREHOUSE'
   AND start_time >= '{start_date}'
   AND start_time < '{end_date}'
@@ -769,8 +780,15 @@ LIMIT {limit}
         min_queries = 1
 
         # Build SQL (from warehouse/user_activity.py template)
+        # SECURITY: resolved_id is interpolated into a string-literal filter and
+        # cannot be bound as a SQL parameter marker here, so validate it as a
+        # plain alphanumeric warehouse id (rejects quotes/semicolons/whitespace)
+        # before interpolation. start_date/end_date are derived internally and
+        # min_queries/limit are literal ints.
         warehouse_filter = (
-            f"AND compute.warehouse_id = '{resolved_id}'" if resolved_id else ""
+            f"AND compute.warehouse_id = '{validate_warehouse_id(resolved_id)}'"
+            if resolved_id
+            else ""
         )
         sql = f"""
 WITH user_activity AS (
@@ -853,6 +871,13 @@ LIMIT {limit}
             end_date=end_date,
         )
 
+        # SECURITY: warehouse_id is interpolated into a string-literal filter
+        # below and cannot be bound as a SQL parameter marker here. Validate it
+        # as a plain alphanumeric warehouse id (rejects quotes/semicolons/
+        # whitespace) before interpolation; start_date/end_date are derived
+        # internally from an int window.
+        safe_warehouse_id = validate_warehouse_id(warehouse_id)
+
         try:
             # Build SQL (from warehouse/cost.py template)
             sql = f"""
@@ -872,7 +897,7 @@ WHERE u.usage_date >= '{start_date}'
   AND u.usage_date < '{end_date}'
   AND u.sku_name LIKE '%SQL%'
   AND u.usage_metadata.warehouse_id IS NOT NULL
-  AND u.usage_metadata.warehouse_id = '{warehouse_id}'
+  AND u.usage_metadata.warehouse_id = '{safe_warehouse_id}'
 GROUP BY u.workspace_id, u.usage_metadata.warehouse_id
 ORDER BY total_cost_usd DESC
 LIMIT 1

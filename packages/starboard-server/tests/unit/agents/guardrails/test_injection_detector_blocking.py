@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for prompt injection detection blocking mode.
 
 TDD: These tests are written BEFORE the blocking mode implementation.

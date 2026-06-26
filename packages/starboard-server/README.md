@@ -30,7 +30,7 @@ pip install -e ".[dev,test]"
 # Set environment variables
 export DATABRICKS_HOST="https://your-workspace.databricks.com"
 export DATABRICKS_TOKEN="dapi..."
-export LLM_API_KEY="sk-..."
+export LLM_API_KEY="<your-llm-api-key>"
 
 # Start with make (recommended)
 make dev-server

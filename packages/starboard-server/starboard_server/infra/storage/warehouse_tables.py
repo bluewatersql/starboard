@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """UC table definitions for warehouse agent.
 
 Defines Delta tables stored in Unity Catalog for warehouse agent state,

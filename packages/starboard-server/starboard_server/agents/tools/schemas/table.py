@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Table metadata and lineage tool schemas (UC/Unity Catalog domain)."""
 
 LIST_UC_ASSETS = {

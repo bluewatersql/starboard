@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Pytest configuration for starboard-cli package.
 
 This conftest registers fixtures from tests/fixtures.py.

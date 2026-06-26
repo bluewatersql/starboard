@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Reasoning interface for Unity Catalog tools.
 
 This module provides the LLM-facing interface for UC operations,

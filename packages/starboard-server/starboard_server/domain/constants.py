@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Named constants for domain logic. No magic numbers in business code."""
 
 from enum import IntEnum

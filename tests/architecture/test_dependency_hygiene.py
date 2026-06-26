@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-010: Dependency hygiene.
 
 For each package in the monorepo, every top-level import used in the source

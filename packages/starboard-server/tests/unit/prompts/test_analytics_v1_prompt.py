@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Test Analytics V1 prompt formatting to catch brace escaping errors."""
 
 import pytest

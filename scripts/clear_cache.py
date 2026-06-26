@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Clear all caches (in-memory, SQLite, vector DB).
 
 This script helps debug caching issues by clearing all cached data.

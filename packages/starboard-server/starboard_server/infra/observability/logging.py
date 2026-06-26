@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Structured logging setup with correlation IDs and credential redaction.
 
 This module provides structured logging using structlog with correlation IDs

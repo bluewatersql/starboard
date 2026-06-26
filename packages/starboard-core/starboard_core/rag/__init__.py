@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """RAG (Retrieval-Augmented Generation) data models for Analytics Agent."""
 
 from starboard_core.rag.models import (

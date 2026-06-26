@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """SDK event type facade.
 
 Re-exports the SDK-owned event types that consumers need to work with

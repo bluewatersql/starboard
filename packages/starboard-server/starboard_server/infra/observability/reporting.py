@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Report generation utilities.
 
 File write helpers (``write_text_file``, ``write_json_file``) are async to

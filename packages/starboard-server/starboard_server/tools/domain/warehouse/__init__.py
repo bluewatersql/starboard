@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Warehouse domain logic.
 
 This module contains pure domain logic for warehouse analysis.

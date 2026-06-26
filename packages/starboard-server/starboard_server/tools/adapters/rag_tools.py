@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Analytics Agent V3: build_analytics_context tool (Agentic RAG).
 
 This module intentionally exposes a SINGLE agent-callable tool:

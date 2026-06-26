@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for chunk deduplication in ChunkingService (item 9).
 
 TDD: Written before implementation.

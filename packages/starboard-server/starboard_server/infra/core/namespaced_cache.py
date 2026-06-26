@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Namespaced cache wrapper for key isolation.
 
 This module provides a wrapper around CacheStore that prefixes all keys

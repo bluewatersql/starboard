@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Storage analysis service for UC Delta history, optimization, costs, and impact.
 
 Handles Delta table history, storage optimization recommendations,

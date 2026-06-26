@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Backward-compatible shim for the streaming-event converter.
 
 The implementation moved to the adapters layer

@@ -6,7 +6,52 @@ Welcome to the Starboard AI Agent documentation — an AI-powered analysis and o
 
 Starboard uses **8 domain-specialized AI agents** that reason step-by-step, dynamically select from **45+ tools**, and stream results in real time. Ask questions in natural language and get actionable recommendations for SQL queries, jobs, pipelines, costs, and infrastructure.
 
-![System Overview](diagrams/generated/architecture/system-overview.png)
+```mermaid
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+graph TB
+    User[User/Browser] -->|HTTP/SSE| API[FastAPI Backend]
+    API -->|Classifies| Router[Intent Router]
+
+    Router -->|Query| QueryAgent[Query Agent]
+    Router -->|Job| JobAgent[Job Agent]
+    Router -->|UC| UCAgent[UC Agent]
+    Router -->|Analytics| AnalyticsAgent[Analytics Agent]
+    Router -->|Warehouse| WarehouseAgent[Warehouse Agent]
+    Router -->|Diagnostic| DiagAgent[Diagnostic Agent]
+
+    QueryAgent -->|Executes| Tools[Tool System<br/>45+ Tools]
+    JobAgent -->|Executes| Tools
+    UCAgent -->|Executes| Tools
+    AnalyticsAgent -->|Executes| Tools
+    WarehouseAgent -->|Executes| Tools
+    DiagAgent -->|Executes| Tools
+
+    Tools -->|Fetches| Databricks[Databricks API]
+
+    QueryAgent -->|Reasoning| LLMProvider[LLM Provider<br/>OpenAI/Azure]
+    JobAgent -->|Reasoning| LLMProvider
+    UCAgent -->|Reasoning| LLMProvider
+    AnalyticsAgent -->|Reasoning| LLMProvider
+    WarehouseAgent -->|Reasoning| LLMProvider
+    DiagAgent -->|Reasoning| LLMProvider
+
+    API -->|Persists| StateStore[(State Store<br/>SQLite/Postgres/Lakebase)]
+    API -->|Caches| Cache[(Redis Cache)]
+
+    style User fill:#10b981,color:#fff
+    style API fill:#4f46e5,color:#fff
+    style Router fill:#7c3aed,color:#fff
+    style QueryAgent fill:#06b6d4,color:#fff
+    style JobAgent fill:#06b6d4,color:#fff
+    style UCAgent fill:#06b6d4,color:#fff
+    style AnalyticsAgent fill:#06b6d4,color:#fff
+    style WarehouseAgent fill:#06b6d4,color:#fff
+    style DiagAgent fill:#06b6d4,color:#fff
+    style Tools fill:#f59e0b,color:#fff
+    style Databricks fill:#ff6b6b,color:#fff
+    style LLMProvider fill:#ff6b6b,color:#fff
+```
 
 *High-level system architecture showing the main components and their interactions*
 
@@ -53,7 +98,49 @@ Deployment, runbooks, cloud authentication, state backend configuration, monitor
 
 ## Agent System
 
-![Agent Coordination](diagrams/generated/agents/agent-coordination.png)
+```mermaid
+%%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
+
+sequenceDiagram
+    participant U as User
+    participant API as FastAPI
+    participant MM as MultiAgentManager
+    participant IR as IntentRouter
+    participant QA as QueryAgent
+    participant T as Tools
+    participant DB as Databricks
+
+    U->>API: POST /chat/message
+    API->>MM: process_message()
+    MM->>IR: classify_intent()
+
+    Note over IR: Analyzes message<br/>using LLM
+
+    IR-->>MM: Intent: QUERY_OPTIMIZATION
+    MM->>QA: activate(message, context)
+
+    Note over QA: Agent becomes active<br/>builds context
+
+    QA->>T: execute_tool("resolve_query")
+    T->>DB: GET /api/2.0/sql/queries
+    DB-->>T: query metadata
+    T-->>QA: ToolResult(data)
+
+    QA->>QA: analyze_results()<br/>decide_next_action()
+
+    QA->>T: execute_tool("analyze_query_plan")
+    T->>DB: GET /api/2.0/sql/history
+    DB-->>T: execution history
+    T-->>QA: ToolResult(data)
+
+    Note over QA: Generates<br/>recommendations
+
+    QA-->>MM: FinalResponse(recommendations)
+    MM->>API: stream_events()
+    API-->>U: SSE events
+
+    Note over U: Real-time updates<br/>displayed in UI
+```
 
 *Multi-agent coordination flow showing how requests are routed and processed*
 

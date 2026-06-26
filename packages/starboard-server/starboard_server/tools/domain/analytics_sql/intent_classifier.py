@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Analytics SQL - Intent Classification.
 
 Classifies user intent from natural language queries using pattern matching

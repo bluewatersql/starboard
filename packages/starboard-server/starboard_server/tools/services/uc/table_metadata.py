@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Table metadata service for UC table information and fingerprints.
 
 Handles fetching comprehensive table metadata and generating

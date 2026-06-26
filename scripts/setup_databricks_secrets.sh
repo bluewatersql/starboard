@@ -134,7 +134,7 @@ fi
 read -p "Do you want to add OpenAI API key? (y/N): " add_openai
 if [[ "$add_openai" =~ ^[Yy]$ ]]; then
     add_secret "openai-api-key" \
-        "OpenAI API Key (if not using Databricks models)\nFormat: sk-..."
+        "OpenAI API Key (if not using Databricks models)\nFormat: <your-api-key>"
 fi
 
 # ============================================================================

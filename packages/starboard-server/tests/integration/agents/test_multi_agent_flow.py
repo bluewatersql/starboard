@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for multi-agent conversation flow (Phase 3, Task 3.4).
 
 These tests verify end-to-end multi-agent workflows with all components integrated:

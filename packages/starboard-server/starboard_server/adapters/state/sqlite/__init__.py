@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """SQLite storage adapters for development and testing.
 
 This module provides SQLite-backed implementations for state, memory, and cache stores.

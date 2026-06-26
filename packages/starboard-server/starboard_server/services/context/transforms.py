@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Data transformation utilities for context data.
 
 This module provides transform functions and helper utilities that replace

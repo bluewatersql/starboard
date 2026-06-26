@@ -218,7 +218,7 @@ export DATABRICKS_TOKEN="dapi..."
 
 # LLM
 export LLM_MODEL="gpt-4o-mini"
-export LLM_API_KEY="sk-..."
+export LLM_API_KEY="<your-api-key>"
 export LLM_BASE_URL="https://api.openai.com/v1"  # Optional
 export LLM_TEMPERATURE="0.4"
 export LLM_MAX_TOKENS="120000"
@@ -233,7 +233,7 @@ databricks:
 
 llm:
   model: "gpt-4o"
-  api_key: "sk-..."
+  api_key: "<your-api-key>"
   base_url: "https://api.openai.com/v1"  # Optional
   temperature: 0.4
   max_tokens: 120000

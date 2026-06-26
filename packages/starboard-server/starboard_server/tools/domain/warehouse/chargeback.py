@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Warehouse chargeback calculation.
 
 Domain logic for calculating cost allocation per user/team

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Shared prompt components for domain agents.
 
 This package provides reusable prompt sections that should be used consistently

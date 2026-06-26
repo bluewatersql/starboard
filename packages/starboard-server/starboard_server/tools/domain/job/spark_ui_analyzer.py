@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Spark UI log analyzer.
 
 Transforms raw Spark UI logs (jobData/stageData) into structured, LLM-friendly

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery agent prompts."""
 
 from starboard_server.prompts.discovery.v2 import (

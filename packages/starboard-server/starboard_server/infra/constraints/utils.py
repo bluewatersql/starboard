@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Literal

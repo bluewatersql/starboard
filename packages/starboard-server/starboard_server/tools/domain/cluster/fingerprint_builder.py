@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Cluster fingerprint builder.
 
 Pure functions for building cluster fingerprints from raw API data.

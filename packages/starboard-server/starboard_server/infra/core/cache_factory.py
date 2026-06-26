@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Cache factory for creating namespaced cache instances.
 
 This module provides a factory pattern for creating cache instances with

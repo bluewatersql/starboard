@@ -109,7 +109,7 @@ make diagrams           # Generate diagrams
 DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
 DATABRICKS_TOKEN=dapi...
 DATABRICKS_WAREHOUSE_ID=your_warehouse_id
-LLM_API_KEY=sk-...
+LLM_API_KEY=<your-api-key>
 
 # Model Configuration
 LLM_MODEL=databricks-claude-sonnet-4-5

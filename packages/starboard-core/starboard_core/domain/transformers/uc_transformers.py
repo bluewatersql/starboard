@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Data transformers for large UC data sources.
 
 Transformers condense raw API responses into compact summaries

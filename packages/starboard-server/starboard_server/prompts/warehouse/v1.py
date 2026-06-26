@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Warehouse Agent System Prompt V1.
 
 System prompt for SQL warehouse portfolio optimization agent.

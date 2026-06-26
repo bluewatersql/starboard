@@ -126,3 +126,8 @@ packages/starboard-server/experiment/
 # Git hooks (local only)
 .githooks/
 .claude/worktrees/
+
+# Internal AI-assistant / IDE tooling (not for OSS distribution)
+.cursor/
+AGENTS.md
+**/AGENTS.md

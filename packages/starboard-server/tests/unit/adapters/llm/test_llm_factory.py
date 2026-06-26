@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for LLM client factory pattern."""
 
 from unittest.mock import Mock, patch

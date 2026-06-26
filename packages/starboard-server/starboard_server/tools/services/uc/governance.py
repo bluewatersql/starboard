@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Governance service for UC grants, access patterns, and policy coverage.
 
 Handles table grants, access pattern analysis from query history,
@@ -25,6 +27,10 @@ from starboard_server.tools.services.uc.base import (
     UCServiceBase,
     detect_principal_type,
     parse_timestamp,
+)
+from starboard_server.tools.services.validation import (
+    QualifiedTableName,
+    validate_window_days,
 )
 
 logger = get_logger(__name__)
@@ -146,6 +152,17 @@ class GovernanceService(UCServiceBase):
             logger.warning("sql_provider_not_configured", operation="access_patterns")
             return None
 
+        # SECURITY: table_name and window_days are interpolated into the SQL
+        # below. They cannot be bound as SQL parameter markers here — table_name
+        # is a UC identifier used inside a string-literal comparison and
+        # window_days is the day-count of an INTERVAL expression, neither of
+        # which Databricks SQL binds. They are strictly validated instead:
+        #  - QualifiedTableName enforces a 3-part catalog.schema.table name with
+        #    only [A-Za-z0-9_] per part (rejects quotes/semicolons/whitespace).
+        #  - window_days is coerced to a bounded positive int.
+        safe_table_name = QualifiedTableName.from_string(table_name).to_dotted_name()
+        safe_window_days = validate_window_days(window_days)
+
         # Query query.history joined with table_lineage
         query = f"""
         WITH target_lineage AS (
@@ -154,8 +171,8 @@ class GovernanceService(UCServiceBase):
                 statement_id,
                 'READ' AS access_type
             FROM system.access.table_lineage
-            WHERE source_table_full_name = '{table_name}'
-              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+            WHERE source_table_full_name = '{safe_table_name}'
+              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
 
             UNION ALL
 
@@ -164,8 +181,8 @@ class GovernanceService(UCServiceBase):
                 statement_id,
                 'WRITE' AS access_type
             FROM system.access.table_lineage
-            WHERE target_table_full_name = '{table_name}'
-              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+            WHERE target_table_full_name = '{safe_table_name}'
+              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
         ),
         query_details AS (
             SELECT
@@ -192,7 +209,7 @@ class GovernanceService(UCServiceBase):
             FROM system.query.history h
             INNER JOIN target_lineage tl ON h.statement_id = tl.statement_id
             WHERE h.execution_status = 'FINISHED'
-              AND h.start_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+              AND h.start_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
         )
         SELECT
             -- Overall counts
@@ -270,9 +287,9 @@ class GovernanceService(UCServiceBase):
         WITH target_lineage AS (
             SELECT DISTINCT statement_id
             FROM system.access.table_lineage
-            WHERE source_table_full_name = '{table_name}'
-               OR target_table_full_name = '{table_name}'
-              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+            WHERE source_table_full_name = '{safe_table_name}'
+               OR target_table_full_name = '{safe_table_name}'
+              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
         )
         SELECT
             DATE(h.start_time) AS query_date,
@@ -280,7 +297,7 @@ class GovernanceService(UCServiceBase):
         FROM system.query.history h
         INNER JOIN target_lineage tl ON h.statement_id = tl.statement_id
         WHERE h.execution_status = 'FINISHED'
-          AND h.start_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+          AND h.start_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
         GROUP BY DATE(h.start_time)
         ORDER BY query_date DESC
         LIMIT 30
@@ -302,8 +319,8 @@ class GovernanceService(UCServiceBase):
         WITH target_lineage AS (
             SELECT DISTINCT statement_id
             FROM system.access.table_lineage
-            WHERE source_table_full_name = '{table_name}'
-              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+            WHERE source_table_full_name = '{safe_table_name}'
+              AND event_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
         )
         SELECT
             h.executed_by,

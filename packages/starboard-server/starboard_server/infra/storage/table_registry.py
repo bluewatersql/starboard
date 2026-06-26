@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Table definition registry for UC storage.
 
 This module provides data structures for defining Unity Catalog tables

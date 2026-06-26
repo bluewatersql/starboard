@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Metrics and observability for multi-agent system.
 
 This module provides structured metrics collection for monitoring multi-agent

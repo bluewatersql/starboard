@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Performance benchmarks for diagnostic agent exploration.
 
 Target: <30s p95 for 5-step exploration

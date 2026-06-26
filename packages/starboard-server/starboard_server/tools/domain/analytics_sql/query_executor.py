@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Analytics SQL - Query Executor.
 
 Wraps SQL execution with specific error handling, retries, and result transformation.

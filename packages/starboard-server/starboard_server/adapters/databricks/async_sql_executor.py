@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Async SQL executor adapter for analytics queries.
 
 This module provides an async SQL executor that uses the AsyncDatabricksClient

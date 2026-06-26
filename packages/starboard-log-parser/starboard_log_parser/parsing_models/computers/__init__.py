@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Data computers for extracting information from ApplicationModel.
 
 Each computer is responsible for computing one specific aspect of a Spark

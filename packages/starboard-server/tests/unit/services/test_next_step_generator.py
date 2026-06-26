@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for NextStepGenerator service.
 
 Tests generation of NextStepOptions from domain agent output and catalog.

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for Postgres memory store (requires running Postgres with pgvector)."""
 
 import os

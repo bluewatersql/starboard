@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Auto-provision serverless SQL warehouse on Databricks.
 
 Creates a serverless warehouse when no warehouse ID is configured,

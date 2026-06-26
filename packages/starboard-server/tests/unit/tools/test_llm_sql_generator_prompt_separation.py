@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for prompt separation in LLMSQLGenerator (item 3).
 
 TDD: These tests are written BEFORE the implementation.

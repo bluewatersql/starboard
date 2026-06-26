@@ -39,7 +39,7 @@ export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
 export DATABRICKS_TOKEN="dapi..."
 
 # Required: LLM provider
-export LLM_API_KEY="sk-..."
+export LLM_API_KEY="<your-api-key>"
 
 # Optional: Override defaults
 export LLM_MODEL="databricks-claude-sonnet-4-5"   # Default model
@@ -416,9 +416,9 @@ starboard --mode offline --goal "..."
 Ensure one of the following is configured:
 
 ```bash
-export LLM_API_KEY="sk-..."
+export LLM_API_KEY="<your-api-key>"
 # or
-export OPENAI_API_KEY="sk-..."
+export OPENAI_API_KEY="<your-api-key>"
 ```
 
 ### Agent times out or exceeds token budget

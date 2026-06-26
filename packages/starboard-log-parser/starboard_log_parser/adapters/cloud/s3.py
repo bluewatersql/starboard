@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """
 AWS S3 storage adapter.
 
@@ -179,6 +181,22 @@ class S3Adapter(CloudStorageClient):
 
         return bucket, key
 
+    @staticmethod
+    def _is_not_found_error(exc: Exception) -> bool:
+        """Return True if exc represents an S3 'not found' response (404/NoSuchKey/NoSuchBucket).
+
+        Works with both real botocore ClientError and the stub used when boto3 is absent.
+        """
+        _NOT_FOUND_CODES = {"NoSuchKey", "NoSuchBucket", "404"}
+        response = getattr(exc, "response", None)
+        if response is None:
+            return False
+        code = response.get("Error", {}).get("Code", "")
+        if code in _NOT_FOUND_CODES:
+            return True
+        http_status = response.get("ResponseMetadata", {}).get("HTTPStatusCode", 0)
+        return http_status == 404
+
     def path_exists(self, path: str) -> bool:
         """Check if S3 path exists.
 
@@ -187,6 +205,9 @@ class S3Adapter(CloudStorageClient):
 
         Returns:
             True if path exists (file or prefix), False otherwise
+
+        Raises:
+            CloudStorageError: If S3 returns a non-404 error (permissions, throttling, etc.)
 
         Examples:
             >>> adapter.path_exists("s3://my-bucket/logs/app.json")  # True
@@ -199,17 +220,31 @@ class S3Adapter(CloudStorageClient):
             # First try as a file
             self.s3_client.head_object(Bucket=bucket, Key=key)
             return True
-        except Exception:
-            # If not a file, try as a prefix
-            try:
-                response = self.s3_client.list_objects_v2(
-                    Bucket=bucket,
-                    Prefix=key,
-                    MaxKeys=1,
-                )
-                return "Contents" in response and len(response["Contents"]) > 0
-            except Exception:
+        except Exception as e:
+            if not self._is_not_found_error(e):
+                raise CloudStorageError(
+                    operation="path_exists",
+                    path=path,
+                    reason=str(e),
+                ) from e
+            # True 404 on file — fall through to prefix check
+
+        # If not a file, try as a prefix
+        try:
+            response = self.s3_client.list_objects_v2(
+                Bucket=bucket,
+                Prefix=key,
+                MaxKeys=1,
+            )
+            return "Contents" in response and len(response["Contents"]) > 0
+        except Exception as e:
+            if self._is_not_found_error(e):
                 return False
+            raise CloudStorageError(
+                operation="path_exists",
+                path=path,
+                reason=str(e),
+            ) from e
 
     def list_files(
         self,
@@ -280,8 +315,13 @@ class S3Adapter(CloudStorageClient):
             return files
 
         except Exception as e:
-            logger.warning(f"Failed to list S3 files at {path}: {e}")
-            return []
+            if self._is_not_found_error(e):
+                return []
+            raise CloudStorageError(
+                operation="list_files",
+                path=path,
+                reason=str(e),
+            ) from e
 
     def read_chunk(
         self,

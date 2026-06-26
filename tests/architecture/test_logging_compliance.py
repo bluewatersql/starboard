@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-004: No stdlib logging.
 
 All server-package modules must use ``structlog`` (via the project's

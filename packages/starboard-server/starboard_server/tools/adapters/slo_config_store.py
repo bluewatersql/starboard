@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """In-memory SLO configuration store.
 
 Provides ephemeral storage for SLO configurations with sensible defaults.

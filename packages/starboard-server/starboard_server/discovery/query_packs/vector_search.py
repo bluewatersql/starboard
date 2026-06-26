@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Vector Search expanded discovery query pack.\n\nCovers endpoint billing, usage patterns, idle detection, and indexing costs.\nReplaces the single-query VECTOR_SEARCH_PACK from product_surfaces.py."""
 
 from __future__ import annotations

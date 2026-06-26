@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Reasoning interface for warehouse portfolio tools.
 
 Provides clean, parameter-based interface optimized for LLM reasoning agents.

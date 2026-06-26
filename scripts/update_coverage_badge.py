@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Update coverage badge in README.md based on coverage.json."""
 
 import json

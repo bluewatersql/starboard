@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Shared base utilities and protocols for UC sub-services.
 
 Contains provider protocols, helper functions, and the common base class

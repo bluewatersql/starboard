@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-001: StateStore Protocol compliance.
 
 All classes whose name ends in ``Store`` must implement a common ``StateStore``

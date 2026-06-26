@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery tool adapters — expose the DiscoveryEngine phases as agent tools.
 
 Provides 4 granular tools matching the engine's 4-phase pipeline, allowing the

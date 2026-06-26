@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Lineage service for UC table lineage queries.
 
 Handles fetching and transforming table lineage data from the

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Handoff recommendation domain models.
 
 Defines structures for domain agents to recommend handoffs to other agents

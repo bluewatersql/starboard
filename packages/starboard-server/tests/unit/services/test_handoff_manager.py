@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for agent handoff manager.
 
 Phase 3 Component 3: Handoff Manager & Persistence

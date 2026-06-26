@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Fast JSON serialization using orjson.
 
 Drop-in replacement for stdlib json in hot paths (SSE, API, tools, state).

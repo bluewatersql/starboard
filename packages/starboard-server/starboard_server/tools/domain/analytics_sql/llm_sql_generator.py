@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Analytics SQL - LLM-based SQL Generator (Agentic Pattern).
 
 Generates SQL queries using LLM with RAG context. NO internal validation or loops.

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Typed repository pattern for UC storage.
 
 This module provides the UCRepository class that wraps UCStorageAdapter

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tool adapters providing reasoning interfaces optimized for LLM."""
 
 from starboard_server.tools.adapters.analytics_sql_tools import AnalyticsSQLTools

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """OpenAI LLM client for API interactions.
 
 Thin facade that delegates to extracted sub-modules:

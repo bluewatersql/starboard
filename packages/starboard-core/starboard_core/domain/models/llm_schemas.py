@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Pydantic V2 models for LLM response validation.
 
 This module defines validated schemas for all LLM interactions to ensure

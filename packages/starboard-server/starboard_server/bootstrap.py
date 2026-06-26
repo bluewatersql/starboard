@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Public entry point for creating Starboard server instances.
 
 This module is the **canonical public API** for ``starboard_server``.  CLI,

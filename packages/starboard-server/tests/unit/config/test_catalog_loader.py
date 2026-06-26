@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for service catalog loader.
 
 Tests loading and parsing service catalog from YAML configuration.

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Feedback service for collecting and analyzing user feedback on agent responses.
 
 Provides business logic for:

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Additional golden tests for Analytics Agent edge cases and scenarios.
 
 These tests capture prompt behavior for edge cases like:

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Query workload service for UC table analysis.
 
 Provides shared data fetching and processing for:
@@ -27,6 +29,11 @@ from starboard_core.domain.transformers import (
 )
 
 from starboard_server.infra.observability.logging import get_logger
+from starboard_server.tools.services.validation import (
+    QualifiedTableName,
+    validate_limit,
+    validate_window_days,
+)
 
 logger = get_logger(__name__)
 
@@ -366,8 +373,21 @@ class QueryWorkloadService:
         if not table_names:
             return pl.DataFrame()
 
-        # Build table list for SQL IN clause
-        table_list = ", ".join(f"'{t}'" for t in table_names)
+        # SECURITY: table names and the day window are interpolated into the SQL
+        # below. Databricks SQL cannot bind these as parameter markers in these
+        # system-table queries (identifiers / INTERVAL day-counts are not
+        # bindable), so each value is strictly validated instead:
+        #  - table names must be well-formed catalog.schema.table identifiers
+        #    (QualifiedTableName rejects quotes/semicolons/whitespace), and the
+        #    validated dotted name is used as the string literal value.
+        #  - window_days / limit are coerced to bounded positive ints.
+        safe_window_days = validate_window_days(window_days)
+        safe_limit = validate_limit(limit)
+        validated_tables = [
+            QualifiedTableName.from_string(t).to_dotted_name() for t in table_names
+        ]
+        # Build table list for SQL IN clause (values are validated dotted names)
+        table_list = ", ".join(f"'{t}'" for t in validated_tables)
 
         # Single query that joins lineage with history
         # This uses lineage for accurate table attribution
@@ -380,7 +400,7 @@ class QueryWorkloadService:
                 'READ' AS access_type
             FROM system.access.table_lineage tl
             WHERE tl.source_table_full_name IN ({table_list})
-              AND tl.event_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+              AND tl.event_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
 
             UNION ALL
 
@@ -390,7 +410,7 @@ class QueryWorkloadService:
                 'WRITE' AS access_type
             FROM system.access.table_lineage tl
             WHERE tl.target_table_full_name IN ({table_list})
-              AND tl.event_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+              AND tl.event_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
         )
         SELECT
             h.statement_id,
@@ -423,9 +443,9 @@ class QueryWorkloadService:
         FROM target_lineage tl
         INNER JOIN system.query.history h ON tl.statement_id = h.statement_id
         WHERE h.execution_status = 'FINISHED'
-          AND h.start_time >= CURRENT_TIMESTAMP() - INTERVAL {window_days} DAYS
+          AND h.start_time >= CURRENT_TIMESTAMP() - INTERVAL {safe_window_days} DAYS
         ORDER BY h.start_time DESC
-        LIMIT {limit}
+        LIMIT {safe_limit}
         """
 
         logger.debug("fetching_workload_data", table_count=len(table_names))
@@ -443,6 +463,10 @@ class QueryWorkloadService:
         Returns:
             Polars DataFrame with hourly DBU usage by warehouse
         """
+        # SECURITY: window_days is interpolated into INTERVAL <n> DAYS, which
+        # Databricks SQL cannot bind as a parameter marker. Coerce to a bounded
+        # positive int so the interpolated text is purely numeric.
+        safe_window_days = validate_window_days(window_days)
         query = f"""
         SELECT
             workspace_id,
@@ -450,7 +474,7 @@ class QueryWorkloadService:
             DATE_TRUNC('hour', usage_start_time) AS usage_hour,
             SUM(COALESCE(usage_quantity, 0)) AS dbus
         FROM system.billing.usage
-        WHERE usage_start_time >= CURRENT_DATE() - INTERVAL {window_days} DAYS
+        WHERE usage_start_time >= CURRENT_DATE() - INTERVAL {safe_window_days} DAYS
           AND usage_unit = 'DBU'
         GROUP BY ALL
         """

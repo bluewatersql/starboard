@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for turn context."""
 
 from starboard_server.api.turn_context import TurnContext, create_turn_context

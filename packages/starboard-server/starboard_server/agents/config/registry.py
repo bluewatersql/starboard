@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Agent registry for centralized agent management.
 
 Phase 3 Component 1: Agent Registry & Metadata

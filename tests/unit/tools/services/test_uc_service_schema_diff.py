@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for UC service schema diff functionality.
 
 Tests the generate_schema_diff method which uses DESCRIBE HISTORY

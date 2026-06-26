@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery agent system prompt v2.
 
 Guides the discovery agent through a 4-phase workflow using granular tools,

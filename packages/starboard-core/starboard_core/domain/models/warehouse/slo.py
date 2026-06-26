@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Warehouse SLO configuration models.
 
 Service Level Objective configuration and tracking for warehouses.

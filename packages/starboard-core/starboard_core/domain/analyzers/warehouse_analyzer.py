@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Warehouse analyzers.
 
 Pure domain logic for calculating warehouse fingerprints and health scores.

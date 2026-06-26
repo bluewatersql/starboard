@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Domain analyzer — two-stage analysis: heuristics then LLM.
 
 The ``DomainAnalyzer`` evaluates query results for each domain by:

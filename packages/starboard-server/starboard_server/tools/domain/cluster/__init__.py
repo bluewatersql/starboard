@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Cluster domain logic.
 
 Domain functions for cluster analysis, fingerprinting, and health assessment.

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Shared utility functions for domain logic.
 
 This module provides common helper functions used across all domain modules

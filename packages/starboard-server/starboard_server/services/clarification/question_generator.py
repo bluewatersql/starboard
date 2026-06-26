@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Question generator service for Phase 7 clarification pattern.
 
 This service generates user-friendly clarification questions with options

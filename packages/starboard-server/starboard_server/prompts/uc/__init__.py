@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unity Catalog (UC) domain prompts package.
 
 The UC agent replaces the deprecated "table" agent with extended capabilities

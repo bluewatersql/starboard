@@ -671,7 +671,7 @@ Please be patient! This is a community project.
 ### Contributors
 
 All contributors are recognized:
-- Listed in `CONTRIBUTORS.md`
+- Listed in the [GitHub contributors graph](https://github.com/starboard-ai/job-agent/graphs/contributors)
 - Mentioned in release notes
 - GitHub contributor badge
 

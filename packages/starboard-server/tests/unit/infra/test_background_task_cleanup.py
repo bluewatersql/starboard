@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for background task cleanup.
 
 Tests verify that background tasks are properly cancelled and awaited

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Databricks workspace discovery and health assessment pipeline.
 
 Provides the ``DiscoveryEngine`` for running a full workspace health

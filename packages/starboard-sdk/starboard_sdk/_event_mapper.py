@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Maps internal server events to stable SDK event types.
 
 This module is internal to the SDK (prefixed with ``_``). It converts

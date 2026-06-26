@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for v2 LLM response dataclasses."""
 
 from dataclasses import FrozenInstanceError

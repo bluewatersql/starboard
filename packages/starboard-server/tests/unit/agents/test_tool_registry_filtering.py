@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """
 Unit tests for ToolRegistry.filter_by_domain() (Phase 2, Task 2.2).
 

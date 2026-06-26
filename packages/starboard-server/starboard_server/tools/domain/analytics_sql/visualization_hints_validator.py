@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Visualization Hints Validator for Analytics SQL.
 
 Validates and sanitizes visualization hints from LLM SQL generation to ensure

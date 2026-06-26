@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Advisor report formatter for optimization agents.
 
 Formats AdvisorReport (used by query, job, table, compute agents)

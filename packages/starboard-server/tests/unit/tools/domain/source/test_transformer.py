@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for source transformer domain logic."""
 
 from starboard_server.tools.domain.source.models import CodeQualityIssue

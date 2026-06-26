@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Interactive chat mode for multi-turn CLI conversations.
 
 Provides a REPL interface for conversational interaction with the

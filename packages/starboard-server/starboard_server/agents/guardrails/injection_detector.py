@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Prompt injection detection.
 
 Scans user input for common prompt injection patterns and logs suspicious

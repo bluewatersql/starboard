@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Analytics Agent SQL - Query Builder Domain Logic.
 
 This package contains the core domain logic for building and validating

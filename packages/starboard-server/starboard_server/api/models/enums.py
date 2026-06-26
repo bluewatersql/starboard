@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """API enums for message and event models.
 
 The shared role/status/event enums are defined in the domain layer

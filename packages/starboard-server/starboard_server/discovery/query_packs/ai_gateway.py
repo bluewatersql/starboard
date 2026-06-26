@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """AI Gateway discovery query pack.\n\nCovers endpoint requests, error rates, latency, and token usage."""
 
 from __future__ import annotations

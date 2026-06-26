@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Security-critical unit tests for Workstream 1A.
 
 Covers all 14 security items:

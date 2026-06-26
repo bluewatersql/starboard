@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-002: Layer boundary violations.
 
 The architectural dependency rule is:

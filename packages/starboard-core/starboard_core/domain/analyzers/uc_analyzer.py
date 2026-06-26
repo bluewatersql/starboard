@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Pure domain logic for UC analysis.
 
 This module contains pure functions for schema analysis, classification,

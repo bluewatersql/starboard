@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for context fetchers.
 
 The _parse_job_id function extracts the first numeric sequence from any string,

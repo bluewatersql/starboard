@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Pydantic models for warehouse report type (Warehouse agent).
 
 This module defines schemas for the 'warehouse' report type, which provides

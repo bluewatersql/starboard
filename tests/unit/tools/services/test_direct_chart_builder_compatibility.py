@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Compatibility tests for DirectChartConfigBuilder output format.
 
 Ensures the output from DirectChartConfigBuilder matches what frontend expects

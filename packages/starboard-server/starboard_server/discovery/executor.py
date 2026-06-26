@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Query pack executor — parallel SQL execution with bounded concurrency.
 
 Executes query packs against Databricks via AsyncDatabricksClient,

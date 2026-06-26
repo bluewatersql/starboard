@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Next-step generator service for cross-domain suggestions.
 
 Generates NextStepOptions from domain agent outputs and service catalog.

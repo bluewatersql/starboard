@@ -19,8 +19,10 @@ version = "0.1.0"
 description = "Starboard AI Agent - AI-powered Databricks workload analysis and optimization"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "DBRX"}
-dependencies = []
+license = {text = "Databricks Open Model License"}
+dependencies = [
+    "detect-secrets>=1.5.0",
+]
 
 [project.optional-dependencies]
 core = [

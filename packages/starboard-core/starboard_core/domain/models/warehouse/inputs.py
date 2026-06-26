@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Domain input models for warehouse operations.
 
 Provides validated input models for warehouse tool operations.

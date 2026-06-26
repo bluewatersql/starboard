@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Per-domain LLM analysis prompt templates and prompt builder (Jinja2 v2).
 
 Migrated from str.format() to Jinja2 templates in Wave 20260329.

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Starboard AI Agent - Core domain models, prompts, and shared types"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "DBRX"}
+license = {text = "Databricks Open Model License"}
 dependencies = [
     "pydantic>=2.12.3",
     "typing-extensions>=4.14.1",

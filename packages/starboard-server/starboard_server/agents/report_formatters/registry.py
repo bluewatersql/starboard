@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Formatter registry for dispatching to type-specific formatters.
 
 The registry pattern allows runtime dispatch to the appropriate formatter

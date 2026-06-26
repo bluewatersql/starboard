@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for handoff streaming events.
 
 Phase 3 Component 5: Streaming Events for Handoffs

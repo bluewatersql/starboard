@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Jinja2 environment for prompt template rendering.
 
 Provides a singleton Environment configured for prompt templates with

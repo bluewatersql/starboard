@@ -10,7 +10,7 @@ Complete guide for building the RAG vector store for Analytics Agent V2.
 # 1. Set environment variables
 export DATABRICKS_HOST="your-workspace.cloud.databricks.com"
 export DATABRICKS_TOKEN="dapi..."
-export OPENAI_API_KEY="sk-..."
+export OPENAI_API_KEY="<your-api-key>"
 
 # 2. Run the build script
 python scripts/build_rag_vector_store.py
@@ -30,7 +30,7 @@ python scripts/build_rag_vector_store.py
 | `DATABRICKS_HOST` | Databricks workspace URL | `my-workspace.cloud.databricks.com` |
 | `DATABRICKS_WAREHOUSE_ID` | SQL Warehouse ID| `abc123` |
 | `DATABRICKS_TOKEN` | Personal access token | `dapi...` |
-| `OPENAI_API_KEY` | OpenAI API key | `sk-...` |
+| `OPENAI_API_KEY` | OpenAI API key | `<your-api-key>` |
 
 ### Required Permissions
 

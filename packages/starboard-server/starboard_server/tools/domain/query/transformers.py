@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Query and warehouse data transformation functions.
 
 This module provides functions to transform Databricks SQL warehouse configurations,

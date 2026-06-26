@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Converter for translating agent StreamingEvents to SSE ChatEvents.
 
 This module provides a simple, declarative approach to converting internal agent

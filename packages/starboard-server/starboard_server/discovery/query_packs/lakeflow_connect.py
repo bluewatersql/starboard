@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Lakeflow Connect discovery query pack.\n\nCovers ingestion pipeline usage, cost, and connector types."""
 
 from __future__ import annotations

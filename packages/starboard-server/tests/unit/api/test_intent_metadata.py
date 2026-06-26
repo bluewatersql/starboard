@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for intent classification metadata in API models.
 
 Phase 2 Component 5: API & Streaming

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unity Catalog domain module.
 
 This module re-exports domain models, analyzers, and transformers for

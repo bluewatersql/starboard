@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Per-domain LLM analysis prompt templates and prompt builder.
 
 Each domain gets a specialized prompt that guides the LLM to evaluate

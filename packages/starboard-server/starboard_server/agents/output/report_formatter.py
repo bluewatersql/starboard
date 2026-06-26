@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """DEPRECATED: Use starboard_server.agents.report_formatters instead.
 
 This module is deprecated in favor of the new adapter-based formatter system.

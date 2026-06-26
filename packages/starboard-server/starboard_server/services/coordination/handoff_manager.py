@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Agent handoff manager for multi-agent routing.
 
 Phase 3 Component 3: Handoff Manager & Persistence

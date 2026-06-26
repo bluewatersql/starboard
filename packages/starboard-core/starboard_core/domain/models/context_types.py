@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Context type identifiers for analyzing user-provided context.
 
 This module defines context types used by the planning system to determine

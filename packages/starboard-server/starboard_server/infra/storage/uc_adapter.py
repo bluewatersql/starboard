@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unity Catalog storage adapter.
 
 This module provides the UCStorageAdapter class for reading and writing
@@ -20,6 +22,11 @@ from starboard_server.infra.observability.logging import get_logger
 from starboard_server.infra.storage.table_registry import TableDef, TableRegistry
 
 logger = get_logger(__name__)
+
+# Allowlist for SQL column identifiers. Used as defense-in-depth when building
+# WHERE conditions so that column names cannot carry an injection payload even
+# if a caller bypasses schema validation.
+_VALID_COLUMN_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 class InvalidColumnError(ValueError):
@@ -480,16 +487,28 @@ class UCStorageAdapter:
         """
 
     def _build_where_conditions(self, filters: dict[str, Any]) -> list[str]:
-        """Build WHERE clause conditions."""
+        """Build WHERE clause conditions.
+
+        SECURITY: column names and values are interpolated into SQL. The
+        Databricks ``execute_statement`` path used by this adapter takes a raw
+        statement string and does not expose SQL parameter markers, so values
+        cannot be bound — they are formatted safely instead:
+          - Column names are validated against an identifier allowlist
+            (``[A-Za-z_][A-Za-z0-9_]*``). Callers already validate columns
+            against the table schema; this is defense-in-depth so the method is
+            safe regardless of caller.
+          - Every value (string, numeric, bool, None, etc.) is formatted via
+            ``_format_value``, which escapes embedded single quotes, so numeric
+            and string values alike cannot carry an injection payload.
+        """
         conditions = []
         for col, val in filters.items():
+            if not _VALID_COLUMN_NAME.match(col):
+                raise InvalidColumnError(f"Invalid column name in filter: {col!r}")
             if val is None:
                 conditions.append(f"{col} IS NULL")
-            elif isinstance(val, str):
-                escaped = val.replace("'", "''")
-                conditions.append(f"{col} = '{escaped}'")
             else:
-                conditions.append(f"{col} = {val}")
+                conditions.append(f"{col} = {self._format_value(val)}")
         return conditions
 
     # =========================================================================

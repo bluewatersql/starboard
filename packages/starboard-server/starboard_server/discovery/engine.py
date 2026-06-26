@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery engine — orchestrates the full 4-phase pipeline.
 
 Phase 1: Audit — run P-AUDIT01 to discover active products

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Cluster fingerprint models.
 
 Detailed analysis models for Databricks cluster configuration and workload

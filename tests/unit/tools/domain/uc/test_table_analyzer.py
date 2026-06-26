@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for TableAnalyzer domain logic (table discovery and categorization)."""
 
 from starboard_core.domain.analyzers import TableAnalyzer

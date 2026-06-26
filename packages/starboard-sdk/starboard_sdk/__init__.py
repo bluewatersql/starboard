@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Starboard SDK — Python client for multi-turn Starboard AI Agent sessions.
 
 Provides ``StarboardClient`` and ``ConversationSession`` for notebooks and

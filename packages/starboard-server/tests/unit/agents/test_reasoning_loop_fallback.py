@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for reasoning loop fallback report generation.
 
 Tests that the reasoning loop produces meaningful output even when

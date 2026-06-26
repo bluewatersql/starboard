@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Clarification API REST endpoints.
 
 Provides HTTP endpoints for handling clarification requests:
@@ -7,7 +9,7 @@ Provides HTTP endpoints for handling clarification requests:
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, HTTPException, Path, Request, status
 
 from starboard_server.api.dependencies import ContainerDep
 from starboard_server.api.models import (
@@ -44,6 +46,7 @@ router = APIRouter(prefix="/api", tags=["clarification"])
     },
 )
 async def respond_to_clarification(
+    http_request: Request,
     conversation_id: str = Path(..., description="Conversation ID"),
     clarification_id: str = Path(..., description="Clarification ID"),
     request: RespondToClarificationRequest = ...,  # type: ignore[assignment]
@@ -115,6 +118,22 @@ async def respond_to_clarification(
             detail=f"Clarification ID mismatch: {request.clarification_id} != {clarification_id}",
         )
 
+    # Resolve the authenticated user from the auth middleware
+    # (request.state.user). Never substitute a fake/default user: if no
+    # authenticated user is resolvable, reject the request with 401 rather than
+    # silently acting on behalf of a placeholder identity.
+    user = getattr(http_request.state, "user", None)
+    if user is None or getattr(user, "id", None) is None:
+        logger.warning(
+            "clarification_response_unauthenticated",
+            conversation_id=conversation_id,
+            clarification_id=clarification_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+        )
+
     try:
         # SIMPLIFIED: Router clarifications are ephemeral (not stored in DB)
         # Just determine the enriched query from the selected option
@@ -146,7 +165,7 @@ async def respond_to_clarification(
         await container.multi_agent_manager.enqueue_message(  # type: ignore[attr-defined]
             conversation_id=conversation_id,
             content=enriched_query,
-            user_id="default_user",  # TODO(BACKLOG-001): Extract user_id from auth request context
+            user_id=user.id,
         )
 
         # Generate response

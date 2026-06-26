@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for MessageProcessor with clarification pattern (Phase 7).
 
 Tests the full integration of:

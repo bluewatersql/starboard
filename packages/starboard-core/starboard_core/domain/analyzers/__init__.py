@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Domain analyzers - pure computation logic with no I/O dependencies."""
 
 from starboard_core.domain.analyzers.uc_analyzer import (

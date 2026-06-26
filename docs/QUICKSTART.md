@@ -65,7 +65,7 @@ DATABRICKS_TOKEN=dapi_your_token_here
 DATABRICKS_WAREHOUSE_ID=your_warehouse_id
 
 # Required: LLM provider
-LLM_API_KEY=sk-...
+LLM_API_KEY=<your-api-key>
 
 # Optional: Model selection (defaults to databricks-claude-sonnet-4-5)
 LLM_MODEL=databricks-claude-sonnet-4-5

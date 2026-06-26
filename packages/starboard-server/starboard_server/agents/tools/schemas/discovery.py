@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery Agent tool schemas.
 
 Defines OpenAI function call schemas for the 4-phase discovery workflow

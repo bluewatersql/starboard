@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Context facades package.
 
 All facades have been removed. Use SharedContextProvider directly with transforms:

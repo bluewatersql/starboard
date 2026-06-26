@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Diagnostic report formatter for troubleshooting agent.
 
 Formats DiagnosticReport (used by diagnostic agent) into readable markdown with:

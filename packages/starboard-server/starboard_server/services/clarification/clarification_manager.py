@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Clarification manager service for Phase 7 (MVP - Simplified).
 
 This service orchestrates ambiguity detection and question generation.

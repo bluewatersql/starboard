@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Service Catalog Tool for agent discovery and handoff recommendations.
 
 Provides catalog registry and lookup functionality for service discovery.

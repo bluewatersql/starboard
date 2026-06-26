@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Starboard AI Agent - Command-line Interface"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "DBRX"}
+license = {text = "Databricks Open Model License"}
 dependencies = [
     "starboard-core",    # Workspace dependency
     "starboard-server",  # Server components (agents, adapters)

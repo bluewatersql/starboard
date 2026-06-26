@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Safety and approval management for operations with side effects."""
 
 from starboard_server.infra.observability.logging import get_logger

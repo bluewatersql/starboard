@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Query result cache for visualization data references.
 
 This module provides Layer 2 caching for query results, enabling frontend

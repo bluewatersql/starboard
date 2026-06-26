@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Domain models for clarification requests (Phase 7).
 
 This module defines models for the Clarification Request Pattern, which detects

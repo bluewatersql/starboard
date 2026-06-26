@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Rate limiting middleware and utilities.
 
 Provides rate limiting functionality using slowapi with support for:

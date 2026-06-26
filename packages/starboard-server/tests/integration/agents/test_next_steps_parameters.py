@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for next step parameter passing (Context Passing Bug Fix).
 
 These tests verify end-to-end workflows where user-selected next step options

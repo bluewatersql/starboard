@@ -117,7 +117,7 @@ databricks bundle destroy -t dev --auto-approve
 ```bash
 # Create .env file
 cat > .env << EOF
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=<your-api-key>
 DATABRICKS_HOST=https://...
 DATABRICKS_TOKEN=dapi...
 EOF
@@ -181,7 +181,7 @@ kubectl create namespace starboard-agent
 # Create secrets
 kubectl create secret generic starboard-secrets \
   --namespace starboard-agent \
-  --from-literal=openai-api-key="sk-..." \
+  --from-literal=openai-api-key="<your-api-key>" \
   --from-literal=databricks-token="dapi..."
 
 # Deploy with Helm

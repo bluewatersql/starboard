@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Cluster report formatter for Cluster agent.
 
 Formats ClusterReport into readable markdown with:

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Conversation management endpoints.
 
 Provides HTTP endpoints for conversation CRUD operations:
@@ -153,9 +155,11 @@ async def create_conversation(
             error=str(e),
             exc_info=True,
         )
+        # Do not leak internal exception text to the client; the full error is
+        # logged above with exc_info for server-side diagnosis.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create conversation: {str(e)}",
+            detail="Failed to create conversation",
         ) from e
 
 

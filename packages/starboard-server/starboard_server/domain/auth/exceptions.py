@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Authentication-specific exceptions.
 
 Following clean architecture principles, these exceptions are part of the domain layer

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit test configuration and shared fixtures.
 
 Ensures test isolation by resetting global singletons between tests.

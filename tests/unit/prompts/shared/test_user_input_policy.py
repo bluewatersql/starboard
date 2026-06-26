@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for the user_input_policy shared prompt module.
 
 This module tests the date interpretation policy, parameter defaults,

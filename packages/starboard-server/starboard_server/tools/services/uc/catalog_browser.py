@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Catalog browser service for UC asset enumeration and discovery.
 
 Handles catalog/schema/table browsing, LLM-based table discovery,

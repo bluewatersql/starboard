@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Server-Sent Events (SSE) streaming for real-time chat updates.
 
 This module implements SSE endpoints for streaming chat events to clients.

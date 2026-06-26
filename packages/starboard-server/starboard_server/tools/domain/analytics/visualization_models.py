@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Domain models for data visualization.
 
 This module defines models for LLM-driven visualization with query catalog guardrails.

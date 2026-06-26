@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Base protocol for data computers.
 
 Data computers extract and compute specific aspects of Spark application data,

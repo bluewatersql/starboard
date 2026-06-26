@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for B2: Conversation History Reload Accuracy.
 
 Verifies that thinking_steps, tool_calls, and tool_positions are correctly

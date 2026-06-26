@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Domain transformers - pure data transformation functions.
 
 These transformers condense raw API responses into compact summaries

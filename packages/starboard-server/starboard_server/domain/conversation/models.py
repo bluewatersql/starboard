@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Canonical domain models for conversations, messages, and streaming events.
 
 These types are the innermost, stable definitions used across the agent and

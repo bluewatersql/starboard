@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for tool categories with Analytics V3 RAG context builder."""
 
 from starboard_server.agents.tool_categories import (

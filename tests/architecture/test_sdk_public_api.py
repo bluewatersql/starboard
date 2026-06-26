@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-007: No ``Any`` in SDK public API.
 
 Public function and method signatures in ``starboard_sdk`` must not use

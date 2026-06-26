@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """
 Tests for S3Adapter.
 
@@ -149,12 +151,12 @@ class TestS3AdapterPathExists:
 
     @patch("boto3.Session")
     def test_path_exists_file_not_found(self, mock_session: Mock) -> None:
-        """Should return False when file doesn't exist."""
+        """Should return False when file doesn't exist (NoSuchKey 404)."""
         from starboard_log_parser.adapters.cloud.s3 import S3Adapter
 
-        # Mock S3 client raising 404
         mock_s3_client = Mock()
-        mock_s3_client.head_object.side_effect = Exception("404")
+        mock_s3_client.head_object.side_effect = _make_s3_error("NoSuchKey", 404)
+        mock_s3_client.list_objects_v2.return_value = {}
         mock_session.return_value.client.return_value = mock_s3_client
 
         provider = StaticCredentialProvider(access_key="test", secret_key="test")
@@ -169,9 +171,8 @@ class TestS3AdapterPathExists:
         """Should return True when prefix exists."""
         from starboard_log_parser.adapters.cloud.s3 import S3Adapter
 
-        # Mock S3 client - head_object fails, list_objects succeeds
         mock_s3_client = Mock()
-        mock_s3_client.head_object.side_effect = Exception("404")
+        mock_s3_client.head_object.side_effect = _make_s3_error("NoSuchKey", 404)
         mock_s3_client.list_objects_v2.return_value = {
             "Contents": [{"Key": "logs/file1.json"}]
         }
@@ -371,6 +372,199 @@ class TestS3AdapterGetFileSize:
             adapter.get_file_size("s3://my-bucket/nonexistent.json")
 
         assert "get_size" in str(exc_info.value)
+
+
+def _make_s3_error(code: str, http_status: int = 400) -> Exception:
+    """Build a raiseable S3 error with a .response dict.
+
+    Uses a plain Exception subclass so it is always raiseable, regardless of
+    whether botocore is installed or boto3/botocore.exceptions are mocked.
+    _is_not_found_error only inspects exc.response, so this is sufficient.
+    """
+
+    class _FakeClientError(Exception):
+        pass
+
+    err = _FakeClientError(f"S3 {code}")
+    err.response = {  # type: ignore[attr-defined]
+        "Error": {"Code": code, "Message": f"Simulated {code}"},
+        "ResponseMetadata": {"HTTPStatusCode": http_status},
+    }
+    return err
+
+
+class TestS3AdapterPathExistsErrorHandling:
+    """Tests for path_exists error propagation (F-3-p2-log-parser-1)."""
+
+    def _make_client_error(self, code: str, http_status: int = 400) -> Exception:
+        return _make_s3_error(code, http_status)
+
+    @patch("boto3.Session")
+    def test_path_exists_404_on_file_and_prefix_returns_false(
+        self, mock_session: Mock
+    ) -> None:
+        """404 on both head_object and list_objects should return False."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        # head_object raises 404/NoSuchKey
+        mock_s3_client.head_object.side_effect = self._make_client_error(
+            "NoSuchKey", 404
+        )
+        # list_objects_v2 raises NoSuchBucket (also a 404-class not-found)
+        mock_s3_client.list_objects_v2.side_effect = self._make_client_error(
+            "NoSuchBucket", 404
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        result = adapter.path_exists("s3://my-bucket/nonexistent/key")
+        assert result is False
+
+    @patch("boto3.Session")
+    def test_path_exists_403_on_head_object_raises_cloud_storage_error(
+        self, mock_session: Mock
+    ) -> None:
+        """AccessDenied (403) on head_object must raise CloudStorageError, not return False."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        mock_s3_client.head_object.side_effect = self._make_client_error(
+            "AccessDenied", 403
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        with pytest.raises(CloudStorageError):
+            adapter.path_exists("s3://my-bucket/some/key")
+
+    @patch("boto3.Session")
+    def test_path_exists_throttling_on_head_object_raises_cloud_storage_error(
+        self, mock_session: Mock
+    ) -> None:
+        """Throttling on head_object must raise CloudStorageError, not return False."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        mock_s3_client.head_object.side_effect = self._make_client_error(
+            "SlowDown", 503
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        with pytest.raises(CloudStorageError):
+            adapter.path_exists("s3://my-bucket/some/key")
+
+    @patch("boto3.Session")
+    def test_path_exists_403_on_list_objects_raises_cloud_storage_error(
+        self, mock_session: Mock
+    ) -> None:
+        """AccessDenied on list_objects_v2 (prefix check) must raise CloudStorageError."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        # head_object raises 404 so we fall through to prefix check
+        mock_s3_client.head_object.side_effect = self._make_client_error(
+            "NoSuchKey", 404
+        )
+        # prefix check gets 403
+        mock_s3_client.list_objects_v2.side_effect = self._make_client_error(
+            "AccessDenied", 403
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        with pytest.raises(CloudStorageError):
+            adapter.path_exists("s3://my-bucket/some/prefix/")
+
+
+class TestS3AdapterListFilesErrorHandling:
+    """Tests for list_files error propagation (F-3-p2-log-parser-2)."""
+
+    def _make_client_error(self, code: str, http_status: int = 400) -> Exception:
+        return _make_s3_error(code, http_status)
+
+    @patch("boto3.Session")
+    def test_list_files_404_returns_empty_list(self, mock_session: Mock) -> None:
+        """NoSuchBucket (404) should return [] not raise."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        mock_s3_client.list_objects_v2.side_effect = self._make_client_error(
+            "NoSuchBucket", 404
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        result = adapter.list_files("s3://missing-bucket/prefix/")
+        assert result == []
+
+    @patch("boto3.Session")
+    def test_list_files_403_raises_cloud_storage_error(
+        self, mock_session: Mock
+    ) -> None:
+        """AccessDenied (403) must raise CloudStorageError, not return []."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        mock_s3_client.list_objects_v2.side_effect = self._make_client_error(
+            "AccessDenied", 403
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        with pytest.raises(CloudStorageError):
+            adapter.list_files("s3://my-bucket/some/prefix/")
+
+    @patch("boto3.Session")
+    def test_list_files_throttling_raises_cloud_storage_error(
+        self, mock_session: Mock
+    ) -> None:
+        """Throttling (SlowDown) must raise CloudStorageError, not return []."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        mock_s3_client.list_objects_v2.side_effect = self._make_client_error(
+            "SlowDown", 503
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        with pytest.raises(CloudStorageError):
+            adapter.list_files("s3://my-bucket/some/prefix/")
+
+    @patch("boto3.Session")
+    def test_list_files_generic_error_raises_cloud_storage_error(
+        self, mock_session: Mock
+    ) -> None:
+        """Any non-404 ClientError must raise CloudStorageError, not return []."""
+        from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+
+        mock_s3_client = Mock()
+        mock_s3_client.list_objects_v2.side_effect = self._make_client_error(
+            "InternalError", 500
+        )
+        mock_session.return_value.client.return_value = mock_s3_client
+
+        provider = StaticCredentialProvider(access_key="test", secret_key="test")
+        adapter = S3Adapter(credential_provider=provider)
+
+        with pytest.raises(CloudStorageError):
+            adapter.list_files("s3://my-bucket/some/prefix/")
 
 
 class TestS3AdapterCredentialRefresh:

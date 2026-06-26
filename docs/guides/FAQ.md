@@ -96,7 +96,7 @@ At minimum:
 ```bash
 DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
 DATABRICKS_TOKEN=dapi...
-LLM_API_KEY=sk-...
+LLM_API_KEY=<your-api-key>
 ```
 
 See the [Configuration Guide](../CONFIGURATION.md) for the complete reference.

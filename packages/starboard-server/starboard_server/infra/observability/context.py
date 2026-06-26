@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Observability context for distributed tracing and structured logging.
 
 This module provides a lightweight, immutable context for passing observability

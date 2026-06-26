@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Stable re-export facade for conversation types used by the agent layer.
 
 Agents import the shared conversation models from here (the domain layer) rather

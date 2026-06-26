@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """MLflow discovery query pack.\n\nCovers experiment health, run patterns, user activity, and lifecycle."""
 
 from __future__ import annotations

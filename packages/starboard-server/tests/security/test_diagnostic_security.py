@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Security tests for diagnostic agent.
 
 Covers OWASP Top 10 relevant to the diagnostic pipeline:

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Pytest configuration and shared fixtures for integration tests.
 
 This conftest provides fixtures for cross-package integration testing.

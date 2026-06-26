@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Analytics report formatter for FinOps agent.
 
 Formats AnalyticsReport (used by analytics/FinOps agent) into readable

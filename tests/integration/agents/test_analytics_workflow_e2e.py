@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for analytics agent end-to-end workflow.
 
 Tests the complete V3 agentic RAG workflow:

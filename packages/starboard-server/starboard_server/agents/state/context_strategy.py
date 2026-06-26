@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Conversation context window management strategy.
 
 Manages what context is passed to agents as conversations grow,

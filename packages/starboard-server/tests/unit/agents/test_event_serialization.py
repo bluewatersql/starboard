@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for event to_sse_data() serialization methods.
 
 This module tests that all StreamingEvent subclasses correctly implement

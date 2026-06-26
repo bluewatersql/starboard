@@ -67,7 +67,7 @@ Create a `.env` file in your project directory:
 ```bash
 DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
 DATABRICKS_TOKEN=dapi_your_token_here
-LLM_API_KEY=sk-...
+LLM_API_KEY=<your-api-key>
 LLM_MODEL=databricks-claude-sonnet-4-5
 ```
 

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for message API models."""
 
 from starboard_server.api.models.messages import FileAttachment, SendMessageRequest

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery heuristics — deterministic best-practice rules.
 
 Heuristics pre-screen query results against thresholds before LLM analysis.

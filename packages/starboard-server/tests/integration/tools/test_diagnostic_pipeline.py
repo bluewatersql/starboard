@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for diagnostic artifact pipeline (Phase 1).
 
 These tests verify end-to-end artifact processing flows:

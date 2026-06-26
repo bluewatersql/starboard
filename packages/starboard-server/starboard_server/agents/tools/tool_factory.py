@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tool factory for multi-agent reasoning framework.
 
 This module provides a factory function to create and register native

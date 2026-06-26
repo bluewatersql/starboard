@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Circuit breaker pattern for external service calls.
 
 This module implements the circuit breaker pattern to prevent cascading failures

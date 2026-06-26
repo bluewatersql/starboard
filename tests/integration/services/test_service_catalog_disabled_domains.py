@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for service catalog disabled domains filtering.
 
 Verifies that DISABLED_AGENT_DOMAINS configuration is respected throughout

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """UC service facade -- backward-compatible delegation to focused sub-services.
 
 This module preserves the original UCService interface while delegating

@@ -182,7 +182,7 @@ databricks:
 
 llm:
   model: "gpt-4o"
-  api_key: "sk-..."
+  api_key: "<your-api-key>"
   temperature: 0.4
   max_tokens: 120000
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Export production vector store for in-memory bootstrap.
 
 This script exports a curated subset of the production vector store

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery prompts — domain analysis prompt templates.
 
 Versioned prompt templates for LLM-driven workspace health analysis.

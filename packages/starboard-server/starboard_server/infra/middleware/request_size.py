@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Request size limit middleware.
 
 Prevents memory exhaustion by rejecting requests that exceed a configurable

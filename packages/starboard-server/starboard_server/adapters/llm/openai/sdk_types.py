@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Typed accessors for OpenAI SDK streaming objects.
 
 Centralizes hasattr/getattr checks into a single module so that if the SDK

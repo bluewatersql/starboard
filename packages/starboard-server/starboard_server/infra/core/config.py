@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Application configuration using Pydantic BaseSettings.
 
 Environment variables are loaded automatically by Pydantic. The .env file

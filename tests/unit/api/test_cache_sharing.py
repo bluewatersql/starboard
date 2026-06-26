@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Test cache sharing between data and visualization endpoints.
 
 This test validates that data cached during query execution

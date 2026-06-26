@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Discovery agent system prompt v1.
 
 Guides the discovery agent to run workspace health assessments.

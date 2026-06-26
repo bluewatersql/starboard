@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Integration tests for advanced diagnostic scenarios (6-10).
 
 These scenarios test ONLINE mode, handoffs, and complex exploration flows.

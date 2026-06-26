@@ -144,7 +144,7 @@ DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
 DATABRICKS_TOKEN="dapi..."
 
 # LLM Configuration
-LLM_API_KEY="sk-..."
+LLM_API_KEY="<your-api-key>"
 LLM_MODEL="gpt-4o"  # or gpt-4o-mini for faster/cheaper
 ```
 

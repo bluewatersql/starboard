@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Base class and utilities for tool adapters.
 
 Provides shared initialization, observability helpers, and schema generation

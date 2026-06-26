@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Lakebase expanded discovery query pack.\n\nCovers instance usage, idle detection, cost trends, and growth.\nReplaces the single-query LAKEBASE_PACK from product_surfaces.py."""
 
 from __future__ import annotations

@@ -62,7 +62,7 @@ The SDK reads the same environment variables as the CLI:
 # Required
 export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
 export DATABRICKS_TOKEN="dapi..."
-export LLM_API_KEY="sk-..."
+export LLM_API_KEY="<your-api-key>"
 
 # Optional
 export LLM_MODEL="databricks-claude-sonnet-4-5"

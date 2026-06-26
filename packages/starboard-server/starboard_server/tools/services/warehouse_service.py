@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Warehouse service for basic warehouse operations.
 
 This service provides basic warehouse operations using the WarehouseDataProvider

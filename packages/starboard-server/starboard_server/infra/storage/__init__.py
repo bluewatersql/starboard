@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unity Catalog table storage adapter.
 
 This module provides a standardized interface for agents to read/write

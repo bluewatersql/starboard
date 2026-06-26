@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Spark event log parser with multi-cloud support"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "DBRX"}
+license = {text = "Databricks Open Model License"}
 dependencies = [
     "orjson>=3.11.4",
     "stream-unzip>=0.0.94",

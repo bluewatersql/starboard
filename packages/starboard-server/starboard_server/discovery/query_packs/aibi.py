@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """AI/BI expanded discovery query pack.\n\nCovers dashboard audit, stale dashboards, Genie spaces, and query performance.\nReplaces the 2-query AIBI_PACK from product_surfaces.py."""
 
 from __future__ import annotations

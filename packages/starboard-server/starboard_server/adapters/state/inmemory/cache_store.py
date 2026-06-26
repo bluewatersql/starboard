@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """In-memory cache store implementation with optional TTL reset-on-hit.
 
 This module provides an in-memory cache with TTL support and the ability

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """DLT Pipelines discovery query pack.
 
 Covers pipeline health, failure rates, serverless candidates,

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for Intent Classifier service (Phase 2: Conversation Extension)."""
 
 from starboard_core.models.conversation import Message

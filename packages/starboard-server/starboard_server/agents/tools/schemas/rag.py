@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tool schemas for RAG-based discovery (Analytics Agent).
 
 NOTE: Legacy schemas removed (Dec 25, 2025):

@@ -31,7 +31,7 @@ Configuration file support (config.yaml) has been removed in favor of environmen
    DATABRICKS_WAREHOUSE_ID=your_warehouse_id
 
    # Required: LLM Provider
-   LLM_API_KEY=sk-...  # OpenAI API key or Azure OpenAI key
+   LLM_API_KEY=<your-api-key>  # OpenAI API key or Azure OpenAI key
    
    # Optional: Adjust defaults
    LLM_MODEL=databricks-claude-sonnet-4-5
@@ -59,7 +59,7 @@ DATABRICKS_TOKEN=dapi_your_token_here
 DATABRICKS_WAREHOUSE_ID=your_warehouse_id
 
 # LLM Provider
-LLM_API_KEY=sk-...  # OpenAI API key
+LLM_API_KEY=<your-api-key>  # OpenAI API key
 ```
 
 ### LLM Configuration

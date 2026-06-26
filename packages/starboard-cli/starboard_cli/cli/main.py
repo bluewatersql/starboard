@@ -1041,7 +1041,7 @@ Environment Variables:
             "    token: dapi...\n"
             "  llm:\n"
             "    model: gpt-4o\n"
-            "    api_key: sk-...\n"
+            "    api_key: <your-api-key>\n"
             "    temperature: 0.4\n"
             "See examples/env.example for all options."
         ),

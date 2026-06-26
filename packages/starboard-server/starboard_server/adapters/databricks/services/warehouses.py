@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Async Warehouse service implementation.
 
 This module provides async SQL warehouse operations for Databricks.

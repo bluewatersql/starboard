@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Base mixin for domain agents to generate structured outputs.
 
 This mixin provides a standard interface for domain agents to build

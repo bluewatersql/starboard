@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for discovery agent prompt v1 and v2.
 
 Verifies prompt version, format, and registration in the prompt factories.

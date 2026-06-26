@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Analytics SQL Generation Tools (Agentic RAG Workflow).
 
 Provides agent-callable tools for the agentic RAG pattern:

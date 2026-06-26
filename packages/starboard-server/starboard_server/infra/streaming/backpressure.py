@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """SSE streaming backpressure handling.
 
 Provides a bounded event buffer with watermark-based flow control.

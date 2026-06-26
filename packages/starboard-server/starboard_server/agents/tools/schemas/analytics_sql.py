@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tool schemas for Analytics SQL Generation (Agentic RAG Workflow).
 
 Analytics SQL follows an agentic RAG pattern where the agent controls the workflow:

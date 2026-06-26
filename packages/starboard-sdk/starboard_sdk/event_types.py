@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """SDK event types for streaming responses.
 
 These are stable public types owned by the SDK. Internal server events are

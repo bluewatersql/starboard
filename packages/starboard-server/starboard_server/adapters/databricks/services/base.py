@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Base service class with async patterns for Databricks SDK.
 
 This module provides a base class for all Databricks services with:

@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Apps expanded discovery query pack.\n\nCovers app inventory, start/stop history, costs, and per-user efficiency.\nReplaces the 2-query APPS_PACK from product_surfaces.py."""
 
 from __future__ import annotations

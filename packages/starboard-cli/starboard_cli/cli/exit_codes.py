@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Standard exit codes for CLI processes.
 
 These constants provide semantic exit codes so that shell scripts and CI

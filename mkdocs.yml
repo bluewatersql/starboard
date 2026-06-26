@@ -95,14 +95,22 @@ nav:
       - Agent Catalog: overview/agents.md
       - Quickstart: QUICKSTART.md
       - Configuration: CONFIGURATION.md
+      - Changelog: overview/changelog.md
+      - Claude Code Integration: CLAUDE_CODE_INTEGRATION.md
 
   - User Guide:
       - Web Interface: user-guide/web-ui.md
       - CLI Reference: user-guide/cli.md
+      - SDK: user-guide/sdk.md
+      - Interruptible Reasoning: user-guide/interruptible-reasoning.md
+      - Troubleshooting: user-guide/troubleshooting.md
+      - Understanding Reports: user-guide/understanding-reports.md
       - Workflows:
           - Query Optimization: user-guide/workflows/query-optimization.md
           - Job Debugging: user-guide/workflows/job-debugging.md
           - Cost Analysis: user-guide/workflows/cost-analysis.md
+          - Cluster Optimization: user-guide/workflows/cluster-optimization.md
+          - Warehouse Optimization: user-guide/workflows/warehouse-optimization.md
           - Table Governance: user-guide/workflows/table-governance.md
           - Workspace Discovery: user-guide/workflows/workspace-discovery.md
       - Quick Reference: QUICK_REFERENCE.md
