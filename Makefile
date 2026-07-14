@@ -2,10 +2,10 @@
 # ================================
 # Development workflow for Starboard AI Agent monorepo
 
-.PHONY: help setup install install-dev install-frontend verify \
-        dev dev-debug dev-server dev-server-debug dev-frontend dev-frontend-debug dev-browser dev-stop dev-debug-context \
-        test test-unit test-sdk test-integration test-golden test-contract test-coverage test-frontend test-architecture \
-        lint lint-frontend type-check format check pre-commit audit-deps \
+.PHONY: help setup install install-dev verify \
+        dev dev-debug dev-server dev-server-debug dev-stop dev-debug-context \
+        test test-unit test-sdk test-integration test-golden test-contract test-coverage test-architecture \
+        lint type-check format check pre-commit audit-deps \
         clean clean-debug clean-deep build info
 
 # Package manager detection (prefer uv)
@@ -36,14 +36,11 @@ help:
 	@echo "  setup             First-time environment setup"
 	@echo "  install           Install packages (production)"
 	@echo "  install-dev       Install with dev dependencies"
-	@echo "  install-frontend  Install frontend (npm)"
 	@echo ""
 	@echo "$(GREEN)Development:$(NC)"
-	@echo "  dev               Start backend + frontend"
-	@echo "  dev-debug         Start both with debug logging"
+	@echo "  dev               Start backend server"
+	@echo "  dev-debug         Start with debug logging"
 	@echo "  dev-server        Backend only (localhost:8000)"
-	@echo "  dev-frontend      Frontend only (localhost:3000)"
-	@echo "  dev-browser       Chrome with console/network logging"
 	@echo "  dev-stop          Stop all dev servers"
 	@echo ""
 	@echo "$(GREEN)Testing:$(NC)"
@@ -54,12 +51,10 @@ help:
 	@echo "  test-golden       Golden/snapshot tests"
 	@echo "  test-contract     API contract tests"
 	@echo "  test-coverage     With coverage report"
-	@echo "  test-frontend     Frontend tests (Jest)"
 	@echo "  test-architecture Architecture fitness tests (GUIDELINE-001–010)"
 	@echo ""
 	@echo "$(GREEN)Code Quality:$(NC)"
 	@echo "  lint              Python linting (ruff)"
-	@echo "  lint-frontend     Frontend linting (eslint + tsc)"
 	@echo "  type-check        Python type checking (mypy)"
 	@echo "  format            Auto-format all code"
 	@echo "  check             All checks (lint + type + test)"
@@ -76,7 +71,6 @@ help:
 info:
 	@echo "Package Manager: $(PACKAGE_MANAGER)"
 	@python --version 2>/dev/null || echo "Python: not found"
-	@node --version 2>/dev/null | xargs -I{} echo "Node: {}" || echo "Node: not found"
 
 # ================================
 # Setup & Installation
@@ -89,7 +83,6 @@ setup: clean
 	fi
 	@$(MAKE) install-dev
 	@$(MAKE) verify
-	@$(MAKE) install-frontend
 	@echo ""
 	@echo "$(GREEN)✓ Setup complete!$(NC)"
 	@echo "Next: copy examples/env.example to .env and configure"
@@ -126,16 +119,6 @@ install-dev:
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
 
-install-frontend:
-	@echo "$(BLUE)Installing frontend dependencies...$(NC)"
-	@command -v npm >/dev/null 2>&1 || { echo "$(YELLOW)Error: npm not found. Install Node.js first.$(NC)"; exit 1; }
-	@cd frontend && rm -rf node_modules package-lock.json && npm cache clean --force 2>/dev/null && npm install
-	@if [ ! -f "frontend/node_modules/.bin/next" ]; then \
-		echo "$(YELLOW)Error: next not installed after npm install. Check for errors above.$(NC)"; \
-		exit 1; \
-	fi
-	@echo "$(GREEN)✓ Done$(NC)"
-
 verify:
 	@echo "$(BLUE)Verifying installation...$(NC)"
 	# Requires Python 3.12 — aligned with pyproject.toml (python_version=3.12) and .python-version (3.12.10)
@@ -154,13 +137,14 @@ verify:
 DEBUG_DIR := .debug
 
 dev:
-	@$(MAKE) -j2 dev-server dev-frontend
+	@echo "$(BLUE)Starting Starboard backend...$(NC)"
+	@$(MAKE) dev-server
 
 dev-debug:
 	@mkdir -p $(DEBUG_DIR)
-	@echo "$(BLUE)Starting servers with debug logging...$(NC)"
-	@echo "$(YELLOW)Logs: $(DEBUG_DIR)/server.log, $(DEBUG_DIR)/frontend.log$(NC)"
-	@$(MAKE) -j2 dev-server-debug dev-frontend-debug
+	@echo "$(BLUE)Starting server with debug logging...$(NC)"
+	@echo "$(YELLOW)Logs: $(DEBUG_DIR)/server.log$(NC)"
+	@$(MAKE) dev-server-debug
 
 dev-server:
 	@echo "$(BLUE)Starting backend server...$(NC)"
@@ -174,27 +158,9 @@ dev-server-debug:
 		uvicorn "starboard_server.main:create_app" --factory --reload --host 0.0.0.0 --port 8000 \
 		--log-level debug 2>&1 | tee ../../$(DEBUG_DIR)/server.log
 
-dev-frontend:
-	@echo "$(BLUE)Starting frontend server...$(NC)"
-	@if [ ! -f "frontend/node_modules/.bin/next" ]; then $(MAKE) install-frontend; fi
-	@cd frontend && npm run dev
-
-dev-frontend-debug:
-	@mkdir -p $(DEBUG_DIR)
-	@echo "$(BLUE)Starting frontend (debug)...$(NC)"
-	@if [ ! -f "frontend/node_modules/.bin/next" ]; then $(MAKE) install-frontend; fi
-	@cd frontend && DEBUG="*" npm run dev 2>&1 | tee ../$(DEBUG_DIR)/frontend.log
-
-dev-browser:
-	@echo "$(BLUE)Launching debug browser (Playwright Chrome)...$(NC)"
-	@echo "$(YELLOW)Logs: $(DEBUG_DIR)/browser/$(NC)"
-	@python scripts/debug_browser.py $(URL)
-
 dev-stop:
 	@echo "$(BLUE)Stopping dev servers...$(NC)"
 	@-pkill -f "uvicorn starboard_server" 2>/dev/null || true
-	@-pkill -f "next dev" 2>/dev/null || true
-	@-pkill -f "node.*next" 2>/dev/null || true
 	@echo "$(GREEN)✓ Servers stopped$(NC)"
 
 dev-debug-context:
@@ -208,10 +174,6 @@ dev-debug-context:
 	@ruff check > .debug/test/lint/ruff.txt || true
 	@echo "$(BLUE)  Running type-check...$(NC)"
 	@mypy . > .debug/test/type-check/mypy.txt || true
-	@echo "$(BLUE)  Running lint-frontend...$(NC)"
-	@if [ ! -f "frontend/node_modules/.bin/eslint" ]; then $(MAKE) install-frontend; fi
-	@cd frontend && npm run lint > ../.debug/test/lint/frontend.txt || true
-	@cd ..
 	@echo "$(BLUE)  Running test-unit...$(NC)"
 	@pytest packages/starboard-core/tests/unit/ packages/starboard-log-parser/tests/unit/ packages/starboard-server/tests/unit/ packages/starboard-cli/tests/unit/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/unit.txt || true
 	@echo "$(BLUE)  Running test-integration...$(NC)"
@@ -220,9 +182,6 @@ dev-debug-context:
 	@pytest -m golden --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/golden.txt || true
 	@echo "$(BLUE)  Running test-contract...$(NC)"
 	@pytest tests/contract/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|tests/.*FAILED)" > .debug/test/tests/contract.txt || true
-	@echo "$(BLUE)  Running test-frontend...$(NC)"
-	@if [ ! -f "frontend/node_modules/.bin/jest" ]; then $(MAKE) install-frontend; fi
-	@cd frontend && npm test -- --ci 2>&1 | grep -E "(FAIL|✕)" > ../.debug/test/tests/frontend.txt || true
 	@find .debug/test -type f -empty -delete
 	@echo "$(GREEN)✓ Debug context saved to .debug/test/ (empty files removed)$(NC)"
 # ================================
@@ -258,9 +217,7 @@ test-golden:
 
 test-contract:
 	@echo "$(BLUE)Running contract tests...$(NC)"
-	@python scripts/export_api_schemas.py
 	@pytest tests/contract/ -v --tb=short
-	@if [ -f "frontend/node_modules/.bin/jest" ]; then cd frontend && npm run test:contract; fi
 	@echo "$(GREEN)✓ Contract tests passed$(NC)"
 
 test-coverage:
@@ -278,12 +235,6 @@ test-coverage:
 		--cov-report=term-missing --cov-report=html:htmlcov
 	@echo "$(GREEN)✓ Coverage report: htmlcov/index.html$(NC)"
 
-test-frontend:
-	@echo "$(BLUE)Running frontend tests...$(NC)"
-	@if [ ! -f "frontend/node_modules/.bin/jest" ]; then $(MAKE) install-frontend; fi
-	@cd frontend && npm test
-	@echo "$(GREEN)✓ Frontend tests passed$(NC)"
-
 test-architecture:
 	@echo "$(BLUE)Running architecture fitness tests...$(NC)"
 	@pytest tests/architecture/ -v --tb=short
@@ -297,13 +248,6 @@ lint:
 	@echo "$(BLUE)Running Python linter...$(NC)"
 	@ruff check $(PY_PACKAGES) $(PY_TESTS)
 	@echo "$(GREEN)✓ Lint passed$(NC)"
-
-lint-frontend:
-	@echo "$(BLUE)Running frontend linters...$(NC)"
-	@if [ ! -f "frontend/node_modules/.bin/eslint" ]; then $(MAKE) install-frontend; fi
-	@cd frontend && npm run lint
-	@cd frontend && npx tsc --noEmit
-	@echo "$(GREEN)✓ Frontend lint passed$(NC)"
 
 type-check:
 	@echo "$(BLUE)Running type checker...$(NC)"
@@ -328,7 +272,6 @@ pre-commit:
 audit-deps:
 	@echo "$(BLUE)Auditing dependencies...$(NC)"
 	pip-audit --strict
-	cd frontend && npm audit --audit-level=high
 	@echo "$(GREEN)✓ Audit complete$(NC)"
 
 # ================================
@@ -379,10 +322,6 @@ clean-deep: clean clean-debug
 	@echo "$(YELLOW)Deep cleaning (removing all temp files)...$(NC)"
 	@# Python virtual environment
 	@rm -rf .venv
-	@# Frontend temp files
-	@rm -rf frontend/node_modules frontend/.next frontend/.turbo frontend/out
-	@rm -rf frontend/.cache frontend/.swc frontend/coverage frontend/.eslintcache
-	@rm -f frontend/package-lock.json
 	@# Python compiled and temp files
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
