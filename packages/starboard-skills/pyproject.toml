@@ -1,0 +1,17 @@
+[project]
+name = "starboard-skills"
+version = "0.1.0"
+description = "Starboard Claude skills and Databricks helper scripts"
+requires-python = ">=3.12"
+dependencies = [
+    "databricks-sdk>=0.60.0",
+    "rich>=13.0.0,<14.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+]
+
+[project.scripts]
+starboard-helper = "starboard_skills.helpers.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
