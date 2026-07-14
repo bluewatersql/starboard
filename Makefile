@@ -13,7 +13,6 @@ PACKAGE_MANAGER := $(shell command -v uv >/dev/null 2>&1 && echo "uv" || echo "p
 
 # Python package paths
 PY_PACKAGES := packages/starboard-core/starboard_core \
-               packages/starboard-log-parser/starboard_log_parser \
                packages/starboard/starboard
 PY_TESTS := packages/*/tests tests
 
@@ -89,10 +88,10 @@ install:
 	@echo "$(BLUE)Installing packages...$(NC)"
 	@if [ "$(PACKAGE_MANAGER)" = "uv" ]; then \
 		uv sync && \
-		uv pip install -e packages/starboard-core -e packages/starboard-log-parser \
+		uv pip install -e packages/starboard-core \
 		              -e packages/starboard; \
 	else \
-		pip install -e packages/starboard-core -e packages/starboard-log-parser \
+		pip install -e packages/starboard-core \
 		            -e packages/starboard; \
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
@@ -102,11 +101,9 @@ install-dev:
 	@if [ "$(PACKAGE_MANAGER)" = "uv" ]; then \
 		uv sync && \
 		uv pip install -e "packages/starboard-core[test]" \
-		              -e "packages/starboard-log-parser[test,databricks,http]" \
 		              -e "packages/starboard[test,dev]"; \
 	else \
 		pip install -e "packages/starboard-core[test]" \
-		            -e "packages/starboard-log-parser[test,databricks,http]" \
 		            -e "packages/starboard[test,dev]"; \
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
@@ -116,7 +113,6 @@ verify:
 	# Requires Python 3.12 — aligned with pyproject.toml (python_version=3.12) and .python-version (3.12.10)
 	@python -c "import sys; assert sys.version_info >= (3, 12)" && echo "$(GREEN)✓ Python 3.12+$(NC)"
 	@python -c "import starboard_core" && echo "$(GREEN)✓ starboard-core$(NC)"
-	@python -c "import starboard_log_parser" && echo "$(GREEN)✓ starboard-log-parser$(NC)"
 	@python -c "import starboard" && echo "$(GREEN)✓ starboard$(NC)"
 
 # ================================
@@ -165,7 +161,7 @@ dev-debug-context:
 	@echo "$(BLUE)  Running type-check...$(NC)"
 	@mypy . > .debug/test/type-check/mypy.txt || true
 	@echo "$(BLUE)  Running test-unit...$(NC)"
-	@pytest packages/starboard-core/tests/unit/ packages/starboard-log-parser/tests/unit/ packages/starboard/tests/unit/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/unit.txt || true
+	@pytest packages/starboard-core/tests/unit/ packages/starboard/tests/unit/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/unit.txt || true
 	@echo "$(BLUE)  Running test-integration...$(NC)"
 	@pytest packages/starboard/tests/integration/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/integration.txt || true
 	@echo "$(BLUE)  Running test-golden...$(NC)"
@@ -183,7 +179,6 @@ test: test-unit test-integration
 test-unit:
 	@echo "$(BLUE)Running unit tests...$(NC)"
 	@pytest packages/starboard-core/tests/unit/ -v --tb=short
-	@pytest packages/starboard-log-parser/tests/unit/ -v --tb=short
 	@pytest packages/starboard/tests/unit/ -v --tb=short
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
 
@@ -211,10 +206,8 @@ test-contract:
 test-coverage:
 	@echo "$(BLUE)Running tests with coverage...$(NC)"
 	@pytest packages/starboard-core/tests/unit/ \
-		packages/starboard-log-parser/tests/unit/ \
 		packages/starboard/tests/unit/ \
 		--cov=starboard_core \
-		--cov=starboard_log_parser \
 		--cov=starboard \
 		--cov-report=term-missing --cov-report=html:htmlcov
 	@echo "$(GREEN)✓ Coverage report: htmlcov/index.html$(NC)"
@@ -265,11 +258,9 @@ build:
 	@echo "$(BLUE)Building packages...$(NC)"
 	@if [ "$(PACKAGE_MANAGER)" = "uv" ]; then \
 		uv build packages/starboard-core && \
-		uv build packages/starboard-log-parser && \
 		uv build packages/starboard; \
 	else \
 		cd packages/starboard-core && python -m build && \
-		cd ../starboard-log-parser && python -m build && \
 		cd ../starboard && python -m build; \
 	fi
 	@echo "$(GREEN)✓ Build complete$(NC)"

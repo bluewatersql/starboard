@@ -100,7 +100,7 @@ def test_all_mcp_tool_schemas_have_parameters(project_root: Path) -> None:
     schemas_root = (
         project_root
         / "packages"
-        / "starboard-server"
+        / "starboard"
         / "starboard"
         / "agents"
         / "tools"

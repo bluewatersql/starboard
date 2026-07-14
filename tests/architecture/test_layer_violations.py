@@ -62,7 +62,7 @@ def test_agents_layer_does_not_import_api_layer(project_root: Path) -> None:
     reuse of agents outside the HTTP context (e.g. CLI, SDK, tests).
     """
     agents_root = (
-        project_root / "packages" / "starboard-server" / "starboard" / "agents"
+        project_root / "packages" / "starboard" / "starboard" / "agents"
     )
     if not agents_root.exists():
         pytest.skip(f"agents directory not found: {agents_root}")

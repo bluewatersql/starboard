@@ -44,7 +44,7 @@ def create_builder(with_patterns: bool = True) -> DiagnosticContextBuilder:
         from pathlib import Path
 
         catalog_path = Path(__file__).parent.parent.parent.parent.parent.parent / (
-            "packages/starboard-server/starboard/tools/domain/"
+            "packages/starboard/starboard/tools/domain/"
             "diagnostic/patterns/catalog"
         )
         if catalog_path.exists():

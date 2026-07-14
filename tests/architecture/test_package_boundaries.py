@@ -65,7 +65,7 @@ def _collect_server_internal_imports(
 @pytest.mark.unit
 def test_cli_does_not_import_internal_server_modules(project_root: Path) -> None:
     """starboard.cli must not import internal starboard sub-modules."""
-    cli_dir = project_root / "packages" / "starboard-cli" / "starboard.cli"
+    cli_dir = project_root / "packages" / "starboard" / "starboard" / "cli"
     if not cli_dir.exists():
         pytest.skip(f"CLI package not found: {cli_dir}")
 

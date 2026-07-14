@@ -404,7 +404,7 @@ class TestCatalogIntegration:
         catalog_dir = (
             Path(__file__).parent.parent.parent.parent.parent.parent
             / "packages"
-            / "starboard-server"
+            / "starboard"
             / "starboard"
             / "tools"
             / "domain"
@@ -432,7 +432,7 @@ class TestCatalogIntegration:
         catalog_dir = (
             Path(__file__).parent.parent.parent.parent.parent.parent
             / "packages"
-            / "starboard-server"
+            / "starboard"
             / "starboard"
             / "tools"
             / "domain"

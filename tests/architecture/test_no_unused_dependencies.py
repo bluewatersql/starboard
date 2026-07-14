@@ -27,29 +27,29 @@ def _assert_not_importable(module_name: str) -> None:
 
 @pytest.mark.unit
 def test_chromadb_not_installed() -> None:
-    """chromadb was removed from starboard-server dependencies (zero imports)."""
+    """chromadb was removed from starboard dependencies (zero imports)."""
     _assert_not_importable("chromadb")
 
 
 @pytest.mark.unit
 def test_slack_sdk_not_installed() -> None:
-    """slack-sdk was removed from starboard-server dependencies (zero imports)."""
+    """slack-sdk was removed from starboard dependencies (zero imports)."""
     _assert_not_importable("slack_sdk")
 
 
 @pytest.mark.unit
 def test_tabulate_not_installed() -> None:
-    """tabulate was removed from starboard-server dependencies (zero imports)."""
+    """tabulate was removed from starboard dependencies (zero imports)."""
     _assert_not_importable("tabulate")
 
 
 @pytest.mark.unit
 def test_rapidfuzz_not_installed() -> None:
-    """rapidfuzz was removed from starboard-server dependencies (zero imports)."""
+    """rapidfuzz was removed from starboard dependencies (zero imports)."""
     _assert_not_importable("rapidfuzz")
 
 
 @pytest.mark.unit
 def test_sqlparse_not_installed() -> None:
-    """sqlparse was removed from starboard-server dependencies (zero imports)."""
+    """sqlparse was removed from starboard dependencies (zero imports)."""
     _assert_not_importable("sqlparse")

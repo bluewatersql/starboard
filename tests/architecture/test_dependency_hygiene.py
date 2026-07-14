@@ -35,6 +35,7 @@ import pytest
 _WORKSPACE_PACKAGES = {
     "starboard_core",
     "starboard",
+    "starboard_skills",
 }
 
 # Known stdlib top-level modules — these need no declared dependency
@@ -285,8 +286,8 @@ def _check_package(
 
 @pytest.mark.unit
 def test_server_package_dependency_hygiene(project_root: Path) -> None:
-    """starboard-server imports must all be declared; declared deps must be used."""
-    package_dir = project_root / "packages" / "starboard-server"
+    """starboard imports must all be declared; declared deps must be used."""
+    package_dir = project_root / "packages" / "starboard"
     undeclared, unused = _check_package(
         "starboard", package_dir, "starboard", project_root
     )
@@ -304,32 +305,16 @@ def test_server_package_dependency_hygiene(project_root: Path) -> None:
         )
 
     assert not messages, (
-        "GUIDELINE-010: Dependency hygiene violations in starboard-server:\n"
+        "GUIDELINE-010: Dependency hygiene violations in starboard:\n"
         + "\n".join(messages)
     )
 
 
 @pytest.mark.unit
 def test_cli_package_dependency_hygiene(project_root: Path) -> None:
-    """starboard-cli imports must all be declared; declared deps must be used."""
+    """CLI is now part of the starboard package (no separate starboard-cli)."""
     package_dir = project_root / "packages" / "starboard-cli"
-    undeclared, unused = _check_package(
-        "starboard.cli", package_dir, "starboard.cli", project_root
-    )
-
-    messages: list[str] = []
-    if undeclared:
-        messages.append(
-            "  Undeclared imports:\n" + "\n".join(f"    - {m}" for m in undeclared)
-        )
-    if unused:
-        messages.append(
-            "  Unused dependencies:\n" + "\n".join(f"    - {m}" for m in unused)
-        )
-
-    assert not messages, (
-        "GUIDELINE-010: Dependency hygiene violations in starboard-cli:\n"
-        + "\n".join(messages)
-    )
+    if not package_dir.exists():
+        pytest.skip("starboard-cli merged into starboard package")
 
 

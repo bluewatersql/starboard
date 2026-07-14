@@ -31,6 +31,8 @@ _STDLIB_LOGGING_ALLOWLIST = frozenset(
         # The tracing bridge — uses logging.Filter/LogRecord to inject trace context
         # into stdlib log records for OpenTelemetry integration.
         "infra/observability/tracing.py",
+        # The CLI uses stdlib logging (not part of the server's structlog convention).
+        "cli/cli/main.py",
     ]
 )
 
@@ -60,7 +62,7 @@ def _has_stdlib_logging_import(file_path: Path) -> list[str]:
 @pytest.mark.unit
 def test_no_stdlib_logging_in_server_package(project_root: Path) -> None:
     """starboard must not use stdlib logging — use structlog instead."""
-    server_root = project_root / "packages" / "starboard-server" / "starboard"
+    server_root = project_root / "packages" / "starboard" / "starboard"
     if not server_root.exists():
         pytest.skip(f"server package not found: {server_root}")
 

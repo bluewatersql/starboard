@@ -57,7 +57,7 @@ def test_tool_adapters_use_standard_error_format(project_root: Path) -> None:
     adapters_root = (
         project_root
         / "packages"
-        / "starboard-server"
+        / "starboard"
         / "starboard"
         / "tools"
         / "adapters"
