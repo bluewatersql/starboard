@@ -53,8 +53,16 @@ dependencies = [
     "pgvector>=0.3.0,<1.0.0", # Vector similarity search extension
     "aiosqlite>=0.19.0,<1.0.0", # Async SQLite driver for dev/testing
     "sqlite-vec>=0.1.1,<1.0.0", # Vector similarity search for SQLite
-    # Security: pin cryptography to avoid PYSEC-2026-36 RCE (CVSS 9.8)
-    "cryptography>=48.0.1,<49.0.0",  # pinned for PYSEC-2026-36 RCE — see changes/oss_readiness/
+    # Constrain cryptography to the range that runs on the default DBR 17.3 LTS cluster with zero
+    # package changes. DBR 17.3 ships cryptography 43.0.3 (NOT affected by PYSEC-2026-36 /
+    # CVE-2026-39892 — that buffer-overflow was introduced in 45.0.0) and cffi 1.17.1.
+    # Floor 43.0.3 keeps the runtime's bundled cryptography as-is (no install/upgrade); cap <48
+    # because cryptography>=48 requires cffi>=2.0, which would break against the runtime's
+    # cffi 1.17.1 + compiled _cffi_backend. See changes/oss_readiness/.
+    "cryptography>=43.0.3,<48.0.0",
+    # Hard-cap cffi <2 to stay aligned with DBR 17.3's bundled _cffi_backend (1.17.1) and prevent any
+    # transitive bump to cffi 2.x from breaking imports on the default cluster.
+    "cffi<2.0.0",
     # MCP protocol
     "mcp>=1.19.0,<2.0.0",
     "orjson>=3.11.4",
