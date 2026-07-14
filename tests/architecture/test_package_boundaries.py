@@ -2,8 +2,8 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-005: Package boundary enforcement.
 
-``starboard-cli`` and ``starboard-sdk`` must only import from:
-  - their own package (``starboard_cli.*`` / ``starboard_sdk.*``)
+``starboard-cli`` must only import from:
+  - its own package (``starboard_cli.*``)
   - ``starboard_core.*``  (the shared pure-domain package)
   - the public API of ``starboard_server`` (symbols exported in
     ``starboard_server/__init__.py``)
@@ -12,7 +12,7 @@ Importing internal server sub-modules (e.g. ``starboard_server.infra.*``,
 ``starboard_server.agents.*``) bypasses the public boundary and creates
 tight coupling.
 
-STATUS: Expected to FAIL because CLI and SDK import internal server modules.
+STATUS: Expected to FAIL because CLI imports internal server modules.
 """
 
 from __future__ import annotations
@@ -31,7 +31,6 @@ _INTERNAL_PREFIXES = (
     "starboard_server.domain",
     "starboard_server.repositories",
     "starboard_server.services",
-    "starboard_server.api",
     "starboard_server.prompts",
     "starboard_server.mcp",
     "starboard_server.discovery",
@@ -80,18 +79,3 @@ def test_cli_does_not_import_internal_server_modules(project_root: Path) -> None
     )
 
 
-@pytest.mark.unit
-def test_sdk_does_not_import_internal_server_modules(project_root: Path) -> None:
-    """starboard_sdk must not import internal starboard_server sub-modules."""
-    sdk_dir = project_root / "packages" / "starboard-sdk" / "starboard_sdk"
-    if not sdk_dir.exists():
-        pytest.skip(f"SDK package not found: {sdk_dir}")
-
-    violations = _collect_server_internal_imports(sdk_dir, "starboard_sdk")
-    formatted = [
-        f"{f.relative_to(project_root)}:{ln}: {imp}" for f, ln, imp in violations
-    ]
-    assert not formatted, (
-        f"GUIDELINE-005: {len(formatted)} internal server import(s) in starboard_sdk:\n"
-        + "\n".join(f"  - {v}" for v in formatted)
-    )

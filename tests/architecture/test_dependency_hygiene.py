@@ -36,7 +36,6 @@ _WORKSPACE_PACKAGES = {
     "starboard_core",
     "starboard_server",
     "starboard_cli",
-    "starboard_sdk",
     "starboard_log_parser",
 }
 
@@ -336,25 +335,3 @@ def test_cli_package_dependency_hygiene(project_root: Path) -> None:
     )
 
 
-@pytest.mark.unit
-def test_sdk_package_dependency_hygiene(project_root: Path) -> None:
-    """starboard-sdk imports must all be declared; declared deps must be used."""
-    package_dir = project_root / "packages" / "starboard-sdk"
-    undeclared, unused = _check_package(
-        "starboard_sdk", package_dir, "starboard_sdk", project_root
-    )
-
-    messages: list[str] = []
-    if undeclared:
-        messages.append(
-            "  Undeclared imports:\n" + "\n".join(f"    - {m}" for m in undeclared)
-        )
-    if unused:
-        messages.append(
-            "  Unused dependencies:\n" + "\n".join(f"    - {m}" for m in unused)
-        )
-
-    assert not messages, (
-        "GUIDELINE-010: Dependency hygiene violations in starboard-sdk:\n"
-        + "\n".join(messages)
-    )
