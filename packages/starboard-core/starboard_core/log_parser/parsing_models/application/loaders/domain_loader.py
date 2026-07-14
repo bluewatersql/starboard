@@ -31,7 +31,9 @@ from starboard_core.log_parser.parsing_models.validation_event_data import (
 )
 
 if TYPE_CHECKING:
-    from starboard_core.log_parser.parsing_models.computers.registry import ComputerRegistry
+    from starboard_core.log_parser.parsing_models.computers.registry import (
+        ComputerRegistry,
+    )
 
 logger = logging.getLogger(__name__)
 

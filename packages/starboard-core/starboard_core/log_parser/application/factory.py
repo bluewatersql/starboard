@@ -53,7 +53,9 @@ def _convert_application_model_to_domain(
     Raises:
         ValueError: If conversion fails due to missing data
     """
-    from starboard_core.log_parser.parsing_models.computers.registry import ComputerRegistry
+    from starboard_core.log_parser.parsing_models.computers.registry import (
+        ComputerRegistry,
+    )
 
     computers = ComputerRegistry.create_default()
 
@@ -431,7 +433,9 @@ def create_spark_application_from_content(
     # Raw event log format (JSON lines)
     logger.debug("detected_event_log_format")
 
-    from starboard_core.log_parser.parsing_models.event_log_parser import ApplicationModel
+    from starboard_core.log_parser.parsing_models.event_log_parser import (
+        ApplicationModel,
+    )
 
     # Parse using ApplicationModel
     lines_iterator = _parse_event_log_content(content)
