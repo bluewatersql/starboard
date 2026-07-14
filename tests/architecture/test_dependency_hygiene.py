@@ -60,6 +60,7 @@ _STDLIB_MODULES = {
     "fnmatch",
     "functools",
     "gc",
+    "getpass",
     "glob",
     "gzip",
     "hashlib",
@@ -182,6 +183,14 @@ _INDIRECT_DEPENDENCIES = {
     "dotenv",  # Used by CLI (server declares for downstream consumers)
 }
 
+# Version-constraint-only dependencies: declared to pin/cap a transitive package for runtime
+# compatibility (e.g. Databricks Runtime alignment) or security, not imported directly in source.
+_CONSTRAINT_ONLY_DEPENDENCIES = {
+    "cryptography",  # Capped <47 for DBR 17.3 msal 1.32.3; floored for CVE-2026-39892 baseline
+    "cffi",  # Capped <2 to match DBR 17.3's compiled _cffi_backend (1.17.1)
+    "protobuf",  # Pinned 5.29.5 to satisfy databricks-sdk 0.73.0 + DBR google/grpc stack
+}
+
 # Transitive dependencies that are technically undeclared but come from declared deps
 _KNOWN_TRANSITIVES = {
     "starlette",  # Transitive via fastapi
@@ -268,7 +277,11 @@ def _check_package(
         - _OPTIONAL_DEPENDENCIES
     )
     unused = sorted(
-        declared_imports - third_party - _WORKSPACE_PACKAGES - _INDIRECT_DEPENDENCIES
+        declared_imports
+        - third_party
+        - _WORKSPACE_PACKAGES
+        - _INDIRECT_DEPENDENCIES
+        - _CONSTRAINT_ONLY_DEPENDENCIES
     )
     return undeclared, unused
 

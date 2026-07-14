@@ -8,13 +8,16 @@ license = {text = "Databricks Open Model License"}
 dependencies = [
     "starboard-core", # Workspace dependency
     "starboard-log-parser[databricks,http]", # Workspace dependency - Log parser
-    # FastAPI stack
-    "fastapi>=0.128.0,<1.0.0",
-    # Explicit starlette floor: fastapi's range alone resolves to 0.49.3 (vulnerable), so pin
-    # starlette>=1.3.1 to fix CVE batch: GHSA-82w8-qh3p-5jfq (DoS, CVSS 7.5),
+    # FastAPI stack. starlette>=1.3.1 (below) is required for the CVE batch, but starlette 1.x is
+    # only supported by fastapi>=0.137.0 — fastapi 0.128.x-0.136.x cap starlette <1.0.0, so a lower
+    # fastapi floor is contradictory with the starlette pin. DBR 17.3 ships fastapi 0.115.12 /
+    # starlette 0.46.2; both are auto-upgraded here (self-contained wheels, no cluster steps).
+    "fastapi>=0.137.0,<1.0.0",
+    # starlette>=1.3.1 fixes CVE batch: GHSA-82w8-qh3p-5jfq (DoS, CVSS 7.5),
     # GHSA-86qp-5c8j-p5mr (host header poisoning), GHSA-wqp7-x3pw-xc5r (SSRF/NTLM),
     # GHSA-jp82-jpqv-5vv3 (URL hostname poisoning), GHSA-x746-7m8f-x49c (arbitrary HTTP methods),
-    # PYSEC-2026-161 (BadHost) — see F-3-1b-002.
+    # PYSEC-2026-161 (BadHost) — see F-3-1b-002. Other starlette consumers accept 1.x:
+    # mcp 1.19.0 (starlette>=0.27) and slowapi 0.1.9 (unconstrained).
     "starlette>=1.3.1",
     "uvicorn[standard]>=0.24.0,<1.0.0",
     # >=0.0.31 fixes GHSA-wp53-j4wj-2cfg (arbitrary file write, CVSS 8.2),
@@ -53,16 +56,23 @@ dependencies = [
     "pgvector>=0.3.0,<1.0.0", # Vector similarity search extension
     "aiosqlite>=0.19.0,<1.0.0", # Async SQLite driver for dev/testing
     "sqlite-vec>=0.1.1,<1.0.0", # Vector similarity search for SQLite
-    # Constrain cryptography to the range that runs on the default DBR 17.3 LTS cluster with zero
-    # package changes. DBR 17.3 ships cryptography 43.0.3 (NOT affected by PYSEC-2026-36 /
-    # CVE-2026-39892 — that buffer-overflow was introduced in 45.0.0) and cffi 1.17.1.
-    # Floor 43.0.3 keeps the runtime's bundled cryptography as-is (no install/upgrade); cap <48
-    # because cryptography>=48 requires cffi>=2.0, which would break against the runtime's
-    # cffi 1.17.1 + compiled _cffi_backend. See changes/oss_readiness/.
-    "cryptography>=43.0.3,<48.0.0",
+    # Constrain cryptography/cffi to run on the default DBR 17.3 LTS cluster with zero package
+    # changes. DBR 17.3 ships cryptography 43.0.3 (NOT affected by PYSEC-2026-36 / CVE-2026-39892 —
+    # that buffer-overflow was introduced in 45.0.0), cffi 1.17.1, and msal 1.32.3.
+    # Floor 43.0.3 keeps the runtime's bundled cryptography as-is (no install/upgrade); cap <47
+    # because DBR's msal 1.32.3 requires cryptography<47 (and cryptography>=48 also requires
+    # cffi>=2.0, which would break against the runtime's cffi 1.17.1 + compiled _cffi_backend).
+    # See changes/oss_readiness/.
+    "cryptography>=43.0.3,<47.0.0",
     # Hard-cap cffi <2 to stay aligned with DBR 17.3's bundled _cffi_backend (1.17.1) and prevent any
     # transitive bump to cffi 2.x from breaking imports on the default cluster.
     "cffi<2.0.0",
+    # Pin protobuf to the one 5.x that satisfies BOTH databricks-sdk 0.73.0 (which excludes
+    # 5.26.*-5.29.4) AND DBR 17.3's bundled google-api-core 2.20.0 / googleapis-common-protos
+    # 1.65.0 / grpcio-status 1.67.0 (all require protobuf<6). Without this, databricks-sdk drags
+    # protobuf to 6.x and breaks the runtime's google/grpc stack. 5.29.5 is a patch bump over the
+    # runtime's 5.29.4.
+    "protobuf>=5.29.5,<6.0.0",
     # MCP protocol
     "mcp>=1.19.0,<2.0.0",
     "orjson>=3.11.4",
