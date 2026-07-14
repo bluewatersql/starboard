@@ -19,10 +19,10 @@ Connect Starboard's Databricks analysis tools and domain agents to Claude Code, 
 
 ### Prerequisites
 
-Install the Starboard server package with MCP support:
+Install the Starboard package:
 
 ```bash
-pip install starboard-server[mcp]
+pip install starboard
 # Or from the repo:
 make setup
 ```

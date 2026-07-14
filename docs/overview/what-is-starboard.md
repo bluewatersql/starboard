@@ -57,7 +57,7 @@ Each agent has access to specialized tools (45+ total) and domain-specific promp
 - **Progressive results** — Get partial answers as the agent works
 
 ### Production Ready
-- **Multiple interfaces** — Web UI, CLI, REST API
+- **Multiple interfaces** — CLI (`starboard`), MCP server (`starboard-mcp`)
 - **Pluggable state backends** — SQLite (dev), Postgres (production), Databricks Lakebase
 - **Conversation history** — Full persistence with search
 - **Caching** — Semantic cache for repeated queries, metadata cache for API results
@@ -69,12 +69,12 @@ Each agent has access to specialized tools (45+ total) and domain-specific promp
 ```
 ┌──────────────────────────────────────────────────────┐
 │                    User Interfaces                     │
-│   Web UI (Next.js)  │  CLI (Python)  │  REST API     │
-└──────────┬───────────┴────────┬───────┴──────┬────────┘
-           │                    │              │
-           ▼                    ▼              ▼
+│         CLI (starboard)    │   MCP (starboard-mcp)   │
+└──────────┬─────────────────┴──────┬───────────────────┘
+           │                        │
+           ▼                        ▼
 ┌──────────────────────────────────────────────────────┐
-│                   FastAPI Backend                      │
+│                  starboard package                     │
 │  ┌─────────────┐  ┌──────────────────────────────┐   │
 │  │Intent Router │→│ Multi-Agent Conversation Mgr  │   │
 │  └─────────────┘  └──────────────────────────────┘   │
@@ -104,11 +104,11 @@ For the complete architecture deep-dive, see [System Architecture](../architectu
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend** | Python 3.12, FastAPI, asyncio, Pydantic V2, structlog |
-| **Frontend** | Next.js 16, React 19, Material UI v7, Tailwind CSS v4, Zustand v5 |
+| **Backend** | Python 3.12, asyncio, Pydantic V2, structlog |
+| **MCP** | stdio transport, Model Context Protocol |
 | **LLM** | OpenAI-compatible (GPT-4o, Claude via Databricks Model Serving) |
 | **State** | SQLite/Postgres/Databricks Lakebase, Redis (cache), sqlite-vec/pgvector (embeddings) |
-| **Package Manager** | uv (Python workspace), npm (frontend) |
+| **Package Manager** | uv |
 | **Quality** | ruff, mypy, pytest (3,200+ tests), pre-commit hooks |
 
 ---
@@ -125,6 +125,6 @@ For the complete architecture deep-dive, see [System Architecture](../architectu
 ## Next Steps
 
 - [Quickstart](../QUICKSTART.md) — Get running in 5 minutes
-- [Web UI Guide](../user-guide/web-ui.md) — Learn the web interface
+- [Claude Code Integration](../CLAUDE_CODE_INTEGRATION.md) — MCP server setup
 - [CLI Reference](../user-guide/cli.md) — Command-line usage
 - [Agent Catalog](agents.md) — Deep dive into each agent's capabilities

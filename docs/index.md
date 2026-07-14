@@ -10,7 +10,7 @@ Starboard uses **8 domain-specialized AI agents** that reason step-by-step, dyna
 %%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
 
 graph TB
-    User[User/Browser] -->|HTTP/SSE| API[FastAPI Backend]
+    User[User/CLI/MCP] -->|goal/tool call| API[starboard package]
     API -->|Classifies| Router[Intent Router]
 
     Router -->|Query| QueryAgent[Query Agent]
@@ -41,6 +41,7 @@ graph TB
 
     style User fill:#10b981,color:#fff
     style API fill:#4f46e5,color:#fff
+
     style Router fill:#7c3aed,color:#fff
     style QueryAgent fill:#06b6d4,color:#fff
     style JobAgent fill:#06b6d4,color:#fff
@@ -63,12 +64,12 @@ graph TB
 |--------------|-------|
 | **Understand what Starboard does** | [What is Starboard?](overview/what-is-starboard.md) |
 | **Get running in 5 minutes** | [Quickstart](QUICKSTART.md) |
-| **Learn the web interface** | [Web UI Guide](user-guide/web-ui.md) |
+| **Use the MCP server** | [Claude Code Integration](CLAUDE_CODE_INTEGRATION.md) |
 | **Use the CLI** | [CLI Reference](user-guide/cli.md) |
 | **Optimize a slow query** | [Query Optimization Workflow](user-guide/workflows/query-optimization.md) |
 | **Debug a failing job** | [Job Debugging Workflow](user-guide/workflows/job-debugging.md) |
 | **Analyze costs** | [Cost Analysis Workflow](user-guide/workflows/cost-analysis.md) |
-| **Integrate via REST API** | [API Quickstart](integration/api-quickstart.md) |
+| **Integrate via MCP** | [Claude Code Integration](CLAUDE_CODE_INTEGRATION.md) |
 | **Deploy to production** | [Deployment Guide](DEPLOYMENT.md) |
 | **Contribute code** | [Developer Getting Started](guides/GETTING_STARTED.md) |
 
@@ -79,14 +80,14 @@ graph TB
 ### [Overview](overview/what-is-starboard.md)
 Product introduction, agent catalog, quickstart, and configuration.
 
-### [User Guide](user-guide/web-ui.md)
-Web interface walkthrough, CLI reference, end-to-end workflows for common tasks (query optimization, job debugging, cost analysis, table governance, workspace discovery).
+### [User Guide](user-guide/cli.md)
+CLI reference, MCP integration, end-to-end workflows for common tasks (query optimization, job debugging, cost analysis, table governance, workspace discovery).
 
 ### [Agents](agents/README.md)
 Deep documentation for all 8 domain agents — Query, Job, UC, Cluster, Analytics/FinOps, Warehouse, Discovery, and Diagnostic — plus the Intent Router framework.
 
 ### [Architecture](architecture/SYSTEM_ARCHITECTURE.md)
-System architecture, multi-agent reasoning patterns, tool system design, frontend architecture, and output contracts.
+System architecture, multi-agent reasoning patterns, tool system design, and output contracts.
 
 ### [Developer Guide](guides/GETTING_STARTED.md)
 Setup, contributing, testing, engineering standards, agent/tool development guides, API reference, tool catalog, and package documentation.
@@ -103,14 +104,14 @@ Deployment, runbooks, cloud authentication, state backend configuration, monitor
 
 sequenceDiagram
     participant U as User
-    participant API as FastAPI
+    participant API as starboard
     participant MM as MultiAgentManager
     participant IR as IntentRouter
     participant QA as QueryAgent
     participant T as Tools
     participant DB as Databricks
 
-    U->>API: POST /chat/message
+    U->>API: goal / MCP tool call
     API->>MM: process_message()
     MM->>IR: classify_intent()
 
@@ -137,9 +138,9 @@ sequenceDiagram
 
     QA-->>MM: FinalResponse(recommendations)
     MM->>API: stream_events()
-    API-->>U: SSE events
+    API-->>U: response / SSE events
 
-    Note over U: Real-time updates<br/>displayed in UI
+    Note over U: Real-time updates<br/>in CLI or MCP client
 ```
 
 *Multi-agent coordination flow showing how requests are routed and processed*
@@ -163,12 +164,9 @@ See the full [Agent Catalog](overview/agents.md) for capabilities matrix and cro
 
 ```
 packages/
-├── starboard-core/         # Core domain models, prompts, shared types
-├── starboard-server/       # FastAPI backend with multi-agent system
-├── starboard-log-parser/   # Log parsing with cloud storage
-└── starboard-cli/          # Command-line interface
-
-frontend/                   # Next.js 16 web UI (React 19, MUI v7)
+├── starboard-core/     # Domain models, prompts, shared types + log parsing
+├── starboard/          # MCP server + CLI + agents + tools
+└── starboard-skills/   # Claude skill files + Databricks helper scripts
 ```
 
 ---
@@ -180,9 +178,7 @@ frontend/                   # Next.js 16 web UI (React 19, MUI v7)
 make setup              # Bootstrap environment
 
 # Development
-make dev                # Start both backend and frontend
-make dev-server         # Backend only (http://localhost:8000)
-make dev-frontend       # Frontend only (http://localhost:3000)
+make dev-server         # Start MCP server / backend
 
 # Testing
 make test               # Run all tests
