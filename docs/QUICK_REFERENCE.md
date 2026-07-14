@@ -61,9 +61,7 @@ status: current
 
 ```bash
 make setup              # First-time bootstrap
-make dev                # Start backend + frontend
-make dev-server         # Backend only (http://localhost:8000)
-make dev-frontend       # Frontend only (http://localhost:3000)
+make dev-server         # Start MCP server / backend
 ```
 
 ### Testing
@@ -73,7 +71,6 @@ make test               # All tests
 make test-unit          # Unit tests only
 make test-integration   # Integration tests
 make test-golden        # Snapshot/golden tests
-make test-contract      # API contract tests
 make test-coverage      # With coverage report
 make test-parallel      # Parallel execution
 ```
@@ -126,43 +123,19 @@ DATABASE_URL=sqlite:///dev_data/starboard_state.db
 
 | Category | Path |
 |----------|------|
-| Agent Factory | `packages/starboard-server/starboard/agents/agent_factory.py` |
-| Domain Agent Base | `packages/starboard-server/starboard/agents/domain/domain_agent.py` |
-| Intent Router | `packages/starboard-server/starboard/agents/routing/intent_router.py` |
-| Tool Categories | `packages/starboard-server/starboard/agents/tool_categories.py` |
-| Routing Models | `packages/starboard-server/starboard/agents/routing/routing_models.py` |
-| Prompt Builders | `packages/starboard-server/starboard/prompts/factories.py` |
-| Domain Prompts | `packages/starboard-server/starboard/prompts/{domain}/v1.py` |
-| Tool Adapters | `packages/starboard-server/starboard/tools/adapters/` |
-| Tool Services | `packages/starboard-server/starboard/tools/services/` |
-| Tool Domain Logic | `packages/starboard-server/starboard/tools/domain/` |
-| FastAPI App | `packages/starboard-server/starboard/api/main.py` |
-| Config | `packages/starboard-server/starboard/infra/core/config.py` |
-| Conversation Manager | `packages/starboard-server/starboard/agents/conversation/multi_agent_manager.py` |
-
----
-
-## API Endpoints
-
-```bash
-# Conversations
-POST   /api/chat/conversations                    # Create
-GET    /api/chat/conversations                    # List
-GET    /api/chat/conversations/{id}               # Get
-GET    /api/chat/conversations/{id}/history       # History
-DELETE /api/chat/conversations/{id}               # Delete
-
-# Messages & Streaming
-POST   /api/chat/conversations/{id}/messages      # Send message
-GET    /api/chat/conversations/{id}/stream        # Stream events (SSE)
-
-# Health & Config
-GET    /health/live                               # Liveness check
-GET    /health/ready                              # Readiness check
-GET    /api/chat/config                           # Server config
-```
-
-**Full reference**: [API Reference](api/API_REFERENCE.md) | **Swagger**: http://localhost:8000/docs
+| Agent Factory | `packages/starboard/starboard/agents/agent_factory.py` |
+| Domain Agent Base | `packages/starboard/starboard/agents/domain/domain_agent.py` |
+| Intent Router | `packages/starboard/starboard/agents/routing/intent_router.py` |
+| Tool Categories | `packages/starboard/starboard/agents/tool_categories.py` |
+| Routing Models | `packages/starboard/starboard/agents/routing/routing_models.py` |
+| Prompt Builders | `packages/starboard/starboard/prompts/factories.py` |
+| Domain Prompts | `packages/starboard/starboard/prompts/{domain}/v1.py` |
+| Tool Adapters | `packages/starboard/starboard/tools/adapters/` |
+| Tool Services | `packages/starboard/starboard/tools/services/` |
+| Tool Domain Logic | `packages/starboard/starboard/tools/domain/` |
+| MCP Entry Point | `packages/starboard/starboard/mcp/server.py` |
+| Config | `packages/starboard/starboard/infra/core/config.py` |
+| Conversation Manager | `packages/starboard/starboard/agents/conversation/multi_agent_manager.py` |
 
 ---
 
