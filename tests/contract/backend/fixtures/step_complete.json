@@ -1,9 +1,0 @@
-{
-  "message_id": "msg_test_step",
-  "step": 1,
-  "reasoning": null,
-  "tools_called": [
-    "fetch_table_metadata",
-    "analyze_query_plan"
-  ]
-}

@@ -1,2 +1,0 @@
-export { DomainModelSelector } from "./DomainModelSelector";
-
