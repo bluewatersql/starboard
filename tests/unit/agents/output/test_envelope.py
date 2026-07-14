@@ -18,7 +18,7 @@ class TestAgentMetrics:
 
     def test_valid_metrics(self) -> None:
         """AgentMetrics accepts valid non-negative values."""
-        from starboard_server.agents.output.envelope import AgentMetrics
+        from starboard.agents.output.envelope import AgentMetrics
 
         metrics = AgentMetrics(
             tokens_used=1500,
@@ -33,7 +33,7 @@ class TestAgentMetrics:
 
     def test_zero_values_valid(self) -> None:
         """AgentMetrics accepts zero values."""
-        from starboard_server.agents.output.envelope import AgentMetrics
+        from starboard.agents.output.envelope import AgentMetrics
 
         metrics = AgentMetrics(
             tokens_used=0,
@@ -46,7 +46,7 @@ class TestAgentMetrics:
 
     def test_negative_tokens_rejected(self) -> None:
         """AgentMetrics rejects negative tokens_used."""
-        from starboard_server.agents.output.envelope import AgentMetrics
+        from starboard.agents.output.envelope import AgentMetrics
 
         with pytest.raises(ValidationError) as exc_info:
             AgentMetrics(
@@ -59,7 +59,7 @@ class TestAgentMetrics:
 
     def test_negative_cost_rejected(self) -> None:
         """AgentMetrics rejects negative cost_usd."""
-        from starboard_server.agents.output.envelope import AgentMetrics
+        from starboard.agents.output.envelope import AgentMetrics
 
         with pytest.raises(ValidationError) as exc_info:
             AgentMetrics(
@@ -76,7 +76,7 @@ class TestStructuredError:
 
     def test_minimal_error(self) -> None:
         """StructuredError with required fields only."""
-        from starboard_server.agents.output.envelope import StructuredError
+        from starboard.agents.output.envelope import StructuredError
 
         error = StructuredError(
             code="VALIDATION_ERROR",
@@ -89,7 +89,7 @@ class TestStructuredError:
 
     def test_full_error(self) -> None:
         """StructuredError with all optional fields."""
-        from starboard_server.agents.output.envelope import StructuredError
+        from starboard.agents.output.envelope import StructuredError
 
         error = StructuredError(
             code="SCHEMA_MISMATCH",
@@ -106,7 +106,7 @@ class TestPartialInfo:
 
     def test_valid_reasons(self) -> None:
         """PartialInfo accepts all valid reasons."""
-        from starboard_server.agents.output.envelope import PartialInfo
+        from starboard.agents.output.envelope import PartialInfo
 
         valid_reasons = [
             "budget_exceeded",
@@ -121,14 +121,14 @@ class TestPartialInfo:
 
     def test_invalid_reason_rejected(self) -> None:
         """PartialInfo rejects invalid reasons."""
-        from starboard_server.agents.output.envelope import PartialInfo
+        from starboard.agents.output.envelope import PartialInfo
 
         with pytest.raises(ValidationError):
             PartialInfo(reason="invalid_reason")  # type: ignore
 
     def test_with_missing_fields(self) -> None:
         """PartialInfo can specify missing fields."""
-        from starboard_server.agents.output.envelope import PartialInfo
+        from starboard.agents.output.envelope import PartialInfo
 
         info = PartialInfo(
             reason="validation_failed",
@@ -145,7 +145,7 @@ class TestAgentResultEnvelope:
 
     def test_success_envelope(self) -> None:
         """AgentResultEnvelope for successful response."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             ENVELOPE_VERSION,
             AgentMetrics,
             AgentResultEnvelope,
@@ -174,7 +174,7 @@ class TestAgentResultEnvelope:
 
     def test_partial_envelope(self) -> None:
         """AgentResultEnvelope for partial response."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             AgentMetrics,
             AgentResultEnvelope,
             PartialInfo,
@@ -206,7 +206,7 @@ class TestAgentResultEnvelope:
 
     def test_error_envelope(self) -> None:
         """AgentResultEnvelope for error response."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             AgentMetrics,
             AgentResultEnvelope,
             StructuredError,
@@ -239,7 +239,7 @@ class TestAgentResultEnvelope:
 
     def test_valid_status_values(self) -> None:
         """AgentResultEnvelope accepts all valid status values."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             AgentMetrics,
             AgentResultEnvelope,
         )
@@ -270,7 +270,7 @@ class TestAgentResultEnvelope:
 
     def test_invalid_status_rejected(self) -> None:
         """AgentResultEnvelope rejects invalid status values."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             AgentMetrics,
             AgentResultEnvelope,
         )
@@ -293,7 +293,7 @@ class TestAgentResultEnvelope:
 
     def test_valid_report_types(self) -> None:
         """AgentResultEnvelope accepts all valid report types."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             AgentMetrics,
             AgentResultEnvelope,
         )
@@ -318,7 +318,7 @@ class TestAgentResultEnvelope:
 
     def test_next_steps_serialization(self) -> None:
         """AgentResultEnvelope serializes next_steps correctly."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             AgentMetrics,
             AgentResultEnvelope,
         )
@@ -359,7 +359,7 @@ class TestAgentResultEnvelope:
 
     def test_model_dump_includes_all_fields(self) -> None:
         """model_dump() includes all envelope fields."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             AgentMetrics,
             AgentResultEnvelope,
         )
@@ -399,13 +399,13 @@ class TestEnvelopeVersion:
 
     def test_envelope_version_constant(self) -> None:
         """ENVELOPE_VERSION constant exists and is valid."""
-        from starboard_server.agents.output.envelope import ENVELOPE_VERSION
+        from starboard.agents.output.envelope import ENVELOPE_VERSION
 
         assert ENVELOPE_VERSION == "1.0"
 
     def test_default_version_matches_constant(self) -> None:
         """Default schema_version matches ENVELOPE_VERSION."""
-        from starboard_server.agents.output.envelope import (
+        from starboard.agents.output.envelope import (
             ENVELOPE_VERSION,
             AgentMetrics,
             AgentResultEnvelope,

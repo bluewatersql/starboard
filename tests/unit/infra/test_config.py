@@ -3,7 +3,7 @@
 """Tests for application configuration."""
 
 import pytest
-from starboard_server.infra.core.config import EnvConfig
+from starboard.infra.core.config import EnvConfig
 
 
 def test_envconfig_defaults():

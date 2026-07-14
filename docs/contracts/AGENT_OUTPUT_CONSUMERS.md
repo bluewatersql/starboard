@@ -202,7 +202,7 @@ if (rawReport.report) {
 
 ## CLI Consumers
 
-### 1. `packages/starboard-cli/starboard_cli/cli/main.py`
+### 1. `packages/starboard-cli/starboard.cli/cli/main.py`
 
 **Purpose:** Command-line interface for agent interactions.
 

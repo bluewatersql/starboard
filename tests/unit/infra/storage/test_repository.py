@@ -15,8 +15,8 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_server.infra.storage.repository import UCRepository
-from starboard_server.infra.storage.uc_adapter import UCStorageAdapter
+from starboard.infra.storage.repository import UCRepository
+from starboard.infra.storage.uc_adapter import UCStorageAdapter
 
 
 @dataclass

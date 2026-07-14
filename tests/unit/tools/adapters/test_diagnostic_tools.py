@@ -12,7 +12,7 @@ import json
 from unittest.mock import AsyncMock
 
 import pytest
-from starboard_server.tools.adapters.diagnostic_tools import DiagnosticTools
+from starboard.tools.adapters.diagnostic_tools import DiagnosticTools
 
 # =============================================================================
 # FIXTURES

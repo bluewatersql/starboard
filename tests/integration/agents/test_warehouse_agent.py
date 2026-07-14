@@ -16,11 +16,11 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_server.agents.agent_factory import AgentFactory
-from starboard_server.agents.config.agent_config import AgentConfig
-from starboard_server.agents.routing.intent_router import IntentRouter
-from starboard_server.agents.routing.routing_models import RouteDecision
-from starboard_server.prompts import get_prompt_builder_for_domain
+from starboard.agents.agent_factory import AgentFactory
+from starboard.agents.config.agent_config import AgentConfig
+from starboard.agents.routing.intent_router import IntentRouter
+from starboard.agents.routing.routing_models import RouteDecision
+from starboard.prompts import get_prompt_builder_for_domain
 
 # =============================================================================
 # Test Fixtures
@@ -294,7 +294,7 @@ class TestWarehouseToolCategories:
 
     def test_warehouse_tools_available(self) -> None:
         """Warehouse domain should have expected tools."""
-        from starboard_server.agents.tool_categories import TOOL_CATEGORIES
+        from starboard.agents.tool_categories import TOOL_CATEGORIES
 
         warehouse_tools = TOOL_CATEGORIES["warehouse"]
 
@@ -316,7 +316,7 @@ class TestWarehouseToolCategories:
 
     def test_diagnostic_has_warehouse_tools(self) -> None:
         """Diagnostic agent should have access to warehouse tools."""
-        from starboard_server.agents.tool_categories import TOOL_OVERLAP_MATRIX
+        from starboard.agents.tool_categories import TOOL_OVERLAP_MATRIX
 
         # Warehouse tools should be accessible by diagnostic
         assert "diagnostic" in TOOL_OVERLAP_MATRIX["get_warehouse_portfolio"]
@@ -369,7 +369,7 @@ class TestWarehouseToolSchemas:
 
     def test_schemas_registered(self) -> None:
         """All implemented warehouse tool schemas should be registered."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         # Only implemented tools should be registered
         warehouse_tools = [
@@ -388,7 +388,7 @@ class TestWarehouseToolSchemas:
 
     def test_schema_structure(self) -> None:
         """Tool schemas should have required fields."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         schema = ALL_TOOL_METADATA["get_warehouse_portfolio"]
 

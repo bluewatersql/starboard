@@ -9,7 +9,7 @@ Run with: pytest tests/benchmarks/transformers/test_cluster_metrics_benchmarks.p
 import json
 
 import pytest
-from starboard_server.tools.domain.cluster.cluster_metrics_analyzer import (
+from starboard.tools.domain.cluster.cluster_metrics_analyzer import (
     ClusterMetricsAnalyzer,
 )
 

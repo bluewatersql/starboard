@@ -16,7 +16,7 @@ def get_coverage_percentage() -> float:
     if not coverage_file.exists():
         print("Error: coverage.json not found. Run tests with coverage first:")
         print(
-            "  uv run pytest tests/unit/ --cov=starboard_server --cov=starboard_core --cov-report=json"
+            "  uv run pytest tests/unit/ --cov=starboard --cov=starboard_core --cov-report=json"
         )
         sys.exit(1)
 

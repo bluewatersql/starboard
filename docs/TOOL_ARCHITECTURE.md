@@ -52,7 +52,7 @@ Domain (Pure Logic) --> Service (Orchestration) --> Adapters (Tools)
 ## Directory Structure
 
 ```
-packages/starboard-server/starboard_server/tools/
+packages/starboard-server/starboard/tools/
 |-- domain/                     # Pure business logic
 |   |-- query/                  # Query resolution and analysis
 |   |-- job/                    # Job analysis and optimization
@@ -114,7 +114,7 @@ The 80/20 strategy means:
 - **80%** of operations: Agents complete independently using strategic tool overlap
 - **20%** of complex operations: Agents delegate to domain specialists (no tool needed)
 
-**Source**: `packages/starboard-server/starboard_server/agents/tool_categories.py`
+**Source**: `packages/starboard-server/starboard/agents/tool_categories.py`
 
 ---
 
@@ -223,7 +223,7 @@ The 80/20 strategy means:
 ### Tool Adapter Usage (Multi-Agent Framework)
 
 ```python
-from starboard_server.tools.adapters.query_tools import QueryTools
+from starboard.tools.adapters.query_tools import QueryTools
 
 query_tools = QueryTools(api, context, events)
 result = await query_tools.resolve_query(
@@ -236,7 +236,7 @@ result = await query_tools.resolve_query(
 ### Tool Registry Usage
 
 ```python
-from starboard_server.agents.tool_factory import create_tool_registry
+from starboard.agents.tool_factory import create_tool_registry
 
 # Create registry with all tools
 registry = await create_tool_registry(

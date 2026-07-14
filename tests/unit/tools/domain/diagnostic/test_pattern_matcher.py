@@ -15,11 +15,11 @@ Tests cover:
 from textwrap import dedent
 
 import pytest
-from starboard_server.tools.domain.diagnostic.pattern_matcher import (
+from starboard.tools.domain.diagnostic.pattern_matcher import (
     ConfidenceDetails,
     PatternMatcher,
 )
-from starboard_server.tools.domain.diagnostic.patterns.registry import (
+from starboard.tools.domain.diagnostic.patterns.registry import (
     PatternRegistry,
 )
 

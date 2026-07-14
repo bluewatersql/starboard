@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import BaseModel
-from starboard_server.infra.rag.checkpoint import (
+from starboard.infra.rag.checkpoint import (
     is_file_fresh,
     read_checkpoint,
     validate_checkpoint,
@@ -117,7 +117,7 @@ class TestReadCheckpoint:
 
         # Mock is_file_fresh to return False
         with patch(
-            "starboard_server.infra.rag.checkpoint.is_file_fresh", return_value=False
+            "starboard.infra.rag.checkpoint.is_file_fresh", return_value=False
         ):
             result = await read_checkpoint("stale", checkpoint_dir)
             assert result is None
@@ -142,10 +142,10 @@ class TestReadCheckpoint:
 
         with (
             patch(
-                "starboard_server.infra.rag.checkpoint.is_file_fresh", return_value=True
+                "starboard.infra.rag.checkpoint.is_file_fresh", return_value=True
             ),
             patch(
-                "starboard_server.infra.rag.checkpoint.read_json",
+                "starboard.infra.rag.checkpoint.read_json",
                 side_effect=PermissionError("Access denied"),
             ),
         ):
@@ -230,7 +230,7 @@ class TestWriteCheckpoint:
         # Patch write_json to raise permission error
         with (
             patch(
-                "starboard_server.infra.rag.checkpoint.write_json",
+                "starboard.infra.rag.checkpoint.write_json",
                 side_effect=PermissionError("Access denied"),
             ),
             pytest.raises(PermissionError),
@@ -344,7 +344,7 @@ class TestCheckpointIntegration:
 
         # Mock is_file_fresh to simulate staleness
         with patch(
-            "starboard_server.infra.rag.checkpoint.is_file_fresh", return_value=False
+            "starboard.infra.rag.checkpoint.is_file_fresh", return_value=False
         ):
             loaded = await read_checkpoint("stale_test", checkpoint_dir)
             assert loaded is None

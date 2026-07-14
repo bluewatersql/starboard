@@ -10,23 +10,23 @@ prompt-injectable context for the diagnostic agent.
 
 from __future__ import annotations
 
-from starboard_server.tools.domain.diagnostic.artifact_detector import ArtifactDetector
-from starboard_server.tools.domain.diagnostic.artifact_explorer import (
+from starboard.tools.domain.diagnostic.artifact_detector import ArtifactDetector
+from starboard.tools.domain.diagnostic.artifact_explorer import (
     ArtifactExplorer,
     ExplorationStrategy,
 )
-from starboard_server.tools.domain.diagnostic.context_extractor import (
+from starboard.tools.domain.diagnostic.context_extractor import (
     DatabricksContextExtractor,
 )
-from starboard_server.tools.domain.diagnostic.diagnostic_context_builder import (
+from starboard.tools.domain.diagnostic.diagnostic_context_builder import (
     DiagnosticContext,
     DiagnosticContextBuilder,
 )
-from starboard_server.tools.domain.diagnostic.evidence_extractor import (
+from starboard.tools.domain.diagnostic.evidence_extractor import (
     EvidenceWindowExtractor,
 )
-from starboard_server.tools.domain.diagnostic.pattern_matcher import PatternMatcher
-from starboard_server.tools.domain.diagnostic.patterns.registry import PatternRegistry
+from starboard.tools.domain.diagnostic.pattern_matcher import PatternMatcher
+from starboard.tools.domain.diagnostic.patterns.registry import PatternRegistry
 
 # =============================================================================
 # FIXTURES
@@ -44,7 +44,7 @@ def create_builder(with_patterns: bool = True) -> DiagnosticContextBuilder:
         from pathlib import Path
 
         catalog_path = Path(__file__).parent.parent.parent.parent.parent.parent / (
-            "packages/starboard-server/starboard_server/tools/domain/"
+            "packages/starboard-server/starboard/tools/domain/"
             "diagnostic/patterns/catalog"
         )
         if catalog_path.exists():

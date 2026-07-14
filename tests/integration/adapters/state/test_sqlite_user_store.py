@@ -9,8 +9,8 @@ These tests use a real SQLite in-memory database.
 import aiosqlite
 import pytest
 from starboard_core.domain.models.auth import UserStatus
-from starboard_server.adapters.state.sqlite.user_store import SQLiteUserStore
-from starboard_server.domain.auth.exceptions import UserNotFoundError
+from starboard.adapters.state.sqlite.user_store import SQLiteUserStore
+from starboard.domain.auth.exceptions import UserNotFoundError
 
 
 @pytest.fixture

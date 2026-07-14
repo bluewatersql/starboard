@@ -18,10 +18,10 @@ async def test_inmemory_store():
     console.print("[bold cyan]Testing In-Memory Vector Store Bootstrap[/bold cyan]\n")
 
     # Import after path setup
-    from starboard_server.infra.rag.adapters.storage.bootstrap_loader import (
+    from starboard.infra.rag.adapters.storage.bootstrap_loader import (
         load_bootstrap_data,
     )
-    from starboard_server.infra.rag.adapters.storage.inmemory_vector_store import (
+    from starboard.infra.rag.adapters.storage.inmemory_vector_store import (
         InMemoryMultiCollectionStore,
     )
 

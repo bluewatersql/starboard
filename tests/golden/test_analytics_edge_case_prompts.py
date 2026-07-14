@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.prompts.factories import build_analytics_prompt
+from starboard.prompts.factories import build_analytics_prompt
 from syrupy.assertion import SnapshotAssertion
 
 

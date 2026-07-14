@@ -8,8 +8,8 @@ from __future__ import annotations
 import json
 
 import pytest
-from starboard_server.tools.domain.diagnostic.models import ArtifactType
-from starboard_server.tools.domain.diagnostic.query_profile_extractor import (
+from starboard.tools.domain.diagnostic.models import ArtifactType
+from starboard.tools.domain.diagnostic.query_profile_extractor import (
     QueryProfileExtractor,
 )
 

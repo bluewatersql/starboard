@@ -9,7 +9,7 @@ Tests metadata extraction with mocked Databricks client.
 from unittest.mock import MagicMock
 
 import pytest
-from starboard_server.infra.rag.services.metadata_service import (
+from starboard.infra.rag.services.metadata_service import (
     MetadataExtractor,
 )
 
@@ -52,7 +52,7 @@ class MockDatabricksClient:
 @pytest.fixture
 def query_analyzer():
     """Create QueryAnalyzer instance."""
-    from starboard_server.infra.rag.domain.query_analyzer import QueryAnalyzer
+    from starboard.infra.rag.domain.query_analyzer import QueryAnalyzer
 
     return QueryAnalyzer()
 

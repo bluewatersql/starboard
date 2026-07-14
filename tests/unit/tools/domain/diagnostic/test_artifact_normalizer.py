@@ -13,8 +13,8 @@ Tests cover all normalization rules:
 """
 
 import pytest
-from starboard_server.tools.domain.diagnostic import ArtifactType
-from starboard_server.tools.domain.diagnostic.artifact_normalizer import (
+from starboard.tools.domain.diagnostic import ArtifactType
+from starboard.tools.domain.diagnostic.artifact_normalizer import (
     ArtifactNormalizer,
 )
 

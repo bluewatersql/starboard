@@ -6,7 +6,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-from starboard_server.adapters.state.databricks.config import DatabricksLakebaseConfig
+from starboard.adapters.state.databricks.config import DatabricksLakebaseConfig
 
 
 class TestDatabricksLakebaseConfig:

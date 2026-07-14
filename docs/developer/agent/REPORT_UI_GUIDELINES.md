@@ -217,7 +217,7 @@ A **report type** is a discriminated union that determines how agent output is r
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ 1. AGENT PROMPT                                                          │
-│    packages/starboard-server/starboard_server/prompts/{domain}/v1.py     │
+│    packages/starboard-server/starboard/prompts/{domain}/v1.py     │
 │                                                                          │
 │    Define output schema in system prompt:                                │
 │    - report_type discriminator                                           │
@@ -240,7 +240,7 @@ A **report type** is a discriminated union that determines how agent output is r
                                     ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ 3. REPORT FORMATTER                                                      │
-│    packages/starboard-server/starboard_server/agents/report_formatters/  │
+│    packages/starboard-server/starboard/agents/report_formatters/  │
 │                                                                          │
 │    - {type}_formatter.py: Implements ReportFormatter protocol            │
 │    - registry.py: Register new formatter                                 │
@@ -251,7 +251,7 @@ A **report type** is a discriminated union that determines how agent output is r
                                     ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ 4. SSE STREAMING                                                         │
-│    packages/starboard-server/starboard_server/agents/                    │
+│    packages/starboard-server/starboard/agents/                    │
 │                                                                          │
 │    - domain/domain_agent.py: complete tool unwrapping                    │
 │    - conversation/multi_agent_manager.py: attach complete_report         │
@@ -333,14 +333,14 @@ class {Type}Report(BaseModel):
 
 ### Step 2: Create Report Formatter
 
-Create `packages/starboard-server/starboard_server/agents/report_formatters/{type}_formatter.py`:
+Create `packages/starboard-server/starboard/agents/report_formatters/{type}_formatter.py`:
 
 ```python
 """Report formatter for {type} reports."""
 
 from typing import Any
 
-from starboard_server.infra.observability.logging import get_logger
+from starboard.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -387,10 +387,10 @@ class {Type}ReportFormatter:
 
 ### Step 3: Register Formatter
 
-Update `packages/starboard-server/starboard_server/agents/report_formatters/registry.py`:
+Update `packages/starboard-server/starboard/agents/report_formatters/registry.py`:
 
 ```python
-from starboard_server.agents.report_formatters.{type}_formatter import (
+from starboard.agents.report_formatters.{type}_formatter import (
     {Type}ReportFormatter,
 )
 
@@ -678,12 +678,12 @@ reports/
 
 Tool display names provide user-friendly labels for tool calls in the UI. All configuration is in a single file:
 
-**Location:** `packages/starboard-server/starboard_server/agents/tool_display.py`
+**Location:** `packages/starboard-server/starboard/agents/tool_display.py`
 
 ### Tool Display Configuration
 
 ```python
-from starboard_server.agents.tool_display import ToolDisplayConfig
+from starboard.agents.tool_display import ToolDisplayConfig
 
 TOOL_DISPLAY: dict[str, ToolDisplayConfig] = {
     "resolve_query": ToolDisplayConfig(

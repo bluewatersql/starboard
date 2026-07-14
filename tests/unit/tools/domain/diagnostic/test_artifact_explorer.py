@@ -18,20 +18,20 @@ from textwrap import dedent
 from unittest.mock import MagicMock
 
 import pytest
-from starboard_server.tools.domain.diagnostic.artifact_detector import (
+from starboard.tools.domain.diagnostic.artifact_detector import (
     ArtifactDetector,
 )
-from starboard_server.tools.domain.diagnostic.artifact_explorer import (
+from starboard.tools.domain.diagnostic.artifact_explorer import (
     ArtifactExplorer,
     ExplorationResult,
     ExplorationState,
     ExplorationStep,
     ExplorationStrategy,
 )
-from starboard_server.tools.domain.diagnostic.context_extractor import (
+from starboard.tools.domain.diagnostic.context_extractor import (
     DatabricksContextExtractor,
 )
-from starboard_server.tools.domain.diagnostic.evidence_extractor import (
+from starboard.tools.domain.diagnostic.evidence_extractor import (
     EvidenceWindowExtractor,
 )
 
@@ -603,18 +603,18 @@ class TestMatchPatternsStrategy:
         """Create explorer with PatternMatcher loaded."""
         from pathlib import Path
 
-        from starboard_server.tools.domain.diagnostic.pattern_matcher import (
+        from starboard.tools.domain.diagnostic.pattern_matcher import (
             PatternMatcher,
         )
-        from starboard_server.tools.domain.diagnostic.patterns.registry import (
+        from starboard.tools.domain.diagnostic.patterns.registry import (
             PatternRegistry,
         )
 
         registry = PatternRegistry()
-        # Find catalog relative to starboard_server package
-        import starboard_server
+        # Find catalog relative to starboard package
+        import starboard
 
-        pkg_path = Path(starboard_server.__file__).parent
+        pkg_path = Path(starboard.__file__).parent
         catalog_dir = (
             pkg_path / "tools" / "domain" / "diagnostic" / "patterns" / "catalog"
         )
@@ -915,17 +915,17 @@ class TestCorrelateStrategy:
         """Create explorer with PatternMatcher loaded."""
         from pathlib import Path
 
-        from starboard_server.tools.domain.diagnostic.pattern_matcher import (
+        from starboard.tools.domain.diagnostic.pattern_matcher import (
             PatternMatcher,
         )
-        from starboard_server.tools.domain.diagnostic.patterns.registry import (
+        from starboard.tools.domain.diagnostic.patterns.registry import (
             PatternRegistry,
         )
 
         registry = PatternRegistry()
-        import starboard_server
+        import starboard
 
-        pkg_path = Path(starboard_server.__file__).parent
+        pkg_path = Path(starboard.__file__).parent
         catalog_dir = (
             pkg_path / "tools" / "domain" / "diagnostic" / "patterns" / "catalog"
         )

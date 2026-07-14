@@ -11,18 +11,18 @@ for the LLM agent.
 from __future__ import annotations
 
 import pytest
-from starboard_server.tools.domain.diagnostic.artifact_detector import ArtifactDetector
-from starboard_server.tools.domain.diagnostic.artifact_explorer import (
+from starboard.tools.domain.diagnostic.artifact_detector import ArtifactDetector
+from starboard.tools.domain.diagnostic.artifact_explorer import (
     ArtifactExplorer,
     ExplorationStrategy,
 )
-from starboard_server.tools.domain.diagnostic.context_extractor import (
+from starboard.tools.domain.diagnostic.context_extractor import (
     DatabricksContextExtractor,
 )
-from starboard_server.tools.domain.diagnostic.evidence_extractor import (
+from starboard.tools.domain.diagnostic.evidence_extractor import (
     EvidenceWindowExtractor,
 )
-from starboard_server.tools.domain.diagnostic.exploration_tool_adapter import (
+from starboard.tools.domain.diagnostic.exploration_tool_adapter import (
     ExplorationToolAdapter,
     create_exploration_tools,
 )

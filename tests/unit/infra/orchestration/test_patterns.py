@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from starboard_server.infra.orchestration.patterns import (
+from starboard.infra.orchestration.patterns import (
     create_fanout_workflow,
     create_map_reduce_workflow,
     create_pipeline_workflow,

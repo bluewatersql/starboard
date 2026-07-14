@@ -20,13 +20,13 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-from starboard_server.tools.domain.diagnostic.exit_code_triager import (
+from starboard.tools.domain.diagnostic.exit_code_triager import (
     ExitCodeTriager,
 )
-from starboard_server.tools.domain.diagnostic.pattern_matcher import (
+from starboard.tools.domain.diagnostic.pattern_matcher import (
     PatternMatcher,
 )
-from starboard_server.tools.domain.diagnostic.patterns.registry import (
+from starboard.tools.domain.diagnostic.patterns.registry import (
     PatternRegistry,
 )
 from syrupy.assertion import SnapshotAssertion
@@ -44,7 +44,7 @@ def registry() -> PatternRegistry:
         Path(__file__).parent.parent.parent.parent
         / "packages"
         / "starboard-server"
-        / "starboard_server"
+        / "starboard"
         / "tools"
         / "domain"
         / "diagnostic"

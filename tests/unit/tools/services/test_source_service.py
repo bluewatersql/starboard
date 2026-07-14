@@ -13,7 +13,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
-from starboard_server.tools.adapters.source_tools import SourceTools
+from starboard.tools.adapters.source_tools import SourceTools
 
 
 class MockDatabricksAPI:

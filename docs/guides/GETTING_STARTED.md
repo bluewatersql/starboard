@@ -176,15 +176,15 @@ SAFE_MODE="false"  # Disable external calls for testing
 ```bash
 # Test Databricks connection
 python3 -c "
-from starboard_server.adapters.apis.databricks import DatabricksAPI
+from starboard.adapters.apis.databricks import DatabricksAPI
 api = DatabricksAPI()
 print('✓ Databricks connected:', api.get_current_user())
 "
 
 # Test OpenAI connection
 python3 -c "
-from starboard_server.adapters.llm.openai.client import OpenAIProvider
-from starboard_server.infra.core.config import get_config
+from starboard.adapters.llm.openai.client import OpenAIProvider
+from starboard.infra.core.config import get_config
 provider = OpenAIProvider(cfg=get_config())
 print('✓ OpenAI connected')
 "
@@ -344,13 +344,13 @@ Let's add a simple tool to get familiar with the codebase.
 
 ```bash
 # Create file
-touch packages/starboard-server/starboard_server/tools/domain/example/hello.py
+touch packages/starboard-server/starboard/tools/domain/example/hello.py
 ```
 
 **2. Add domain logic**:
 
 ```python
-# packages/starboard-server/starboard_server/tools/domain/example/hello.py
+# packages/starboard-server/starboard/tools/domain/example/hello.py
 """Example tool domain logic."""
 
 def greet(name: str) -> str:
@@ -381,7 +381,7 @@ touch tests/unit/tools/domain/example/test_hello.py
 # tests/unit/tools/domain/example/test_hello.py
 """Tests for hello tool."""
 
-from starboard_server.tools.domain.example.hello import greet
+from starboard.tools.domain.example.hello import greet
 
 
 def test_greet():
@@ -414,7 +414,7 @@ test_hello.py::test_greet_different_name PASSED
 **5. Commit your change**:
 
 ```bash
-git add packages/starboard-server/starboard_server/tools/domain/example/
+git add packages/starboard-server/starboard/tools/domain/example/
 git add tests/unit/tools/domain/example/
 git commit -m "feat: Add example hello tool
 
@@ -488,7 +488,7 @@ pytest tests/unit/agents/test_intent_router.py::test_classify_query -v
 pytest -k "test_agent" -v
 
 # With coverage
-pytest --cov=starboard_server tests/unit/
+pytest --cov=starboard tests/unit/
 ```
 
 ### Hot Reloading
@@ -571,7 +571,7 @@ make setup
 ls -la .env
 
 # Verify credentials
-python3 -c "from starboard_server.infra.core.config import get_config; print(get_config())"
+python3 -c "from starboard.infra.core.config import get_config; print(get_config())"
 
 # Check port not in use
 lsof -i :8000

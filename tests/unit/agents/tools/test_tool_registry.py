@@ -5,7 +5,7 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from starboard_server.agents.tools.tool_registry import (
+from starboard.agents.tools.tool_registry import (
     NativeToolAdapter,
     ToolMetadata,
     ToolRegistry,

@@ -114,7 +114,7 @@ Logging is configured at application startup via `setup_structured_logging()` in
 {
   "event": "specialist_execution",
   "level": "debug",
-  "logger": "starboard_server.agents.observability.metrics",
+  "logger": "starboard.agents.observability.metrics",
   "timestamp": "2026-03-01T10:15:30.123456Z",
   "domain": "query",
   "duration_seconds": 2.5,
@@ -153,7 +153,7 @@ To reduce noise, the following loggers are suppressed to WARNING level even in D
 ### Getting a Logger
 
 ```python
-from starboard_server.infra.observability.logging import get_logger
+from starboard.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -187,7 +187,7 @@ Every operation in the system can carry an `ObservabilityContext` with the follo
 ### Creating and Propagating Context
 
 ```python
-from starboard_server.infra.observability.context import (
+from starboard.infra.observability.context import (
     ObservabilityContext,
     create_observability_context,
 )
@@ -214,7 +214,7 @@ logger.debug("tool_call_started", **ctx.to_log_dict())
 In addition to `ObservabilityContext`, the logging module provides a request-scoped correlation ID via `ContextVar`:
 
 ```python
-from starboard_server.infra.observability.logging import (
+from starboard.infra.observability.logging import (
     get_request_id,
     set_request_id,
     clear_request_id,
@@ -295,7 +295,7 @@ Cost tracking is implemented through the `MultiAgentMetrics` and `AgentMetrics` 
 ### Recording Metrics
 
 ```python
-from starboard_server.agents.observability.metrics import get_metrics
+from starboard.agents.observability.metrics import get_metrics
 
 metrics = get_metrics()
 
@@ -373,7 +373,7 @@ transitions = metrics.get_transition_stats()
 Individual agent sessions track granular step-by-step metrics:
 
 ```python
-from starboard_server.agents.observability.metrics import AgentMetrics
+from starboard.agents.observability.metrics import AgentMetrics
 
 agent_metrics = AgentMetrics(
     session_id="sess-123",
@@ -431,7 +431,7 @@ The `EventEmitter` in `infra/observability/events.py` provides a publish-subscri
 Events emitted by child components bubble up to parent emitters:
 
 ```python
-from starboard_server.infra.observability.events import EventEmitter
+from starboard.infra.observability.events import EventEmitter
 
 # Parent emitter (e.g., orchestrator)
 parent = EventEmitter()
@@ -460,7 +460,7 @@ Circuit breakers protect against cascading failures from external services (LLM 
 ### Configuration
 
 ```python
-from starboard_server.infra.reliability.circuit_breaker import CircuitBreaker
+from starboard.infra.reliability.circuit_breaker import CircuitBreaker
 
 breaker = CircuitBreaker(
     failure_threshold=5,    # Open after 5 consecutive failures
@@ -510,7 +510,7 @@ The `SSEBroadcaster` in `agents/observability/sse_broadcaster.py` manages real-t
 ### Key Metrics
 
 ```python
-from starboard_server.agents.observability.sse_broadcaster import SSEBroadcaster
+from starboard.agents.observability.sse_broadcaster import SSEBroadcaster
 
 broadcaster = SSEBroadcaster()
 
@@ -664,4 +664,4 @@ HTTP 429 Too Many Requests
 | `infra/middleware/rate_limit.py` | Rate limiting utilities |
 | `.cursor/05_observability_and_cost.md` | Engineering standards for observability |
 
-All paths are relative to `packages/starboard-server/starboard_server/`.
+All paths are relative to `packages/starboard-server/starboard/`.

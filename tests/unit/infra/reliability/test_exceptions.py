@@ -16,7 +16,7 @@ Examples:
 """
 
 import pytest
-from starboard_server.infra.reliability.exceptions import (
+from starboard.infra.reliability.exceptions import (
     APIRateLimitError,
     ApprovalRequiredError,
     ConfigurationError,

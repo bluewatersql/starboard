@@ -20,7 +20,7 @@ from starboard_core.domain.models.clarification import (
     ClarificationRequest,
     ClarificationType,
 )
-from starboard_server.repositories.clarification_repository import (
+from starboard.repositories.clarification_repository import (
     ClarificationRepository,
 )
 

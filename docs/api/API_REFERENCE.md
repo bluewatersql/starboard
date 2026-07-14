@@ -66,7 +66,7 @@ All other endpoints require a valid Databricks authentication token passed via t
 
 ## Health Endpoints
 
-These endpoints are defined directly in `starboard_server.main` (not behind any API prefix).
+These endpoints are defined directly in `starboard.main` (not behind any API prefix).
 
 ### GET /health/live
 

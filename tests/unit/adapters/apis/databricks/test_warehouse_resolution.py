@@ -10,9 +10,9 @@ the default workspace warehouse when not explicitly configured.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from starboard_server.adapters.databricks.client import AsyncDatabricksClient
-from starboard_server.infra.core.config import EnvConfig
-from starboard_server.infra.reliability.exceptions import ConfigurationError
+from starboard.adapters.databricks.client import AsyncDatabricksClient
+from starboard.infra.core.config import EnvConfig
+from starboard.infra.reliability.exceptions import ConfigurationError
 
 
 class TestWarehouseIdResolution:
@@ -22,7 +22,7 @@ class TestWarehouseIdResolution:
     def mock_workspace_client(self):
         """Create a mock WorkspaceClient."""
         with patch(
-            "starboard_server.adapters.databricks.client.WorkspaceClient"
+            "starboard.adapters.databricks.client.WorkspaceClient"
         ) as mock:
             client = MagicMock()
             # Mock authentication check

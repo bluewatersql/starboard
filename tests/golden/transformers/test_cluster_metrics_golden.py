@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 import pytest
-from starboard_server.tools.domain.cluster.cluster_metrics_analyzer import (
+from starboard.tools.domain.cluster.cluster_metrics_analyzer import (
     ClusterMetricsAnalyzer,
 )
 

@@ -15,7 +15,7 @@ Coverage targets:
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from starboard_server.agents.routing.intent_router import IntentRouter
+from starboard.agents.routing.intent_router import IntentRouter
 
 
 class TestIntentRouterInitialization:
@@ -914,7 +914,7 @@ class TestHistoryContext:
         assert len(result) <= 600  # some overhead for labels
 
     def test_message_objects_supported(self) -> None:
-        from starboard_server.agents.state.agent_state import Message
+        from starboard.agents.state.agent_state import Message
 
         history = [
             Message(role="user", content="Check job 123"),

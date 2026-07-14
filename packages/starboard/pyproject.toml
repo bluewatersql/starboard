@@ -1,0 +1,176 @@
+[project]
+name = "starboard"
+version = "0.1.0"
+description = "Starboard AI Agent - FastAPI Backend Server"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Databricks Open Model License"}
+dependencies = [
+    "starboard-core", # Workspace dependency - includes log parser
+    # FastAPI stack. starlette>=1.3.1 (below) is required for the CVE batch, but starlette 1.x is
+    # only supported by fastapi>=0.137.0 — fastapi 0.128.x-0.136.x cap starlette <1.0.0, so a lower
+    # fastapi floor is contradictory with the starlette pin. DBR 17.3 ships fastapi 0.115.12 /
+    # starlette 0.46.2; both are auto-upgraded here (self-contained wheels, no cluster steps).
+    "fastapi>=0.137.0,<1.0.0",
+    # starlette>=1.3.1 fixes CVE batch: GHSA-82w8-qh3p-5jfq (DoS, CVSS 7.5),
+    # GHSA-86qp-5c8j-p5mr (host header poisoning), GHSA-wqp7-x3pw-xc5r (SSRF/NTLM),
+    # GHSA-jp82-jpqv-5vv3 (URL hostname poisoning), GHSA-x746-7m8f-x49c (arbitrary HTTP methods),
+    # PYSEC-2026-161 (BadHost) — see F-3-1b-002. Other starlette consumers accept 1.x:
+    # mcp 1.19.0 (starlette>=0.27) and slowapi 0.1.9 (unconstrained).
+    "starlette>=1.3.1",
+    "uvicorn[standard]>=0.24.0,<1.0.0",
+    # >=0.0.31 fixes GHSA-wp53-j4wj-2cfg (arbitrary file write, CVSS 8.2),
+    # GHSA-5rvq-cxj2-64vf (CPU DoS), GHSA-pp6c-gr5w-3c5g (DoS via multipart headers),
+    # GHSA-6jv3-5f52-599m (parameter smuggling), GHSA-mj87-hwqh-73pj (DoS preamble),
+    # GHSA-v9pg-7xvm-68hf (negative Content-Length) — see F-3-1b-003; takes effect after uv lock --refresh
+    "python-multipart>=0.0.31",
+    # Databricks & LLM
+    "databricks-sdk>=0.73.0,<1.0.0",
+    "databricks-sql-connector>=3.0.0",
+    "openai>=2.6.0,<3.0.0",
+    "tiktoken>=0.12.0",
+    # Data processing
+    "polars>=1.17.0,<2.0.0",
+    "pyarrow>=18.0.0,<20.0.0", # Required for Arrow format with Databricks + Polars integration
+    "numpy>=1.24.0,<3.0.0",
+    "sqlglot>=27.29.0,<28.0.0",
+    # Data visualization (FinOps charts)
+    "altair>=5.0.0,<6.0.0", # Declarative visualization with Vega-Lite
+    "vl-convert-python>=1.0.0,<2.0.0", # Convert Vega-Lite to PNG/SVG
+    # Prompt templating
+    "Jinja2>=3.1.0",
+    # Configuration
+    "pydantic>=2.0.0,<3.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+    # Infrastructure
+    "httpx>=0.28.1,<1.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "pyyaml>=6.0.3",
+    "rich>=13.0.0,<14.0.0",
+    "structlog>=24.0.0",
+    "redis>=5.0.0,<6.0.0",
+    "slowapi>=0.1.9,<1.0.0", # Rate limiting for FastAPI
+    # Database (State Management)
+    "asyncpg>=0.29.0,<1.0.0", # Async Postgres driver
+    "pgvector>=0.3.0,<1.0.0", # Vector similarity search extension
+    "aiosqlite>=0.19.0,<1.0.0", # Async SQLite driver for dev/testing
+    "sqlite-vec>=0.1.1,<1.0.0", # Vector similarity search for SQLite
+    # Constrain cryptography/cffi to run on the default DBR 17.3 LTS cluster with zero package
+    # changes. DBR 17.3 ships cryptography 43.0.3 (NOT affected by PYSEC-2026-36 / CVE-2026-39892 —
+    # that buffer-overflow was introduced in 45.0.0), cffi 1.17.1, and msal 1.32.3.
+    # Floor 43.0.3 keeps the runtime's bundled cryptography as-is (no install/upgrade); cap <47
+    # because DBR's msal 1.32.3 requires cryptography<47 (and cryptography>=48 also requires
+    # cffi>=2.0, which would break against the runtime's cffi 1.17.1 + compiled _cffi_backend).
+    # See changes/oss_readiness/.
+    "cryptography>=43.0.3,<47.0.0",
+    # Hard-cap cffi <2 to stay aligned with DBR 17.3's bundled _cffi_backend (1.17.1) and prevent any
+    # transitive bump to cffi 2.x from breaking imports on the default cluster.
+    "cffi<2.0.0",
+    # Pin protobuf to the one 5.x that satisfies BOTH databricks-sdk 0.73.0 (which excludes
+    # 5.26.*-5.29.4) AND DBR 17.3's bundled google-api-core 2.20.0 / googleapis-common-protos
+    # 1.65.0 / grpcio-status 1.67.0 (all require protobuf<6). Without this, databricks-sdk drags
+    # protobuf to 6.x and breaks the runtime's google/grpc stack. 5.29.5 is a patch bump over the
+    # runtime's 5.29.4.
+    "protobuf>=5.29.5,<6.0.0",
+    # MCP protocol
+    "mcp>=1.19.0,<2.0.0",
+    "orjson>=3.11.4",
+    "aiofiles>=24.1",
+    # Observability (core tracing used unconditionally by adapters/infra)
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+]
+
+[project.optional-dependencies]
+observability = [
+    "opentelemetry-instrumentation-fastapi>=0.41b0",
+    "prometheus-client>=0.19.0",
+]
+
+test = [
+    # Core testing framework
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "pytest-xdist>=3.5.0",  # Parallel test execution
+
+    # Advanced testing (Week 3)
+    "syrupy>=4.6.0",  # Snapshot/golden testing
+    "pytest-benchmark>=4.0.0",  # Performance benchmarking
+    "hypothesis>=6.92.0",  # Property-based testing
+
+    # Test utilities
+    "httpx>=0.28.1",
+    "respx>=0.22.0",  # Mock httpx requests for testing
+    "faker>=28.0.0",  # Generate test data
+    "freezegun>=1.5.0",  # Mock datetime
+
+    "types-aiofiles>=24.1",
+]
+
+lint = [
+    "mypy>=1.10.0",
+    "ruff>=0.4.0",  # Formatting and linting
+]
+
+load = [
+    "locust>=2.0.0",
+]
+
+dev = [
+    "uvicorn[standard]>=0.24.0",
+    "playwright>=1.40.0",  # Browser automation for debug logging
+]
+
+all = [
+    "starboard[test,lint,observability,dev,load]",
+]
+
+[project.scripts]
+starboard = "starboard.cli.main:main"
+starboard-mcp = "starboard.mcp.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatchling.build.targets.wheel]
+packages = ["starboard"]
+
+# Include data files in package distribution
+[tool.hatchling.build.targets.wheel.shared-data]
+"starboard/tools/domain/analytics/data" = "starboard/tools/domain/analytics/data"
+
+[tool.hatchling.build.targets.sdist]
+include = [
+    "starboard/**/*.py",
+    "starboard/tools/domain/analytics/data/*.json",
+]
+
+[tool.mypy]
+exclude = [
+    "experiment/",  # Exclude experiment folder (prototype code)
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=starboard",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (may require external services)",
+    "golden: Golden/snapshot tests for prompts and schemas",
+    "slow: Tests that take significant time",
+    "baseline: Baseline tests to ensure backward compatibility (Phase 0)",
+]
+asyncio_mode = "auto"

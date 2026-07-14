@@ -21,9 +21,9 @@ from starboard_core.rag.models import (
     RAGFacetContext,
     RAGTableContext,
 )
-from starboard_server.tools.adapters.analytics_sql_tools import AnalyticsSQLTools
-from starboard_server.tools.adapters.rag_tools import AnalyticsContextTools
-from starboard_server.tools.domain.analytics_sql.sql_validator import SQLValidator
+from starboard.tools.adapters.analytics_sql_tools import AnalyticsSQLTools
+from starboard.tools.adapters.rag_tools import AnalyticsContextTools
+from starboard.tools.domain.analytics_sql.sql_validator import SQLValidator
 
 # ============================================================================
 # Test Fixtures

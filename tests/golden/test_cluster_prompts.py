@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.prompts.cluster.v1 import CLUSTER_SYSTEM_PROMPT, PROMPT_VERSION
-from starboard_server.prompts.factories import build_cluster_prompt
+from starboard.prompts.cluster.v1 import CLUSTER_SYSTEM_PROMPT, PROMPT_VERSION
+from starboard.prompts.factories import build_cluster_prompt
 from syrupy.assertion import SnapshotAssertion
 
 

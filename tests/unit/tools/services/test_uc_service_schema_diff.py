@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-from starboard_server.tools.services.uc_service import UCService
+from starboard.tools.services.uc_service import UCService
 
 
 class MockSQLProvider:

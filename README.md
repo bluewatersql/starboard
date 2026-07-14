@@ -1,7 +1,6 @@
 # Starboard AI Agent
 
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
-[![Frontend](https://img.shields.io/badge/frontend-Next.js_16-black.svg)](./frontend)
 [![Package Manager](https://img.shields.io/badge/pkg_manager-uv-purple.svg)](https://github.com/astral-sh/uv)
 
 AI-powered Databricks workload analysis and optimization platform.
@@ -16,7 +15,6 @@ Starboard AI Agent is a multi-package monorepo providing:
 - **FinOps Analytics** — Cost analysis, billing, budget forecasting, usage trends
 - **Warehouse Optimization** — SQL warehouse portfolio analysis
 - **Diagnostics** — Troubleshooting, debugging, and root cause analysis
-- **Real-time Streaming** — Live agent reasoning and tool execution via SSE
 - **Interruptible Reasoning** — User-in-the-loop interrupts and replanning
 
 ## Architecture
@@ -25,23 +23,23 @@ Starboard AI Agent is a multi-package monorepo providing:
 
 ```
 packages/
-├── starboard-core/         # Domain models, prompts, shared types (no I/O deps)
-├── starboard-log-parser/   # Spark event log parsing with credential providers
-├── starboard-server/       # FastAPI backend with multi-agent system
-├── starboard-cli/          # Command-line interface
-└── starboard-sdk/          # Thin SDK for notebook/programmatic use
-
-frontend/                   # Next.js 16 web UI (React 19, Material UI v7)
+├── starboard-core/     # Domain models, prompts, shared types + Spark log parsing (no I/O deps)
+├── starboard/          # MCP server + CLI + SDK (primary install)
+└── starboard-skills/   # Lightweight Claude skill files + Databricks helper scripts
 ```
 
 | Package | Description | Dependencies |
 |---------|-------------|--------------|
-| **starboard-core** | Pure domain logic, prompts, types | None (core) |
-| **starboard-log-parser** | Spark event log parsing | starboard-core |
-| **starboard-server** | FastAPI backend, agents, tools | starboard-core, starboard-log-parser |
-| **starboard-cli** | CLI application | starboard-core, starboard-server |
-| **starboard-sdk** | Programmatic SDK for notebooks | starboard-core, starboard-server |
-| **frontend** | Next.js web interface | REST API client |
+| **starboard-core** | Pure domain logic, prompts, types, log parsing | None (core) |
+| **starboard** | MCP server, CLI, agents, tools | starboard-core |
+| **starboard-skills** | Claude skill files + thin helper scripts | starboard-core, databricks-sdk |
+
+### Install Tiers
+
+```bash
+pip install starboard          # Full: CLI + MCP server + all agents + all tools
+pip install starboard-skills   # Lightweight: Claude skill files + helper scripts only
+```
 
 ### Multi-Agent System
 
@@ -63,7 +61,7 @@ MultiAgentConversationManager
 domain/      – pure logic, deterministic, no I/O
 adapters/    – I/O boundaries (LLM SDKs, DB, HTTP, FS)
 agents/      – policies, tool routing, orchestration
-app/         – CLI/API/FastAPI entrypoints
+app/         – CLI/MCP entrypoints
 infra/       – config, logging, DI/wiring, observability
 tools/       – tool implementations with explicit schemas
 ```
@@ -74,7 +72,6 @@ tools/       – tool implementations with explicit schemas
 
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
-- Node.js 18+ (for frontend)
 
 ### Setup
 
@@ -90,12 +87,8 @@ cp examples/env.example .env
 ### Development
 
 ```bash
-# Start backend + frontend together
-make dev
-
-# Or individually:
-make dev-server         # Backend at http://localhost:8000 (API docs at /docs)
-make dev-frontend       # Frontend at http://localhost:3000
+# Start the MCP server / backend
+make dev-server
 
 # Stop all dev servers
 make dev-stop
@@ -107,7 +100,7 @@ Starboard can be used as an MCP server inside Claude Code, Cursor, or Claude Des
 
 ```bash
 # Quick setup
-pip install -e "packages/starboard-server"
+pip install starboard
 # Copy the example MCP config to your IDE's MCP config location and edit credentials
 cp examples/cursor-mcp.json <ide-mcp-config-path>
 
@@ -124,9 +117,7 @@ make test               # All tests (unit + integration)
 make test-unit          # Unit tests only
 make test-integration   # Integration tests
 make test-golden        # Golden/snapshot tests
-make test-contract      # API contract tests (backend + frontend)
 make test-coverage      # With coverage report
-make test-frontend      # Frontend tests (Jest)
 ```
 
 ### Code Quality
@@ -134,7 +125,6 @@ make test-frontend      # Frontend tests (Jest)
 ```bash
 make format             # Auto-format code (ruff)
 make lint               # Python linting (ruff)
-make lint-frontend      # Frontend linting (eslint + tsc)
 make type-check         # Python type checking (mypy)
 make check              # All checks (lint + type + test)
 make pre-commit         # Run pre-commit hooks
@@ -165,6 +155,13 @@ starboard --chat
 starboard --help
 ```
 
+### MCP Server
+
+```bash
+# Start the MCP server (stdio transport for Claude Code / Cursor)
+starboard-mcp --transport stdio
+```
+
 ## Project Structure
 
 ```
@@ -174,14 +171,11 @@ job-agent/
 ├── Makefile                    # Development workflow commands
 ├── CONTRIBUTING.md             # Contribution guide
 ├── packages/                   # Python packages
-│   ├── starboard-core/
-│   ├── starboard-log-parser/
-│   ├── starboard-server/
-│   ├── starboard-cli/
-│   └── starboard-sdk/
-├── frontend/                   # Next.js 16 web UI
+│   ├── starboard-core/         # Pure domain + log parsing
+│   ├── starboard/              # MCP server + CLI + SDK
+│   └── starboard-skills/       # Claude skills + helper scripts
 ├── docs/                       # MkDocs documentation site
-├── tests/                      # Cross-package tests (contract, golden, integration)
+├── tests/                      # Cross-package tests (golden, integration)
 ├── evals/                      # Evaluation assets
 ├── scripts/                    # Dev/ops scripts
 ├── examples/                   # Usage examples and env template
@@ -231,9 +225,7 @@ See [Deployment Guide](docs/DEPLOYMENT.md) for all deployment options.
 
 ### Architecture & Design
 - [System Architecture](docs/architecture/SYSTEM_ARCHITECTURE.md) — Complete system design
-- [API Reference](docs/api/API_REFERENCE.md) — REST & Chat APIs
 - [Tool Architecture](docs/TOOL_ARCHITECTURE.md) — Tool system design
-- [Frontend Architecture](docs/FRONTEND_ARCHITECTURE.md) — Frontend patterns
 - [Interruptible Reasoning](docs/INTERRUPTIBLE_REASONING.md) — Agent reasoning patterns
 
 ### Operations
@@ -243,11 +235,8 @@ See [Deployment Guide](docs/DEPLOYMENT.md) for all deployment options.
 
 ### Package Documentation
 - [starboard-core](packages/starboard-core/README.md)
-- [starboard-log-parser](packages/starboard-log-parser/README.md)
-- [starboard-server](packages/starboard-server/README.md)
-- [starboard-cli](packages/starboard-cli/README.md)
-- [starboard-sdk](packages/starboard-sdk/README.md)
-- [frontend](frontend/README.md)
+- [starboard](packages/starboard/README.md)
+- [starboard-skills](packages/starboard-skills/README.md)
 
 ### Full Documentation Site
 
@@ -287,9 +276,7 @@ Licensed under the [Databricks Open Model License](LICENSE).
 ## Acknowledgments
 
 Built with:
-- [FastAPI](https://fastapi.tiangolo.com/) — Backend framework
-- [Next.js](https://nextjs.org/) — Frontend framework
-- [Material UI](https://mui.com/) — UI component library
+- [FastAPI](https://fastapi.tiangolo.com/) — MCP server framework
 - [OpenAI](https://openai.com/) — LLM provider
 - [Databricks SDK](https://github.com/databricks/databricks-sdk-py) — Databricks integration
 - [uv](https://github.com/astral-sh/uv) — Package management

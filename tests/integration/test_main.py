@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Databricks, Inc.
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """
-Tests for starboard_server.main.
+Tests for starboard.main.
 
 Tests the FastAPI application initialization, configuration, and health endpoints.
 """
@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from starboard_server.main import (
+from starboard.main import (
     create_app,
     get_container,
 )
@@ -19,7 +19,7 @@ from starboard_server.main import (
 @pytest.fixture
 def mock_event_coverage():
     """Mock event coverage validation."""
-    with patch("starboard_server.api.event_converter.validate_event_coverage") as mock:
+    with patch("starboard.api.event_converter.validate_event_coverage") as mock:
         mock.return_value = (True, [])
         yield mock
 
@@ -27,7 +27,7 @@ def mock_event_coverage():
 @pytest.fixture
 def mock_config():
     """Mock app configuration."""
-    with patch("starboard_server.main.get_config") as mock:
+    with patch("starboard.main.get_config") as mock:
         config = Mock()
         config.log_level = "INFO"
         config.log_json = False
@@ -50,7 +50,7 @@ def mock_config():
 @pytest.fixture
 def mock_container():
     """Mock Container for testing."""
-    with patch("starboard_server.main.Container") as mock_container_class:
+    with patch("starboard.main.Container") as mock_container_class:
         container = AsyncMock()
         container.config = Mock(
             environment="test",
@@ -65,7 +65,7 @@ def mock_container():
 @pytest.fixture
 def mock_app_config():
     """Mock get_config function."""
-    with patch("starboard_server.infra.core.config.get_config") as mock_get_config:
+    with patch("starboard.infra.core.config.get_config") as mock_get_config:
         config = Mock()
         config.environment = "test"
         config.database_backend = "sqlite"
@@ -159,7 +159,7 @@ class TestHealthEndpoints:
     def test_health_ready_without_container(self):
         """Test get_container raises error when container is not initialized."""
         # Reset the global container
-        import starboard_server.main as main_module
+        import starboard.main as main_module
 
         original_container = main_module._container
 
@@ -182,7 +182,7 @@ class TestGetContainer:
     def test_get_container_raises_when_not_initialized(self):
         """Test that get_container raises RuntimeError when container is not initialized."""
         # Reset the global container
-        import starboard_server.main as main_module
+        import starboard.main as main_module
 
         main_module._container = None
 
@@ -237,7 +237,7 @@ class TestLifespan:
     ):
         """Test that lifespan raises error when event coverage is invalid."""
         with patch(
-            "starboard_server.api.event_converter.validate_event_coverage"
+            "starboard.api.event_converter.validate_event_coverage"
         ) as mock_validate:
             # Simulate invalid event coverage
             mock_validate.return_value = (False, ["MissingEvent"])
@@ -268,7 +268,7 @@ class TestLifespan:
         self, mock_config, mock_event_coverage, mock_app_config
     ):
         """Test that lifespan handles container initialization errors."""
-        with patch("starboard_server.main.Container") as mock_container_class:
+        with patch("starboard.main.Container") as mock_container_class:
             # Simulate initialization error
             mock_container_class.return_value.initialize.side_effect = Exception(
                 "Init failed"

@@ -15,8 +15,8 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_server.tools.domain.analytics_sql.models import ValidationResult
-from starboard_server.tools.domain.analytics_sql.sql_validator import (
+from starboard.tools.domain.analytics_sql.models import ValidationResult
+from starboard.tools.domain.analytics_sql.sql_validator import (
     DATABRICKS_ERROR_PATTERNS,
     SQLValidator,
 )

@@ -14,7 +14,7 @@ Tests cover:
 
 import pytest
 from pydantic import ValidationError
-from starboard_server.tools.domain.diagnostic.patterns.schema import (
+from starboard.tools.domain.diagnostic.patterns.schema import (
     Category,
     ConfidenceFactorsYAML,
     EvidenceChecklistYAML,

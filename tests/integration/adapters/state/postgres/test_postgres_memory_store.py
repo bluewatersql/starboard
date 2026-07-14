@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 from starboard_core.models.memory import Episode, Fact, SemanticQuery
-from starboard_server.adapters.state.postgres import PostgresMemoryStore
+from starboard.adapters.state.postgres import PostgresMemoryStore
 
 
 @pytest.fixture(scope="module")

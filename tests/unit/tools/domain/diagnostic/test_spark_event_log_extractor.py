@@ -6,8 +6,8 @@
 from __future__ import annotations
 
 import pytest
-from starboard_server.tools.domain.diagnostic.models import ArtifactType
-from starboard_server.tools.domain.diagnostic.spark_event_log_extractor import (
+from starboard.tools.domain.diagnostic.models import ArtifactType
+from starboard.tools.domain.diagnostic.spark_event_log_extractor import (
     SparkDiagnosticEvidence,
     SparkEventLogExtractor,
 )

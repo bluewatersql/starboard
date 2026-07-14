@@ -18,8 +18,8 @@ from unittest.mock import AsyncMock, MagicMock
 import polars as pl
 import pytest
 from starboard_core.rag.models import RAGContext, RAGTableContext
-from starboard_server.tools.adapters.analytics_sql_tools import AnalyticsSQLTools
-from starboard_server.tools.domain.analytics_sql.sql_validator import SQLValidator
+from starboard.tools.adapters.analytics_sql_tools import AnalyticsSQLTools
+from starboard.tools.domain.analytics_sql.sql_validator import SQLValidator
 
 # ============================================================================
 # Test Fixtures

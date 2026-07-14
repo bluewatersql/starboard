@@ -8,7 +8,7 @@ Tests the observability context dataclass for distributed tracing.
 import uuid
 
 import pytest
-from starboard_server.infra.observability import (
+from starboard.infra.observability import (
     ObservabilityContext,
     create_observability_context,
 )

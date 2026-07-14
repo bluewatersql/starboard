@@ -14,7 +14,7 @@ Tests cover:
 from __future__ import annotations
 
 import pytest
-from starboard_server.tools.domain.diagnostic.response_framer import (
+from starboard.tools.domain.diagnostic.response_framer import (
     ConfidenceLevel,
     DiagnosticFinding,
     FramedResponse,

@@ -6,7 +6,7 @@ Ensures the output from DirectChartConfigBuilder matches what frontend expects
 and is compatible with the previous VisualizationService output format.
 """
 
-from starboard_server.tools.services.direct_chart_builder import (
+from starboard.tools.services.direct_chart_builder import (
     DirectChartConfigBuilder,
 )
 

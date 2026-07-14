@@ -110,16 +110,16 @@ from starboard_log_parser.adapters import S3Adapter
 
 ```python
 # Agent system
-from starboard_server.agents.agent_factory import AgentFactory
-from starboard_server.agents.conversation import MultiAgentConversationManager
-from starboard_server.agents.routing.intent_router import IntentRouter
+from starboard.agents.agent_factory import AgentFactory
+from starboard.agents.conversation import MultiAgentConversationManager
+from starboard.agents.routing.intent_router import IntentRouter
 
 # Tools
-from starboard_server.agents.tool_categories import TOOL_CATEGORIES
-from starboard_server.tools.adapters import resolve_query
+from starboard.agents.tool_categories import TOOL_CATEGORIES
+from starboard.tools.adapters import resolve_query
 
 # Config
-from starboard_server.infra.core.config import EnvConfig, get_config
+from starboard.infra.core.config import EnvConfig, get_config
 ```
 
 ### starboard-cli
@@ -128,7 +128,7 @@ from starboard_server.infra.core.config import EnvConfig, get_config
 
 ```python
 # Entry point
-from starboard_cli.cli.main import main, create_agent_manager
+from starboard.cli.cli.main import main, create_agent_manager
 ```
 
 ### starboard-sdk
@@ -136,7 +136,7 @@ from starboard_cli.cli.main import main, create_agent_manager
 **Role**: Programmatic Python client for multi-turn conversations.
 
 ```python
-from starboard_sdk import StarboardClient, ConversationSession, AgentResponse
+from starboard.sdk import StarboardClient, ConversationSession, AgentResponse
 ```
 
 **Rules**: Uses `create_agent_manager` from CLI to bootstrap the agent stack. Adds session management and a clean API surface.
@@ -167,15 +167,15 @@ stages = app.stages
 
 ```python
 # CLI creates the agent manager directly (in-process, no HTTP)
-from starboard_server.agents.conversation import MultiAgentConversationManager
-from starboard_server.agents.agent_factory import AgentFactory
+from starboard.agents.conversation import MultiAgentConversationManager
+from starboard.agents.agent_factory import AgentFactory
 ```
 
 ### SDK uses CLI bootstrapping
 
 ```python
 # SDK reuses CLI's agent manager creation
-from starboard_cli.cli.main import create_agent_manager
+from starboard.cli.cli.main import create_agent_manager
 
 manager, api, vector_store = await create_agent_manager(config)
 ```

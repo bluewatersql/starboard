@@ -12,7 +12,7 @@ Coverage targets:
 
 from unittest.mock import Mock
 
-from starboard_server.infra.observability.events import (
+from starboard.infra.observability.events import (
     EventEmitter,
     EventType,
     StatusEvent,

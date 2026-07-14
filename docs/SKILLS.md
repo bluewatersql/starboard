@@ -339,9 +339,9 @@ settings_path = os.path.expanduser('~/.claude/settings.json')
 with open(settings_path) as f:
     settings = json.load(f)
 
-from starboard_server.mcp.tool_bridge import PHASE_B_TOOLS
-from starboard_server.mcp.composite_tools import COMPOSITE_TOOL_METADATA
-from starboard_server.mcp.agent_bridge import AGENT_TOOL_METADATA
+from starboard.mcp.tool_bridge import PHASE_B_TOOLS
+from starboard.mcp.composite_tools import COMPOSITE_TOOL_METADATA
+from starboard.mcp.agent_bridge import AGENT_TOOL_METADATA
 
 tools = {'starboard_ping'}
 tools.update(PHASE_B_TOOLS)

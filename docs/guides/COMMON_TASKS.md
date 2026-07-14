@@ -32,7 +32,7 @@ Tools are how agents interact with external systems. Follow the three-layer arch
 
 Create pure business logic with no I/O dependencies.
 
-**File**: `packages/starboard-server/starboard_server/tools/domain/compute/cost_analyzer.py`
+**File**: `packages/starboard-server/starboard/tools/domain/compute/cost_analyzer.py`
 
 ```python
 """Domain logic for cost analysis."""
@@ -105,16 +105,16 @@ def analyze_costs(
 
 Add orchestration and external I/O.
 
-**File**: `packages/starboard-server/starboard_server/tools/services/cost_service.py`
+**File**: `packages/starboard-server/starboard/tools/services/cost_service.py`
 
 ```python
 """Service layer for cost analysis."""
 
 from datetime import datetime
 
-from starboard_server.adapters.apis.databricks import DatabricksAPI
-from starboard_server.infra.observability.events import EventEmitter
-from starboard_server.tools.domain.compute.cost_analyzer import (
+from starboard.adapters.apis.databricks import DatabricksAPI
+from starboard.infra.observability.events import EventEmitter
+from starboard.tools.domain.compute.cost_analyzer import (
     analyze_costs,
     CostAnalysis,
 )
@@ -193,16 +193,16 @@ class CostService:
 
 Create clean interface for LLM consumption.
 
-**File**: `packages/starboard-server/starboard_server/tools/adapters/cost_tools.py`
+**File**: `packages/starboard-server/starboard/tools/adapters/cost_tools.py`
 
 ```python
 """Adapter interface for cost analysis tools."""
 
 from typing import Any
 
-from starboard_server.adapters.apis.databricks import DatabricksAPI
-from starboard_server.infra.observability.events import EventEmitter
-from starboard_server.tools.services.cost_service import CostService
+from starboard.adapters.apis.databricks import DatabricksAPI
+from starboard.infra.observability.events import EventEmitter
+from starboard.tools.services.cost_service import CostService
 
 
 class CostTools:
@@ -268,11 +268,11 @@ class CostTools:
 
 Add to tool factory.
 
-**File**: `packages/starboard-server/starboard_server/agents/tools/tool_factory.py`
+**File**: `packages/starboard-server/starboard/agents/tools/tool_factory.py`
 
 ```python
 # ... existing imports ...
-from starboard_server.tools.adapters.cost_tools import CostTools
+from starboard.tools.adapters.cost_tools import CostTools
 
 def create_tool_registry(...) -> ToolRegistry:
     """Create and populate tool registry."""
@@ -324,7 +324,7 @@ def create_tool_registry(...) -> ToolRegistry:
 """Tests for cost analyzer."""
 
 import pytest
-from starboard_server.tools.domain.compute.cost_analyzer import analyze_costs
+from starboard.tools.domain.compute.cost_analyzer import analyze_costs
 
 
 def test_analyze_costs_basic():
@@ -365,7 +365,7 @@ def test_analyze_costs_with_threshold():
 import pytest
 from unittest.mock import AsyncMock
 
-from starboard_server.tools.services.cost_service import CostService
+from starboard.tools.services.cost_service import CostService
 
 
 @pytest.mark.asyncio
@@ -442,7 +442,7 @@ Agents are domain specialists. Follow this process to add a new agent.
 
 Create system prompts in the server package under the prompts directory.
 
-**File**: `packages/starboard-server/starboard_server/prompts/security/v1.py`
+**File**: `packages/starboard-server/starboard/prompts/security/v1.py`
 
 ```python
 """Prompts for security agent."""
@@ -482,13 +482,13 @@ Analyze the security implications and provide recommendations.
 
 ### Step 2: Create Agent Class
 
-**File**: `packages/starboard-server/starboard_server/agents/domain/security_agent.py`
+**File**: `packages/starboard-server/starboard/agents/domain/security_agent.py`
 
 ```python
 """Security and governance agent."""
 
-from starboard_server.agents.domain.domain_agent import DomainAgent
-from starboard_server.prompts.security.v1 import (
+from starboard.agents.domain.domain_agent import DomainAgent
+from starboard.prompts.security.v1 import (
     SECURITY_AGENT_SYSTEM_PROMPT,
     SECURITY_AGENT_USER_PROMPT_TEMPLATE,
 )
@@ -518,7 +518,7 @@ class SecurityAgent(DomainAgent):
 
 ### Step 3: Register in AgentFactory
 
-**File**: `packages/starboard-server/starboard_server/agents/agent_factory.py`
+**File**: `packages/starboard-server/starboard/agents/agent_factory.py`
 
 ```python
 class AgentFactory:
@@ -543,7 +543,7 @@ class AgentFactory:
 
 ### Step 4: Update Intent Router
 
-**File**: `packages/starboard-server/starboard_server/agents/routing/intent_router.py`
+**File**: `packages/starboard-server/starboard/agents/routing/intent_router.py`
 
 ```python
 # Update classification prompt to include security domain
@@ -584,7 +584,7 @@ Create tools needed by the security agent (follow "Adding a New Tool" process).
 """Tests for security agent."""
 
 import pytest
-from starboard_server.agents.domain.security_agent import SecurityAgent
+from starboard.agents.domain.security_agent import SecurityAgent
 
 
 @pytest.fixture
@@ -659,7 +659,7 @@ NEW ADDITION: Always check for partitioning before suggesting indexes.
 
 ### Step 2: Update Agent to Use New Version
 
-**File**: `packages/starboard-server/starboard_server/agents/domain/query_agent.py`
+**File**: `packages/starboard-server/starboard/agents/domain/query_agent.py`
 
 ```python
 # Change import
@@ -727,7 +727,7 @@ async def compare_prompt_versions():
 
 ### Step 1: Define Request/Response Models
 
-**File**: `packages/starboard-server/starboard_server/api/models/security.py`
+**File**: `packages/starboard-server/starboard/api/models/security.py`
 
 ```python
 """Security API models."""
@@ -753,15 +753,15 @@ class CheckAccessResponse(BaseModel):
 
 ### Step 2: Create Route Handler
 
-**File**: `packages/starboard-server/starboard_server/api/security.py`
+**File**: `packages/starboard-server/starboard/api/security.py`
 
 ```python
 """Security API endpoints."""
 
 from fastapi import APIRouter, HTTPException, status
 
-from starboard_server.api.dependencies import MultiAgentManagerDep
-from starboard_server.api.models.security import (
+from starboard.api.dependencies import MultiAgentManagerDep
+from starboard.api.models.security import (
     CheckAccessRequest,
     CheckAccessResponse,
 )
@@ -817,13 +817,13 @@ async def check_access(
 
 ### Step 3: Register Router
 
-**File**: `packages/starboard-server/starboard_server/api/__init__.py`
+**File**: `packages/starboard-server/starboard/api/__init__.py`
 
 ```python
 """API package."""
 
-from starboard_server.api.chat import router as chat_router
-from starboard_server.api.security import router as security_router  # NEW
+from starboard.api.chat import router as chat_router
+from starboard.api.security import router as security_router  # NEW
 
 __all__ = [
     "chat_router",
@@ -832,10 +832,10 @@ __all__ = [
 ]
 ```
 
-**File**: `packages/starboard-server/starboard_server/api/main.py`
+**File**: `packages/starboard-server/starboard/api/main.py`
 
 ```python
-from starboard_server.api import chat_router, security_router
+from starboard.api import chat_router, security_router
 
 # Register routers
 app.include_router(chat_router)
@@ -922,7 +922,7 @@ class Message:
 
 ### Step 2: Update Repository
 
-**File**: `packages/starboard-server/starboard_server/repositories/conversation_repository.py`
+**File**: `packages/starboard-server/starboard/repositories/conversation_repository.py`
 
 ```python
 # Update save method to include new field
@@ -945,7 +945,7 @@ async def save_message(self, message: Message) -> None:
 
 ### Step 3: Create Migration
 
-**File**: `packages/starboard-server/starboard_server/infra/storage/migrations/007_add_token_count.sql`
+**File**: `packages/starboard-server/starboard/infra/storage/migrations/007_add_token_count.sql`
 
 ```sql
 -- Add token_count column to messages table
@@ -1017,7 +1017,7 @@ grep "tool_start\|tool_end" .debug/server/debug.log
 
 ```python
 # In agent or tool
-from starboard_server.infra.observability.logging import get_logger
+from starboard.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -1053,7 +1053,7 @@ import pdb; pdb.set_trace()
 
 ```python
 # Enable LLM call logging
-from starboard_server.adapters.llm.openai.client import OpenAIProvider
+from starboard.adapters.llm.openai.client import OpenAIProvider
 
 # Add callback to log all calls
 def log_llm_call(request, response):

@@ -22,7 +22,7 @@ from starboard_core.rag.models import (
     RAGFacetContext,
     RAGTableContext,
 )
-from starboard_server.tools.adapters.rag_tools import AnalyticsContextTools
+from starboard.tools.adapters.rag_tools import AnalyticsContextTools
 
 # ============================================================================
 # Test Fixtures

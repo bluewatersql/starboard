@@ -6,7 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from starboard_server.services.context.provider import (
+from starboard.services.context.provider import (
     ContextCache,
     SharedContextProvider,
 )

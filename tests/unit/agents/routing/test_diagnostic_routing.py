@@ -12,7 +12,7 @@ Tests verify that:
 - Exclusivity patterns work correctly
 """
 
-from starboard_server.agents.routing.domain_intents import (
+from starboard.agents.routing.domain_intents import (
     DOMAIN_INTENTS,
     route_by_scoring,
     score_domain,

@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 import pytest
-from starboard_server.tools.domain.query.warehouse_query_analyzer import (
+from starboard.tools.domain.query.warehouse_query_analyzer import (
     WarehouseQueryAnalyzer,
 )
 

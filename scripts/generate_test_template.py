@@ -45,10 +45,10 @@ class TestTemplateGenerator:
 
     def _get_test_file_path(self) -> Path:
         """Get test file path."""
-        # Get relative path from starboard_server
+        # Get relative path from starboard
         path_str = str(self.source_file)
-        if "starboard_server/" in path_str:
-            rel_path = path_str.split("starboard_server/")[1]
+        if "starboard/" in path_str:
+            rel_path = path_str.split("starboard/")[1]
         else:
             rel_path = path_str
 
@@ -284,7 +284,7 @@ def main():
     parser.add_argument(
         "source_file",
         type=Path,
-        help="Source file to generate tests for (relative to starboard_server/)",
+        help="Source file to generate tests for (relative to starboard/)",
     )
     parser.add_argument(
         "--type",
@@ -310,8 +310,8 @@ def main():
 
     # Try to find the file if it doesn't exist as-is
     if not source_file.exists():
-        # Try in packages/starboard-server/starboard_server/
-        alt_path = Path("packages/starboard-server/starboard_server") / source_file
+        # Try in packages/starboard-server/starboard/
+        alt_path = Path("packages/starboard-server/starboard") / source_file
         if alt_path.exists():
             source_file = alt_path
         else:

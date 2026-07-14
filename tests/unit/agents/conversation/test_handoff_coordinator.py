@@ -16,14 +16,14 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_server.agents.conversation import AgentHandoffCoordinator
-from starboard_server.agents.routing.routing_models import (
+from starboard.agents.conversation import AgentHandoffCoordinator
+from starboard.agents.routing.routing_models import (
     AgentTransition,
     RouteDecision,
 )
-from starboard_server.agents.state.agent_state import Message, WorkingMemory
-from starboard_server.agents.state.shared_context import SharedAgentContext
-from starboard_server.api.models import EventType
+from starboard.agents.state.agent_state import Message, WorkingMemory
+from starboard.agents.state.shared_context import SharedAgentContext
+from starboard.api.models import EventType
 
 
 @pytest.fixture

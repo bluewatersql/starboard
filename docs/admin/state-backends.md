@@ -550,7 +550,7 @@ The cache layer will automatically fall back to in-memory caching if Redis is un
 Run validation manually to check your configuration:
 
 ```python
-from starboard_server.infra.core.config import EnvConfig
+from starboard.infra.core.config import EnvConfig
 
 config = EnvConfig.from_env()
 config.validate()  # Raises ValueError with all issues listed
@@ -585,4 +585,4 @@ config.validate()  # Raises ValueError with all issues listed
 | `infra/rag/services/vector_store_factory.py` | Vector store factory with automatic fallback |
 | `infra/cache/semantic_cache.py` | `SemanticCache` using vector similarity |
 
-All paths are relative to `packages/starboard-server/starboard_server/`.
+All paths are relative to `packages/starboard-server/starboard/`.

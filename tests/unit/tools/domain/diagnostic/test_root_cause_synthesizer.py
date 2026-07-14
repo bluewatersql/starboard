@@ -3,11 +3,11 @@
 """Tests for RootCauseSynthesizer."""
 
 import pytest
-from starboard_server.tools.domain.diagnostic.models import (
+from starboard.tools.domain.diagnostic.models import (
     ExplorationSummary,
     PrimarySymptom,
 )
-from starboard_server.tools.domain.diagnostic.root_cause_synthesizer import (
+from starboard.tools.domain.diagnostic.root_cause_synthesizer import (
     RootCauseSynthesizer,
     SynthesisResult,
     ToolOutput,

@@ -12,7 +12,7 @@ Tests cover:
 """
 
 import pytest
-from starboard_server.tools.domain.diagnostic.exit_code_triager import (
+from starboard.tools.domain.diagnostic.exit_code_triager import (
     ExitCodeTriager,
     HypothesisType,
 )

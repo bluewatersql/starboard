@@ -60,7 +60,7 @@ def check_prompt_version(file_path: Path) -> bool:
 
 def main() -> int:
     """Run validation checks on all agent prompts."""
-    base_path = Path("packages/starboard-server/starboard_server")
+    base_path = Path("packages/starboard-server/starboard")
     errors: list[str] = []
     warnings: list[str] = []
 

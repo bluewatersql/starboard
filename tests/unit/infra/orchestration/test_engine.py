@@ -15,12 +15,12 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_server.infra.orchestration.engine import (
+from starboard.infra.orchestration.engine import (
     WorkflowContext,
     WorkflowEngine,
     WorkflowResult,
 )
-from starboard_server.infra.orchestration.workflow import (
+from starboard.infra.orchestration.workflow import (
     Workflow,
     WorkflowStep,
 )

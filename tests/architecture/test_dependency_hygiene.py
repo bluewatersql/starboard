@@ -34,9 +34,7 @@ import pytest
 # Packages that are part of this workspace — skip undeclared-import checks for them
 _WORKSPACE_PACKAGES = {
     "starboard_core",
-    "starboard_server",
-    "starboard_cli",
-    "starboard_log_parser",
+    "starboard",
 }
 
 # Known stdlib top-level modules — these need no declared dependency
@@ -290,7 +288,7 @@ def test_server_package_dependency_hygiene(project_root: Path) -> None:
     """starboard-server imports must all be declared; declared deps must be used."""
     package_dir = project_root / "packages" / "starboard-server"
     undeclared, unused = _check_package(
-        "starboard_server", package_dir, "starboard_server", project_root
+        "starboard", package_dir, "starboard", project_root
     )
 
     messages: list[str] = []
@@ -316,7 +314,7 @@ def test_cli_package_dependency_hygiene(project_root: Path) -> None:
     """starboard-cli imports must all be declared; declared deps must be used."""
     package_dir = project_root / "packages" / "starboard-cli"
     undeclared, unused = _check_package(
-        "starboard_cli", package_dir, "starboard_cli", project_root
+        "starboard.cli", package_dir, "starboard.cli", project_root
     )
 
     messages: list[str] = []

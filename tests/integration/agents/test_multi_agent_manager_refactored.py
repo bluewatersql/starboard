@@ -23,13 +23,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.agents.conversation import MultiAgentConversationManager
-from starboard_server.agents.events.agent_events import ThinkingEvent
-from starboard_server.agents.events.user_events import FinalOutputEvent
-from starboard_server.agents.routing.routing_models import RouteDecision
-from starboard_server.agents.state.agent_state import Message, WorkingMemory
-from starboard_server.agents.state.shared_context import SharedAgentContext
-from starboard_server.api.models import ConversationConfig
+from starboard.agents.conversation import MultiAgentConversationManager
+from starboard.agents.events.agent_events import ThinkingEvent
+from starboard.agents.events.user_events import FinalOutputEvent
+from starboard.agents.routing.routing_models import RouteDecision
+from starboard.agents.state.agent_state import Message, WorkingMemory
+from starboard.agents.state.shared_context import SharedAgentContext
+from starboard.api.models import ConversationConfig
 
 
 @pytest.fixture

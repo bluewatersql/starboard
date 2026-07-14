@@ -17,7 +17,7 @@ from __future__ import annotations
 from textwrap import dedent
 
 import pytest
-from starboard_server.tools.domain.diagnostic.sql_analyzer import (
+from starboard.tools.domain.diagnostic.sql_analyzer import (
     SQLAnalysisResult,
     SQLAnalyzer,
     SQLAntiPatternType,

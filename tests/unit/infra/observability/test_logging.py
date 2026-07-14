@@ -12,7 +12,7 @@ Coverage targets:
 import logging
 import uuid
 
-from starboard_server.infra.observability.logging import (
+from starboard.infra.observability.logging import (
     clear_request_id,
     get_logger,
     get_request_id,

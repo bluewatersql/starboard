@@ -9,7 +9,7 @@ import pytest
 from starboard_core.foundations.models import (
     VectorSearchResult,
 )
-from starboard_server.infra.cache import SemanticCache
+from starboard.infra.cache import SemanticCache
 
 
 class TestSemanticCacheInit:

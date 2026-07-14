@@ -60,8 +60,8 @@ def _find_long_functions(
 
 @pytest.mark.unit
 def test_no_function_exceeds_max_lines(project_root: Path) -> None:
-    """No function/method in starboard_server may exceed 80 significant lines."""
-    server_root = project_root / "packages" / "starboard-server" / "starboard_server"
+    """No function/method in starboard may exceed 80 significant lines."""
+    server_root = project_root / "packages" / "starboard-server" / "starboard"
     if not server_root.exists():
         pytest.skip(f"Server package not found: {server_root}")
 

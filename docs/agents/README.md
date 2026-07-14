@@ -70,7 +70,7 @@ graph TD
 | **[Discovery](domain/discovery.md)** | `discovery` | Workspace-wide health assessment (4-phase pipeline) | 6 | `advisor` |
 | **[Diagnostic](domain/diagnostic.md)** | `diagnostic` | Cross-domain troubleshooting, root cause analysis | ALL | `advisor` |
 
-Tool counts are from `packages/starboard-server/starboard_server/agents/tool_categories.py` and include core tools (`request_user_input`, `complete`).
+Tool counts are from `packages/starboard-server/starboard/agents/tool_categories.py` and include core tools (`request_user_input`, `complete`).
 
 ---
 

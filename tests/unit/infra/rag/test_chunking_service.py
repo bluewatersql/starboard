@@ -12,7 +12,7 @@ from starboard_core.rag.models import (
     RelationshipMetadata,
     TableMetadata,
 )
-from starboard_server.infra.rag.services.chunking_service import (
+from starboard.infra.rag.services.chunking_service import (
     ChunkingService,
     TableChunk,
 )

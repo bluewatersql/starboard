@@ -6,13 +6,13 @@
 from __future__ import annotations
 
 import pytest
-from starboard_server.tools.domain.diagnostic.large_artifact_processor import (
+from starboard.tools.domain.diagnostic.large_artifact_processor import (
     LARGE_FILE_THRESHOLD,
     LargeArtifactProcessor,
     ProcessedArtifact,
     is_large_file,
 )
-from starboard_server.tools.domain.diagnostic.models import ArtifactType
+from starboard.tools.domain.diagnostic.models import ArtifactType
 
 # =============================================================================
 # FIXTURES

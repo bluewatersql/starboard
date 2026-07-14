@@ -9,8 +9,8 @@ Tests for translating AgentOutput to AgentResultEnvelope.
 from datetime import UTC, datetime
 
 import pytest
-from starboard_server.agents.state.agent_state import AgentOutput
-from starboard_server.domain.models.conversation_patterns import (
+from starboard.agents.state.agent_state import AgentOutput
+from starboard.domain.models.conversation_patterns import (
     ActionType,
     NextStepOption,
 )
@@ -21,7 +21,7 @@ class TestEnvelopeTranslator:
 
     def test_translates_success_output(self) -> None:
         """Success AgentOutput becomes success envelope."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -56,7 +56,7 @@ class TestEnvelopeTranslator:
 
     def test_translates_budget_exceeded(self) -> None:
         """budget_exceeded status maps correctly."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -85,7 +85,7 @@ class TestEnvelopeTranslator:
 
     def test_translates_max_steps_reached(self) -> None:
         """max_steps_reached status maps correctly."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -111,7 +111,7 @@ class TestEnvelopeTranslator:
 
     def test_translates_error_output(self) -> None:
         """error status maps correctly with error message."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -141,7 +141,7 @@ class TestEnvelopeTranslator:
 
     def test_extracts_metrics_correctly(self) -> None:
         """Metrics are extracted correctly from AgentOutput."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -170,7 +170,7 @@ class TestEnvelopeTranslator:
 
     def test_preserves_next_steps(self) -> None:
         """next_steps from AgentOutput are preserved in envelope."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -223,7 +223,7 @@ class TestEnvelopeTranslator:
 
     def test_infers_report_type_from_complete_report(self) -> None:
         """report_type is inferred from complete_report."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -251,7 +251,7 @@ class TestEnvelopeTranslator:
 
     def test_defaults_report_type_by_domain(self) -> None:
         """report_type defaults based on domain when not in complete_report."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -293,7 +293,7 @@ class TestEnvelopeTranslator:
 
     def test_timestamp_is_set(self) -> None:
         """Envelope timestamp is set to current time."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -323,7 +323,7 @@ class TestEnvelopeTranslator:
 
     def test_handles_none_complete_report(self) -> None:
         """Handles AgentOutput with complete_report=None."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -355,7 +355,7 @@ class TestEnvelopeTranslatorEdgeCases:
 
     def test_handles_empty_next_steps(self) -> None:
         """Handles AgentOutput with empty next_steps."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 
@@ -382,7 +382,7 @@ class TestEnvelopeTranslatorEdgeCases:
 
     def test_handles_none_next_steps(self) -> None:
         """Handles AgentOutput with next_steps=None."""
-        from starboard_server.agents.output.envelope_translator import (
+        from starboard.agents.output.envelope_translator import (
             EnvelopeTranslator,
         )
 

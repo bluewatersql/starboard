@@ -56,7 +56,7 @@ curl -s http://localhost:8000/health/live | jq .
    sudo systemctl restart starboard-server
 
    # Manual
-   uvicorn starboard_server.main:create_app --factory --host 0.0.0.0 --port 8000
+   uvicorn starboard.main:create_app --factory --host 0.0.0.0 --port 8000
    ```
 3. Check for crash loops in process manager logs.
 
@@ -316,7 +316,7 @@ jq 'select(.level == "error")' < /dev/stdin | wc -l
    cases.
 4. **Service catalog issues** -- Verify the catalog file is valid:
    ```bash
-   python -c "import yaml; yaml.safe_load(open('packages/starboard-server/starboard_server/config/service_catalog.yaml'))"
+   python -c "import yaml; yaml.safe_load(open('packages/starboard-server/starboard/config/service_catalog.yaml'))"
    ```
 
 ### Verification
@@ -403,7 +403,7 @@ groups:
 ### Circuit Breaker Activation
 
 The circuit breaker pattern is implemented in
-`starboard_server/infra/reliability/circuit_breaker.py`. It protects against cascading
+`starboard/infra/reliability/circuit_breaker.py`. It protects against cascading
 failures when external dependencies (Databricks API, LLM provider) are degraded.
 
 **When to activate:** External dependency is returning errors for > 50% of requests.
@@ -431,7 +431,7 @@ but cannot reach external dependencies.
 export SAFE_MODE=true
 
 # Restart the service
-uvicorn starboard_server.main:create_app --factory --host 0.0.0.0 --port 8000
+uvicorn starboard.main:create_app --factory --host 0.0.0.0 --port 8000
 ```
 
 !!! danger "Safe mode limits functionality"
@@ -449,7 +449,7 @@ other domains:
 export DISABLED_AGENT_DOMAINS="diagnostic,discovery"
 
 # Restart the service
-uvicorn starboard_server.main:create_app --factory --host 0.0.0.0 --port 8000
+uvicorn starboard.main:create_app --factory --host 0.0.0.0 --port 8000
 ```
 
 !!! warning "Disabled domains are invisible to the router"

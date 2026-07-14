@@ -15,15 +15,12 @@ packages/
 │       ├── conftest.py
 │       └── unit/
 │
-├── starboard-server/
-│   └── tests/
-│       ├── conftest.py
-│       ├── unit/
-│       ├── golden/        # Snapshot tests for prompts
-│       └── integration/   # Server integration tests
-│
-└── starboard-cli/
+└── starboard/
     └── tests/
+        ├── conftest.py
+        ├── unit/
+        ├── golden/        # Snapshot tests for prompts
+        └── integration/   # Integration tests
 
 tests/                      # Root-level cross-package tests
 └── integration/            # Cross-package integration
@@ -34,7 +31,7 @@ tests/                      # Root-level cross-package tests
 | Type | Location | Purpose | Speed |
 |------|----------|---------|-------|
 | **Unit** | `packages/*/tests/unit/` | Test individual functions/classes | Fast |
-| **Golden** | `packages/starboard-server/tests/golden/` | Snapshot tests for prompts | Fast |
+| **Golden** | `packages/starboard/tests/golden/` | Snapshot tests for prompts | Fast |
 | **Package Integration** | `packages/*/tests/integration/` | Test package components together | Medium |
 | **Cross-Package** | `tests/integration/` | Test package interactions | Medium |
 
@@ -46,11 +43,11 @@ tests/                      # Root-level cross-package tests
 
 ```bash
 # From package directory
-cd packages/starboard-server
+cd packages/starboard
 pytest
 
 # Or from root
-pytest packages/starboard-server/tests/
+pytest packages/starboard/tests/
 
 # Specific test types
 pytest -m unit                # Only unit tests
@@ -72,7 +69,7 @@ pytest packages/ -n auto
 
 ```bash
 # Package integration
-pytest packages/starboard-server/tests/integration/
+pytest packages/starboard/tests/integration/
 
 # Cross-package integration
 pytest tests/integration/
@@ -82,14 +79,13 @@ pytest tests/integration/
 
 ```bash
 # Single package
-cd packages/starboard-server
-pytest --cov=starboard_server --cov-report=html
+cd packages/starboard
+pytest --cov=starboard --cov-report=html
 
 # All packages
 pytest packages/ \
   --cov=starboard_core \
-  --cov=starboard_server \
-  --cov=starboard_cli
+  --cov=starboard
 ```
 
 ---
@@ -112,8 +108,8 @@ Use markers to categorize and selectively run tests:
 ### Per-Package Coverage
 
 ```bash
-cd packages/starboard-server
-pytest --cov=starboard_server --cov-report=html --cov-report=term-missing
+cd packages/starboard
+pytest --cov=starboard --cov-report=html --cov-report=term-missing
 ```
 
 **Coverage Requirements**:
@@ -131,7 +127,7 @@ The repository includes an auto-updating coverage badge:
 **Update badge**:
 ```bash
 # Run tests with coverage
-pytest packages/starboard-server --cov=starboard_server --cov-report=json
+pytest packages/starboard --cov=starboard --cov-report=json
 
 # Update badge
 python scripts/update_coverage_badge.py
@@ -183,13 +179,13 @@ pytest packages/ tests/
 pytest packages/ -m "unit and not slow"
 
 # With coverage
-pytest packages/starboard-server --cov=starboard_server --cov-report=html
+pytest packages/starboard --cov=starboard --cov-report=html
 
 # Parallel execution
 pytest packages/ -n auto
 
 # Specific test file (agents)
-pytest packages/starboard-server/tests/unit/agents/test_domain_agent.py
+pytest packages/starboard/tests/unit/agents/test_domain_agent.py
 
 # Matching pattern
 pytest packages/ -k "test_tool"
@@ -217,7 +213,7 @@ pytest packages/ -vv
 uv sync
 
 # Check test discovery
-pytest --collect-only packages/starboard-server/tests/
+pytest --collect-only packages/starboard/tests/
 ```
 
 ### Import Errors
@@ -235,7 +231,7 @@ export PYTHONPATH=/path/to/job-agent:$PYTHONPATH
 uv pip install pytest-cov
 
 # Run with explicit coverage
-pytest --cov=starboard_server packages/starboard-server/tests/
+pytest --cov=starboard packages/starboard/tests/
 ```
 
 ---

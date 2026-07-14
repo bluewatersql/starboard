@@ -7,7 +7,7 @@ f-strings or ``.format()`` calls, as this can enable prompt-injection attacks.
 Only constant expressions (string literals, module-level constants defined
 within the same file) are acceptable.
 
-This test scans every ``.py`` file under ``starboard_server/prompts/`` and:
+This test scans every ``.py`` file under ``starboard/prompts/`` and:
   1. Flags f-strings that embed a ``Name`` node (variable reference), which
      indicates runtime interpolation.
   2. Flags ``.format()`` method calls on string literals or names.
@@ -74,7 +74,7 @@ def _find_prompt_construction_violations(
 def test_prompts_do_not_use_variable_interpolation(project_root: Path) -> None:
     """Prompt files must not use f-strings or .format() with variable interpolation."""
     prompts_root = (
-        project_root / "packages" / "starboard-server" / "starboard_server" / "prompts"
+        project_root / "packages" / "starboard-server" / "starboard" / "prompts"
     )
     if not prompts_root.exists():
         pytest.skip(f"Prompts directory not found: {prompts_root}")

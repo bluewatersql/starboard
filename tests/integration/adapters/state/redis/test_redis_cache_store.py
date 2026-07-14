@@ -6,7 +6,7 @@ import asyncio
 import os
 
 import pytest
-from starboard_server.adapters.state.redis import RedisCacheStore
+from starboard.adapters.state.redis import RedisCacheStore
 
 
 @pytest.fixture(scope="module")

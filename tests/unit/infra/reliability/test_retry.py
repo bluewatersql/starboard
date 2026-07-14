@@ -22,7 +22,7 @@ from unittest.mock import AsyncMock, Mock, call, patch
 
 import pytest
 from openai import RateLimitError
-from starboard_server.infra.reliability.retry import retry_with_backoff
+from starboard.infra.reliability.retry import retry_with_backoff
 
 
 class TestRetryWithBackoffHappyPath:
@@ -245,7 +245,7 @@ class TestRetryWithBackoffLogging:
         def test_func():
             return mock_func()
 
-        with patch("starboard_server.infra.reliability.retry.logger") as mock_logger:
+        with patch("starboard.infra.reliability.retry.logger") as mock_logger:
             test_func()
 
             # Should log structured warning about retry
@@ -265,7 +265,7 @@ class TestRetryWithBackoffLogging:
         def test_func():
             return mock_func()
 
-        with patch("starboard_server.infra.reliability.retry.logger") as mock_logger:
+        with patch("starboard.infra.reliability.retry.logger") as mock_logger:
             with pytest.raises(ValueError):
                 test_func()
 

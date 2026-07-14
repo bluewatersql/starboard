@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from starboard_server.tools.domain.warehouse.chargeback import (
+from starboard.tools.domain.warehouse.chargeback import (
     ChargebackCalculator,
     UserAllocation,
     WarehouseChargeback,

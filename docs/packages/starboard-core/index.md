@@ -1,10 +1,12 @@
 # starboard-core
 
-Pure domain logic, prompts, shared types with no external dependencies.
+Pure domain logic, prompts, shared types, and Spark log parsing with no external dependencies.
 
 ## Overview
 
 `starboard-core` is the foundation package providing pure domain logic with **zero I/O dependencies**. It uses hexagonal architecture (ports & adapters) to define clean abstractions that other packages implement.
+
+It also includes the Spark event log parser (previously a separate `starboard-log-parser` package), providing high-performance streaming parsing of Spark event logs from multiple sources (local, DBFS, Unity Catalog Volumes, HTTP/S, S3).
 
 ![Architecture Diagram](../../diagrams/generated/packages/starboard-core-architecture.png)
 
@@ -14,6 +16,12 @@ Pure domain logic, prompts, shared types with no external dependencies.
 - **[Data Flow](../../diagrams/generated/packages/starboard-core-dataflow.png)** - Repository pattern flow
 
 ## Key Components
+
+### Log Parser (`log_parser/`)
+- **SparkApplication**: Immutable parsed application model (jobs, stages, tasks, executors, DAG)
+- **Event Parser**: Streaming parser for 30+ Spark event types (~50,000 events/second, O(1) memory)
+- **Storage Loaders**: Local, DBFS, Unity Catalog Volumes, HTTP/S, S3
+- **Credential Providers**: Protocol-based authentication (pluggable)
 
 ### Domain Models (`domain/models/`)
 - **Context Types**: Agent and tool execution contexts

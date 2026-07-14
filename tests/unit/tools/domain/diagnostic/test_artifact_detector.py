@@ -8,8 +8,8 @@ Tests cover all detection rules for artifact type and language classification.
 """
 
 import pytest
-from starboard_server.tools.domain.diagnostic import ArtifactType, CodeLanguage
-from starboard_server.tools.domain.diagnostic.artifact_detector import ArtifactDetector
+from starboard.tools.domain.diagnostic import ArtifactType, CodeLanguage
+from starboard.tools.domain.diagnostic.artifact_detector import ArtifactDetector
 
 # =============================================================================
 # FIXTURES

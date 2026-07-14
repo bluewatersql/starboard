@@ -12,8 +12,8 @@ Coverage targets:
 from unittest.mock import Mock
 
 import pytest
-from starboard_server.agents.routing.routing_models import RouteDecision
-from starboard_server.agents.routing.specialist_context_builder import (
+from starboard.agents.routing.routing_models import RouteDecision
+from starboard.agents.routing.specialist_context_builder import (
     SpecialistContextBuilder,
 )
 

@@ -10,7 +10,7 @@ import json
 
 import pytest
 from starboard_core.rag.models import ColumnMetadata, TableMetadata
-from starboard_server.infra.rag.services.enrichment_service import EnrichmentService
+from starboard.infra.rag.services.enrichment_service import EnrichmentService
 
 
 class MockLLMClient:

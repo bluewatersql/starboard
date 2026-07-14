@@ -3,7 +3,7 @@
 """Tests for diagnostic tool call governance."""
 
 import pytest
-from starboard_server.tools.domain.diagnostic.tool_governance import (
+from starboard.tools.domain.diagnostic.tool_governance import (
     ToolGovernance,
     ToolPriority,
     ToolRequest,

@@ -254,7 +254,7 @@ class TestNextStepOptionDataclass:
 
     def test_nextstep_option_has_canonical_fields(self) -> None:
         """NextStepOption dataclass uses canonical fields."""
-        from starboard_server.domain.models.conversation_patterns import (
+        from starboard.domain.models.conversation_patterns import (
             ActionType,
             NextStepOption,
         )
@@ -278,7 +278,7 @@ class TestNextStepOptionDataclass:
 
     def test_to_dict_produces_canonical_keys(self) -> None:
         """NextStepOption.to_dict() produces canonical keys."""
-        from starboard_server.domain.models.conversation_patterns import (
+        from starboard.domain.models.conversation_patterns import (
             ActionType,
             NextStepOption,
         )
@@ -311,7 +311,7 @@ class TestNextStepOptionDataclass:
 
     def test_from_dict_accepts_canonical_keys(self) -> None:
         """NextStepOption.from_dict() accepts canonical keys."""
-        from starboard_server.domain.models.conversation_patterns import (
+        from starboard.domain.models.conversation_patterns import (
             ActionType,
             NextStepOption,
         )
@@ -338,7 +338,7 @@ class TestNextStepOptionDataclass:
 
     def test_nextstep_option_is_frozen(self) -> None:
         """NextStepOption is immutable (frozen dataclass)."""
-        from starboard_server.domain.models.conversation_patterns import (
+        from starboard.domain.models.conversation_patterns import (
             ActionType,
             NextStepOption,
         )
@@ -366,7 +366,7 @@ class TestNextStepSchemaAlignment:
         import dataclasses
 
         from starboard_core.domain.models.llm_schemas import NextStepAction
-        from starboard_server.domain.models.conversation_patterns import NextStepOption
+        from starboard.domain.models.conversation_patterns import NextStepOption
 
         pydantic_fields = set(NextStepAction.model_fields.keys())
         dataclass_fields = {f.name for f in dataclasses.fields(NextStepOption)}
@@ -382,7 +382,7 @@ class TestNextStepSchemaAlignment:
         from typing import get_args
 
         from starboard_core.domain.models.llm_schemas import NextStepAction
-        from starboard_server.domain.models.conversation_patterns import ActionType
+        from starboard.domain.models.conversation_patterns import ActionType
 
         # Get literal values from Pydantic field
         action_type_field = NextStepAction.model_fields["action_type"]

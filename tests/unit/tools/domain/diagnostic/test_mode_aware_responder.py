@@ -14,8 +14,8 @@ Tests cover:
 from __future__ import annotations
 
 import pytest
-from starboard_server.tools.domain.diagnostic.context_extractor import ContextMode
-from starboard_server.tools.domain.diagnostic.mode_aware_responder import (
+from starboard.tools.domain.diagnostic.context_extractor import ContextMode
+from starboard.tools.domain.diagnostic.mode_aware_responder import (
     ModeAwareResponder,
     ModeAwareResponse,
     OfflineGuidance,

@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from starboard_core.foundations.models import VectorRecord
-from starboard_server.infra.rag.adapters.storage.sqlite_vector_store import (
+from starboard.infra.rag.adapters.storage.sqlite_vector_store import (
     SQLiteVectorStore,
 )
 

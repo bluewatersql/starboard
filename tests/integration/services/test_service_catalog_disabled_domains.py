@@ -9,22 +9,22 @@ Part of Phase 9: Service Catalog & Next-Step Suggestions
 """
 
 import pytest
-from starboard_server.domain.models.agent_output import (
+from starboard.domain.models.agent_output import (
     DomainAgentOutput,
     InDomainNextStep,
 )
-from starboard_server.domain.models.conversation_patterns import ActionType
-from starboard_server.domain.models.handoff_recommendation import (
+from starboard.domain.models.conversation_patterns import ActionType
+from starboard.domain.models.handoff_recommendation import (
     HandoffConfidence,
     HandoffRecommendation,
 )
-from starboard_server.domain.models.service_catalog import (
+from starboard.domain.models.service_catalog import (
     ServiceCatalogEntry,
     ServiceStatus,
     ServiceType,
 )
-from starboard_server.services.coordination.next_step_generator import NextStepGenerator
-from starboard_server.tools.service_catalog_tool import ServiceCatalogTool
+from starboard.services.coordination.next_step_generator import NextStepGenerator
+from starboard.tools.service_catalog_tool import ServiceCatalogTool
 
 
 class TestDisabledDomainsIntegration:

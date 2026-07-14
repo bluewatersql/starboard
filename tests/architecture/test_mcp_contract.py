@@ -2,7 +2,7 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-006: MCP tool input-schema contract.
 
-Every tool schema defined in ``starboard_server/agents/tools/schemas/``
+Every tool schema defined in ``starboard/agents/tools/schemas/``
 must declare a ``"parameters"`` key with a non-empty JSON-Schema object
 (i.e. ``{"type": "object", "properties": {...}}``).  Missing or empty
 ``parameters`` blocks mean the MCP layer cannot validate caller payloads.
@@ -101,7 +101,7 @@ def test_all_mcp_tool_schemas_have_parameters(project_root: Path) -> None:
         project_root
         / "packages"
         / "starboard-server"
-        / "starboard_server"
+        / "starboard"
         / "agents"
         / "tools"
         / "schemas"

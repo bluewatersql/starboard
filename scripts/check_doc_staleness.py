@@ -45,7 +45,7 @@ def find_undocumented_tools(project_root: Path) -> list[str]:
         project_root
         / "packages"
         / "starboard-server"
-        / "starboard_server"
+        / "starboard"
         / "tools"
         / "adapters"
     )

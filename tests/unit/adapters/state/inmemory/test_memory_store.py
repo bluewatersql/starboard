@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 from starboard_core.models.memory import Episode, Fact, SemanticQuery
-from starboard_server.adapters.state.inmemory import InMemoryMemoryStore
+from starboard.adapters.state.inmemory import InMemoryMemoryStore
 
 
 @pytest.fixture

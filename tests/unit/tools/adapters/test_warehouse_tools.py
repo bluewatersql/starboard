@@ -21,8 +21,8 @@ from starboard_core.domain.models.warehouse import (
     WarehouseFingerprint,
     WorkloadPattern,
 )
-from starboard_server.tools.adapters.base import collect_tool_schemas
-from starboard_server.tools.adapters.warehouse_tools import (
+from starboard.tools.adapters.base import collect_tool_schemas
+from starboard.tools.adapters.warehouse_tools import (
     WarehouseTools,
 )
 
@@ -438,7 +438,7 @@ class TestGetWarehouseConfig:
     ) -> None:
         """Returns config when warehouse exists."""
         with patch(
-            "starboard_server.tools.adapters.warehouse_tools.get_transformed",
+            "starboard.tools.adapters.warehouse_tools.get_transformed",
             new_callable=AsyncMock,
         ) as mock_get_transformed:
             mock_get_transformed.return_value = {
@@ -459,7 +459,7 @@ class TestGetWarehouseConfig:
     ) -> None:
         """Returns found=False when warehouse doesn't exist."""
         with patch(
-            "starboard_server.tools.adapters.warehouse_tools.get_transformed",
+            "starboard.tools.adapters.warehouse_tools.get_transformed",
             new_callable=AsyncMock,
         ) as mock_get_transformed:
             mock_get_transformed.return_value = None
@@ -489,7 +489,7 @@ class TestGetWarehouseMetrics:
     ) -> None:
         """Returns metrics when warehouse exists."""
         with patch(
-            "starboard_server.tools.adapters.warehouse_tools.analyze_warehouse_queries",
+            "starboard.tools.adapters.warehouse_tools.analyze_warehouse_queries",
             new_callable=AsyncMock,
         ) as mock_analyze:
             mock_analyze.return_value = {
@@ -510,7 +510,7 @@ class TestGetWarehouseMetrics:
     ) -> None:
         """Returns found=False when metrics unavailable."""
         with patch(
-            "starboard_server.tools.adapters.warehouse_tools.analyze_warehouse_queries",
+            "starboard.tools.adapters.warehouse_tools.analyze_warehouse_queries",
             new_callable=AsyncMock,
         ) as mock_analyze:
             mock_analyze.return_value = None
@@ -540,7 +540,7 @@ class TestGetQueryRuntimeMetrics:
     ) -> None:
         """Returns metrics when statement exists."""
         with patch(
-            "starboard_server.tools.adapters.warehouse_tools.get_transformed",
+            "starboard.tools.adapters.warehouse_tools.get_transformed",
             new_callable=AsyncMock,
         ) as mock_get_transformed:
             mock_get_transformed.return_value = {
@@ -561,7 +561,7 @@ class TestGetQueryRuntimeMetrics:
     ) -> None:
         """Returns found=False when statement doesn't exist."""
         with patch(
-            "starboard_server.tools.adapters.warehouse_tools.get_transformed",
+            "starboard.tools.adapters.warehouse_tools.get_transformed",
             new_callable=AsyncMock,
         ) as mock_get_transformed:
             mock_get_transformed.return_value = None

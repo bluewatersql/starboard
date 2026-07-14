@@ -46,7 +46,7 @@ class TestGetTransformed:
     @pytest.mark.asyncio
     async def test_get_transformed_with_transform_fn(self, mock_provider: MockProvider):
         """Test getting and transforming data."""
-        from starboard_server.services.context.transforms import get_transformed
+        from starboard.services.context.transforms import get_transformed
 
         mock_provider.data["cluster_config::cluster-123"] = {
             "cluster_id": "cluster-123",
@@ -72,7 +72,7 @@ class TestGetTransformed:
         self, mock_provider: MockProvider
     ):
         """Test getting data without transformation."""
-        from starboard_server.services.context.transforms import get_transformed
+        from starboard.services.context.transforms import get_transformed
 
         mock_provider.data["cluster_config::cluster-123"] = {
             "cluster_id": "cluster-123",
@@ -91,7 +91,7 @@ class TestGetTransformed:
     @pytest.mark.asyncio
     async def test_get_transformed_not_found(self, mock_provider: MockProvider):
         """Test getting data when resource not found."""
-        from starboard_server.services.context.transforms import get_transformed
+        from starboard.services.context.transforms import get_transformed
 
         result = await get_transformed(
             mock_provider,
@@ -105,7 +105,7 @@ class TestGetTransformed:
     @pytest.mark.asyncio
     async def test_get_transformed_with_kwargs(self, mock_provider: MockProvider):
         """Test that kwargs are passed to provider."""
-        from starboard_server.services.context.transforms import get_transformed
+        from starboard.services.context.transforms import get_transformed
 
         # Create a mock that captures kwargs
         captured_kwargs = {}
@@ -138,14 +138,14 @@ class TestAnalyzeClusterMetrics:
     @pytest.mark.asyncio
     async def test_analyze_cluster_metrics_with_data(self, mock_provider: MockProvider):
         """Test analyzing cluster metrics when data exists."""
-        from starboard_server.services.context.transforms import analyze_cluster_metrics
+        from starboard.services.context.transforms import analyze_cluster_metrics
 
         mock_provider.data["cluster_metrics::cluster-123"] = {
             "metrics": {"cpu_utilization": 75.5}
         }
 
         with patch(
-            "starboard_server.services.context.transforms.ClusterMetricsAnalyzer"
+            "starboard.services.context.transforms.ClusterMetricsAnalyzer"
         ) as mock_analyzer_class:
             mock_analyzer = MagicMock()
             mock_analyzer.analyze.return_value = [{"id": "cluster-123", "metrics": {}}]
@@ -162,7 +162,7 @@ class TestAnalyzeClusterMetrics:
         self, mock_provider: MockProvider
     ):
         """Test analyzing cluster metrics with empty cluster list."""
-        from starboard_server.services.context.transforms import analyze_cluster_metrics
+        from starboard.services.context.transforms import analyze_cluster_metrics
 
         result = await analyze_cluster_metrics(mock_provider, [])
         assert result is None
@@ -170,7 +170,7 @@ class TestAnalyzeClusterMetrics:
     @pytest.mark.asyncio
     async def test_analyze_cluster_metrics_not_found(self, mock_provider: MockProvider):
         """Test analyzing cluster metrics when data not found."""
-        from starboard_server.services.context.transforms import analyze_cluster_metrics
+        from starboard.services.context.transforms import analyze_cluster_metrics
 
         result = await analyze_cluster_metrics(mock_provider, ["nonexistent"])
         assert result is None
@@ -189,7 +189,7 @@ class TestAnalyzeWarehouseQueries:
         self, mock_provider: MockProvider
     ):
         """Test analyzing warehouse queries when data exists."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             analyze_warehouse_queries,
         )
 
@@ -198,7 +198,7 @@ class TestAnalyzeWarehouseQueries:
         }
 
         with patch(
-            "starboard_server.services.context.transforms.WarehouseQueryAnalyzer"
+            "starboard.services.context.transforms.WarehouseQueryAnalyzer"
         ) as mock_analyzer_class:
             mock_analyzer = MagicMock()
             mock_analyzer.analyze.return_value = {
@@ -217,7 +217,7 @@ class TestAnalyzeWarehouseQueries:
         self, mock_provider: MockProvider
     ):
         """Test analyzing warehouse queries with custom days parameter."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             analyze_warehouse_queries,
         )
 
@@ -239,7 +239,7 @@ class TestAnalyzeWarehouseQueries:
         self, mock_provider: MockProvider
     ):
         """Test analyzing warehouse queries when data not found."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             analyze_warehouse_queries,
         )
 
@@ -252,10 +252,10 @@ class TestAnalyzeSparkLogs:
 
     def test_analyze_spark_logs_found(self):
         """Test analyzing spark logs when found."""
-        from starboard_server.services.context.transforms import analyze_spark_logs
+        from starboard.services.context.transforms import analyze_spark_logs
 
         with patch(
-            "starboard_server.services.context.transforms.create_spark_application"
+            "starboard.services.context.transforms.create_spark_application"
         ) as mock_create:
             mock_app = MagicMock()
             mock_app.to_dict.return_value = {
@@ -265,7 +265,7 @@ class TestAnalyzeSparkLogs:
             mock_create.return_value = mock_app
 
             with patch(
-                "starboard_server.services.context.transforms.SparkUIAnalyzer"
+                "starboard.services.context.transforms.SparkUIAnalyzer"
             ) as mock_analyzer_class:
                 mock_analyzer = MagicMock()
                 mock_result = MagicMock()
@@ -282,10 +282,10 @@ class TestAnalyzeSparkLogs:
 
     def test_analyze_spark_logs_raw_mode(self):
         """Test analyzing spark logs in raw mode."""
-        from starboard_server.services.context.transforms import analyze_spark_logs
+        from starboard.services.context.transforms import analyze_spark_logs
 
         with patch(
-            "starboard_server.services.context.transforms.create_spark_application"
+            "starboard.services.context.transforms.create_spark_application"
         ) as mock_create:
             mock_app = MagicMock()
             mock_app.to_dict.return_value = {
@@ -302,10 +302,10 @@ class TestAnalyzeSparkLogs:
 
     def test_analyze_spark_logs_not_found(self):
         """Test analyzing spark logs when not found."""
-        from starboard_server.services.context.transforms import analyze_spark_logs
+        from starboard.services.context.transforms import analyze_spark_logs
 
         with patch(
-            "starboard_server.services.context.transforms.create_spark_application"
+            "starboard.services.context.transforms.create_spark_application"
         ) as mock_create:
             mock_create.return_value = None
 
@@ -314,11 +314,11 @@ class TestAnalyzeSparkLogs:
 
     def test_analyze_spark_logs_path_not_found_error(self):
         """Test analyzing spark logs when path not found."""
-        from starboard_log_parser import SparkLogPathNotFoundError
-        from starboard_server.services.context.transforms import analyze_spark_logs
+        from starboard_core.log_parser import SparkLogPathNotFoundError
+        from starboard.services.context.transforms import analyze_spark_logs
 
         with patch(
-            "starboard_server.services.context.transforms.create_spark_application"
+            "starboard.services.context.transforms.create_spark_application"
         ) as mock_create:
             mock_create.side_effect = SparkLogPathNotFoundError("path not found")
 
@@ -327,10 +327,10 @@ class TestAnalyzeSparkLogs:
 
     def test_analyze_spark_logs_parse_error_raises(self):
         """Test that parse errors are raised."""
-        from starboard_server.services.context.transforms import analyze_spark_logs
+        from starboard.services.context.transforms import analyze_spark_logs
 
         with patch(
-            "starboard_server.services.context.transforms.create_spark_application"
+            "starboard.services.context.transforms.create_spark_application"
         ) as mock_create:
             mock_create.side_effect = ValueError("Parse error")
 
@@ -339,10 +339,10 @@ class TestAnalyzeSparkLogs:
 
     def test_analyze_spark_logs_dbfs_path_passes_to_factory(self):
         """Test that DBFS paths are passed through to create_spark_application."""
-        from starboard_server.services.context.transforms import analyze_spark_logs
+        from starboard.services.context.transforms import analyze_spark_logs
 
         with patch(
-            "starboard_server.services.context.transforms.create_spark_application"
+            "starboard.services.context.transforms.create_spark_application"
         ) as mock_create:
             mock_create.return_value = None
 
@@ -358,7 +358,7 @@ class TestTransformExports:
 
     def test_cluster_transforms_exported(self):
         """Verify cluster transform functions are exported."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             ClusterMetricsAnalyzer,
             SparkUIAnalyzer,
             transform_cluster_config,
@@ -372,7 +372,7 @@ class TestTransformExports:
 
     def test_warehouse_transforms_exported(self):
         """Verify warehouse transform functions are exported."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             WarehouseQueryAnalyzer,
             transform_query_history,
             transform_warehouse_configuration,
@@ -384,7 +384,7 @@ class TestTransformExports:
 
     def test_table_transforms_exported(self):
         """Verify table transform functions are exported."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             transform_delta_history,
             transform_table_lineage,
             transform_table_metadata,
@@ -396,7 +396,7 @@ class TestTransformExports:
 
     def test_job_transforms_exported(self):
         """Verify job transform functions are exported."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             transform_job_config,
             transform_job_runs,
             transform_system_tables_job_detail,
@@ -408,7 +408,7 @@ class TestTransformExports:
 
     def test_helper_functions_exported(self):
         """Verify helper functions are exported."""
-        from starboard_server.services.context.transforms import (
+        from starboard.services.context.transforms import (
             analyze_cluster_metrics,
             analyze_spark_logs,
             analyze_warehouse_queries,
@@ -438,7 +438,7 @@ class TestGetJobMetadata:
     @pytest.mark.asyncio
     async def test_get_job_metadata_found(self, mock_provider: MockProvider):
         """Test getting job metadata when job exists."""
-        from starboard_server.services.context.transforms import get_job_metadata
+        from starboard.services.context.transforms import get_job_metadata
 
         mock_provider.data["job_metadata::12345"] = {
             "job_settings": {
@@ -452,10 +452,10 @@ class TestGetJobMetadata:
 
         with (
             patch(
-                "starboard_server.services.context.transforms.transform_job_config"
+                "starboard.services.context.transforms.transform_job_config"
             ) as mock_config,
             patch(
-                "starboard_server.services.context.transforms.transform_job_runs"
+                "starboard.services.context.transforms.transform_job_runs"
             ) as mock_runs,
         ):
             mock_config.return_value = {"job": {"name": "test-job"}}
@@ -474,7 +474,7 @@ class TestGetJobMetadata:
     @pytest.mark.asyncio
     async def test_get_job_metadata_not_found(self, mock_provider: MockProvider):
         """Test getting job metadata when job not found."""
-        from starboard_server.services.context.transforms import get_job_metadata
+        from starboard.services.context.transforms import get_job_metadata
 
         result = await get_job_metadata(mock_provider, "nonexistent")
         assert result is None
@@ -482,7 +482,7 @@ class TestGetJobMetadata:
     @pytest.mark.asyncio
     async def test_get_job_metadata_with_max_runs(self, mock_provider: MockProvider):
         """Test that max_runs parameter is passed correctly."""
-        from starboard_server.services.context.transforms import get_job_metadata
+        from starboard.services.context.transforms import get_job_metadata
 
         captured_kwargs = {}
 
@@ -508,7 +508,7 @@ class TestSearchJobsByName:
     @pytest.mark.asyncio
     async def test_search_jobs_by_name_exact_match(self, mock_provider: MockProvider):
         """Test searching for jobs with exact match."""
-        from starboard_server.services.context.transforms import search_jobs_by_name
+        from starboard.services.context.transforms import search_jobs_by_name
 
         mock_provider.data["jobs_by_name::my-job"] = {
             "exact_match": True,
@@ -525,7 +525,7 @@ class TestSearchJobsByName:
     @pytest.mark.asyncio
     async def test_search_jobs_by_name_partial_match(self, mock_provider: MockProvider):
         """Test searching for jobs with partial match."""
-        from starboard_server.services.context.transforms import search_jobs_by_name
+        from starboard.services.context.transforms import search_jobs_by_name
 
         mock_provider.data["jobs_by_name::my"] = {
             "exact_match": False,
@@ -544,7 +544,7 @@ class TestSearchJobsByName:
     @pytest.mark.asyncio
     async def test_search_jobs_by_name_not_found(self, mock_provider: MockProvider):
         """Test searching for jobs when none found."""
-        from starboard_server.services.context.transforms import search_jobs_by_name
+        from starboard.services.context.transforms import search_jobs_by_name
 
         result = await search_jobs_by_name(mock_provider, "nonexistent")
         assert result is None
@@ -552,7 +552,7 @@ class TestSearchJobsByName:
     @pytest.mark.asyncio
     async def test_search_jobs_by_name_with_params(self, mock_provider: MockProvider):
         """Test that exact_match and limit parameters are passed."""
-        from starboard_server.services.context.transforms import search_jobs_by_name
+        from starboard.services.context.transforms import search_jobs_by_name
 
         captured_kwargs = {}
 
@@ -579,7 +579,7 @@ class TestGetJobsList:
     @pytest.mark.asyncio
     async def test_get_jobs_list_found(self, mock_provider: MockProvider):
         """Test getting jobs list when jobs exist."""
-        from starboard_server.services.context.transforms import get_jobs_list
+        from starboard.services.context.transforms import get_jobs_list
 
         mock_provider.data["jobs_list::all"] = [
             {"job_id": "12345", "settings": {"name": "job-1"}},
@@ -595,7 +595,7 @@ class TestGetJobsList:
     @pytest.mark.asyncio
     async def test_get_jobs_list_empty(self, mock_provider: MockProvider):
         """Test getting jobs list when none found."""
-        from starboard_server.services.context.transforms import get_jobs_list
+        from starboard.services.context.transforms import get_jobs_list
 
         result = await get_jobs_list(mock_provider)
         assert result == []
@@ -603,7 +603,7 @@ class TestGetJobsList:
     @pytest.mark.asyncio
     async def test_get_jobs_list_with_limit(self, mock_provider: MockProvider):
         """Test that limit parameter is passed correctly."""
-        from starboard_server.services.context.transforms import get_jobs_list
+        from starboard.services.context.transforms import get_jobs_list
 
         captured_kwargs = {}
 
@@ -629,7 +629,7 @@ class TestGetExplainPlan:
     @pytest.mark.asyncio
     async def test_get_explain_plan_found(self, mock_provider: MockProvider):
         """Test getting explain plan when available."""
-        from starboard_server.services.context.transforms import get_explain_plan
+        from starboard.services.context.transforms import get_explain_plan
 
         mock_provider.data["explain_plan::SELECT * FROM t"] = (
             "== Physical Plan ==\nScan..."
@@ -643,7 +643,7 @@ class TestGetExplainPlan:
     @pytest.mark.asyncio
     async def test_get_explain_plan_not_found(self, mock_provider: MockProvider):
         """Test getting explain plan when not available."""
-        from starboard_server.services.context.transforms import get_explain_plan
+        from starboard.services.context.transforms import get_explain_plan
 
         result = await get_explain_plan(mock_provider, "SELECT * FROM nonexistent")
         assert result is None

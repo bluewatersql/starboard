@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from starboard_core.foundations.models import VectorRecord, VectorSearchResult
-from starboard_server.infra.rag.adapters.storage.sqlite_multi_collection_store import (
+from starboard.infra.rag.adapters.storage.sqlite_multi_collection_store import (
     SQLiteMultiCollectionStore,
 )
 

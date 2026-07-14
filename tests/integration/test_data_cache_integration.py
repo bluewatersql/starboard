@@ -17,8 +17,8 @@ import contextlib
 
 import polars as pl
 import pytest
-from starboard_server.adapters.state.inmemory.cache_store import InMemoryCacheStore
-from starboard_server.tools.services.query_result_cache import QueryResultCache
+from starboard.adapters.state.inmemory.cache_store import InMemoryCacheStore
+from starboard.tools.services.query_result_cache import QueryResultCache
 
 
 class TestDataCacheIntegration:

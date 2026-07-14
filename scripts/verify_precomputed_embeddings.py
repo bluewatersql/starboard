@@ -15,7 +15,7 @@ async def main():
     """Verify precomputed embeddings."""
     console.print("[bold cyan]Verifying Precomputed Embeddings Usage[/bold cyan]\n")
 
-    from starboard_server.infra.rag.adapters.storage.bootstrap_loader import (
+    from starboard.infra.rag.adapters.storage.bootstrap_loader import (
         BootstrapDataLoader,
     )
 

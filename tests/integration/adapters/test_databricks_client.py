@@ -11,9 +11,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from databricks.sdk import WorkspaceClient
-from starboard_server.adapters.databricks.client import AsyncDatabricksClient
-from starboard_server.infra.core.config import EnvConfig
-from starboard_server.infra.reliability.exceptions import ConfigurationError
+from starboard.adapters.databricks.client import AsyncDatabricksClient
+from starboard.infra.core.config import EnvConfig
+from starboard.infra.reliability.exceptions import ConfigurationError
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def mock_env_config():
 def mock_workspace_client():
     """Mock WorkspaceClient."""
     with patch(
-        "starboard_server.adapters.databricks.client.WorkspaceClient"
+        "starboard.adapters.databricks.client.WorkspaceClient"
     ) as mock_client_class:
         client = MagicMock(spec=WorkspaceClient)
         # Mock current user to simulate authentication (returns object with as_dict())

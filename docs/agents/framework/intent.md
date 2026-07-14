@@ -428,7 +428,7 @@ graph TD
 - [Agent Implementation Guide](../../developer/agent/IMPLEMENTATION_GUIDE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
-- [Router Prompt Source](../../../packages/starboard-server/starboard_server/prompts/router/v1.py)
-- [Domain Intents Source](../../../packages/starboard-server/starboard_server/agents/routing/domain_intents.py)
-- [Intent Router Source](../../../packages/starboard-server/starboard_server/agents/routing/intent_router.py)
+- [Router Prompt Source](../../../packages/starboard-server/starboard/prompts/router/v1.py)
+- [Domain Intents Source](../../../packages/starboard-server/starboard/agents/routing/domain_intents.py)
+- [Intent Router Source](../../../packages/starboard-server/starboard/agents/routing/intent_router.py)
 

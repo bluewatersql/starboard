@@ -14,9 +14,7 @@ PACKAGE_MANAGER := $(shell command -v uv >/dev/null 2>&1 && echo "uv" || echo "p
 # Python package paths
 PY_PACKAGES := packages/starboard-core/starboard_core \
                packages/starboard-log-parser/starboard_log_parser \
-               packages/starboard-server/starboard_server \
-               packages/starboard-cli/starboard_cli \
-               packages/starboard-sdk/starboard_sdk
+               packages/starboard/starboard
 PY_TESTS := packages/*/tests tests
 
 # Colors
@@ -92,12 +90,10 @@ install:
 	@if [ "$(PACKAGE_MANAGER)" = "uv" ]; then \
 		uv sync && \
 		uv pip install -e packages/starboard-core -e packages/starboard-log-parser \
-		              -e packages/starboard-server -e packages/starboard-cli \
-		              -e packages/starboard-sdk; \
+		              -e packages/starboard; \
 	else \
 		pip install -e packages/starboard-core -e packages/starboard-log-parser \
-		            -e packages/starboard-server -e packages/starboard-cli \
-		            -e packages/starboard-sdk; \
+		            -e packages/starboard; \
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
 
@@ -107,15 +103,11 @@ install-dev:
 		uv sync && \
 		uv pip install -e "packages/starboard-core[test]" \
 		              -e "packages/starboard-log-parser[test,databricks,http]" \
-		              -e "packages/starboard-server[test,dev]" \
-		              -e "packages/starboard-cli[test]" \
-		              -e "packages/starboard-sdk[test]"; \
+		              -e "packages/starboard[test,dev]"; \
 	else \
 		pip install -e "packages/starboard-core[test]" \
 		            -e "packages/starboard-log-parser[test,databricks,http]" \
-		            -e "packages/starboard-server[test,dev]" \
-		            -e "packages/starboard-cli[test]" \
-		            -e "packages/starboard-sdk[test]"; \
+		            -e "packages/starboard[test,dev]"; \
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
 
@@ -125,9 +117,7 @@ verify:
 	@python -c "import sys; assert sys.version_info >= (3, 12)" && echo "$(GREEN)✓ Python 3.12+$(NC)"
 	@python -c "import starboard_core" && echo "$(GREEN)✓ starboard-core$(NC)"
 	@python -c "import starboard_log_parser" && echo "$(GREEN)✓ starboard-log-parser$(NC)"
-	@python -c "import starboard_server" && echo "$(GREEN)✓ starboard-server$(NC)"
-	@python -c "import starboard_cli" && echo "$(GREEN)✓ starboard-cli$(NC)"
-	@python -c "import starboard_sdk" && echo "$(GREEN)✓ starboard-sdk$(NC)"
+	@python -c "import starboard" && echo "$(GREEN)✓ starboard$(NC)"
 
 # ================================
 # Development Servers
@@ -148,19 +138,19 @@ dev-debug:
 
 dev-server:
 	@echo "$(BLUE)Starting backend server...$(NC)"
-	@cd packages/starboard-server && STARBOARD_LOG_LEVEL=DEBUG uvicorn "starboard_server.main:create_app" --factory --reload --host 0.0.0.0 --port 8000
+	@cd packages/starboard && STARBOARD_LOG_LEVEL=DEBUG uvicorn "starboard.main:create_app" --factory --reload --host 0.0.0.0 --port 8000
 
 dev-server-debug:
 	@mkdir -p $(DEBUG_DIR)
 	@echo "$(BLUE)Starting backend (debug)...$(NC)"
-	@cd packages/starboard-server && \
+	@cd packages/starboard && \
 		STARBOARD_LOG_LEVEL=DEBUG STARBOARD_DEBUG=true \
-		uvicorn "starboard_server.main:create_app" --factory --reload --host 0.0.0.0 --port 8000 \
+		uvicorn "starboard.main:create_app" --factory --reload --host 0.0.0.0 --port 8000 \
 		--log-level debug 2>&1 | tee ../../$(DEBUG_DIR)/server.log
 
 dev-stop:
 	@echo "$(BLUE)Stopping dev servers...$(NC)"
-	@-pkill -f "uvicorn starboard_server" 2>/dev/null || true
+	@-pkill -f "uvicorn starboard" 2>/dev/null || true
 	@echo "$(GREEN)✓ Servers stopped$(NC)"
 
 dev-debug-context:
@@ -175,9 +165,9 @@ dev-debug-context:
 	@echo "$(BLUE)  Running type-check...$(NC)"
 	@mypy . > .debug/test/type-check/mypy.txt || true
 	@echo "$(BLUE)  Running test-unit...$(NC)"
-	@pytest packages/starboard-core/tests/unit/ packages/starboard-log-parser/tests/unit/ packages/starboard-server/tests/unit/ packages/starboard-cli/tests/unit/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/unit.txt || true
+	@pytest packages/starboard-core/tests/unit/ packages/starboard-log-parser/tests/unit/ packages/starboard/tests/unit/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/unit.txt || true
 	@echo "$(BLUE)  Running test-integration...$(NC)"
-	@pytest packages/starboard-server/tests/integration/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/integration.txt || true
+	@pytest packages/starboard/tests/integration/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/integration.txt || true
 	@echo "$(BLUE)  Running test-golden...$(NC)"
 	@pytest -m golden --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/golden.txt || true
 	@echo "$(BLUE)  Running test-contract...$(NC)"
@@ -194,19 +184,17 @@ test-unit:
 	@echo "$(BLUE)Running unit tests...$(NC)"
 	@pytest packages/starboard-core/tests/unit/ -v --tb=short
 	@pytest packages/starboard-log-parser/tests/unit/ -v --tb=short
-	@pytest packages/starboard-server/tests/unit/ -v --tb=short
-	@pytest packages/starboard-cli/tests/unit/ -v --tb=short
-	@pytest packages/starboard-sdk/tests/unit/ -v --tb=short
+	@pytest packages/starboard/tests/unit/ -v --tb=short
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
 
 test-sdk:
 	@echo "$(BLUE)Running SDK tests...$(NC)"
-	@pytest packages/starboard-sdk/tests/ -v --tb=short
+	@pytest packages/starboard/tests/unit/test_sdk.py -v --tb=short
 	@echo "$(GREEN)✓ SDK tests passed$(NC)"
 
 test-integration:
 	@echo "$(BLUE)Running integration tests...$(NC)"
-	@pytest packages/starboard-server/tests/integration/ -v --tb=short
+	@pytest packages/starboard/tests/integration/ -v --tb=short
 	@pytest tests/integration/ -v --tb=short 2>/dev/null || true
 	@echo "$(GREEN)✓ Integration tests passed$(NC)"
 
@@ -224,14 +212,10 @@ test-coverage:
 	@echo "$(BLUE)Running tests with coverage...$(NC)"
 	@pytest packages/starboard-core/tests/unit/ \
 		packages/starboard-log-parser/tests/unit/ \
-		packages/starboard-server/tests/unit/ \
-		packages/starboard-cli/tests/unit/ \
-		packages/starboard-sdk/tests/unit/ \
+		packages/starboard/tests/unit/ \
 		--cov=starboard_core \
 		--cov=starboard_log_parser \
-		--cov=starboard_server \
-		--cov=starboard_cli \
-		--cov=starboard_sdk \
+		--cov=starboard \
 		--cov-report=term-missing --cov-report=html:htmlcov
 	@echo "$(GREEN)✓ Coverage report: htmlcov/index.html$(NC)"
 
@@ -251,8 +235,7 @@ lint:
 
 type-check:
 	@echo "$(BLUE)Running type checker...$(NC)"
-	@mypy packages/starboard-server/starboard_server/ --config-file pyproject.toml
-	@mypy packages/starboard-sdk/starboard_sdk/ --config-file pyproject.toml
+	@mypy packages/starboard/starboard/ --config-file pyproject.toml
 	@echo "$(GREEN)✓ Type check passed$(NC)"
 
 format:
@@ -283,15 +266,11 @@ build:
 	@if [ "$(PACKAGE_MANAGER)" = "uv" ]; then \
 		uv build packages/starboard-core && \
 		uv build packages/starboard-log-parser && \
-		uv build packages/starboard-server && \
-		uv build packages/starboard-cli && \
-		uv build packages/starboard-sdk; \
+		uv build packages/starboard; \
 	else \
 		cd packages/starboard-core && python -m build && \
 		cd ../starboard-log-parser && python -m build && \
-		cd ../starboard-server && python -m build && \
-		cd ../starboard-cli && python -m build && \
-		cd ../starboard-sdk && python -m build; \
+		cd ../starboard && python -m build; \
 	fi
 	@echo "$(GREEN)✓ Build complete$(NC)"
 

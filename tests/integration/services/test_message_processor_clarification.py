@@ -16,11 +16,11 @@ to clarification request generation.
 from typing import Any
 
 import pytest
-from starboard_server.agents.tools.tool_registry import ToolMetadata, ToolRegistry
-from starboard_server.services.clarification.clarification_manager import (
+from starboard.agents.tools.tool_registry import ToolMetadata, ToolRegistry
+from starboard.services.clarification.clarification_manager import (
     ClarificationManager,
 )
-from starboard_server.services.messaging.message_processor import (
+from starboard.services.messaging.message_processor import (
     MessageProcessor,
     ProcessingType,
 )
@@ -403,7 +403,7 @@ class TestBackwardCompatibility:
         self, message_processor_with_clarification
     ):
         """Test that option selection is processed before clarification."""
-        from starboard_server.domain.models.conversation_patterns import (
+        from starboard.domain.models.conversation_patterns import (
             ActionType,
             NextStepOption,
         )

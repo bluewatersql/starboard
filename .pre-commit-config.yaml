@@ -38,7 +38,7 @@ repos:
       - id: mypy
         args: ["--config-file", "pyproject.toml"]
         additional_dependencies: ["pydantic>=2.0"]
-        files: ^packages/starboard-server/starboard_server/|^packages/starboard-sdk/starboard_sdk/
+        files: ^packages/starboard/starboard/
         pass_filenames: false
 
   - repo: https://github.com/pypa/pip-audit

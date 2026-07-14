@@ -120,33 +120,13 @@ make dev-server
 - API docs at `http://localhost:8000/docs`
 - Auto-reloads on code changes
 
-#### Frontend Only
+#### MCP Server (stdio transport)
 
 ```bash
-make dev-frontend
+starboard-mcp --transport stdio
 ```
 
-- Starts Next.js development server
-- Runs on `http://localhost:3000`
-- Hot module replacement enabled
-
-#### Both Together
-
-```bash
-make dev
-```
-
-Starts both backend and frontend servers.
-
-**Note:** This runs both in the same process. For better control, run them in separate terminals:
-
-```bash
-# Terminal 1
-make dev-server
-
-# Terminal 2
-make dev-frontend
-```
+The MCP server communicates over stdio for use with Claude Code, Cursor, and Claude Desktop.
 
 ---
 
@@ -169,10 +149,9 @@ make test-unit
 ```
 
 **What it tests:**
-- `packages/starboard-server/tests/unit/`
+- `packages/starboard/tests/unit/`
 - `packages/starboard-core/tests/unit/`
-- `packages/starboard-cli/tests/unit/`
-- `packages/starboard-log-parser/tests/unit/`
+- `packages/starboard-skills/tests/unit/`
 
 **Characteristics:**
 - Fast (<1 second per test)
@@ -186,7 +165,7 @@ make test-integration
 ```
 
 **What it tests:**
-- `packages/starboard-server/tests/integration/`
+- `packages/starboard/tests/integration/`
 
 **Characteristics:**
 - May call external services (mocked in most cases)
@@ -214,12 +193,12 @@ make test-coverage
 
 **Output:**
 - Terminal: Summary with line-by-line coverage
-- HTML: `packages/starboard-server/htmlcov/index.html`
+- HTML: `packages/starboard/htmlcov/index.html`
 - JSON: `.coverage.json`
 
 **Opens HTML report:**
 ```bash
-open packages/starboard-server/htmlcov/index.html
+open packages/starboard/htmlcov/index.html
 ```
 
 ---
@@ -322,8 +301,8 @@ make build
 
 **What it builds:**
 - `packages/starboard-core/dist/`
-- `packages/starboard-server/dist/`
-- `packages/starboard-cli/dist/`
+- `packages/starboard/dist/`
+- `packages/starboard-skills/dist/`
 
 **Output formats:**
 - Wheel (`.whl`) - binary distribution
@@ -362,7 +341,6 @@ make clean-deep
 
 **Removes everything from `make clean` plus:**
 - `.venv/` virtual environment
-- `node_modules/` JavaScript dependencies
 
 **Warning:** After deep clean, you must run `make setup` again.
 
@@ -443,7 +421,7 @@ Or use:
 
 ```bash
 # Run within virtual environment automatically
-.venv/bin/python -m uvicorn starboard_server.main:app --reload
+.venv/bin/python -m uvicorn starboard.main:app --reload
 ```
 
 #### Makefile Shows Deprecation Warning
@@ -454,7 +432,7 @@ If you see:
 ⚠️  This Makefile is deprecated.
 ```
 
-You're in `packages/starboard-server/`. Change to project root:
+You're in a package subdirectory. Change to project root:
 
 ```bash
 cd ../..
@@ -491,8 +469,8 @@ htmlcov/
 ### Running Specific Package Tests
 
 ```bash
-# Test only starboard-server
-cd packages/starboard-server && pytest tests/unit/ -v
+# Test only starboard
+cd packages/starboard && pytest tests/unit/ -v
 
 # Test only starboard-core
 cd packages/starboard-core && pytest tests/unit/ -v
@@ -505,7 +483,7 @@ cd packages/starboard-core && pytest tests/unit/ -v
 pip install pytest-watch
 
 # Watch and re-run tests
-cd packages/starboard-server
+cd packages/starboard
 ptw tests/unit/
 ```
 
@@ -513,7 +491,7 @@ ptw tests/unit/
 
 ```bash
 # Run tests with verbose output
-cd packages/starboard-server
+cd packages/starboard
 pytest tests/unit/ -vv -s
 
 # Run single test
@@ -645,13 +623,12 @@ make install-dev # Reinstall
 
 ## Migration from Old Setup
 
-If you were using the old `scripts/setup_testing.sh` or `packages/starboard-server/Makefile`:
+If you were using the old `scripts/setup_testing.sh`:
 
 ### Old Way
 
 ```bash
 bash scripts/setup_testing.sh
-cd packages/starboard-server
 make test
 ```
 

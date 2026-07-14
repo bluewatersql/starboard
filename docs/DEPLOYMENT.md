@@ -44,7 +44,7 @@ databricks bundle deploy -t prod
 ```
 Databricks Workspace
 ├── App: starboard-agent
-│   ├── Container: Backend + Frontend
+│   ├── Container: MCP server + CLI
 │   ├── Auto-scaling: 1-10 instances
 │   └── Authentication: Workspace SSO
 └── Resources:
@@ -140,8 +140,8 @@ Create `docker-compose.yml`:
 version: '3.8'
 
 services:
-  backend:
-    build: packages/starboard-server
+  starboard:
+    build: packages/starboard
     ports:
       - "8000:8000"
     environment:
@@ -151,22 +151,12 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
       interval: 30s
-
-  frontend:
-    build: frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-    depends_on:
-      - backend
 ```
 
 ### Access
 
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:8000`
-- API Docs: `http://localhost:8000/docs`
+- MCP server (stdio): `starboard-mcp --transport stdio`
+- CLI: `starboard --goal "..."`
 
 ---
 
@@ -195,10 +185,10 @@ helm install starboard-agent ./helm \
 Create `helm/values.yaml`:
 
 ```yaml
-backend:
+starboard:
   replicas: 3
   image:
-    repository: your-registry/starboard-backend
+    repository: your-registry/starboard
     tag: latest
   resources:
     requests:
@@ -238,35 +228,7 @@ readinessProbe:
   periodSeconds: 5
 ```
 
----
-
-## Static Frontend Serving
-
-For production deployments, the Next.js frontend is built as a static export and served by FastAPI:
-
-### Build Process
-
-```bash
-# Build frontend
-cd frontend && npm run build
-
-# Start FastAPI (serves both frontend and API)
-uv run starboard-server
-```
-
-### Architecture
-
-```
-Single FastAPI Process (Port 8000)
-├── Static Files: /, /chat, /config, /_next/*
-└── API Routes: /api/chat/*, /api/*, /docs, /health/*
-```
-
-### Benefits
-
-✅ Single process - simpler deployment  
-✅ Lower resources - one container  
-✅ Easier scaling - scale together
+**Note**: Health endpoints are only available when running the MCP server in HTTP mode. For stdio transport (Claude Code / Cursor), health checks are not applicable.
 
 ---
 
@@ -372,10 +334,10 @@ databricks bundle deploy -t prod
 
 ```bash
 # Rollback deployment
-kubectl rollout undo deployment/starboard-backend -n starboard-agent
+kubectl rollout undo deployment/starboard -n starboard-agent
 
 # Check status
-kubectl rollout status deployment/starboard-backend -n starboard-agent
+kubectl rollout status deployment/starboard -n starboard-agent
 ```
 
 ---

@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 import pytest
-from starboard_server.tools.domain.job.spark_ui_analyzer import SparkUIAnalyzer
+from starboard.tools.domain.job.spark_ui_analyzer import SparkUIAnalyzer
 
 GOLDEN_DIR = Path(__file__).parent / "data"
 

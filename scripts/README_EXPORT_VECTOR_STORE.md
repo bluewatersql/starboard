@@ -1,6 +1,6 @@
 # Vector Store Export Script
 
-This script exports a curated subset of the production vector store (`starboard_vector.db`) to JSON + compressed NumPy format for bundling with the `starboard-server` package.
+This script exports a curated subset of the production vector store (`starboard_vector.db`) to JSON + compressed NumPy format for bundling with the `starboard` package.
 
 ## Purpose
 
@@ -32,7 +32,7 @@ python scripts/export_vector_store_snapshot.py
 This will create:
 
 ```
-packages/starboard-server/starboard_server/infra/rag/data/bootstrap/
+packages/starboard/starboard/infra/rag/data/bootstrap/
 ├── tables.json              # Core system table metadata (~30 KB)
 ├── tables_embeddings.npz    # Precomputed embeddings (~100 KB)
 ├── nuance.json              # SQL patterns and best practices (~20 KB)
@@ -49,7 +49,7 @@ packages/starboard-server/starboard_server/infra/rag/data/bootstrap/
 The exported files are designed to be committed to the repository:
 
 ```bash
-git add packages/starboard-server/starboard_server/infra/rag/data/bootstrap/
+git add packages/starboard/starboard/infra/rag/data/bootstrap/
 git commit -m "Update in-memory vector store bootstrap data"
 ```
 
@@ -149,7 +149,7 @@ Export metadata and statistics:
 
 When the in-memory vector store is initialized:
 
-1. **Try Package-Managed Data:** Load from `starboard_server/infra/rag/data/bootstrap/`
+1. **Try Package-Managed Data:** Load from `starboard/infra/rag/data/bootstrap/`
 2. **Fall Back to Hardcoded:** If exports unavailable, use minimal hardcoded tables/nuance
 3. **Bootstrap Complete:** Store is ready for RAG queries
 

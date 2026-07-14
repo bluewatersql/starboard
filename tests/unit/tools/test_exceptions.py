@@ -3,7 +3,7 @@
 """Unit tests for tool-specific exceptions."""
 
 import pytest
-from starboard_server.tools.exceptions import (
+from starboard.tools.exceptions import (
     AccessDeniedError,
     ClusterNotFoundError,
     DataUnavailableError,

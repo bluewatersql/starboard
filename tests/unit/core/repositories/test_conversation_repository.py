@@ -5,7 +5,7 @@
 import pytest
 from starboard_core.models.conversation import Message
 from starboard_core.repositories.conversation import ConversationRepository
-from starboard_server.adapters.state.inmemory import InMemoryStateStore
+from starboard.adapters.state.inmemory import InMemoryStateStore
 
 
 @pytest.fixture

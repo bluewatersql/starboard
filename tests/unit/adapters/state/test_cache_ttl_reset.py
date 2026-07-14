@@ -11,7 +11,7 @@ Tests that:
 import asyncio
 
 import pytest
-from starboard_server.adapters.state.inmemory.cache_store import (
+from starboard.adapters.state.inmemory.cache_store import (
     CacheEntry,
     InMemoryCacheStore,
 )

@@ -8,7 +8,7 @@ Tests collection types, query models, and protocol validation.
 
 import pytest
 from starboard_core.foundations.models import VectorRecord, VectorSearchResult
-from starboard_server.infra.rag.domain.protocols import (
+from starboard.infra.rag.domain.protocols import (
     CollectionType,
     MultiCollectionStore,
     VectorQuery,

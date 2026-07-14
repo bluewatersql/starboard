@@ -80,9 +80,9 @@ Each evaluation dataset is a JSON file with the following structure:
 ## CI Integration
 
 Evaluations run automatically on PRs that modify:
-- `packages/starboard-server/starboard_server/prompts/`
-- `packages/starboard-server/starboard_server/agents/`
-- `packages/starboard-server/starboard_server/tools/`
+- `packages/starboard-server/starboard/prompts/`
+- `packages/starboard-server/starboard/agents/`
+- `packages/starboard-server/starboard/tools/`
 
 Merge is blocked if:
 - Accuracy drops >5% from baseline

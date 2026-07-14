@@ -7,7 +7,7 @@ Run with: pytest tests/benchmarks/transformers/test_warehouse_query_benchmarks.p
 """
 
 import pytest
-from starboard_server.tools.domain.query.warehouse_query_analyzer import (
+from starboard.tools.domain.query.warehouse_query_analyzer import (
     WarehouseQueryAnalyzer,
 )
 

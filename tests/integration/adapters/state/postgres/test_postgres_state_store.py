@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 from starboard_core.models.conversation import Conversation, Message
-from starboard_server.adapters.state.postgres import PostgresStateStore
+from starboard.adapters.state.postgres import PostgresStateStore
 
 
 @pytest.fixture(scope="module")

@@ -12,21 +12,21 @@ class TestDatePolicy:
 
     def test_date_policy_exists(self) -> None:
         """DATE_POLICY should be importable."""
-        from starboard_server.prompts.shared.user_input_policy import DATE_POLICY
+        from starboard.prompts.shared.user_input_policy import DATE_POLICY
 
         assert DATE_POLICY is not None
         assert isinstance(DATE_POLICY, str)
 
     def test_date_policy_contains_30_day_default(self) -> None:
         """DATE_POLICY should specify 30-day rolling window."""
-        from starboard_server.prompts.shared.user_input_policy import DATE_POLICY
+        from starboard.prompts.shared.user_input_policy import DATE_POLICY
 
         assert "30" in DATE_POLICY
         assert "day" in DATE_POLICY.lower()
 
     def test_date_policy_covers_common_phrases(self) -> None:
         """DATE_POLICY should cover common date phrases."""
-        from starboard_server.prompts.shared.user_input_policy import DATE_POLICY
+        from starboard.prompts.shared.user_input_policy import DATE_POLICY
 
         policy_lower = DATE_POLICY.lower()
         assert "last month" in policy_lower
@@ -35,7 +35,7 @@ class TestDatePolicy:
 
     def test_date_policy_forbids_clarification(self) -> None:
         """DATE_POLICY should explicitly forbid asking for date clarification."""
-        from starboard_server.prompts.shared.user_input_policy import DATE_POLICY
+        from starboard.prompts.shared.user_input_policy import DATE_POLICY
 
         policy_lower = DATE_POLICY.lower()
         assert "never ask" in policy_lower
@@ -46,7 +46,7 @@ class TestParameterDefaults:
 
     def test_parameter_defaults_exists(self) -> None:
         """PARAMETER_DEFAULTS should be importable."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             PARAMETER_DEFAULTS,
         )
 
@@ -55,7 +55,7 @@ class TestParameterDefaults:
 
     def test_parameter_defaults_has_start_date(self) -> None:
         """PARAMETER_DEFAULTS should specify start_date default."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             PARAMETER_DEFAULTS,
         )
 
@@ -63,7 +63,7 @@ class TestParameterDefaults:
 
     def test_parameter_defaults_has_end_date(self) -> None:
         """PARAMETER_DEFAULTS should specify end_date default."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             PARAMETER_DEFAULTS,
         )
 
@@ -71,7 +71,7 @@ class TestParameterDefaults:
 
     def test_parameter_defaults_has_limit(self) -> None:
         """PARAMETER_DEFAULTS should specify limit default."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             PARAMETER_DEFAULTS,
         )
 
@@ -83,14 +83,14 @@ class TestUserInputPolicy:
 
     def test_user_input_policy_exists(self) -> None:
         """USER_INPUT_POLICY should be importable."""
-        from starboard_server.prompts.shared.user_input_policy import USER_INPUT_POLICY
+        from starboard.prompts.shared.user_input_policy import USER_INPUT_POLICY
 
         assert USER_INPUT_POLICY is not None
         assert isinstance(USER_INPUT_POLICY, str)
 
     def test_user_input_policy_specifies_when_to_ask(self) -> None:
         """USER_INPUT_POLICY should specify when to ask for input."""
-        from starboard_server.prompts.shared.user_input_policy import USER_INPUT_POLICY
+        from starboard.prompts.shared.user_input_policy import USER_INPUT_POLICY
 
         policy_lower = USER_INPUT_POLICY.lower()
         # Should mention required IDs as valid reason to ask
@@ -98,7 +98,7 @@ class TestUserInputPolicy:
 
     def test_user_input_policy_mentions_id_parameters(self) -> None:
         """USER_INPUT_POLICY should mention ID parameters."""
-        from starboard_server.prompts.shared.user_input_policy import USER_INPUT_POLICY
+        from starboard.prompts.shared.user_input_policy import USER_INPUT_POLICY
 
         # Should mention at least one ID type
         assert any(
@@ -112,7 +112,7 @@ class TestCombinedSection:
 
     def test_combined_section_exists(self) -> None:
         """USER_INPUT_POLICY_SECTION should be importable."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             USER_INPUT_POLICY_SECTION,
         )
 
@@ -121,7 +121,7 @@ class TestCombinedSection:
 
     def test_combined_section_contains_all_parts(self) -> None:
         """USER_INPUT_POLICY_SECTION should contain all sub-sections."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             USER_INPUT_POLICY_SECTION,
         )
 
@@ -135,7 +135,7 @@ class TestBuilderFunction:
 
     def test_builder_function_exists(self) -> None:
         """build_user_input_policy_section should be importable."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             build_user_input_policy_section,
         )
 
@@ -143,7 +143,7 @@ class TestBuilderFunction:
 
     def test_builder_returns_string(self) -> None:
         """build_user_input_policy_section should return a string."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             build_user_input_policy_section,
         )
 
@@ -152,7 +152,7 @@ class TestBuilderFunction:
 
     def test_builder_default_includes_defaults(self) -> None:
         """build_user_input_policy_section() should include parameter defaults."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             build_user_input_policy_section,
         )
 
@@ -161,7 +161,7 @@ class TestBuilderFunction:
 
     def test_builder_can_exclude_defaults(self) -> None:
         """build_user_input_policy_section(include_defaults=False) should exclude defaults."""
-        from starboard_server.prompts.shared.user_input_policy import (
+        from starboard.prompts.shared.user_input_policy import (
             build_user_input_policy_section,
         )
 
@@ -176,7 +176,7 @@ class TestModuleExports:
 
     def test_all_exports_defined(self) -> None:
         """Module should define __all__ with expected exports."""
-        from starboard_server.prompts.shared import user_input_policy
+        from starboard.prompts.shared import user_input_policy
 
         expected_exports = {
             "DATE_POLICY",
@@ -190,7 +190,7 @@ class TestModuleExports:
 
     def test_importable_from_shared_package(self) -> None:
         """Exports should be importable from shared package."""
-        from starboard_server.prompts.shared import (
+        from starboard.prompts.shared import (
             USER_INPUT_POLICY_SECTION,
             build_user_input_policy_section,
         )

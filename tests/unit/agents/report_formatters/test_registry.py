@@ -11,7 +11,7 @@ Tests cover:
 """
 
 import pytest
-from starboard_server.agents.report_formatters import (
+from starboard.agents.report_formatters import (
     AdvisorReportFormatter,
     AnalyticsReportFormatter,
     ReportFormatterRegistry,

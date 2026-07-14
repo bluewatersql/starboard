@@ -11,8 +11,8 @@ This test suite verifies that:
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.agents.routing.intent_router import IntentRouter
-from starboard_server.prompts.factories import (
+from starboard.agents.routing.intent_router import IntentRouter
+from starboard.prompts.factories import (
     build_analytics_prompt,
     get_prompt_builder_for_domain,
 )
@@ -314,7 +314,7 @@ class TestAnalyticsIntegration:
         """Test that analytics is included in AgentDomain type."""
         from typing import get_args
 
-        from starboard_server.agents.routing.routing_models import AgentDomain
+        from starboard.agents.routing.routing_models import AgentDomain
 
         # Get literal values
         domains = get_args(AgentDomain)

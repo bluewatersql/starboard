@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 from starboard_core.models.conversation import Conversation, Message
-from starboard_server.adapters.state.inmemory import InMemoryStateStore
+from starboard.adapters.state.inmemory import InMemoryStateStore
 
 
 @pytest.fixture

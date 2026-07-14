@@ -70,7 +70,7 @@ Token efficiency is also affected by output verbosity. Starboard uses conservati
 
 ## Relevant Source Files
 
-- `packages/starboard-server/starboard_server/agents/config/agent_config.py` — `DEFAULT_TOKEN_BUDGETS` per-domain budget configuration
-- `packages/starboard-server/starboard_server/tools/domain/diagnostic/tool_governance.py` — budget enforcement logic
-- `packages/starboard-server/starboard_server/infra/core/config.py` — environment variable configuration
-- `packages/starboard-server/starboard_server/adapters/llm/` — token counting and cost calculation
+- `packages/starboard-server/starboard/agents/config/agent_config.py` — `DEFAULT_TOKEN_BUDGETS` per-domain budget configuration
+- `packages/starboard-server/starboard/tools/domain/diagnostic/tool_governance.py` — budget enforcement logic
+- `packages/starboard-server/starboard/infra/core/config.py` — environment variable configuration
+- `packages/starboard-server/starboard/adapters/llm/` — token counting and cost calculation

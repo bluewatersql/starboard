@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.prompts.factories import build_job_prompt
-from starboard_server.prompts.job.v1 import JOB_SYSTEM_PROMPT, PROMPT_VERSION
+from starboard.prompts.factories import build_job_prompt
+from starboard.prompts.job.v1 import JOB_SYSTEM_PROMPT, PROMPT_VERSION
 from syrupy.assertion import SnapshotAssertion
 
 

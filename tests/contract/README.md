@@ -44,7 +44,7 @@ pytest tests/contract/ -v
 pytest tests/contract/test_api_schemas.py::TestMessageRequest -v
 
 # With coverage
-pytest tests/contract/ --cov=starboard_server.api.models
+pytest tests/contract/ --cov=starboard.api.models
 ```
 
 ### 3. Run Frontend Contract Tests
@@ -228,7 +228,7 @@ jobs:
 
 1. **Update Pydantic Model**
    ```python
-   # starboard_server/api/models.py
+   # starboard/api/models.py
    class MessageRequest(BaseModel):
        content: str
        user_id: str
@@ -304,7 +304,7 @@ jobs:
 
 ```bash
 # Check imports
-python -c "from starboard_server.api.models import MessageRequest"
+python -c "from starboard.api.models import MessageRequest"
 
 # Run with verbose output
 python scripts/export_api_schemas.py -v

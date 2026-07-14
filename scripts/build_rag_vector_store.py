@@ -43,10 +43,10 @@ from rich.progress import (
 )
 from starboard_core.foundations.models import VectorRecord
 from starboard_core.rag.models import TableMetadata
-from starboard_server.adapters.llm import create_llm_client
-from starboard_server.adapters.llm.base import BaseLLMClient
-from starboard_server.infra.core.config import EnvConfig
-from starboard_server.infra.rag import (
+from starboard.adapters.llm import create_llm_client
+from starboard.adapters.llm.base import BaseLLMClient
+from starboard.infra.core.config import EnvConfig
+from starboard.infra.rag import (
     ChunkingService,
     CollectionType,
     DomainService,
@@ -55,9 +55,9 @@ from starboard_server.infra.rag import (
     QueryAnalyzer,
     SQLiteMultiCollectionStore,
 )
-from starboard_server.infra.rag.adapters.embedding import LLMClientEmbeddingProvider
-from starboard_server.infra.rag.domain.protocols import EmbeddingProvider
-from starboard_server.infra.rag.services.checkpoint_service import (
+from starboard.infra.rag.adapters.embedding import LLMClientEmbeddingProvider
+from starboard.infra.rag.domain.protocols import EmbeddingProvider
+from starboard.infra.rag.services.checkpoint_service import (
     read_checkpoint,
     write_checkpoint,
 )

@@ -14,7 +14,7 @@ Tests cover:
 import asyncio
 
 import pytest
-from starboard_server.infra.cache.async_lru_cache import AsyncLRUCache
+from starboard.infra.cache.async_lru_cache import AsyncLRUCache
 
 
 class TestAsyncLRUCacheBasics:

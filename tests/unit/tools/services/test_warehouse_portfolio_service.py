@@ -15,7 +15,7 @@ from starboard_core.domain.models.warehouse import (
     SLOTarget,
     WarehouseFingerprint,
 )
-from starboard_server.tools.services.warehouse_portfolio_service import (
+from starboard.tools.services.warehouse_portfolio_service import (
     WarehousePortfolioService,
 )
 

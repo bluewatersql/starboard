@@ -13,7 +13,7 @@ Requirements:
 """
 
 import pytest
-from starboard_server.tools.domain.job.spark_ui_analyzer import SparkUIAnalyzer
+from starboard.tools.domain.job.spark_ui_analyzer import SparkUIAnalyzer
 
 
 def generate_spark_ui_data(num_jobs: int, num_stages: int) -> dict:

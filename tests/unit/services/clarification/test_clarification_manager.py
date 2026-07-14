@@ -13,8 +13,8 @@ Following TDD approach: Write tests first, implement service to pass.
 from typing import Any
 
 import pytest
-from starboard_server.agents.tools.tool_registry import ToolMetadata, ToolRegistry
-from starboard_server.services.clarification.clarification_manager import (
+from starboard.agents.tools.tool_registry import ToolMetadata, ToolRegistry
+from starboard.services.clarification.clarification_manager import (
     ClarificationManager,
 )
 

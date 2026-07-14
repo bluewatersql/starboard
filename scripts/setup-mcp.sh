@@ -29,14 +29,14 @@ if command -v starboard-mcp &>/dev/null; then
     ok "starboard-mcp found at $(command -v starboard-mcp)"
 else
     warn "starboard-mcp command not found."
-    read -rp "Install starboard-server[mcp] now? [Y/n]: " do_install
+    read -rp "Install starboard now? [Y/n]: " do_install
     do_install=${do_install:-Y}
     if [[ "$do_install" =~ ^[Yy]$ ]]; then
-        info "Installing starboard-server with MCP extras..."
+        info "Installing starboard..."
         if command -v uv &>/dev/null; then
-            uv pip install -e "${REPO_ROOT}/packages/starboard-server[mcp]"
+            uv pip install -e "${REPO_ROOT}/packages/starboard"
         elif command -v pip &>/dev/null; then
-            pip install -e "${REPO_ROOT}/packages/starboard-server[mcp]"
+            pip install -e "${REPO_ROOT}/packages/starboard"
         else
             error "Neither uv nor pip found. Please install Python packaging tools first."
             exit 1
@@ -50,7 +50,7 @@ else
         ok "starboard-mcp installed successfully."
     else
         warn "Skipping installation. You can install later with:"
-        echo "  pip install -e \"packages/starboard-server[mcp]\""
+        echo "  pip install -e \"packages/starboard\""
         echo ""
     fi
 fi
@@ -221,7 +221,7 @@ write_claude_desktop_config() {
 
     if [[ -f "$claude_config" ]]; then
         warn "Claude Desktop config already exists at $claude_config"
-        warn "You may want to manually merge the starboard server entry."
+        warn "You may want to manually merge the starboard MCP entry."
         read -rp "Overwrite entire file? [y/N]: " overwrite
         if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
             info "Skipping Claude Desktop config."
@@ -339,9 +339,9 @@ if [[ "$target" == "3" || "$target" == "4" ]]; then
                 while IFS= read -r tool; do
                     starboard_tools+=("$tool")
                 done < <(python3 -c "
-from starboard_server.mcp.tool_bridge import PHASE_B_TOOLS
-from starboard_server.mcp.composite_tools import COMPOSITE_TOOL_METADATA
-from starboard_server.mcp.agent_bridge import AGENT_TOOL_METADATA
+from starboard.mcp.tool_bridge import PHASE_B_TOOLS
+from starboard.mcp.composite_tools import COMPOSITE_TOOL_METADATA
+from starboard.mcp.agent_bridge import AGENT_TOOL_METADATA
 tools = {'starboard_ping'}
 tools.update(PHASE_B_TOOLS)
 tools.update(t['name'] for t in COMPOSITE_TOOL_METADATA)

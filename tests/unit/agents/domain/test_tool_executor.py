@@ -3,12 +3,12 @@
 """Tests for ToolExecutor."""
 
 import pytest
-from starboard_server.agents.domain.tool_executor import (
+from starboard.agents.domain.tool_executor import (
     ToolExecutionResult,
     ToolExecutor,
 )
-from starboard_server.agents.output.llm_responses import ToolCall
-from starboard_server.agents.tools.tool_registry import ToolResult
+from starboard.agents.output.llm_responses import ToolCall
+from starboard.agents.tools.tool_registry import ToolResult
 
 
 class MockToolRegistry:

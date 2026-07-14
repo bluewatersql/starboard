@@ -11,17 +11,17 @@ Tests cover:
 from __future__ import annotations
 
 import pytest
-from starboard_server.infra.whatif.evaluator import (
+from starboard.infra.whatif.evaluator import (
     ScenarioComparison,
     ScenarioEvaluation,
     ScenarioEvaluator,
 )
-from starboard_server.infra.whatif.historical import HistoricalData
-from starboard_server.infra.whatif.prediction import (
+from starboard.infra.whatif.historical import HistoricalData
+from starboard.infra.whatif.prediction import (
     ConfidenceInterval,
     PredictionResult,
 )
-from starboard_server.infra.whatif.scenario import Scenario, ScenarioParameter
+from starboard.infra.whatif.scenario import Scenario, ScenarioParameter
 
 
 class MockCostModel:

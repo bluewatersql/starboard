@@ -12,7 +12,7 @@ Coverage targets:
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from starboard_server.agents.routing.routing_models import (
+from starboard.agents.routing.routing_models import (
     AgentTransition,
     RouteDecision,
     create_diagnostic_decision,

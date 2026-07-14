@@ -652,7 +652,7 @@ SQLiteMultiCollectionStore
 ### Python API
 
 ```python
-from starboard_server.infra.rag import SQLiteMultiCollectionStore
+from starboard.infra.rag import SQLiteMultiCollectionStore
 
 # Initialize
 store = SQLiteMultiCollectionStore("data/rag_vectors.db")

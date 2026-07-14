@@ -16,7 +16,7 @@ Test Coverage:
 
 from __future__ import annotations
 
-from starboard_server.prompts.visualization.v1 import (
+from starboard.prompts.visualization.v1 import (
     PROMPT_VERSION,
     build_visualization_prompt,
 )

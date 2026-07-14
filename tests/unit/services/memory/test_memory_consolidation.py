@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 
 import pytest
 from starboard_core.models.conversation import Message
-from starboard_server.infra.core.config import EnvConfig
-from starboard_server.infra.core.container import Container
-from starboard_server.services.memory.memory_consolidation import (
+from starboard.infra.core.config import EnvConfig
+from starboard.infra.core.container import Container
+from starboard.services.memory.memory_consolidation import (
     MemoryConsolidationService,
 )
 

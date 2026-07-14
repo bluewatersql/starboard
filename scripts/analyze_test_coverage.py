@@ -39,8 +39,8 @@ class CoverageGap:
 
     @property
     def relative_path(self) -> str:
-        """Get relative path from starboard_server root."""
-        return self.file_path.replace("packages/starboard-server/starboard_server/", "")
+        """Get relative path from starboard root."""
+        return self.file_path.replace("packages/starboard-server/starboard/", "")
 
     def __str__(self) -> str:
         return (
@@ -120,7 +120,7 @@ class CoverageAnalyzer:
         if coverage >= 80:
             return None
 
-        rel_path = file.replace("packages/starboard-server/starboard_server/", "")
+        rel_path = file.replace("packages/starboard-server/starboard/", "")
 
         # Determine category and priority
         category, priority, reason = self._categorize_file(rel_path, coverage, lines)
@@ -313,7 +313,7 @@ def main():
     if not args.coverage_file.exists():
         print(f"Error: Coverage file not found: {args.coverage_file}")
         print("\nRun tests with coverage first:")
-        print("  pytest --cov=starboard_server --cov-report=json")
+        print("  pytest --cov=starboard --cov-report=json")
         return 1
 
     # Analyze coverage

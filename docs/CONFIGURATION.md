@@ -41,7 +41,7 @@ Configuration file support (config.yaml) has been removed in favor of environmen
 3. **Load environment and start**:
    ```bash
    source .env  # or use direnv, docker-compose, etc.
-   make dev     # Starts both backend and frontend
+   make dev-server   # Start the MCP server / backend
    ```
 
 ---
@@ -203,8 +203,8 @@ ENABLE_OBSERVABILITY=true                     # Enable metrics/tracing
 3. **Singleton**: `get_config()` returns the global config instance
 
 ```python
-# packages/starboard-server/starboard_server/infra/core/config.py
-from starboard_server.infra.core.config import get_config
+# packages/starboard/starboard/infra/core/config.py
+from starboard.infra.core.config import get_config
 
 # Get configuration (loaded from environment variables)
 config = get_config()
@@ -397,7 +397,7 @@ source .env
 Print current configuration:
 ```bash
 uv run python -c "
-from starboard_server.infra.core.config import get_config
+from starboard.infra.core.config import get_config
 config = get_config()
 print(f'Model: {config.llm_model}')
 print(f'Host: {config.databricks_host}')

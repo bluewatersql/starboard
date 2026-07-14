@@ -17,7 +17,7 @@ def _create_test_state(
     final_output: dict | None = None,
 ):
     """Create a minimal AgentState for testing."""
-    from starboard_server.agents.state.agent_state import (
+    from starboard.agents.state.agent_state import (
         AgentState,
         Message,
         WorkingMemory,
@@ -45,21 +45,21 @@ class TestFinalizationBudgetConstant:
 
     def test_finalization_budget_constant_defined(self) -> None:
         """FINALIZATION_BUDGET constant exists."""
-        from starboard_server.agents.domain.domain_agent import FINALIZATION_BUDGET
+        from starboard.agents.domain.domain_agent import FINALIZATION_BUDGET
 
         assert FINALIZATION_BUDGET is not None
         assert isinstance(FINALIZATION_BUDGET, int)
 
     def test_finalization_budget_reasonable_minimum(self) -> None:
         """FINALIZATION_BUDGET is at least 1000 tokens."""
-        from starboard_server.agents.domain.domain_agent import FINALIZATION_BUDGET
+        from starboard.agents.domain.domain_agent import FINALIZATION_BUDGET
 
         # Need enough for complete tool to generate structured output
         assert FINALIZATION_BUDGET >= 1000
 
     def test_finalization_budget_reasonable_maximum(self) -> None:
         """FINALIZATION_BUDGET is at most 5000 tokens."""
-        from starboard_server.agents.domain.domain_agent import FINALIZATION_BUDGET
+        from starboard.agents.domain.domain_agent import FINALIZATION_BUDGET
 
         # Shouldn't be so large that it wastes budget
         assert FINALIZATION_BUDGET <= 5000
@@ -70,7 +70,7 @@ class TestShouldContinueReasoning:
 
     def test_should_continue_respects_finalization_budget(self) -> None:
         """Reasoning stops when only finalization budget remains."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             FINALIZATION_BUDGET,
             _should_continue_reasoning,
         )
@@ -83,7 +83,7 @@ class TestShouldContinueReasoning:
 
     def test_reasoning_continues_with_sufficient_budget(self) -> None:
         """Reasoning continues when budget > FINALIZATION_BUDGET."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             FINALIZATION_BUDGET,
             _should_continue_reasoning,
         )
@@ -96,7 +96,7 @@ class TestShouldContinueReasoning:
 
     def test_reasoning_stops_when_completed(self) -> None:
         """Reasoning stops when state.completed is True."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             FINALIZATION_BUDGET,
             _should_continue_reasoning,
         )
@@ -111,7 +111,7 @@ class TestShouldContinueReasoning:
 
     def test_reasoning_stops_at_max_steps(self) -> None:
         """Reasoning stops when max_steps reached."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             FINALIZATION_BUDGET,
             _should_continue_reasoning,
         )
@@ -125,7 +125,7 @@ class TestShouldContinueReasoning:
 
     def test_reasoning_continues_below_max_steps(self) -> None:
         """Reasoning continues when below max_steps."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             FINALIZATION_BUDGET,
             _should_continue_reasoning,
         )
@@ -143,7 +143,7 @@ class TestBudgetExhaustionBehavior:
 
     def test_budget_below_threshold_stops_reasoning(self) -> None:
         """When budget < FINALIZATION_BUDGET, reasoning stops."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             FINALIZATION_BUDGET,
             _should_continue_reasoning,
         )
@@ -156,7 +156,7 @@ class TestBudgetExhaustionBehavior:
 
     def test_zero_budget_stops_reasoning(self) -> None:
         """When budget is 0, reasoning stops."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             _should_continue_reasoning,
         )
 
@@ -166,7 +166,7 @@ class TestBudgetExhaustionBehavior:
 
     def test_negative_budget_stops_reasoning(self) -> None:
         """When budget is negative (enforcement off), reasoning stops."""
-        from starboard_server.agents.domain.domain_agent import (
+        from starboard.agents.domain.domain_agent import (
             _should_continue_reasoning,
         )
 
@@ -183,9 +183,9 @@ class TestPartialReportGeneration:
         """Partial report includes all required fields for UI rendering."""
         from unittest.mock import MagicMock
 
-        from starboard_server.agents.config.agent_config import AgentConfig
-        from starboard_server.agents.domain.domain_agent import DomainAgent
-        from starboard_server.agents.state.agent_state import WorkingMemory
+        from starboard.agents.config.agent_config import AgentConfig
+        from starboard.agents.domain.domain_agent import DomainAgent
+        from starboard.agents.state.agent_state import WorkingMemory
 
         # Create minimal agent setup
         mock_llm = MagicMock()
@@ -239,9 +239,9 @@ class TestPartialReportGeneration:
         from dataclasses import replace
         from unittest.mock import MagicMock
 
-        from starboard_server.agents.config.agent_config import AgentConfig
-        from starboard_server.agents.domain.domain_agent import DomainAgent
-        from starboard_server.agents.state.agent_state import WorkingMemory
+        from starboard.agents.config.agent_config import AgentConfig
+        from starboard.agents.domain.domain_agent import DomainAgent
+        from starboard.agents.state.agent_state import WorkingMemory
 
         mock_llm = MagicMock()
         mock_registry = MagicMock()
@@ -272,8 +272,8 @@ class TestPartialReportGeneration:
         """Partial report includes budget_exhausted flag for UI warning banner."""
         from unittest.mock import MagicMock
 
-        from starboard_server.agents.config.agent_config import AgentConfig
-        from starboard_server.agents.domain.domain_agent import DomainAgent
+        from starboard.agents.config.agent_config import AgentConfig
+        from starboard.agents.domain.domain_agent import DomainAgent
 
         mock_llm = MagicMock()
         mock_registry = MagicMock()
@@ -298,8 +298,8 @@ class TestOutputBuilderBudgetStatus:
 
     def test_status_budget_exceeded_from_flag(self) -> None:
         """Status is budget_exceeded when budget_exhausted flag is set."""
-        from starboard_server.agents.config.agent_config import AgentConfig
-        from starboard_server.agents.domain.output_builder import OutputBuilder
+        from starboard.agents.config.agent_config import AgentConfig
+        from starboard.agents.domain.output_builder import OutputBuilder
 
         config = AgentConfig(domain="job", model="test-model")
         builder = OutputBuilder(config=config)
@@ -315,9 +315,9 @@ class TestOutputBuilderBudgetStatus:
 
     def test_status_budget_exceeded_from_threshold(self) -> None:
         """Status is budget_exceeded when below finalization threshold."""
-        from starboard_server.agents.config.agent_config import AgentConfig
-        from starboard_server.agents.domain.domain_agent import FINALIZATION_BUDGET
-        from starboard_server.agents.domain.output_builder import OutputBuilder
+        from starboard.agents.config.agent_config import AgentConfig
+        from starboard.agents.domain.domain_agent import FINALIZATION_BUDGET
+        from starboard.agents.domain.output_builder import OutputBuilder
 
         config = AgentConfig(domain="job", model="test-model")
         builder = OutputBuilder(config=config)
@@ -332,9 +332,9 @@ class TestOutputBuilderBudgetStatus:
 
     def test_status_success_when_completed_normally(self) -> None:
         """Status is success when completed without budget issues."""
-        from starboard_server.agents.config.agent_config import AgentConfig
-        from starboard_server.agents.domain.domain_agent import FINALIZATION_BUDGET
-        from starboard_server.agents.domain.output_builder import OutputBuilder
+        from starboard.agents.config.agent_config import AgentConfig
+        from starboard.agents.domain.domain_agent import FINALIZATION_BUDGET
+        from starboard.agents.domain.output_builder import OutputBuilder
 
         config = AgentConfig(domain="job", model="test-model")
         builder = OutputBuilder(config=config)

@@ -10,7 +10,7 @@ from starboard_core.domain.models.warehouse import (
     DEFAULT_INTERACTIVE_SLOS,
     SLOTarget,
 )
-from starboard_server.tools.adapters.slo_config_store import InMemorySLOConfigStore
+from starboard.tools.adapters.slo_config_store import InMemorySLOConfigStore
 
 
 class TestInMemorySLOConfigStore:

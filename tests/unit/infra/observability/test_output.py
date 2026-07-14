@@ -15,7 +15,7 @@ from typing import Any
 from unittest.mock import mock_open, patch
 
 import pytest
-from starboard_server.infra.observability.output import OutputConfig, OutputManager
+from starboard.infra.observability.output import OutputConfig, OutputManager
 
 
 class TestOutputConfig:

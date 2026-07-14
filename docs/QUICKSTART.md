@@ -1,13 +1,13 @@
 ---
 title: Quickstart
 description: Get Starboard AI Agent running in under 5 minutes.
-last_verified: 2026-03-24
+last_verified: 2026-07-12
 status: current
 ---
 
 # Quickstart
 
-> Last verified: 2026-03-24
+> Last verified: 2026-07-12
 
 Get Starboard AI Agent running locally and execute your first analysis in under 5 minutes.
 
@@ -18,7 +18,6 @@ Get Starboard AI Agent running locally and execute your first analysis in under 
 | Requirement | Version | Check Command |
 |-------------|---------|---------------|
 | Python | 3.12+ | `python --version` |
-| Node.js | 18+ | `node --version` |
 | uv (recommended) | Latest | `uv --version` |
 | Databricks workspace | -- | Access token required |
 | LLM API key | -- | OpenAI, Azure, or Databricks Model Serving |
@@ -76,65 +75,7 @@ LLM_MODEL=databricks-claude-sonnet-4-5
 
 ---
 
-## Step 3: Start Development Servers
-
-```bash
-# Start both backend (port 8000) and frontend (port 3000)
-make dev
-```
-
-Or start them individually:
-
-```bash
-# Backend only
-make dev-server
-
-# Frontend only (in a separate terminal)
-make dev-frontend
-```
-
-**Verify the backend is running:**
-
-```bash
-curl http://localhost:8000/health/live
-```
-
-Expected response:
-
-```json
-{"status": "ok"}
-```
-
-To check full readiness (database, cache, dependencies):
-
-```bash
-curl http://localhost:8000/health/ready
-```
-
-Expected response:
-
-```json
-{"status": "ok", "checks": []}
-```
-
-!!! warning
-    If `/health/ready` returns `503`, the server is running but one or more dependencies (database, cache) are not yet initialized. Check the server logs for details.
-
----
-
-## Step 4: Run Your First Analysis
-
-### Using the Web UI
-
-1. Open **http://localhost:3000** in your browser
-2. Click **New Conversation** in the sidebar
-3. Type a question and press Enter:
-
-```
-Why is my nightly ETL job taking 3 hours? Job ID: 12345
-```
-
-4. Watch the agent reason in real-time -- you will see thinking steps, tool calls, and the final report stream in as they happen
+## Step 3: Run Your First Analysis
 
 ### Using the CLI
 
@@ -147,52 +88,31 @@ starboard --goal "Analyze job 12345 for performance issues"
 
 # Run a workspace health assessment
 starboard --goal "Run a discovery assessment of my workspace"
+
+# Interactive multi-turn session
+starboard --chat
 ```
 
-### Using the REST API
+### Using the MCP Server (Claude Code / Cursor)
 
 ```bash
-# Create a conversation
-CONV_ID=$(curl -s -X POST http://localhost:8000/api/chat/conversations \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": "quickstart_user"}' | python -c "import sys,json; print(json.load(sys.stdin)['conversation_id'])")
+# Install the package
+pip install starboard
 
-# Send a message
-curl -X POST "http://localhost:8000/api/chat/conversations/${CONV_ID}/messages" \
-  -H "Content-Type: application/json" \
-  -d '{"content": "Analyze job 12345"}'
-
-# Stream events (SSE)
-curl -N "http://localhost:8000/api/chat/conversations/${CONV_ID}/stream"
+# Run the interactive setup wizard
+./scripts/setup-mcp.sh
 ```
 
----
-
-## Step 5: Verify Health Endpoints
-
-Starboard exposes two health endpoints for monitoring:
-
-| Endpoint | Purpose | Healthy Response |
-|----------|---------|------------------|
-| `GET /health/live` | Liveness probe -- is the process alive? | `{"status": "ok"}` |
-| `GET /health/ready` | Readiness probe -- are dependencies connected? | `{"status": "ok", "checks": [...]}` |
-
-```bash
-# Liveness (always responds if server is up)
-curl http://localhost:8000/health/live
-
-# Readiness (checks database, cache connectivity)
-curl http://localhost:8000/health/ready
-```
+Then restart your IDE to pick up the new MCP configuration. See [Claude Code Integration Guide](CLAUDE_CODE_INTEGRATION.md) for full details.
 
 ---
 
 ## What Happens Behind the Scenes
 
-When you send a message, Starboard follows this flow:
+When you send a goal, Starboard follows this flow:
 
 ```
-Your Message
+Your Goal
     |
     v
 Intent Router --> Classifies domain (query, job, uc, cluster, analytics, warehouse, discovery, diagnostic)
@@ -207,10 +127,10 @@ Tools (45+) --> Calls Databricks APIs, gathers real data
 Analysis --> Interprets results using domain expertise
     |
     v
-Report --> Streams structured recommendations via SSE
+Report --> Structured recommendations output
 ```
 
-The system has 9 domain agents (including the router), each specialized in a different area of Databricks optimization. The agent autonomously decides which tools to call and in what order based on the data it discovers.
+The system has 9 domain agents (including the router), each specialized in a different area of Databricks optimization.
 
 | Agent | Domain |
 |-------|--------|
@@ -229,12 +149,12 @@ The system has 9 domain agents (including the router), each specialized in a dif
 ## Next Steps
 
 - [Configuration Guide](CONFIGURATION.md) -- Complete environment variable reference
-- [Web UI Guide](user-guide/web-ui.md) -- Learn the web interface
 - [CLI Reference](user-guide/cli.md) -- Command-line usage and options
+- [Claude Code Integration](CLAUDE_CODE_INTEGRATION.md) -- MCP server setup
 - [What is Starboard?](overview/what-is-starboard.md) -- Architecture overview
 - [FAQ](guides/FAQ.md) -- Common questions answered
 
 ---
 
-**Last Updated**: 2026-03-24
-**Version**: 3.0
+**Last Updated**: 2026-07-12
+**Version**: 4.0

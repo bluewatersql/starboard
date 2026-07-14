@@ -450,5 +450,5 @@ graph TD
 - [Agent Implementation Guide](../../developer/agent/IMPLEMENTATION_GUIDE.md)
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
-- [Analytics Prompt Source](../../../packages/starboard-server/starboard_server/prompts/analytics/v1.py)
-- [Tool Categories](../../../packages/starboard-server/starboard_server/agents/tool_categories.py)
+- [Analytics Prompt Source](../../../packages/starboard-server/starboard/prompts/analytics/v1.py)
+- [Tool Categories](../../../packages/starboard-server/starboard/agents/tool_categories.py)

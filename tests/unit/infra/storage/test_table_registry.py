@@ -10,7 +10,7 @@ Tests cover:
 
 from __future__ import annotations
 
-from starboard_server.infra.storage.table_registry import (
+from starboard.infra.storage.table_registry import (
     ColumnDef,
     TableDef,
     TableRegistry,

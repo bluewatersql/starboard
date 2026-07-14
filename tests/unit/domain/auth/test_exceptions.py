@@ -10,7 +10,7 @@ Tests follow Python AI Agent Engineering Standards:
 """
 
 import pytest
-from starboard_server.domain.auth.exceptions import (
+from starboard.domain.auth.exceptions import (
     AuthenticationError,
     InvalidCredentialsError,
     SessionExpiredError,

@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from starboard_server.infra.observability.reporting import (
+from starboard.infra.observability.reporting import (
     AnalystReports,
     Utils,
     generate_markdown_report,

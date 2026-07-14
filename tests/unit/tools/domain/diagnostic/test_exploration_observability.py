@@ -3,7 +3,7 @@
 """Tests for exploration observability and telemetry."""
 
 import pytest
-from starboard_server.tools.domain.diagnostic.exploration_observability import (
+from starboard.tools.domain.diagnostic.exploration_observability import (
     ExplorationMetrics,
     ExplorationTelemetry,
     StepMetrics,

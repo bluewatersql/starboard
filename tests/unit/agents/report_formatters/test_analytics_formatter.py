@@ -13,7 +13,7 @@ Tests cover:
 """
 
 import pytest
-from starboard_server.agents.report_formatters.analytics_formatter import (
+from starboard.agents.report_formatters.analytics_formatter import (
     AnalyticsReportFormatter,
 )
 

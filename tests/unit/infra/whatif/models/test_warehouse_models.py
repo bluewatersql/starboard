@@ -8,13 +8,13 @@ Tests the cost, latency, and risk prediction models.
 from datetime import datetime
 
 import pytest
-from starboard_server.infra.whatif.historical import HistoricalData
-from starboard_server.infra.whatif.models import (
+from starboard.infra.whatif.historical import HistoricalData
+from starboard.infra.whatif.models import (
     WarehouseCostModel,
     WarehouseLatencyModel,
     WarehouseQueueRiskModel,
 )
-from starboard_server.infra.whatif.scenario import Scenario, ScenarioParameter
+from starboard.infra.whatif.scenario import Scenario, ScenarioParameter
 
 # =============================================================================
 # Test Fixtures

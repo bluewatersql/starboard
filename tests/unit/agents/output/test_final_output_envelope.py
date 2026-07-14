@@ -7,9 +7,9 @@ Tests for envelope generation in FinalOutputEvent.to_sse_data().
 """
 
 import pytest
-from starboard_server.agents.events.user_events import FinalOutputEvent
-from starboard_server.agents.state.agent_state import AgentOutput
-from starboard_server.domain.models.conversation_patterns import (
+from starboard.agents.events.user_events import FinalOutputEvent
+from starboard.agents.state.agent_state import AgentOutput
+from starboard.domain.models.conversation_patterns import (
     ActionType,
     NextStepOption,
 )

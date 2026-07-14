@@ -20,7 +20,7 @@ from starboard_core.domain.models.clarification import (
     ClarificationRequest,
     ClarificationType,
 )
-from starboard_server.services.clarification.question_generator import QuestionGenerator
+from starboard.services.clarification.question_generator import QuestionGenerator
 
 
 class TestQuestionGeneratorMissingParameters:

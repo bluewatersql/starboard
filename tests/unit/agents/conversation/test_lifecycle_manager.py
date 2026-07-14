@@ -17,9 +17,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starboard_core.models.conversation import ConversationMetadata
-from starboard_server.agents.conversation import ConversationLifecycleManager
-from starboard_server.agents.state.shared_context import SharedAgentContext
-from starboard_server.api.models import ConversationConfig, ConversationResponse
+from starboard.agents.conversation import ConversationLifecycleManager
+from starboard.agents.state.shared_context import SharedAgentContext
+from starboard.api.models import ConversationConfig, ConversationResponse
 
 
 @pytest.fixture

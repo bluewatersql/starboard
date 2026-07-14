@@ -15,7 +15,7 @@ class TestBoundaryValidatorRepairLogic:
 
     def test_unwraps_response_wrapper(self) -> None:
         """Unwraps OpenAI strict mode {response: {...}} wrapper."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         # OpenAI strict mode wraps in "response"
         raw = {
@@ -35,7 +35,7 @@ class TestBoundaryValidatorRepairLogic:
 
     def test_unwraps_report_wrapper(self) -> None:
         """Unwraps {report: {...}} wrapper to root level."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "report": {
@@ -58,7 +58,7 @@ class TestBoundaryValidatorRepairLogic:
         """Parses report when it's a JSON string."""
         import json
 
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         inner = {"summary": {"overview": "Parsed"}, "analysis": {"findings": []}}
         raw = {"report": json.dumps(inner)}
@@ -71,7 +71,7 @@ class TestBoundaryValidatorRepairLogic:
 
     def test_fixes_summary_inside_analysis(self) -> None:
         """Moves summary from inside analysis to root level."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "analysis": {
@@ -92,7 +92,7 @@ class TestBoundaryValidatorRepairLogic:
 
     def test_unwraps_double_nested_analysis(self) -> None:
         """Fixes {analysis: {analysis: {...}}} double nesting."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "analysis": {
@@ -115,7 +115,7 @@ class TestBoundaryValidatorRepairLogic:
         """Parses analysis when it's a JSON string."""
         import json
 
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "summary": {"overview": "Test"},
@@ -134,7 +134,7 @@ class TestBoundaryValidatorValidReport:
 
     def test_valid_advisor_report_unchanged(self) -> None:
         """Valid advisor report passes through unchanged."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "report_type": "advisor",
@@ -152,7 +152,7 @@ class TestBoundaryValidatorValidReport:
 
     def test_valid_analytics_report_unchanged(self) -> None:
         """Valid analytics report passes through unchanged."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "report_type": "analytics",
@@ -169,7 +169,7 @@ class TestBoundaryValidatorValidReport:
 
     def test_valid_compute_report_unchanged(self) -> None:
         """Valid compute report passes through unchanged."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "report_type": "compute",
@@ -189,7 +189,7 @@ class TestBoundaryValidatorPartialResponses:
 
     def test_missing_summary_creates_partial(self) -> None:
         """Missing summary field results in partial response."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "report_type": "advisor",
@@ -205,7 +205,7 @@ class TestBoundaryValidatorPartialResponses:
 
     def test_empty_payload_creates_partial(self) -> None:
         """Empty payload results in partial response."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         validator = BoundaryValidator()
         result = validator.validate_and_repair({}, domain="query")
@@ -215,7 +215,7 @@ class TestBoundaryValidatorPartialResponses:
 
     def test_none_payload_creates_partial(self) -> None:
         """None payload results in partial response."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         validator = BoundaryValidator()
         result = validator.validate_and_repair(None, domain="query")
@@ -225,7 +225,7 @@ class TestBoundaryValidatorPartialResponses:
 
     def test_unfixable_structure_creates_partial(self) -> None:
         """Malformed structure that can't be repaired creates partial."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "garbage": "data",
@@ -244,7 +244,7 @@ class TestBoundaryValidatorReportTypeInference:
 
     def test_preserves_existing_report_type(self) -> None:
         """Existing report_type is preserved."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "report_type": "analytics",
@@ -258,7 +258,7 @@ class TestBoundaryValidatorReportTypeInference:
 
     def test_infers_report_type_from_domain(self) -> None:
         """Missing report_type is inferred from domain."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "summary": {"overview": "Test"},
@@ -285,7 +285,7 @@ class TestBoundaryValidatorResult:
 
     def test_result_contains_all_fields(self) -> None:
         """ValidationResult has all expected fields."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {"summary": {"overview": "Test"}}
 
@@ -301,7 +301,7 @@ class TestBoundaryValidatorResult:
 
     def test_result_repairs_are_logged(self) -> None:
         """All applied repairs are recorded."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         # Structure that needs multiple repairs (unwrap_report + move_summary_to_root)
         raw = {
@@ -326,7 +326,7 @@ class TestBoundaryValidatorEdgeCases:
 
     def test_handles_non_dict_summary(self) -> None:
         """Handles summary as string instead of dict."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = {
             "summary": "Just a string overview",
@@ -342,7 +342,7 @@ class TestBoundaryValidatorEdgeCases:
 
     def test_handles_list_at_root(self) -> None:
         """Handles list at root (should be dict)."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         raw = [{"finding": "1"}, {"finding": "2"}]
 
@@ -354,7 +354,7 @@ class TestBoundaryValidatorEdgeCases:
 
     def test_max_one_repair_pass(self) -> None:
         """Validator does ONE repair pass, not recursive."""
-        from starboard_server.agents.output.boundary_validator import BoundaryValidator
+        from starboard.agents.output.boundary_validator import BoundaryValidator
 
         # Construct something that would need multiple recursive repairs
         raw = {

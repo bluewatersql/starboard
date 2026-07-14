@@ -10,7 +10,7 @@ Tests cover:
 
 from __future__ import annotations
 
-from starboard_server.infra.whatif.scenario import (
+from starboard.infra.whatif.scenario import (
     Scenario,
     ScenarioParameter,
     create_warehouse_scenario,

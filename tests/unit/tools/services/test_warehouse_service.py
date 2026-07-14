@@ -7,8 +7,8 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from starboard_server.tools.exceptions import WarehouseNotFoundError
-from starboard_server.tools.services.warehouse_service import WarehouseService
+from starboard.tools.exceptions import WarehouseNotFoundError
+from starboard.tools.services.warehouse_service import WarehouseService
 
 
 class MockWarehouseProvider:

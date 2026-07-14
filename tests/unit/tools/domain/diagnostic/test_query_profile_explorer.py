@@ -10,7 +10,7 @@ Liquid format and standard format.
 import json
 
 import pytest
-from starboard_server.tools.domain.diagnostic.query_profile_explorer import (
+from starboard.tools.domain.diagnostic.query_profile_explorer import (
     QueryProfileExplorer,
 )
 

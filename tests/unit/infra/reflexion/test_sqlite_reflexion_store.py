@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from starboard_core.foundations.models import ReflexionLearning, VectorSearchResult
-from starboard_server.infra.reflexion import SQLiteReflexionStore
+from starboard.infra.reflexion import SQLiteReflexionStore
 
 
 class TestSQLiteReflexionStoreInit:

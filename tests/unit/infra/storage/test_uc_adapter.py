@@ -19,12 +19,12 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from starboard_server.infra.storage.table_registry import (
+from starboard.infra.storage.table_registry import (
     ColumnDef,
     TableDef,
     TableRegistry,
 )
-from starboard_server.infra.storage.uc_adapter import (
+from starboard.infra.storage.uc_adapter import (
     InvalidColumnError,
     UCStorageAdapter,
     UCStorageConfig,
@@ -663,7 +663,7 @@ class TestAsyncWrappers:
         mock_client.catalogs.get.return_value = MagicMock()
 
         with patch(
-            "starboard_server.infra.storage.uc_adapter.run_databricks_sync",
+            "starboard.infra.storage.uc_adapter.run_databricks_sync",
             new_callable=AsyncMock,
         ) as mock_run:
             mock_run.return_value = MagicMock()
@@ -682,7 +682,7 @@ class TestAsyncWrappers:
         mock_client.schemas.get.return_value = MagicMock()
 
         with patch(
-            "starboard_server.infra.storage.uc_adapter.run_databricks_sync",
+            "starboard.infra.storage.uc_adapter.run_databricks_sync",
             new_callable=AsyncMock,
         ) as mock_run:
             mock_run.return_value = MagicMock()
@@ -701,7 +701,7 @@ class TestAsyncWrappers:
         mock_response.result = None
 
         with patch(
-            "starboard_server.infra.storage.uc_adapter.run_databricks_sync",
+            "starboard.infra.storage.uc_adapter.run_databricks_sync",
             new_callable=AsyncMock,
         ) as mock_run:
             mock_run.return_value = mock_response
@@ -719,7 +719,7 @@ class TestAsyncWrappers:
         mock_response.status.state = "SUCCEEDED"
 
         with patch(
-            "starboard_server.infra.storage.uc_adapter.run_databricks_sync",
+            "starboard.infra.storage.uc_adapter.run_databricks_sync",
             new_callable=AsyncMock,
         ) as mock_run:
             mock_run.return_value = mock_response

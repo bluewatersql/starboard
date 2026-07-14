@@ -17,10 +17,10 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_server.agents.conversation.event_broadcast_coordinator import (
+from starboard.agents.conversation.event_broadcast_coordinator import (
     EventBroadcastCoordinator,
 )
-from starboard_server.api.models import ChatEvent, EventType
+from starboard.api.models import ChatEvent, EventType
 
 
 @pytest.fixture

@@ -75,7 +75,7 @@ Tools follow a three-layer architecture:
 
 Create pure business logic in `tools/domain/`:
 
-**File**: `packages/starboard-server/starboard_server/tools/domain/example/analyzer.py`
+**File**: `packages/starboard-server/starboard/tools/domain/example/analyzer.py`
 
 ```python
 """Domain logic for example analysis."""
@@ -131,15 +131,15 @@ def analyze_example_data(data: dict[str, Any]) -> AnalysisResult:
 
 Create service in `tools/services/`:
 
-**File**: `packages/starboard-server/starboard_server/tools/services/example_service.py`
+**File**: `packages/starboard-server/starboard/tools/services/example_service.py`
 
 ```python
 """Service layer for example tool operations."""
 
 from typing import Any
 
-from starboard_server.adapters.apis.databricks import DatabricksAPI
-from starboard_server.tools.domain.example.analyzer import (
+from starboard.adapters.apis.databricks import DatabricksAPI
+from starboard.tools.domain.example.analyzer import (
     analyze_example_data,
     AnalysisResult,
 )
@@ -225,16 +225,16 @@ class ExampleService:
 
 Create adapter in `tools/adapters/`:
 
-**File**: `packages/starboard-server/starboard_server/tools/adapters/example_tools.py`
+**File**: `packages/starboard-server/starboard/tools/adapters/example_tools.py`
 
 ```python
 """Adapter interface for example tools."""
 
 from typing import Any
 
-from starboard_server.adapters.apis.databricks import DatabricksAPI
-from starboard_server.infra.observability.events import EventEmitter
-from starboard_server.tools.services.example_service import ExampleService
+from starboard.adapters.apis.databricks import DatabricksAPI
+from starboard.infra.observability.events import EventEmitter
+from starboard.tools.services.example_service import ExampleService
 
 
 class ExampleTools:
@@ -371,7 +371,7 @@ except ToolExecutionError as e:
 
 import pytest
 
-from starboard_server.tools.domain.example.analyzer import analyze_example_data
+from starboard.tools.domain.example.analyzer import analyze_example_data
 
 
 def test_analyze_example_data_basic():
@@ -421,7 +421,7 @@ def test_analyze_example_data_parametrized(value, expected_score):
 
 import pytest
 
-from starboard_server.tools.services.example_service import ExampleService
+from starboard.tools.services.example_service import ExampleService
 
 
 @pytest.mark.asyncio
@@ -465,7 +465,7 @@ async def test_analyze_resource_not_found(mock_api):
 
 import pytest
 
-from starboard_server.tools.adapters.example_tools import ExampleTools
+from starboard.tools.adapters.example_tools import ExampleTools
 
 
 @pytest.mark.asyncio
@@ -518,10 +518,10 @@ async def test_analyze_resource_minimal_output(mock_service):
 
 ### Step 1: Define Tool Metadata
 
-**File**: `packages/starboard-server/starboard_server/agents/tools/registry.py`
+**File**: `packages/starboard-server/starboard/agents/tools/registry.py`
 
 ```python
-from starboard_server.agents.tools.tool_registry import ToolMetadata
+from starboard.agents.tools.tool_registry import ToolMetadata
 
 ANALYZE_RESOURCE_METADATA = ToolMetadata(
     name="analyze_resource",
@@ -550,7 +550,7 @@ ANALYZE_RESOURCE_METADATA = ToolMetadata(
 
 ### Step 2: Register Tool
 
-**File**: `packages/starboard-server/starboard_server/agents/tools/tool_factory.py`
+**File**: `packages/starboard-server/starboard/agents/tools/tool_factory.py`
 
 ```python
 def create_tool_registry(...) -> ToolRegistry:

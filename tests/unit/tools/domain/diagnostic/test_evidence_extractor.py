@@ -14,7 +14,7 @@ Tests cover:
 from textwrap import dedent
 
 import pytest
-from starboard_server.tools.domain.diagnostic.evidence_extractor import (
+from starboard.tools.domain.diagnostic.evidence_extractor import (
     EvidenceType,
     EvidenceWindowExtractor,
 )

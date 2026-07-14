@@ -5,7 +5,7 @@
 from dataclasses import asdict
 
 import pytest
-from starboard_server.tools.domain.diagnostic.models import (
+from starboard.tools.domain.diagnostic.models import (
     DiagnosticFingerprint,
     ExplorationSummary,
     PrimarySymptom,

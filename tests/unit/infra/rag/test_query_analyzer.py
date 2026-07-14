@@ -7,7 +7,7 @@ Tests SQL query parsing and pattern extraction following TDD principles.
 """
 
 from starboard_core.rag.models import AnalysisResult
-from starboard_server.infra.rag.domain.query_analyzer import QueryAnalyzer
+from starboard.infra.rag.domain.query_analyzer import QueryAnalyzer
 
 
 class TestQueryAnalyzerInit:

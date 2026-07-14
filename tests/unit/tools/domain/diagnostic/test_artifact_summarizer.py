@@ -16,7 +16,7 @@ from __future__ import annotations
 from textwrap import dedent
 
 import pytest
-from starboard_server.tools.domain.diagnostic.artifact_summarizer import (
+from starboard.tools.domain.diagnostic.artifact_summarizer import (
     ArtifactSummarizer,
     SummarizationResult,
     SummarySection,

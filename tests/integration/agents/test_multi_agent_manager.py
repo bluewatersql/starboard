@@ -12,12 +12,12 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from starboard_server.agents.agent_factory import AgentFactory
-from starboard_server.agents.conversation.multi_agent_manager import (
+from starboard.agents.agent_factory import AgentFactory
+from starboard.agents.conversation.multi_agent_manager import (
     MultiAgentConversationManager,
 )
-from starboard_server.agents.routing.intent_router import IntentRouter
-from starboard_server.api.models import (
+from starboard.agents.routing.intent_router import IntentRouter
+from starboard.api.models import (
     ConversationConfig,
     ConversationResponse,
     MessageResponse,
@@ -52,7 +52,7 @@ def mock_state_manager():
 def multi_agent_manager(mock_agent_factory, mock_intent_router, mock_state_manager):
     """Create MultiAgentConversationManager with mocked dependencies."""
     with patch(
-        "starboard_server.config.catalog_loader.load_service_catalog"
+        "starboard.config.catalog_loader.load_service_catalog"
     ) as mock_catalog:
         # Mock service catalog to avoid file loading
         mock_catalog.return_value = []
@@ -82,7 +82,7 @@ class TestMultiAgentManagerInitialization:
     ):
         """Test initialization with disabled domains."""
         with patch(
-            "starboard_server.config.catalog_loader.load_service_catalog"
+            "starboard.config.catalog_loader.load_service_catalog"
         ) as mock_catalog:
             mock_catalog.return_value = []
 
@@ -242,8 +242,8 @@ class TestConversationHistory:
     async def test_get_history_success(self, multi_agent_manager, mock_state_manager):
         """Test successful history retrieval."""
         # Mock context with messages
-        from starboard_server.agents.state.agent_state import Message
-        from starboard_server.agents.state.shared_context import SharedAgentContext
+        from starboard.agents.state.agent_state import Message
+        from starboard.agents.state.shared_context import SharedAgentContext
 
         mock_context = Mock(spec=SharedAgentContext)
         mock_context.conversation_history = [
@@ -392,10 +392,10 @@ class TestServiceCatalogInitialization:
         self, mock_agent_factory, mock_intent_router, mock_state_manager
     ):
         """Test that service catalog falls back gracefully on load error."""
-        from starboard_server.config.catalog_loader import CatalogLoadError
+        from starboard.config.catalog_loader import CatalogLoadError
 
         with patch(
-            "starboard_server.config.catalog_loader.load_service_catalog"
+            "starboard.config.catalog_loader.load_service_catalog"
         ) as mock_catalog:
             # Simulate catalog load error
             mock_catalog.side_effect = CatalogLoadError("Catalog not found")

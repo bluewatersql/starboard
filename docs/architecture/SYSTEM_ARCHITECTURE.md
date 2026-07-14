@@ -30,12 +30,12 @@ Starboard AI Agent is a multi-agent AI system for Databricks workload optimizati
 ```
 +---------------------------------------------------------+
 |                    User Interfaces                       |
-|   Web UI (Next.js)  |  CLI (Python)  |  REST API / SDK  |
-+----------+-----------+--------+-------+------+----------+
-           |                    |              |
-           v                    v              v
+|       CLI (starboard)      |    MCP (starboard-mcp)     |
++----------+-----------------+----------+-----------------+
+           |                            |
+           v                            v
 +---------------------------------------------------------+
-|                   FastAPI Backend                        |
+|                  starboard package                       |
 |  +-------------+  +------------------------------+      |
 |  |Intent Router |->| Multi-Agent Conversation Mgr |      |
 |  +-------------+  +------------------------------+      |
@@ -57,16 +57,15 @@ Starboard AI Agent is a multi-agent AI system for Databricks workload optimizati
        APIs            (Multi-provider) (SQLite/PG/Lakebase)
 ```
 
-*High-level system topology showing user interfaces, FastAPI backend with multi-agent system, tool layers, and external services.*
+*High-level system topology showing CLI and MCP interfaces, multi-agent system, tool layers, and external services.*
 
 ### Key Components
 
-1. **User Layer**: Web UI (Next.js 16), CLI (Python), REST API, Python SDK
-2. **API Layer**: FastAPI REST + SSE endpoints, authentication middleware
-3. **Multi-Agent System**: Intent Router + 8 domain agents with conversation management
-4. **Tool System**: 45+ tools in three-layer architecture (Domain, Service, Adapter)
-5. **State Management**: Conversation persistence with 5 storage backends
-6. **External Services**: Databricks API, multi-provider LLM (OpenAI, Azure, Databricks Model Serving), log storage
+1. **User Layer**: CLI (`starboard`), MCP server (`starboard-mcp`)
+2. **Multi-Agent System**: Intent Router + 8 domain agents with conversation management
+3. **Tool System**: 45+ tools in three-layer architecture (Domain, Service, Adapter)
+4. **State Management**: Conversation persistence with 5 storage backends
+5. **External Services**: Databricks API, multi-provider LLM (OpenAI, Azure, Databricks Model Serving), log storage
 
 ---
 
@@ -159,7 +158,7 @@ graph TD
 | **Discovery** | `discovery` | Workspace-wide health assessment (4-phase) | 6 |
 | **Diagnostic** | `diagnostic` | Cross-domain troubleshooting | ALL |
 
-**Source**: `packages/starboard-server/starboard_server/agents/tool_categories.py`
+**Source**: `packages/starboard/starboard/agents/tool_categories.py`
 
 ### Conversation Manager
 
@@ -345,8 +344,7 @@ Pluggable storage strategies (`SQLiteStrategy`, `PostgresStrategy`, etc.) implem
 
 ```
 Local Machine
-  +-- Frontend (Next.js, port 3000)
-  +-- Backend (FastAPI, port 8000)
+  +-- starboard CLI / starboard-mcp (stdio)
   +-- SQLite (embedded state)
   --> Databricks API (external)
   --> LLM Provider (external)
@@ -355,9 +353,8 @@ Local Machine
 ### Production
 
 ```
-Load Balancer
-  --> Frontend (CDN / Static hosting)
-  --> Backend (Docker, 2-N instances, auto-scaling)
+Load Balancer (if HTTP mode)
+  --> starboard (Docker, 2-N instances, auto-scaling)
       --> PostgreSQL / Lakebase (multi-AZ, automated backups)
       --> Redis (cluster mode, automatic failover)
       --> Databricks API

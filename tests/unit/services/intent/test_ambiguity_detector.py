@@ -15,8 +15,8 @@ Following TDD approach: Write tests first, implement service to pass.
 from typing import Any
 
 import pytest
-from starboard_server.agents.tools.tool_registry import ToolMetadata, ToolRegistry
-from starboard_server.services.intent.ambiguity_detector import AmbiguityDetector
+from starboard.agents.tools.tool_registry import ToolMetadata, ToolRegistry
+from starboard.services.intent.ambiguity_detector import AmbiguityDetector
 
 
 class MockToolAdapter:

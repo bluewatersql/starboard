@@ -11,11 +11,11 @@ from __future__ import annotations
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.prompts.discovery.v2 import (
+from starboard.prompts.discovery.v2 import (
     DISCOVERY_SYSTEM_PROMPT,
     PROMPT_VERSION,
 )
-from starboard_server.prompts.factories import build_discovery_prompt
+from starboard.prompts.factories import build_discovery_prompt
 from syrupy.assertion import SnapshotAssertion
 
 

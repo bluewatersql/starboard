@@ -13,7 +13,7 @@ import json
 from unittest.mock import AsyncMock
 
 import pytest
-from starboard_server.tools.domain.diagnostic.artifact_exploration_service import (
+from starboard.tools.domain.diagnostic.artifact_exploration_service import (
     ArtifactExplorationService,
 )
 

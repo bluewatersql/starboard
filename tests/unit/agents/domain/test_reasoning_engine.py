@@ -3,12 +3,12 @@
 """Tests for ReasoningEngine."""
 
 import pytest
-from starboard_server.agents.domain.reasoning_engine import (
+from starboard.agents.domain.reasoning_engine import (
     ReasoningEngine,
     ReasoningStep,
 )
-from starboard_server.agents.state.agent_state import AgentState, Message, WorkingMemory
-from starboard_server.agents.tools.tool_registry import ToolRegistry
+from starboard.agents.state.agent_state import AgentState, Message, WorkingMemory
+from starboard.agents.tools.tool_registry import ToolRegistry
 
 
 class MockLLMClient:
@@ -46,7 +46,7 @@ class MockToolClass:
 @pytest.fixture
 def tool_registry():
     """Create minimal tool registry."""
-    from starboard_server.agents.tools.tool_registry import (
+    from starboard.agents.tools.tool_registry import (
         NativeToolAdapter,
         ToolMetadata,
     )

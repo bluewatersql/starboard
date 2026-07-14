@@ -11,8 +11,8 @@ request/response schemas).  Doing so creates an upward dependency: the
 business-logic layer couples itself to the HTTP transport layer.
 
 This test uses AST to scan every ``.py`` file under
-``starboard_server/agents/`` and fails if any file imports from
-``starboard_server.api``.
+``starboard/agents/`` and fails if any file imports from
+``starboard.api``.
 
 STATUS: Expected to FAIL — agents currently import api.models (e.g.
 multi_agent_manager.py, history_formatter.py, sse_broadcaster.py).
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-_FORBIDDEN_PREFIX = "starboard_server.api"
+_FORBIDDEN_PREFIX = "starboard.api"
 
 
 def _imports_api_layer(file_path: Path) -> list[str]:
@@ -55,14 +55,14 @@ def _imports_api_layer(file_path: Path) -> list[str]:
 
 @pytest.mark.unit
 def test_agents_layer_does_not_import_api_layer(project_root: Path) -> None:
-    """Files under starboard_server/agents/ must not import from starboard_server.api.
+    """Files under starboard/agents/ must not import from starboard.api.
 
     The agents layer is business logic; the api layer is HTTP transport.
     Agents importing api models creates an upward dependency that prevents
     reuse of agents outside the HTTP context (e.g. CLI, SDK, tests).
     """
     agents_root = (
-        project_root / "packages" / "starboard-server" / "starboard_server" / "agents"
+        project_root / "packages" / "starboard-server" / "starboard" / "agents"
     )
     if not agents_root.exists():
         pytest.skip(f"agents directory not found: {agents_root}")

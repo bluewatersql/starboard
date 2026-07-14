@@ -57,8 +57,8 @@ from databricks.sdk.service.database import (
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from starboard_server.adapters.state.databricks.config import DatabricksLakebaseConfig
-from starboard_server.infra.logging import get_logger, setup_structured_logging
+from starboard.adapters.state.databricks.config import DatabricksLakebaseConfig
+from starboard.infra.logging import get_logger, setup_structured_logging
 
 # Setup logging
 setup_structured_logging()
@@ -425,7 +425,7 @@ async def setup_database() -> None:
         Path(__file__).parent.parent
         / "packages"
         / "starboard-server"
-        / "starboard_server"
+        / "starboard"
         / "adapters"
         / "state"
         / "postgres"

@@ -16,13 +16,11 @@ status: current
 
 | Metric | Value |
 |--------|-------|
-| **Packages** | 5 Python (core, server, cli, log-parser, sdk) + 1 Frontend |
+| **Packages** | 3 Python (starboard-core, starboard, starboard-skills) |
 | **Domain Agents** | 8 + 1 Intent Router |
 | **Tools** | 45+ across 9 categories |
-| **API Endpoints** | 22 |
 | **Python** | 3.12+ |
-| **Frontend** | Next.js 16, React 19, Material UI v7 |
-| **Package Manager** | uv (Python), npm (Frontend) |
+| **Package Manager** | uv |
 | **Streaming** | SSE (Server-Sent Events) |
 
 ---
@@ -41,7 +39,7 @@ status: current
 | `discovery` | Discovery | 6 | `discovery` | Workspace health, resource inventory, 4-phase pipeline |
 | `diagnostic` | Diagnostic | ALL | `advisor` | Root cause analysis, cross-domain debugging |
 
-**Source**: `packages/starboard-server/starboard_server/agents/tool_categories.py`
+**Source**: `packages/starboard/starboard/agents/tool_categories.py`
 
 ---
 
@@ -49,13 +47,11 @@ status: current
 
 | Package | Purpose | Entry Point |
 |---------|---------|-------------|
-| **starboard-core** | Domain models, prompts, shared types | Pure domain (no I/O) |
-| **starboard-server** | Multi-agent system, FastAPI API, tools | `starboard_server.main:app` |
-| **starboard-log-parser** | Spark event log parsing | `create_spark_application()` |
-| **starboard-cli** | Command-line interface | `starboard` command |
-| **starboard-sdk** | Python SDK for programmatic access | `StarboardClient.from_env()` |
+| **starboard-core** | Domain models, prompts, shared types, log parsing | Pure domain (no I/O) |
+| **starboard** | Multi-agent system, MCP server, CLI, tools | `starboard` CLI, `starboard-mcp` MCP server |
+| **starboard-skills** | Claude skill files + Databricks helper scripts | `starboard-helper` command |
 
-**Dependency flow**: CLI/SDK --> Server --> Core; Server --> Log Parser
+**Dependency flow**: starboard --> starboard-core; starboard-skills --> starboard-core
 
 ---
 
@@ -130,19 +126,19 @@ DATABASE_URL=sqlite:///dev_data/starboard_state.db
 
 | Category | Path |
 |----------|------|
-| Agent Factory | `packages/starboard-server/starboard_server/agents/agent_factory.py` |
-| Domain Agent Base | `packages/starboard-server/starboard_server/agents/domain/domain_agent.py` |
-| Intent Router | `packages/starboard-server/starboard_server/agents/routing/intent_router.py` |
-| Tool Categories | `packages/starboard-server/starboard_server/agents/tool_categories.py` |
-| Routing Models | `packages/starboard-server/starboard_server/agents/routing/routing_models.py` |
-| Prompt Builders | `packages/starboard-server/starboard_server/prompts/factories.py` |
-| Domain Prompts | `packages/starboard-server/starboard_server/prompts/{domain}/v1.py` |
-| Tool Adapters | `packages/starboard-server/starboard_server/tools/adapters/` |
-| Tool Services | `packages/starboard-server/starboard_server/tools/services/` |
-| Tool Domain Logic | `packages/starboard-server/starboard_server/tools/domain/` |
-| FastAPI App | `packages/starboard-server/starboard_server/api/main.py` |
-| Config | `packages/starboard-server/starboard_server/infra/core/config.py` |
-| Conversation Manager | `packages/starboard-server/starboard_server/agents/conversation/multi_agent_manager.py` |
+| Agent Factory | `packages/starboard-server/starboard/agents/agent_factory.py` |
+| Domain Agent Base | `packages/starboard-server/starboard/agents/domain/domain_agent.py` |
+| Intent Router | `packages/starboard-server/starboard/agents/routing/intent_router.py` |
+| Tool Categories | `packages/starboard-server/starboard/agents/tool_categories.py` |
+| Routing Models | `packages/starboard-server/starboard/agents/routing/routing_models.py` |
+| Prompt Builders | `packages/starboard-server/starboard/prompts/factories.py` |
+| Domain Prompts | `packages/starboard-server/starboard/prompts/{domain}/v1.py` |
+| Tool Adapters | `packages/starboard-server/starboard/tools/adapters/` |
+| Tool Services | `packages/starboard-server/starboard/tools/services/` |
+| Tool Domain Logic | `packages/starboard-server/starboard/tools/domain/` |
+| FastAPI App | `packages/starboard-server/starboard/api/main.py` |
+| Config | `packages/starboard-server/starboard/infra/core/config.py` |
+| Conversation Manager | `packages/starboard-server/starboard/agents/conversation/multi_agent_manager.py` |
 
 ---
 

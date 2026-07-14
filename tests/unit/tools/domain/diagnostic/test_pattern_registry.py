@@ -15,7 +15,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-from starboard_server.tools.domain.diagnostic.patterns.registry import (
+from starboard.tools.domain.diagnostic.patterns.registry import (
     PatternLoadError,
     PatternRegistry,
     reset_global_registry,
@@ -405,7 +405,7 @@ class TestCatalogIntegration:
             Path(__file__).parent.parent.parent.parent.parent.parent
             / "packages"
             / "starboard-server"
-            / "starboard_server"
+            / "starboard"
             / "tools"
             / "domain"
             / "diagnostic"
@@ -433,7 +433,7 @@ class TestCatalogIntegration:
             Path(__file__).parent.parent.parent.parent.parent.parent
             / "packages"
             / "starboard-server"
-            / "starboard_server"
+            / "starboard"
             / "tools"
             / "domain"
             / "diagnostic"

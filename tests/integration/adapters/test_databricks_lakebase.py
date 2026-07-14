@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 import pytest
 from starboard_core.models.conversation import Conversation, Message
 from starboard_core.models.memory import Episode, Fact, SemanticQuery
-from starboard_server.adapters.state.databricks import (
+from starboard.adapters.state.databricks import (
     DatabricksLakebaseConfig,
     DatabricksLakebaseMemoryStore,
     DatabricksLakebaseStateStore,

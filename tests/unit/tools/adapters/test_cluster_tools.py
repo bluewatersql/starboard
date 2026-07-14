@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from starboard_server.tools.adapters.cluster_tools import ClusterTools
+from starboard.tools.adapters.cluster_tools import ClusterTools
 
 
 class TestClusterTools:
@@ -37,7 +37,7 @@ class TestClusterTools:
     ):
         """Test successful cluster config retrieval."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.get_transformed"
+            "starboard.tools.adapters.cluster_tools.get_transformed"
         ) as mock_get:
             mock_get.return_value = {
                 "id": "cluster-123",
@@ -57,7 +57,7 @@ class TestClusterTools:
     ):
         """Test cluster config not found returns error dict."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.get_transformed"
+            "starboard.tools.adapters.cluster_tools.get_transformed"
         ) as mock_get:
             mock_get.return_value = None
 
@@ -77,7 +77,7 @@ class TestClusterTools:
     ):
         """Test successful cluster events retrieval."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.get_transformed"
+            "starboard.tools.adapters.cluster_tools.get_transformed"
         ) as mock_get:
             mock_get.return_value = {
                 "events": [
@@ -99,7 +99,7 @@ class TestClusterTools:
     ):
         """Test cluster events not found returns error dict."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.get_transformed"
+            "starboard.tools.adapters.cluster_tools.get_transformed"
         ) as mock_get:
             mock_get.return_value = None
 
@@ -118,7 +118,7 @@ class TestClusterTools:
     ):
         """Test successful cluster metrics retrieval."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+            "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
         ) as mock_metrics:
             mock_metrics.return_value = [
                 {"cpu_utilization": 75.5, "memory_utilization": 60.0}
@@ -136,7 +136,7 @@ class TestClusterTools:
     ):
         """Test cluster metrics unavailable returns not found dict."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+            "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
         ) as mock_metrics:
             mock_metrics.return_value = []
 
@@ -156,13 +156,13 @@ class TestClusterTools:
         """Test successful spark logs retrieval."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.ComputeResolver"
+                "starboard.tools.adapters.cluster_tools.ComputeResolver"
             ) as mock_resolver,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_spark_logs"
+                "starboard.tools.adapters.cluster_tools.analyze_spark_logs"
             ) as mock_logs,
         ):
             mock_get.return_value = {"id": "cluster-123", "logs": {"path": "/logs"}}
@@ -186,13 +186,13 @@ class TestClusterTools:
         """Test spark logs retrieval in raw mode."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.ComputeResolver"
+                "starboard.tools.adapters.cluster_tools.ComputeResolver"
             ) as mock_resolver,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_spark_logs"
+                "starboard.tools.adapters.cluster_tools.analyze_spark_logs"
             ) as mock_logs,
         ):
             mock_get.return_value = {"id": "cluster-123", "logs": {"path": "/logs"}}
@@ -213,7 +213,7 @@ class TestClusterTools:
     ):
         """Test spark logs cluster not found returns error dict."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.get_transformed"
+            "starboard.tools.adapters.cluster_tools.get_transformed"
         ) as mock_get:
             mock_get.return_value = None
 
@@ -229,10 +229,10 @@ class TestClusterTools:
         """Test spark logs unavailable when logging not configured."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.ComputeResolver"
+                "starboard.tools.adapters.cluster_tools.ComputeResolver"
             ) as mock_resolver,
         ):
             mock_get.return_value = {"id": "cluster-789"}
@@ -252,19 +252,19 @@ class TestClusterTools:
         """Test spark logs retrieval by job_id."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_job_metadata"
+                "starboard.tools.adapters.cluster_tools.get_job_metadata"
             ) as mock_job,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.extract_job_clusters"
+                "starboard.tools.adapters.cluster_tools.extract_job_clusters"
             ) as mock_clusters,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.ComputeResolver"
+                "starboard.tools.adapters.cluster_tools.ComputeResolver"
             ) as mock_resolver,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_spark_logs"
+                "starboard.tools.adapters.cluster_tools.analyze_spark_logs"
             ) as mock_logs,
         ):
             mock_job.return_value = {"runs": [{"cluster_id": "cluster-abc"}]}
@@ -572,10 +572,10 @@ class TestGetClusterHealth:
         """Test successful cluster health retrieval."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = sample_cluster_config
@@ -600,10 +600,10 @@ class TestGetClusterHealth:
         """Test cluster health with metrics available."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = sample_cluster_config
@@ -623,10 +623,10 @@ class TestGetClusterHealth:
         """Test that health response includes metric scores by dimension."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = sample_cluster_config
@@ -658,10 +658,10 @@ class TestGetClusterHealth:
 
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = deprecated_config
@@ -689,10 +689,10 @@ class TestGetClusterHealth:
         """Test that health response includes health_status."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = sample_cluster_config
@@ -711,7 +711,7 @@ class TestGetClusterHealth:
     async def test_get_cluster_health_cluster_not_found(self, tools: ClusterTools):
         """Test cluster health returns error when cluster not found."""
         with patch(
-            "starboard_server.tools.adapters.cluster_tools.get_transformed"
+            "starboard.tools.adapters.cluster_tools.get_transformed"
         ) as mock_get:
             mock_get.return_value = None
 
@@ -728,10 +728,10 @@ class TestGetClusterHealth:
         """Test that health assessment works even when metrics fail."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = sample_cluster_config
@@ -761,10 +761,10 @@ class TestGetClusterHealth:
 
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = risky_config
@@ -784,10 +784,10 @@ class TestGetClusterHealth:
         """Test that health response includes summary text."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = sample_cluster_config
@@ -806,10 +806,10 @@ class TestGetClusterHealth:
         """Test that health response includes generation timestamp."""
         with (
             patch(
-                "starboard_server.tools.adapters.cluster_tools.get_transformed"
+                "starboard.tools.adapters.cluster_tools.get_transformed"
             ) as mock_get,
             patch(
-                "starboard_server.tools.adapters.cluster_tools.analyze_cluster_metrics"
+                "starboard.tools.adapters.cluster_tools.analyze_cluster_metrics"
             ) as mock_metrics,
         ):
             mock_get.return_value = sample_cluster_config

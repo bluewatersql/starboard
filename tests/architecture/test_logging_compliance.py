@@ -4,7 +4,7 @@
 
 All server-package modules must use ``structlog`` (via the project's
 ``get_logger`` helper) instead of the Python standard-library ``logging``
-module.  This test scans every ``.py`` file under ``starboard_server/`` and
+module.  This test scans every ``.py`` file under ``starboard/`` and
 fails if any file contains a bare ``import logging`` or
 ``from logging import ...`` statement.
 
@@ -59,8 +59,8 @@ def _has_stdlib_logging_import(file_path: Path) -> list[str]:
 
 @pytest.mark.unit
 def test_no_stdlib_logging_in_server_package(project_root: Path) -> None:
-    """starboard_server must not use stdlib logging — use structlog instead."""
-    server_root = project_root / "packages" / "starboard-server" / "starboard_server"
+    """starboard must not use stdlib logging — use structlog instead."""
+    server_root = project_root / "packages" / "starboard-server" / "starboard"
     if not server_root.exists():
         pytest.skip(f"server package not found: {server_root}")
 
@@ -78,6 +78,6 @@ def test_no_stdlib_logging_in_server_package(project_root: Path) -> None:
 
     assert not violations, (
         f"GUIDELINE-004: {len(violations)} stdlib logging import(s) found in "
-        f"starboard_server — replace with structlog / get_logger:\n"
+        f"starboard — replace with structlog / get_logger:\n"
         + "\n".join(f"  - {v}" for v in violations)
     )

@@ -11,7 +11,7 @@ Tests markdown formatting of diagnostic reports with:
 - Evidence windows
 """
 
-from starboard_server.agents.report_formatters.diagnostic_formatter import (
+from starboard.agents.report_formatters.diagnostic_formatter import (
     DiagnosticReportFormatter,
 )
 

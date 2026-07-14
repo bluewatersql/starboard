@@ -11,11 +11,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.adapters.llm.base import BaseLLMClient
-from starboard_server.agents.config.agent_config import AgentConfig
-from starboard_server.agents.domain.domain_agent import DomainAgent
-from starboard_server.agents.events import create_thinking_event
-from starboard_server.agents.tools import ToolMetadata, ToolRegistry
+from starboard.adapters.llm.base import BaseLLMClient
+from starboard.agents.config.agent_config import AgentConfig
+from starboard.agents.domain.domain_agent import DomainAgent
+from starboard.agents.events import create_thinking_event
+from starboard.agents.tools import ToolMetadata, ToolRegistry
 
 
 @pytest.fixture
@@ -492,7 +492,7 @@ class TestDomainAgentIntegration:
             )
 
             # Simulate tool call
-            from starboard_server.agents.events import create_tool_start_event
+            from starboard.agents.events import create_tool_start_event
 
             yield create_tool_start_event(
                 step=1,

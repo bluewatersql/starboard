@@ -14,8 +14,8 @@ from datetime import UTC, datetime
 
 import pytest
 from starboard_core.domain.models.auth import UserStatus
-from starboard_server.adapters.state.inmemory.user_store import InMemoryUserStore
-from starboard_server.domain.auth.exceptions import UserNotFoundError
+from starboard.adapters.state.inmemory.user_store import InMemoryUserStore
+from starboard.domain.auth.exceptions import UserNotFoundError
 
 
 @pytest.fixture

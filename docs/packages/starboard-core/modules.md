@@ -466,7 +466,7 @@ from starboard_core.domain.models.recommendations import QueryRecommendation
 ❌ Don't import implementation details:
 ```python
 # BAD - these are in other packages
-from starboard_server.adapters.state.sqlite import SQLiteStateStore
+from starboard.adapters.state.sqlite import SQLiteStateStore
 ```
 
 ✅ Use protocols instead:

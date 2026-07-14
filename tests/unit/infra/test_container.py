@@ -3,8 +3,8 @@
 """Tests for dependency injection container."""
 
 import pytest
-from starboard_server.infra.core.config import EnvConfig
-from starboard_server.infra.core.container import Container
+from starboard.infra.core.config import EnvConfig
+from starboard.infra.core.container import Container
 
 
 @pytest.fixture

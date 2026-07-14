@@ -7,10 +7,10 @@ in the tool registry and can be discovered and executed by the agent.
 """
 
 import pytest
-from starboard_server.adapters.databricks.client import AsyncDatabricksClient
-from starboard_server.agents.tools.tool_factory import create_tool_registry
-from starboard_server.infra.core.config import EnvConfig
-from starboard_server.services.context.provider import SharedContextProvider
+from starboard.adapters.databricks.client import AsyncDatabricksClient
+from starboard.agents.tools.tool_factory import create_tool_registry
+from starboard.infra.core.config import EnvConfig
+from starboard.services.context.provider import SharedContextProvider
 
 
 @pytest.mark.requires_databricks

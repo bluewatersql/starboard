@@ -11,7 +11,7 @@ components were deprecated.
 """
 
 import pytest
-from starboard_server.prompts.analytics.v1 import (
+from starboard.prompts.analytics.v1 import (
     ANALYTICS_SYSTEM_PROMPT,
     PROMPT_VERSION,
 )

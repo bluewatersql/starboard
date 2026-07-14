@@ -16,7 +16,7 @@ import asyncio
 from unittest.mock import patch
 
 import pytest
-from starboard_server.infra.reliability.circuit_breaker import (
+from starboard.infra.reliability.circuit_breaker import (
     AsyncCircuitBreaker,
     CircuitBreaker,
     CircuitBreakerConfig,
@@ -170,7 +170,7 @@ class TestAsyncCircuitBreakerHalfOpenState:
         # Advance monotonic time past recovery_timeout
         original_time = breaker._last_failure_time
         with patch(
-            "starboard_server.infra.reliability.circuit_breaker.time"
+            "starboard.infra.reliability.circuit_breaker.time"
         ) as mock_time:
             mock_time.monotonic.return_value = original_time + 11.0
             result = await breaker.call(succeed)
@@ -193,7 +193,7 @@ class TestAsyncCircuitBreakerHalfOpenState:
         # Advance time
         original_time = breaker._last_failure_time
         with patch(
-            "starboard_server.infra.reliability.circuit_breaker.time"
+            "starboard.infra.reliability.circuit_breaker.time"
         ) as mock_time:
             mock_time.monotonic.return_value = original_time + 11.0
             await breaker.call(succeed)
@@ -212,7 +212,7 @@ class TestAsyncCircuitBreakerHalfOpenState:
         # Advance time to trigger half-open, then fail
         original_time = breaker._last_failure_time
         with patch(
-            "starboard_server.infra.reliability.circuit_breaker.time"
+            "starboard.infra.reliability.circuit_breaker.time"
         ) as mock_time:
             mock_time.monotonic.return_value = original_time + 11.0
             with pytest.raises(ValueError):
@@ -235,7 +235,7 @@ class TestAsyncCircuitBreakerHalfOpenState:
 
         original_time = breaker._last_failure_time
         with patch(
-            "starboard_server.infra.reliability.circuit_breaker.time"
+            "starboard.infra.reliability.circuit_breaker.time"
         ) as mock_time:
             mock_time.monotonic.return_value = original_time + 11.0
 

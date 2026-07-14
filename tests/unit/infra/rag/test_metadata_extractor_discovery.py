@@ -14,8 +14,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from starboard_core.rag.models import ColumnMetadata, TableMetadata
-from starboard_server.infra.rag.domain.query_analyzer import QueryAnalyzer
-from starboard_server.infra.rag.services.metadata_service import MetadataExtractor
+from starboard.infra.rag.domain.query_analyzer import QueryAnalyzer
+from starboard.infra.rag.services.metadata_service import MetadataExtractor
 
 pytestmark = pytest.mark.skip(
     reason="Tests old implementation - refactored during RAG reorganization"

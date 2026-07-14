@@ -14,7 +14,7 @@ Usage:
     python scripts/export_vector_store_snapshot.py
 
 Output:
-    packages/starboard-server/starboard_server/infra/rag/data/bootstrap/
+    packages/starboard-server/starboard/infra/rag/data/bootstrap/
     ├── tables.json              # Table metadata (readable)
     ├── tables_embeddings.npz    # Precomputed embeddings (binary)
     ├── nuance.json              # Best practices (readable)
@@ -344,7 +344,7 @@ async def main():
             break
 
     output_dir = Path(
-        "packages/starboard-server/starboard_server/infra/rag/data/bootstrap"
+        "packages/starboard-server/starboard/infra/rag/data/bootstrap"
     )
 
     # Check if database exists

@@ -17,11 +17,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starboard_core.rag.models import RAGContext, RAGTableContext
-from starboard_server.tools.domain.analytics_sql.llm_sql_generator import (
+from starboard.tools.domain.analytics_sql.llm_sql_generator import (
     SUPPORTED_CHART_TYPES,
     LLMSQLGenerator,
 )
-from starboard_server.tools.domain.analytics_sql.models import (
+from starboard.tools.domain.analytics_sql.models import (
     QueryDomain,
     QueryIntent,
     QueryIntentContext,

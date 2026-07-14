@@ -16,8 +16,8 @@ import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from starboard_core.domain.models.auth import User, UserStatus
-from starboard_server.domain.auth.exceptions import AuthenticationError
-from starboard_server.infra.auth.middleware import AuthMiddleware, get_current_user
+from starboard.domain.auth.exceptions import AuthenticationError
+from starboard.infra.auth.middleware import AuthMiddleware, get_current_user
 
 
 @pytest.fixture

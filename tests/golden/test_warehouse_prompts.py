@@ -20,8 +20,8 @@ from __future__ import annotations
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.prompts.factories import build_warehouse_prompt
-from starboard_server.prompts.warehouse import WAREHOUSE_SYSTEM_PROMPT
+from starboard.prompts.factories import build_warehouse_prompt
+from starboard.prompts.warehouse import WAREHOUSE_SYSTEM_PROMPT
 from syrupy.assertion import SnapshotAssertion
 
 
@@ -228,41 +228,41 @@ class TestWarehouseToolSchemaGolden:
 
     def test_portfolio_schema_exists(self) -> None:
         """Verify portfolio tool schema is registered."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         assert "get_warehouse_portfolio" in ALL_TOOL_METADATA
 
     def test_portfolio_schema_structure(self, snapshot: SnapshotAssertion) -> None:
         """Golden test: Portfolio tool schema structure."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         schema = ALL_TOOL_METADATA["get_warehouse_portfolio"]
         assert snapshot == schema
 
     def test_fingerprint_schema_structure(self, snapshot: SnapshotAssertion) -> None:
         """Golden test: Fingerprint tool schema structure."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         schema = ALL_TOOL_METADATA["get_warehouse_fingerprint"]
         assert snapshot == schema
 
     def test_health_schema_structure(self, snapshot: SnapshotAssertion) -> None:
         """Golden test: Health tool schema structure."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         schema = ALL_TOOL_METADATA["get_warehouse_health"]
         assert snapshot == schema
 
     def test_topology_schema_structure(self, snapshot: SnapshotAssertion) -> None:
         """Golden test: Topology tool schema structure."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         schema = ALL_TOOL_METADATA["analyze_warehouse_topology"]
         assert snapshot == schema
 
     def test_chargeback_schema_structure(self, snapshot: SnapshotAssertion) -> None:
         """Golden test: Chargeback tool schema structure."""
-        from starboard_server.agents.tools.registry import ALL_TOOL_METADATA
+        from starboard.agents.tools.registry import ALL_TOOL_METADATA
 
         schema = ALL_TOOL_METADATA["generate_warehouse_chargeback"]
         assert snapshot == schema

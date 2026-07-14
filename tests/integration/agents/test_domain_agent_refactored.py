@@ -20,16 +20,16 @@ from unittest.mock import MagicMock
 
 import pytest
 from starboard_core.domain.models.llm import OptimizationMode
-from starboard_server.agents.config import AgentConfig
-from starboard_server.agents.domain.domain_agent import DomainAgent
-from starboard_server.agents.events import (
+from starboard.agents.config import AgentConfig
+from starboard.agents.domain.domain_agent import DomainAgent
+from starboard.agents.events import (
     FinalOutputEvent,
     StepCompleteEvent,
     ThinkingEvent,
     ToolEndEvent,
     ToolStartEvent,
 )
-from starboard_server.agents.tools.tool_registry import ToolRegistry
+from starboard.agents.tools.tool_registry import ToolRegistry
 
 
 @pytest.fixture
@@ -72,7 +72,7 @@ def mock_llm_client():
 @pytest.fixture
 def mock_tool_registry():
     """Mock tool registry with test tools."""
-    from starboard_server.agents.tools.tool_registry import (
+    from starboard.agents.tools.tool_registry import (
         NativeToolAdapter,
         ToolMetadata,
     )

@@ -11,7 +11,7 @@ Tests cover:
 from __future__ import annotations
 
 import pytest
-from starboard_server.infra.orchestration.workflow import (
+from starboard.infra.orchestration.workflow import (
     Workflow,
     WorkflowStep,
 )

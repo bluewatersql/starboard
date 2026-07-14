@@ -5,7 +5,7 @@
 import asyncio
 
 import pytest
-from starboard_server.adapters.state.inmemory import InMemoryCacheStore
+from starboard.adapters.state.inmemory import InMemoryCacheStore
 
 
 @pytest.fixture

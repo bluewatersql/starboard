@@ -24,7 +24,7 @@ async def verify_export_load_cycle():
 
     # Check if bootstrap data exists
     bootstrap_dir = Path(
-        "packages/starboard-server/starboard_server/infra/rag/data/bootstrap"
+        "packages/starboard-server/starboard/infra/rag/data/bootstrap"
     )
 
     console.print(f"[yellow]Checking bootstrap directory:[/yellow] {bootstrap_dir}")
@@ -84,7 +84,7 @@ async def verify_export_load_cycle():
     console.print("\n[yellow]Testing in-memory store loading...[/yellow]")
 
     try:
-        from starboard_server.infra.rag.adapters.storage.bootstrap_loader import (
+        from starboard.infra.rag.adapters.storage.bootstrap_loader import (
             BootstrapDataLoader,
         )
 

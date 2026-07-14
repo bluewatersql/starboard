@@ -8,7 +8,7 @@ from SQL generation without making a second LLM call.
 Coverage Target: 80%+
 """
 
-from starboard_server.tools.domain.analytics.visualization_models import (
+from starboard.tools.domain.analytics.visualization_models import (
     ChartConfig,
     ChartRecommendation,
     ChartType,
@@ -16,7 +16,7 @@ from starboard_server.tools.domain.analytics.visualization_models import (
     EncodingType,
     VisualizationOutput,
 )
-from starboard_server.tools.services.direct_chart_builder import (
+from starboard.tools.services.direct_chart_builder import (
     DirectChartConfigBuilder,
 )
 

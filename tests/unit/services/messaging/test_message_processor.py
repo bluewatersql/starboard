@@ -9,12 +9,12 @@ from datetime import UTC, datetime
 
 import pytest
 from starboard_core.models.conversation import Message
-from starboard_server.domain.models.conversation_patterns import (
+from starboard.domain.models.conversation_patterns import (
     ActionType,
     NextStepOption,
     UserIntentType,
 )
-from starboard_server.services.messaging.message_processor import (
+from starboard.services.messaging.message_processor import (
     MessageProcessor,
     ProcessingType,
 )

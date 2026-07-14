@@ -20,8 +20,8 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from openai import APITimeoutError, AsyncOpenAI, RateLimitError
 from pydantic import BaseModel
-from starboard_server.adapters.llm.openai.client import OpenAIProvider
-from starboard_server.infra.core.config import EnvConfig
+from starboard.adapters.llm.openai.client import OpenAIProvider
+from starboard.infra.core.config import EnvConfig
 
 
 class SampleSchema(BaseModel):
@@ -97,7 +97,7 @@ def openai_provider(
 ) -> OpenAIProvider:
     """Provide an OpenAIProvider instance with mocked async client."""
     with patch(
-        "starboard_server.adapters.llm.openai.client.AsyncOpenAI",
+        "starboard.adapters.llm.openai.client.AsyncOpenAI",
         return_value=mock_async_openai_client,
     ):
         provider = OpenAIProvider(cfg=mock_env_config)
@@ -115,7 +115,7 @@ class TestOpenAIProviderInitialization:
 
     def test_init_with_config(self, mock_env_config) -> None:
         """Test that provider initializes correctly with config."""
-        with patch("starboard_server.adapters.llm.openai.client.AsyncOpenAI"):
+        with patch("starboard.adapters.llm.openai.client.AsyncOpenAI"):
             provider = OpenAIProvider(cfg=mock_env_config)
 
             assert provider.cfg == mock_env_config
@@ -930,7 +930,7 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_top_level_properties(self) -> None:
         """Defaults on simple top-level properties are removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import (
+        from starboard.adapters.llm.openai.schema_adapter import (
             make_schema_strict,
         )
 
@@ -952,7 +952,7 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_nested_refs(self) -> None:
         """Defaults inside ``$defs`` that get inlined are also removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import (
+        from starboard.adapters.llm.openai.schema_adapter import (
             make_schema_strict,
         )
 
@@ -978,7 +978,7 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_list_items(self) -> None:
         """Defaults inside array item schemas are removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import (
+        from starboard.adapters.llm.openai.schema_adapter import (
             make_schema_strict,
         )
 
@@ -1002,7 +1002,7 @@ class TestMakeSchemaStrict:
 
     def test_strips_default_from_anyof(self) -> None:
         """Defaults inside anyOf branches are removed."""
-        from starboard_server.adapters.llm.openai.schema_adapter import (
+        from starboard.adapters.llm.openai.schema_adapter import (
             make_schema_strict,
         )
 
@@ -1025,7 +1025,7 @@ class TestMakeSchemaStrict:
         prepare_json_schema with all defaults removed."""
         from enum import StrEnum
 
-        from starboard_server.adapters.llm.openai.schema_adapter import (
+        from starboard.adapters.llm.openai.schema_adapter import (
             prepare_json_schema,
         )
 
@@ -1055,10 +1055,10 @@ class TestMakeSchemaStrict:
         models used in the discovery pipeline emit no defaults after strict
         patching."""
         from starboard_core.domain.models.discovery.analysis import DomainAnalysis
-        from starboard_server.adapters.llm.openai.schema_adapter import (
+        from starboard.adapters.llm.openai.schema_adapter import (
             prepare_json_schema,
         )
-        from starboard_server.discovery.synthesizer import ExecutiveSummaryLLMOutput
+        from starboard.discovery.synthesizer import ExecutiveSummaryLLMOutput
 
         for model_cls in (DomainAnalysis, ExecutiveSummaryLLMOutput):
             json_schema_def, _, _ = prepare_json_schema(model_cls, "test")

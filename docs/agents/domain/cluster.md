@@ -377,6 +377,6 @@ graph TD
 - [Agent Implementation Guide](../../developer/agent/IMPLEMENTATION_GUIDE.md)
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
-- [Cluster Prompt Source](../../../packages/starboard-server/starboard_server/prompts/cluster/v1.py)
-- [Tool Categories](../../../packages/starboard-server/starboard_server/agents/tool_categories.py)
+- [Cluster Prompt Source](../../../packages/starboard-server/starboard/prompts/cluster/v1.py)
+- [Tool Categories](../../../packages/starboard-server/starboard/agents/tool_categories.py)
 

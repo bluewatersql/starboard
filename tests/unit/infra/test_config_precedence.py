@@ -13,7 +13,7 @@ Tests the following priority order (highest to lowest):
 import os
 from unittest.mock import patch
 
-from starboard_server.infra.core.config import EnvConfig, get_config, set_config
+from starboard.infra.core.config import EnvConfig, get_config, set_config
 
 
 class TestConfigPrecedence:
@@ -114,7 +114,7 @@ class TestConfigPrecedence:
         )
 
         # Reset global config
-        from starboard_server.infra.core import config as config_module
+        from starboard.infra.core import config as config_module
 
         config_module._env_config = None
 

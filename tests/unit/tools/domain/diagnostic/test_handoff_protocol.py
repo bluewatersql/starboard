@@ -3,11 +3,11 @@
 """Tests for diagnostic handoff protocol."""
 
 import pytest
-from starboard_server.tools.domain.diagnostic.handoff_protocol import (
+from starboard.tools.domain.diagnostic.handoff_protocol import (
     HandoffProtocol,
     HandoffResult,
 )
-from starboard_server.tools.domain.diagnostic.models import (
+from starboard.tools.domain.diagnostic.models import (
     DiagnosticFingerprint,
     ExplorationSummary,
     PrimarySymptom,

@@ -392,7 +392,7 @@ def fetch(id):  # No type hints
 **Use specific exceptions**:
 ```python
 # Good ✓
-from starboard_server.tools.exceptions import (
+from starboard.tools.exceptions import (
     ToolExecutionError,
     ResourceNotFoundError,
 )
@@ -409,7 +409,7 @@ if not resource_exists:
 
 **Use structured logging**:
 ```python
-from starboard_server.infra.observability.logging import get_logger
+from starboard.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -13,7 +13,7 @@ Tests cover:
 from textwrap import dedent
 
 import pytest
-from starboard_server.tools.domain.diagnostic.context_extractor import (
+from starboard.tools.domain.diagnostic.context_extractor import (
     ContextMode,
     DatabricksContextExtractor,
     IdType,
