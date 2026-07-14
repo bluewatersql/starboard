@@ -183,8 +183,7 @@ DATABASE_URL=sqlite:///dev_data/starboard_state.db
 | Testing Guide | [TESTING.md](TESTING.md) |
 | Configuration | [CONFIGURATION.md](CONFIGURATION.md) |
 | Makefile Guide | [MAKEFILE_GUIDE.md](MAKEFILE_GUIDE.md) |
-| Swagger UI | http://localhost:8000/docs |
-| Frontend | http://localhost:3000 |
+| MCP Server | `starboard-mcp --transport stdio` |
 
 ---
 
