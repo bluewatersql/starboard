@@ -1,20 +1,19 @@
 # =============================================================================
-# Installable meta-package (for pip install from git)
+# uv workspace root — NOT an installable package
 # =============================================================================
 #
-# This root pyproject.toml serves dual purposes:
-#   1. uv workspace root for local development (uv sync)
-#   2. Installable meta-package for remote installs:
-#        pip install "starboard[cli] @ git+https://github.com/<your-org>/starboard.git"
+# This root pyproject.toml is the uv workspace coordinator for local development.
+# Individual packages are installed from their own directories:
+#   pip install packages/starboard/        # full: CLI + MCP server + all agents
+#   pip install packages/starboard-core/   # pure domain + log parsing
+#   pip install packages/starboard-skills/ # lightweight helpers + Claude skills
 #
-# During local dev, uv ignores the [project] section because package = false.
-# During pip install, hatchling bundles all sub-packages into a single wheel
-# and the [project.optional-dependencies] extras control which runtime
-# dependencies are installed.
+# The [project] section below uses a distinct name ("starboard-meta") to avoid
+# conflicting with the "starboard" workspace member in packages/starboard/.
 # =============================================================================
 
 [project]
-name = "starboard"
+name = "starboard-meta"
 version = "0.1.0"
 description = "Starboard AI Agent - AI-powered Databricks workload analysis and optimization"
 readme = "README.md"
@@ -30,17 +29,8 @@ core = [
     "typing-extensions>=4.14.1",
 ]
 
-log-parser = [
-    "starboard[core]",
-    "orjson>=3.11.4",
-    "stream-unzip>=0.0.94",
-    "numpy>=2.0.0,<2.2.0",
-    "httpx>=0.28.1",
-    "databricks-sdk>=0.60.0",
-]
-
 server = [
-    "starboard[core,log-parser]",
+    "starboard[core]",
     # FastAPI stack
     "fastapi>=0.104.0,<1.0.0",
     "uvicorn[standard]>=0.24.0,<1.0.0",
@@ -97,9 +87,9 @@ all = [
 ]
 
 [project.scripts]
-starboard = "starboard_cli.main:main"
-starboard-server = "starboard_server.main:run"
-starboard-mcp = "starboard_server.mcp.cli:main"
+starboard = "starboard.cli.main:main"
+starboard-server = "starboard.main:run"
+starboard-mcp = "starboard.mcp.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -108,10 +98,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [
     "packages/starboard-core/starboard_core",
-    "packages/starboard-log-parser/starboard_log_parser",
-    "packages/starboard-server/starboard_server",
-    "packages/starboard-cli/starboard_cli",
-    "packages/starboard-sdk/starboard_sdk",
+    "packages/starboard/starboard",
 ]
 
 # =============================================================================
@@ -124,18 +111,14 @@ package = false
 [tool.uv.workspace]
 members = [
     "packages/starboard-core",
-    "packages/starboard-log-parser",
-    "packages/starboard-server",
-    "packages/starboard-cli",
-    "packages/starboard-sdk",
+    "packages/starboard",
+    "packages/starboard-skills",
 ]
 
 [tool.uv.sources]
 starboard-core = { workspace = true }
-starboard-log-parser = { workspace = true }
-starboard-server = { workspace = true }
-starboard-cli = { workspace = true }
-starboard-sdk = { workspace = true }
+starboard = { workspace = true }
+starboard-skills = { workspace = true }
 
 # =============================================================================
 # Tool configurations
@@ -180,7 +163,7 @@ plugins = ["pydantic.mypy"]
 exclude = [
     "^packages/.*/tests/",
     "^packages/.*/conftest\\.py$",
-    "^packages/starboard-server/experiment/",
+    "^packages/starboard/experiment/",
     "^scripts/",
     "^tests/",
     "^changes/",
@@ -207,17 +190,16 @@ module = [
     "pyarrow.*",
     "sqlite_vec.*",
     "starboard_core.*",
-    "starboard_log_parser.*",
     "polars.*",
     "openai.*",
     "structlog.*",
     "aiohttp.*",
     "redis.*",
     "aiosqlite.*",
-    "starboard_server.infra.config",
-    "starboard_server.repositories.conversation_repository",
-    "starboard_server.agents.multi_agent_manager",
-    "starboard_server.agents.config.agent_config",
+    "starboard.infra.config",
+    "starboard.repositories.conversation_repository",
+    "starboard.agents.multi_agent_manager",
+    "starboard.agents.config.agent_config",
     # Missing stubs for optional/dev dependencies
     "boto3.*",
     "botocore.*",
@@ -232,17 +214,17 @@ ignore_missing_imports = true
 
 # Scripts have complex types from external libs
 [[tool.mypy.overrides]]
-module = "starboard_server.tools.domain.analytics.scripts.*"
+module = "starboard.tools.domain.analytics.scripts.*"
 ignore_errors = true
 
 # Experiment directory is prototype code - skip type checking
 [[tool.mypy.overrides]]
-module = "starboard_server.experiment.*"
+module = "starboard.experiment.*"
 ignore_errors = true
 
 # Log parser has legacy type issues - skip strict checking
 [[tool.mypy.overrides]]
-module = "starboard_log_parser.*"
+module = "starboard_core.log_parser.*"
 ignore_errors = true
 
 [tool.basedpyright]
@@ -267,7 +249,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["starboard_core", "starboard_log_parser", "starboard_server", "starboard_cli", "starboard_sdk"]
+source = ["starboard_core", "starboard"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",
