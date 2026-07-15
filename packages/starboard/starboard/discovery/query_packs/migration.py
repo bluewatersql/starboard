@@ -23,7 +23,7 @@ WITH cluster_usage AS (
   FROM
     system.billing.usage
   WHERE
-    usage_date >= DATEADD(DAY, -30, CURRENT_DATE())
+    usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
     AND sku_name IN ('ENTERPRISE_ALL_PURPOSE_COMPUTE', 'ENTERPRISE_JOBS_COMPUTE')
   GROUP BY
     workspace_id,
@@ -56,7 +56,7 @@ WHERE
   c.delete_time IS NULL
 ORDER BY
   cu.total_dbus DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 C_MG02_SQL = """\
@@ -75,6 +75,7 @@ job_usage AS (
     BOOL_OR(sku_name LIKE '%SERVERLESS%')                          AS already_serverless
   FROM system.billing.usage, cutoff
   WHERE billing_origin_product = 'JOBS'
+    AND usage_date >= cutoff.dt            -- partition pruning (G2)
     AND usage_start_time >= cutoff.dt
   GROUP BY workspace_id, usage_metadata.job_id
 ),
@@ -92,7 +93,8 @@ user_usage AS (
                     AND sku_name NOT LIKE '%SERVERLESS%'
                    THEN usage_quantity ELSE 0 END), 2)             AS classic_all_purpose_dbus
   FROM system.billing.usage, cutoff
-  WHERE usage_start_time >= cutoff.dt
+  WHERE usage_date >= cutoff.dt            -- partition pruning (G2)
+    AND usage_start_time >= cutoff.dt
     AND identity_metadata.run_as LIKE '%@%'
   GROUP BY workspace_id, identity_metadata.run_as
 )
@@ -129,7 +131,7 @@ SELECT
 FROM user_usage uu
 WHERE uu.classic_all_purpose_dbus > 0
 ORDER BY est_serverless_savings_dbus DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 MIGRATION_PACK = QueryPack(

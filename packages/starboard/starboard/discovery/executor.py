@@ -163,6 +163,10 @@ class QueryPackExecutor:
         assert isinstance(query, SystemQuery)
 
         lookback = query.lookback_override or self._default_lookback_days
+        # G5: clamp to the source table's retention so a larger configured or
+        # overridden lookback never silently returns empty results.
+        if query.max_lookback_days is not None:
+            lookback = min(lookback, query.max_lookback_days)
         rendered_sql = self._render_sql(query, lookback)
 
         async with self._semaphore:

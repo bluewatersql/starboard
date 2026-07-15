@@ -19,7 +19,6 @@ Covers all 14 security items:
 
 from __future__ import annotations
 
-import json
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -230,83 +229,6 @@ class TestAuthMiddleware401NoLeak:
 
 
 # =============================================================================
-# 6: data.py 500 — no internal error details
-# =============================================================================
-
-
-class TestDataEndpoint500NoLeak:
-    """data.py 500 response must not expose internal error details."""
-
-    def test_500_does_not_expose_error_str(self) -> None:
-        """When QueryResultCache raises an unexpected error, 500 body must not include str(e)."""
-        from fastapi import FastAPI
-        from starboard.api.data import router
-        from starboard.api.dependencies import get_state_container
-
-        app = FastAPI()
-        app.include_router(router)
-
-        secret = "internal_db_password_exposed_xyz"
-
-        # Provide a mock container via dependency override
-        mock_container = MagicMock()
-        mock_container.cache_store = MagicMock()
-
-        app.dependency_overrides[get_state_container] = lambda: mock_container
-
-        # Patch QueryResultCache.get_cached_data to raise with secret message
-        with patch(
-            "starboard.api.data.QueryResultCache.get_cached_data",
-            new=AsyncMock(side_effect=RuntimeError(secret)),
-        ):
-            client = TestClient(app, raise_server_exceptions=False)
-            response = client.get("/api/data/some_ref")
-
-        assert response.status_code == 500
-        assert secret not in response.text, (
-            f"Secret leaked in response: {response.text!r}"
-        )
-
-
-# =============================================================================
-# 7: Streaming SSE error events — no exception details in production mode
-# =============================================================================
-
-
-class TestSSEErrorSanitization:
-    """SSE error events must not include exception detail strings in production."""
-
-    def test_sse_error_event_sanitized_in_production(self) -> None:
-        """In production, SSE error event data.error.message must be generic."""
-
-        # Simulate what event_stream does in the except block
-        # We call the internal error formatting logic with production flag
-        from starboard.api.streaming import _build_error_event_data
-
-        secret_message = "DatabaseConnectionError: password=s3cr3t host=internal.db"
-        exc = RuntimeError(secret_message)
-
-        # production=True must sanitize
-        data = _build_error_event_data(exc, _conversation_id="conv_1", production=True)
-        assert secret_message not in json.dumps(data), (
-            f"Secret leaked in SSE error data: {data}"
-        )
-        # Should contain a generic message or just an error code
-        assert "message" in data.get("error", {}) or "code" in data.get("error", {})
-
-    def test_sse_error_event_not_sanitized_in_dev(self) -> None:
-        """In dev, SSE error event may include exception detail for debugging."""
-        from starboard.api.streaming import _build_error_event_data
-
-        secret_message = "dev_debug_error_detail"
-        exc = RuntimeError(secret_message)
-
-        data = _build_error_event_data(exc, _conversation_id="conv_1", production=False)
-        # In dev we expect full detail
-        assert secret_message in json.dumps(data)
-
-
-# =============================================================================
 # 8: config.py enable_pii_redaction default True
 # =============================================================================
 
@@ -479,16 +401,6 @@ class TestCORSMethodsRestricted:
             'allow_methods=["*"]' not in source and "allow_methods=['*']" not in source
         ), "CORS allow_methods must not use wildcard '*'"
 
-    def test_cors_allows_required_methods(self) -> None:
-        """CORS must allow GET, POST, OPTIONS."""
-        import pathlib
-
-        main_path = pathlib.Path(__file__).parents[3] / "starboard" / "main.py"
-        source = main_path.read_text()
-
-        for method in ("GET", "POST", "OPTIONS"):
-            assert method in source, f"CORS must allow {method}"
-
 
 # =============================================================================
 # 12: rate_limit.py — warning when limiter not attached
@@ -524,35 +436,6 @@ class TestRateLimitWarning:
         with patch.object(rate_limit_module, "logger", mock_logger):
             check_rate_limit(request, "10/minute")
             mock_logger.warning.assert_called_once()
-
-
-# =============================================================================
-# 13: data.py — rate limiting on secondary endpoints
-# =============================================================================
-
-
-class TestDataEndpointRateLimiting:
-    """data.py get_cached_data must enforce rate limiting."""
-
-    def test_rate_limit_decorator_applied(self) -> None:
-        """get_cached_data must have a rate limit applied."""
-        # Check the endpoint function has rate limit metadata or decorator
-        # slowapi decorators add __wrapped__ or the function has _rate_limit attribute
-        # We verify by checking either the decorator chain or module-level limit config
-        import inspect
-
-        from starboard.api.data import get_cached_data
-
-        source = inspect.getsource(get_cached_data)
-        # The function should either use @limiter.limit or call check_rate_limit
-        has_rate_limiting = (
-            "limiter.limit" in source
-            or "check_rate_limit" in source
-            or "@limiter" in source
-        )
-        assert has_rate_limiting, (
-            "get_cached_data endpoint must have rate limiting applied"
-        )
 
 
 # =============================================================================

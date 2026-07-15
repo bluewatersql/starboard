@@ -22,13 +22,13 @@ SELECT
   DATE(start_time)                                 AS query_date,
   COUNT(*)                                         AS total_queries,
   ROUND(AVG(total_duration_ms)        / 1000.0, 2) AS avg_total_secs,
-  ROUND(PERCENTILE(total_duration_ms, 0.50) / 1000.0, 2) AS p50_total_secs,
-  ROUND(PERCENTILE(total_duration_ms, 0.95) / 1000.0, 2) AS p95_total_secs,
-  ROUND(PERCENTILE(total_duration_ms, 0.99) / 1000.0, 2) AS p99_total_secs,
+  ROUND(APPROX_PERCENTILE(total_duration_ms, 0.50) / 1000.0, 2) AS p50_total_secs,
+  ROUND(APPROX_PERCENTILE(total_duration_ms, 0.95) / 1000.0, 2) AS p95_total_secs,
+  ROUND(APPROX_PERCENTILE(total_duration_ms, 0.99) / 1000.0, 2) AS p99_total_secs,
   ROUND(AVG(execution_duration_ms)    / 1000.0, 2) AS avg_execution_secs,
   ROUND(AVG(compilation_duration_ms)  / 1000.0, 2) AS avg_compilation_secs,
   SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed_queries,
-  SUM(CASE WHEN from_result_cache = 'true'  THEN 1 ELSE 0 END) AS cache_hits,
+  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END)          AS cache_hits,
   ROUND(SUM(read_bytes) / (1024.0 * 1024 * 1024), 2) AS total_read_gb
 FROM system.query.history
 WHERE start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
@@ -119,10 +119,10 @@ SELECT
   COUNT(DISTINCT executed_by)                      AS distinct_users,
   ROUND(AVG(total_duration_ms)   / 1000.0, 2)     AS avg_total_secs,
   ROUND(SUM(total_duration_ms)   / 1000.0, 2)     AS total_compute_secs,
-  SUM(CASE WHEN from_result_cache = 'true' THEN 1 ELSE 0 END) AS cache_hits,
+  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS cache_hits,
   ROUND(
     TRY_DIVIDE(
-      SUM(CASE WHEN from_result_cache = 'true' THEN 1 ELSE 0 END) * 100.0,
+      SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) * 100.0,
       COUNT(*)
     ), 1
   )                                                AS cache_hit_pct,

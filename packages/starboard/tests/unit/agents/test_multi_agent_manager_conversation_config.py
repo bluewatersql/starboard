@@ -17,7 +17,7 @@ from starboard.agents.conversation.multi_agent_manager import (
 from starboard.agents.routing.intent_router import IntentRouter
 from starboard.agents.state.agent_state import WorkingMemory
 from starboard.agents.state.shared_context import SharedAgentContext
-from starboard.api.models import ConversationConfig
+from starboard.domain.conversation.models import ConversationConfig
 
 
 @pytest.fixture

@@ -14,7 +14,7 @@ from unittest.mock import Mock
 import pytest
 from starboard.agents.agent_factory import AgentFactory
 from starboard.agents.config.agent_config import AgentConfig
-from starboard.api.models import ConversationConfig
+from starboard.domain.conversation.models import ConversationConfig
 
 
 @pytest.fixture

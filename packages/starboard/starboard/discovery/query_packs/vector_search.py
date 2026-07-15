@@ -72,6 +72,7 @@ WHERE NOT EXISTS (
   SELECT 1 FROM system.access.audit a
   WHERE a.service_name = 'vectorSearch'
     AND a.action_name IN ('queryVectorIndex', 'queryVectorIndexRouteOptimized')
+    AND a.event_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
     AND a.event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP())
     AND a.request_params['endpoint_name'] = eb.endpoint_name
 )

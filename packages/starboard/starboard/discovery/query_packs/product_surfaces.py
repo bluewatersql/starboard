@@ -45,7 +45,7 @@ SELECT
 FROM ds_classified
 GROUP BY ALL
 ORDER BY year_month DESC, usage_quantity DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 DELTA_SHARING_PACK = QueryPack(
@@ -92,7 +92,7 @@ WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
        OR sku_name LIKE '%LAKEHOUSE_MONITORING%')
 GROUP BY ALL
 ORDER BY usage_quantity DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 MONITORING_PACK = QueryPack(
@@ -149,7 +149,7 @@ SELECT
 FROM sql_classified
 GROUP BY ALL
 ORDER BY year_month DESC, dbus DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 P_SQL02_SQL = """\
@@ -159,14 +159,14 @@ SELECT
   DATE(start_time)                                AS query_date,
   COUNT(*)                                        AS total_queries,
   ROUND(AVG(total_duration_ms)        / 1000.0, 2) AS avg_total_secs,
-  ROUND(PERCENTILE(total_duration_ms, 0.50) / 1000.0, 2) AS p50_total_secs,
-  ROUND(PERCENTILE(total_duration_ms, 0.95) / 1000.0, 2) AS p95_total_secs,
+  ROUND(APPROX_PERCENTILE(total_duration_ms, 0.50) / 1000.0, 2) AS p50_total_secs,
+  ROUND(APPROX_PERCENTILE(total_duration_ms, 0.95) / 1000.0, 2) AS p95_total_secs,
   ROUND(AVG(compilation_duration_ms)  / 1000.0, 2) AS avg_compile_secs,
   ROUND(AVG(waiting_for_compute_duration_ms) / 1000.0, 2) AS avg_cold_start_secs,
-  SUM(CASE WHEN from_result_cache = 'true' THEN 1 ELSE 0 END) AS cache_hits,
+  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS cache_hits,
   ROUND(
     TRY_DIVIDE(
-      SUM(CASE WHEN from_result_cache = 'true' THEN 1 ELSE 0 END) * 100.0,
+      SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) * 100.0,
       COUNT(*)
     ), 1
   )                                               AS cache_hit_pct,
@@ -178,7 +178,7 @@ WHERE start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
 GROUP BY workspace_id, compute.warehouse_id, DATE(start_time)
 HAVING COUNT(*) > 10
 ORDER BY warehouse_id, query_date DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 SERVERLESS_SQL_PACK = QueryPack(

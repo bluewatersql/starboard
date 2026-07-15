@@ -34,3 +34,4 @@ if fixtures_path.exists():
         sample_job_config = fixtures_module.sample_job_config
         sample_table_metadata = fixtures_module.sample_table_metadata
         reset_event_emitter = fixtures_module.reset_event_emitter
+        temp_config_file = fixtures_module.temp_config_file

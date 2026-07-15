@@ -24,7 +24,8 @@ SELECT
   COUNT(DISTINCT entity_run_id) AS pipeline_references,
   MAX(event_time)               AS last_referenced
 FROM system.access.table_lineage
-WHERE event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+WHERE event_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())   -- partition pruning (G2)
+  AND event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
 GROUP BY ALL
 ORDER BY pipeline_references DESC
 LIMIT 500
@@ -33,7 +34,7 @@ LIMIT 500
 N_L02_SQL = """\
 WITH cutoff AS (
   SELECT
-    DATEADD(DAY, -90, CURRENT_DATE()) AS dt
+    DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt
 )
 SELECT
   request_params.full_name_arg AS table_full_name,
@@ -48,7 +49,8 @@ FROM
   system.access.audit,
   cutoff
 WHERE
-  event_time >= cutoff.dt
+  event_date >= cutoff.dt            -- partition pruning (G2)
+  AND event_time >= cutoff.dt
   AND action_name IN ('getTable', 'createTable', 'deleteTable')
   AND request_params.full_name_arg IS NOT NULL
 GROUP BY
@@ -56,7 +58,7 @@ GROUP BY
 ORDER BY
   days_since_last_access DESC,
   access_count DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 N_DT01_SQL = """\
@@ -99,7 +101,7 @@ WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   AND identity_metadata.run_as LIKE '%@%'
 GROUP BY ALL
 ORDER BY dbus DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 N_ST01_SQL = """\
@@ -118,7 +120,7 @@ WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   )
 GROUP BY ALL
 ORDER BY usage_quantity DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 GOVERNANCE_PACK = QueryPack(

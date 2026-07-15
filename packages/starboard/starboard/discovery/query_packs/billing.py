@@ -38,7 +38,7 @@ WHERE u.usage_date BETWEEN DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
                        AND CURRENT_DATE()
 GROUP BY ALL
 ORDER BY dbus_consumed DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 C_B02_SQL = """\
@@ -54,7 +54,7 @@ WHERE u.usage_date BETWEEN DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
                        AND CURRENT_DATE()
 GROUP BY ALL
 ORDER BY year_month DESC, dbus DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 C_B03_SQL = """\
@@ -111,7 +111,7 @@ CROSS JOIN date_bounds d
 LEFT JOIN most_recent_jobs t2 USING (workspace_id, job_id)
 GROUP BY ALL
 ORDER BY wow_dbu_growth DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 BILLING_PACK = QueryPack(

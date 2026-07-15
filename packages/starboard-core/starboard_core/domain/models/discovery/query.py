@@ -78,6 +78,13 @@ class SystemQuery:
         domain: Which domain this query belongs to.
         required: If True, query failure marks the domain as degraded.
         lookback_override: Per-query override of the global lookback_days.
+        max_lookback_days: Upper bound on the effective lookback for this query,
+            used to keep the window within the source table's retention (e.g.,
+            ``system.compute.node_timeline`` and ``system.serving.endpoint_usage``
+            retain 90 days). The executor clamps the effective lookback to
+            ``min(effective_lookback, max_lookback_days)`` so a larger configured
+            or overridden lookback never silently returns empty results. ``None``
+            means no clamp.
         output_columns: Expected column names in the result (for validation).
         discovery_mode: Filter queries by run depth.
         category: Classify analytical purpose.
@@ -92,6 +99,7 @@ class SystemQuery:
     domain: str
     required: bool = True
     lookback_override: int | None = None
+    max_lookback_days: int | None = None
     output_columns: tuple[str, ...] | None = None
     discovery_mode: DiscoveryMode = DiscoveryMode.GENERAL
     category: QueryCategory = QueryCategory.PROFILE

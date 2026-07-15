@@ -48,6 +48,7 @@ LEFT JOIN run_stats rs USING (workspace_id, experiment_id)
 ORDER BY e.update_time DESC
 LIMIT {result_limit}""",
         required_tables=("system.mlflow.experiments_latest", "system.mlflow.runs_latest",), domain="mlflow", required=False,
+        max_lookback_days=180,  # G5: mlflow.runs_latest retains ~180 days
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
         metadata=QueryMetadata(summary="Experiment inventory with run counts and health metrics", output_hint="Experiments ranked by last update with run stats"),
     ),
@@ -119,6 +120,7 @@ GROUP BY created_by
 ORDER BY num_runs DESC
 LIMIT {result_limit}""",
         required_tables=("system.mlflow.runs_latest",), domain="mlflow", required=False,
+        max_lookback_days=180,  # G5: mlflow.runs_latest retains ~180 days
         discovery_mode=DiscoveryMode.DEEP_DIVE, category=QueryCategory.PROFILE,
         metadata=QueryMetadata(summary="Most active users by run volume and avg duration", output_hint="Users ranked by run count"),
     ),
@@ -139,6 +141,7 @@ GROUP BY le.experiment_name, r.experiment_id, DATE(r.start_time)
 ORDER BY run_date DESC, experiment_name
 LIMIT {result_limit}""",
         required_tables=("system.mlflow.runs_latest",), domain="mlflow", required=False,
+        max_lookback_days=180,  # G5: mlflow.runs_latest retains ~180 days
         discovery_mode=DiscoveryMode.DEEP_DIVE, category=QueryCategory.PROFILE,
         metadata=QueryMetadata(summary="Per-experiment daily run trend", output_hint="Daily run trend per experiment"),
     ),

@@ -23,6 +23,7 @@ FROM (
     MAX_BY(action_name, event_time) AS last_action
   FROM system.access.audit
   WHERE service_name = 'apps' AND action_name IN ('createApp', 'installTemplateApp', 'deleteApp')
+    AND event_date >= DATEADD(DAY, -90, CURRENT_DATE())   -- G4: bound scan to 90d
   GROUP BY get_json_object(request_params.app, '$.name'), workspace_id
 )
 WHERE last_action != 'deleteApp'

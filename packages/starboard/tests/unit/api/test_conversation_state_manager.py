@@ -8,7 +8,7 @@
 import pytest
 from starboard.agents.state.agent_state import Message, WorkingMemory
 from starboard.agents.state.shared_context import SharedAgentContext
-from starboard.api.conversation_state_manager import (
+from starboard.adapters.state.inmemory.conversation_state_manager import (
     InMemoryConversationStateManager,
 )
 

@@ -47,6 +47,7 @@ billing_summary AS (
   FROM system.billing.usage
   WHERE usage_metadata.cluster_id IS NOT NULL
     AND sku_name IN ('ALL_PURPOSE_COMPUTE', 'JOBS_COMPUTE')
+    AND usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())        -- partition pruning (G2)
     AND usage_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   GROUP BY usage_metadata.cluster_id
 )
@@ -78,7 +79,7 @@ LEFT JOIN node_metrics  nm ON c.cluster_id = nm.cluster_id
 LEFT JOIN billing_summary bs ON c.cluster_id = bs.cluster_id
 WHERE c.delete_time IS NULL
 ORDER BY bs.total_dbus DESC NULLS LAST
-LIMIT 50
+LIMIT {result_limit}
 """
 
 C_C02_SQL = """\
@@ -105,6 +106,7 @@ billing_summary AS (
     ROUND(SUM(usage_quantity), 2)          AS total_dbus
   FROM system.billing.usage
   WHERE sku_name = 'ALL_PURPOSE_COMPUTE'   -- exact match; drop LIKE if values are exact
+    AND usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())        -- partition pruning (G2)
     AND usage_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
   GROUP BY usage_metadata.cluster_id
 )
@@ -124,7 +126,7 @@ SELECT
   it.idle_minutes,
   bs.total_dbus,
   ROUND(
-    it.idle_minutes / (30.0 * 24 * 60) * COALESCE(bs.total_dbus, 0),
+    it.idle_minutes / ({lookback_days} * 24.0 * 60) * COALESCE(bs.total_dbus, 0),
     2
   )                                          AS est_idle_dbus
 FROM latest_clusters c
@@ -133,7 +135,7 @@ LEFT JOIN billing_summary bs ON c.cluster_id = bs.cluster_id
 WHERE c.delete_time IS NULL
   AND c.cluster_source IN ('UI', 'API')
 ORDER BY it.idle_minutes DESC NULLS LAST
-LIMIT 50
+LIMIT {result_limit}
 """
 
 C_C03_SQL = """\
@@ -161,7 +163,7 @@ query_perf AS (
     HOUR(start_time)                                                                             AS query_hour,
     COUNT(*)                                                                                     AS total_queries,
     ROUND(AVG(execution_duration_ms) / 1000.0, 2)                                               AS avg_execution_secs,
-    ROUND(PERCENTILE(execution_duration_ms, 0.95) / 1000.0, 2)                                  AS p95_execution_secs,
+    ROUND(APPROX_PERCENTILE(execution_duration_ms, 0.95) / 1000.0, 2)                           AS p95_execution_secs,
     ROUND(AVG(waiting_at_capacity_duration_ms + waiting_for_compute_duration_ms) / 1000.0, 2)   AS avg_queue_secs,
     ROUND(MAX(waiting_at_capacity_duration_ms + waiting_for_compute_duration_ms) / 1000.0, 2)   AS max_queue_secs,
     SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END)                                AS failed_queries,
@@ -192,7 +194,7 @@ LEFT JOIN scale_events se
       AND qp.query_date   = se.event_date
       AND qp.query_hour   = se.event_hour
 ORDER BY qp.warehouse_id, qp.query_date DESC, qp.query_hour
-LIMIT 50
+LIMIT {result_limit}
 """
 
 COMPUTE_PACK = QueryPack(
@@ -212,6 +214,7 @@ COMPUTE_PACK = QueryPack(
                 "system.billing.usage",
             ),
             domain="compute",
+            max_lookback_days=90,  # G5: node_timeline retains ~90 days
 
             discovery_mode=DiscoveryMode.GENERAL,
             category=QueryCategory.PROFILE,
@@ -231,6 +234,7 @@ COMPUTE_PACK = QueryPack(
                 "system.billing.usage",
             ),
             domain="compute",
+            max_lookback_days=90,  # G5: node_timeline retains ~90 days
 
             discovery_mode=DiscoveryMode.GENERAL,
             category=QueryCategory.OPTIMIZATION,

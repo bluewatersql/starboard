@@ -39,7 +39,8 @@ WITH endpoint_classified AS (
       ELSE                                            sku_name
     END                                                              AS serving_tier
   FROM system.billing.usage
-  WHERE usage_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+  WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())        -- partition pruning (G2)
+    AND usage_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
     AND billing_origin_product IN ('MODEL_SERVING', 'VECTOR_SEARCH', 'INFERENCE_TABLES')
     AND usage_metadata.endpoint_name IS NOT NULL
 )
@@ -54,7 +55,7 @@ SELECT
 FROM endpoint_classified
 GROUP BY ALL
 ORDER BY total_dbus DESC
-LIMIT 50
+LIMIT {result_limit}
 """
 
 ML_PACK = QueryPack(

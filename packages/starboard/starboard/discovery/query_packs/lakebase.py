@@ -25,7 +25,9 @@ WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_DATE()) AS dt),
 all_time_usage AS (
   SELECT workspace_id, usage_metadata.database_instance_id AS database_instance_id,
     MAX(usage_end_time) AS last_seen_time_all, SUM(usage_quantity) AS total_units_all
-  FROM system.billing.usage WHERE billing_origin_product = 'DATABASE'
+  FROM system.billing.usage
+  WHERE billing_origin_product = 'DATABASE'
+    AND usage_date >= DATEADD(DAY, -90, CURRENT_DATE())   -- G4: bound scan to 90d
   GROUP BY workspace_id, usage_metadata.database_instance_id HAVING total_units_all != 0
 )
 SELECT u.account_id, u.workspace_id, w.workspace_name,

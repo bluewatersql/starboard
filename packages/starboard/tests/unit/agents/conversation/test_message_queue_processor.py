@@ -12,7 +12,11 @@ import pytest
 from starboard.agents.conversation.message_queue_processor import (
     MessageQueueProcessor,
 )
-from starboard.api.models import EventType, MessageResponse, MessageStatus
+from starboard.domain.conversation.models import (
+    EventType,
+    MessageResponse,
+    MessageStatus,
+)
 
 
 @pytest.fixture

@@ -32,6 +32,7 @@ WITH latest_pipelines AS (
 last_updates AS (
   SELECT workspace_id, pipeline_id, MAX(period_start_time) AS last_update_start
   FROM system.lakeflow.pipeline_update_timeline
+  WHERE period_start_time >= DATEADD(DAY, -90, CURRENT_DATE())   -- G4: bound scan to 90d
   GROUP BY workspace_id, pipeline_id
 )
 SELECT p.workspace_id, p.pipeline_id, p.pipeline_name, p.created_by,
@@ -80,6 +81,7 @@ LIMIT {result_limit}""",
         required_tables=("system.compute.node_timeline", "system.compute.clusters"),
         domain="dlt_pipelines",
         required=False,
+        max_lookback_days=90,  # G5: node_timeline retains ~90 days
         discovery_mode=DiscoveryMode.DEEP_DIVE,
         category=QueryCategory.OPTIMIZATION,
         metadata=QueryMetadata(
@@ -116,8 +118,8 @@ SELECT lp.pipeline_name, u.workspace_id, u.pipeline_id,
   COUNT_IF(u.result_state IS NULL OR u.result_state != 'COMPLETED') AS failed_or_incomplete,
   ROUND(COUNT_IF(u.result_state IS NULL OR u.result_state != 'COMPLETED') * 100.0 / COUNT(*), 2) AS failure_rate_pct,
   ROUND(AVG(TIMESTAMPDIFF(SECOND, u.start_time, u.end_time)), 1) AS avg_duration_sec,
-  ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY TIMESTAMPDIFF(SECOND, u.start_time, u.end_time)), 1) AS p90_duration_sec,
-  ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY TIMESTAMPDIFF(SECOND, u.start_time, u.end_time)), 1) AS p95_duration_sec
+  ROUND(APPROX_PERCENTILE(TIMESTAMPDIFF(SECOND, u.start_time, u.end_time), 0.90), 1) AS p90_duration_sec,
+  ROUND(APPROX_PERCENTILE(TIMESTAMPDIFF(SECOND, u.start_time, u.end_time), 0.95), 1) AS p95_duration_sec
 FROM updates u LEFT JOIN latest_pipelines lp USING (workspace_id, pipeline_id)
 GROUP BY lp.pipeline_name, u.workspace_id, u.pipeline_id
 ORDER BY failure_rate_pct DESC, total_updates DESC
@@ -148,7 +150,7 @@ pipeline_tables AS (
 pipeline_perf AS (
   SELECT pipeline_id, COUNT(*) AS total_updates,
     ROUND(AVG(duration_sec), 1) AS avg_duration_sec,
-    ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration_sec), 1) AS p95_duration_sec
+    ROUND(APPROX_PERCENTILE(duration_sec, 0.95), 1) AS p95_duration_sec
   FROM (
     SELECT pipeline_id, update_id, TIMESTAMPDIFF(SECOND, MIN(period_start_time), MAX(period_end_time)) AS duration_sec
     FROM system.lakeflow.pipeline_update_timeline, cutoff WHERE period_start_time >= cutoff.dt
@@ -272,7 +274,7 @@ pipeline_billing AS (
     product_features.dlt_tier, product_features.is_serverless, product_features.is_photon
 ),
 latest_pipelines AS (
-  SELECT workspace_id, pipeline_id, name AS pipeline_name, edition,
+  SELECT workspace_id, pipeline_id, name AS pipeline_name, settings.edition AS edition,
     settings.continuous AS is_continuous, settings.photon AS photon_enabled
   FROM system.lakeflow.pipelines
   QUALIFY ROW_NUMBER() OVER (PARTITION BY workspace_id, pipeline_id ORDER BY change_time DESC) = 1

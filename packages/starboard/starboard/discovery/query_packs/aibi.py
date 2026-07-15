@@ -92,8 +92,8 @@ SELECT
   COUNT(*) AS query_count,
   COUNT_IF(execution_status = 'FAILED') AS failed_queries,
   ROUND(AVG(total_duration_ms), 0) AS avg_total_ms,
-  ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY total_duration_ms), 0) AS p50_total_ms,
-  ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY total_duration_ms), 0) AS p95_total_ms,
+  ROUND(APPROX_PERCENTILE(total_duration_ms, 0.50), 0) AS p50_total_ms,
+  ROUND(APPROX_PERCENTILE(total_duration_ms, 0.95), 0) AS p95_total_ms,
   ROUND(AVG(waiting_at_capacity_duration_ms), 0) AS avg_queue_wait_ms,
   ROUND(AVG(execution_duration_ms), 0) AS avg_exec_ms,
   ROUND(AVG(read_rows), 0) AS avg_rows_read, ROUND(AVG(read_bytes / 1048576.0), 2) AS avg_read_mb

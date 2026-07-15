@@ -29,6 +29,7 @@ GROUP BY se.endpoint_name, se.served_entity_name, se.entity_type
 ORDER BY total_requests DESC
 LIMIT {result_limit}""",
         required_tables=("system.serving.endpoint_usage", "system.serving.served_entities",), domain="ai_gateway", required=False,
+        max_lookback_days=90,  # G5: serving.endpoint_usage retains ~90 days
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
         metadata=QueryMetadata(summary="Serving endpoint request volume, success rate, and token counts", output_hint="Endpoints ranked by request volume"),
     ),
@@ -55,7 +56,7 @@ LIMIT {result_limit}""",
 WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP()) AS dt)
 SELECT endpoint_name, COUNT(*) AS total_requests, SUM(total_tokens) AS total_tokens,
   ROUND(AVG(latency_ms), 1) AS avg_latency_ms,
-  ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms), 1) AS p95_latency_ms,
+  ROUND(APPROX_PERCENTILE(latency_ms, 0.95), 1) AS p95_latency_ms,
   COUNT_IF(status_code BETWEEN 200 AND 299) AS successful_requests,
   COUNT_IF(status_code >= 500) AS server_errors
 FROM system.ai_gateway.usage, cutoff
