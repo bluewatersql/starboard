@@ -505,7 +505,7 @@ cache_metrics = semantic_cache.get_metrics()
 
 ## SSE (Real-Time Streaming) Monitoring
 
-The `SSEBroadcaster` in `agents/observability/sse_broadcaster.py` manages real-time event streaming to frontend clients.
+The `SSEBroadcaster` in `agents/observability/sse_broadcaster.py` manages real-time event streaming to MCP clients.
 
 ### Key Metrics
 
@@ -664,4 +664,4 @@ HTTP 429 Too Many Requests
 | `infra/middleware/rate_limit.py` | Rate limiting utilities |
 | `.cursor/05_observability_and_cost.md` | Engineering standards for observability |
 
-All paths are relative to `packages/starboard-server/starboard/`.
+All paths are relative to `packages/starboard/starboard/`.

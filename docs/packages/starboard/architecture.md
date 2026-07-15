@@ -596,7 +596,7 @@ job = await api.get_job_async(123)  # Cache hit!
 
 #### QueryResultCache
 
-Layer 2 cache for query results (frontend chart/table toggle):
+Layer 2 cache for query results (MCP client display):
 
 - 60 minute default TTL
 - Reset-on-hit keeps frequently accessed data warm

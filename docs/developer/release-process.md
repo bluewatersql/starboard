@@ -39,7 +39,7 @@ MAJOR.MINOR.PATCH
 | `MINOR` | New features that are backward compatible |
 | `PATCH` | Backward-compatible bug fixes and security patches |
 
-All five packages (`starboard-core`, `starboard-server`, `starboard-log-parser`, `starboard-cli`, `starboard-sdk`) and the workspace root share a single version number and are released together. The current development version is `0.1.0`.
+All three packages (`starboard-core`, `starboard`, `starboard-skills`) and the workspace root share a single version number and are released together. The current development version is `0.1.0`.
 
 Pre-release versions use the suffix `-alpha.N`, `-beta.N`, or `-rc.N` (e.g., `0.2.0-rc.1`).
 
@@ -72,7 +72,6 @@ Before cutting a release, verify:
 - [ ] `CHANGELOG.md` (root) has entries for the new version under `## [Unreleased]`
 - [ ] `docs/overview/changelog.md` is consistent with `CHANGELOG.md` (see [Known Inconsistency](#known-inconsistency-two-changelogs))
 - [ ] All package `pyproject.toml` versions match the intended release version
-- [ ] `frontend/package.json` version matches the intended release version (if versioned separately)
 
 ---
 
@@ -96,14 +95,11 @@ Update the `version` field in every package `pyproject.toml`:
 
 ```
 packages/starboard-core/pyproject.toml
-packages/starboard-server/pyproject.toml
-packages/starboard-log-parser/pyproject.toml
-packages/starboard-cli/pyproject.toml
-packages/starboard-sdk/pyproject.toml
+packages/starboard/pyproject.toml
+packages/starboard-skills/pyproject.toml
 pyproject.toml  (workspace root)
 ```
 
-And in `frontend/package.json` if the frontend is versioned with the release.
 
 ### 4. Update CHANGELOG.md
 

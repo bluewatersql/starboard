@@ -100,7 +100,7 @@ make setup
 Or install directly with pip:
 
 ```bash
-pip install starboard-server[mcp]
+pip install starboard
 ```
 
 Verify the CLI is available:

@@ -202,7 +202,7 @@ if (rawReport.report) {
 
 ## CLI Consumers
 
-### 1. `packages/starboard-cli/starboard.cli/cli/main.py`
+### 1. `packages/starboard/starboard/cli/main.py`
 
 **Purpose:** Command-line interface for agent interactions.
 
@@ -273,11 +273,9 @@ Before modifying agent output schemas:
 
 1. [ ] Update contract tests in `tests/contract/test_agent_output_contract.py`
 2. [ ] Update SSE fixtures in `tests/contract/backend/fixtures/`
-3. [ ] Regenerate frontend types via `scripts/generate_types.py`
-4. [ ] Update frontend components if structure changes
-5. [ ] Update CLI consumers if structure changes
-6. [ ] Run full contract test suite: `make test-contract`
-7. [ ] Coordinate version bump if breaking
+3. [ ] Update CLI consumers if structure changes
+4. [ ] Run full contract test suite: `make test-contract`
+5. [ ] Coordinate version bump if breaking
 
 ---
 

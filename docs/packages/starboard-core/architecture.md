@@ -203,9 +203,9 @@ class StateStore(Protocol):
 **Purpose**: Define what the domain needs without dictating how it's implemented.
 
 **Implementations** (in other packages):
-- `SQLiteStateStore` (starboard-server)
-- `PostgresStateStore` (starboard-server)
-- `InMemoryStateStore` (starboard-server)
+- `SQLiteStateStore` (starboard)
+- `PostgresStateStore` (starboard)
+- `InMemoryStateStore` (starboard)
 
 #### MemoryStore Protocol (`memory_store.py`)
 
@@ -623,7 +623,7 @@ new_obj = replace(frozen_obj, field=new_value)
 
 ## Related Documentation
 
-- [starboard-server Architecture](../starboard-server/architecture.md) - How this is used
+- [starboard Architecture](../starboard/architecture.md) - How this is used
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md) - Overall system design
 - [Package Integration](../../integration/PACKAGE_INTEGRATION.md) - Cross-package patterns
 

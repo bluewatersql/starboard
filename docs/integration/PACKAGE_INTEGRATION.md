@@ -1,6 +1,6 @@
 ---
 title: Package Integration Guide
-description: How the 5 Python packages work together in the Starboard AI Agent monorepo.
+description: How the 3 Python packages work together in the Starboard AI Agent monorepo.
 last_reviewed: 2026-03-24
 status: current
 ---
@@ -12,7 +12,7 @@ status: current
 
 **What you'll learn:**
 
-- How the 5 Python packages relate to each other
+- How the 3 Python packages relate to each other
 - Dependency flow and integration patterns
 - Data flow between packages
 - Import conventions and best practices
@@ -21,22 +21,19 @@ status: current
 
 ## Overview
 
-The Starboard AI Agent is organized as a **monorepo** with 5 Python packages and 1 Next.js frontend. Each package has a specific responsibility, and they integrate through well-defined interfaces.
+The Starboard AI Agent is organized as a **monorepo** with 3 Python packages. Each package has a specific responsibility, and they integrate through well-defined interfaces.
 
 ### Package Responsibilities
 
 | Package | Purpose | Dependencies |
 |---------|---------|--------------|
-| **starboard-core** | Domain models, prompts, shared types | None (pure domain) |
-| **starboard-log-parser** | Spark event log parsing | None (standalone) |
-| **starboard-server** | Multi-agent system, API, 45+ tools | core, log-parser |
-| **starboard-cli** | Command-line interface | core, server |
-| **starboard-sdk** | Python SDK for programmatic access | core, server, cli |
-| **frontend** | Web UI (Next.js) | None (HTTP client to server) |
+| **starboard-core** | Domain models, prompts, shared types, log parsing | None (pure domain) |
+| **starboard** | Multi-agent system, API, CLI, SDK, 45+ tools | starboard-core |
+| **starboard-skills** | Optional skill extensions | starboard-core, databricks-sdk |
 
 ### Design Principle
 
-**Dependency Flow**: CLI/SDK --> Server --> Core (never the reverse)
+**Dependency Flow**: starboard/starboard-skills --> starboard-core (never the reverse)
 
 ---
 
@@ -44,35 +41,23 @@ The Starboard AI Agent is organized as a **monorepo** with 5 Python packages and
 
 ```mermaid
 graph TD
-    FE[Frontend - Next.js] -->|HTTP/SSE| SRV
-    CLI[starboard-cli] --> SRV[starboard-server]
-    CLI --> CORE[starboard-core]
-    SDK[starboard-sdk] --> SRV
-    SDK --> CLI
-    SDK --> CORE
-    SRV --> CORE
-    SRV --> LP[starboard-log-parser]
+    SRV[starboard] --> CORE[starboard-core]
+    SKL[starboard-skills] --> CORE
 
     style CORE fill:#7ED321
-    style LP fill:#7ED321
     style SRV fill:#4A90E2
-    style CLI fill:#4A90E2
-    style SDK fill:#4A90E2
-    style FE fill:#F5A623
+    style SKL fill:#4A90E2
 ```
 
-*Package dependency graph showing all 5 Python packages plus the frontend. Green nodes have no Python dependencies. Blue nodes are backend Python packages. Orange is the frontend.*
+*Package dependency graph showing all 3 Python packages. Green nodes have no Python dependencies. Blue nodes depend on starboard-core.*
 
 ### Dependency Matrix
 
-| Package | core | log-parser | server | cli | sdk | frontend |
-|---------|------|------------|--------|-----|-----|----------|
-| **core** | -- | -- | -- | -- | -- | -- |
-| **log-parser** | -- | -- | -- | -- | -- | -- |
-| **server** | Yes | Yes | -- | -- | -- | -- |
-| **cli** | Yes | -- | Yes | -- | -- | -- |
-| **sdk** | Yes | -- | Yes | Yes | -- | -- |
-| **frontend** | -- | -- | HTTP | -- | -- | -- |
+| Package | starboard-core | databricks-sdk |
+|---------|---------------|----------------|
+| **starboard-core** | -- | -- |
+| **starboard** | Yes | -- |
+| **starboard-skills** | Yes | Yes |
 
 ---
 
@@ -80,7 +65,7 @@ graph TD
 
 ### starboard-core
 
-**Role**: Pure domain layer with zero I/O dependencies.
+**Role**: Pure domain layer with zero I/O dependencies. Includes domain models, prompt templates, and the Spark event log parser.
 
 ```python
 # Domain models
@@ -89,24 +74,17 @@ from starboard_core.domain.models.conversation import Message, Conversation
 
 # Prompt templates
 from starboard_core.prompts import get_prompt_template
+
+# Log parsing (formerly starboard-log-parser)
+from starboard_core.log_parser import create_spark_application
+from starboard_core.log_parser.adapters import S3Adapter
 ```
 
 **Rules**: No network calls, no file I/O, no database access. All logic must be pure and deterministic.
 
-### starboard-log-parser
+### starboard
 
-**Role**: Standalone Spark event log parser with credential provider framework.
-
-```python
-from starboard_log_parser import create_spark_application
-from starboard_log_parser.adapters import S3Adapter
-```
-
-**Rules**: Independent of all other packages. Can be used standalone for log parsing.
-
-### starboard-server
-
-**Role**: The core backend -- multi-agent system, FastAPI API, tool implementations.
+**Role**: The core backend -- multi-agent system, FastAPI API, tool implementations, CLI, and SDK. Located at `packages/starboard/`.
 
 ```python
 # Agent system
@@ -120,50 +98,45 @@ from starboard.tools.adapters import resolve_query
 
 # Config
 from starboard.infra.core.config import EnvConfig, get_config
-```
 
-### starboard-cli
+# CLI entry point
+from starboard.cli.main import main, create_agent_manager
 
-**Role**: Natural language command-line interface.
-
-```python
-# Entry point
-from starboard.cli.cli.main import main, create_agent_manager
-```
-
-### starboard-sdk
-
-**Role**: Programmatic Python client for multi-turn conversations.
-
-```python
+# SDK
 from starboard.sdk import StarboardClient, ConversationSession, AgentResponse
 ```
 
-**Rules**: Uses `create_agent_manager` from CLI to bootstrap the agent stack. Adds session management and a clean API surface.
+### starboard-skills
+
+**Role**: Optional skill extensions that depend on starboard-core and the Databricks SDK.
+
+```python
+from starboard_skills import register_skills
+```
 
 ---
 
 ## Integration Patterns
 
-### Server uses Core models
+### starboard uses starboard-core models
 
 ```python
-# Server imports domain models from Core
+# starboard imports domain models from starboard-core
 from starboard_core.domain.models.llm import OptimizationMode
 from starboard_core.domain.models.conversation import Message
 ```
 
-### Server uses Log Parser
+### starboard uses starboard-core log parser
 
 ```python
-# Server uses log parser for Spark log analysis in Job Agent tools
-from starboard_log_parser import create_spark_application
+# Log parsing is now part of starboard-core
+from starboard_core.log_parser import create_spark_application
 
 app = create_spark_application(log_content)
 stages = app.stages
 ```
 
-### CLI uses Server internals
+### CLI uses starboard agent internals
 
 ```python
 # CLI creates the agent manager directly (in-process, no HTTP)
@@ -175,18 +148,14 @@ from starboard.agents.agent_factory import AgentFactory
 
 ```python
 # SDK reuses CLI's agent manager creation
-from starboard.cli.cli.main import create_agent_manager
+from starboard.cli.main import create_agent_manager
 
 manager, api, vector_store = await create_agent_manager(config)
 ```
 
-### Frontend uses Server API
+### MCP and CLI are the primary integration surfaces
 
-```typescript
-// Frontend communicates via HTTP REST + SSE
-const response = await fetch(`${API_URL}/api/chat/conversations`, { method: 'POST' });
-const eventSource = new EventSource(`${API_URL}/api/chat/conversations/${id}/stream`);
-```
+Starboard exposes its functionality via the MCP protocol (for Claude Code, Cursor, and other MCP-compatible clients) and the CLI. There is no web frontend.
 
 ---
 
@@ -196,12 +165,12 @@ const eventSource = new EventSource(`${API_URL}/api/chat/conversations/${id}/str
 User Input
     |
     v
-[CLI / SDK / Frontend]
+[CLI / SDK / MCP]
     |
     v
-[starboard-server]
+[starboard]
     |-- Uses starboard-core models for domain logic
-    |-- Uses starboard-log-parser for Spark log analysis
+    |-- Uses starboard-core log parser for Spark log analysis
     |-- Calls Databricks APIs via adapters
     |-- Calls LLM provider via adapters
     |
@@ -209,18 +178,18 @@ User Input
 [Agent Response]
     |
     v
-[CLI: Rich terminal / SDK: AgentResponse / Frontend: React UI]
+[CLI: Rich terminal / SDK: AgentResponse / MCP: structured tool response]
 ```
 
 ---
 
 ## Best Practices
 
-1. **Never import server from core** -- Dependency flow is one-way
-2. **Use core models at boundaries** -- Domain models from core are the shared language
-3. **Frontend only uses HTTP** -- No direct Python package imports
-4. **SDK wraps, does not duplicate** -- SDK reuses CLI/server internals
-5. **Log parser is standalone** -- Can be used independently of the agent system
+1. **Never import starboard from starboard-core** -- Dependency flow is one-way
+2. **Use core models at boundaries** -- Domain models from starboard-core are the shared language
+3. **Log parsing lives in starboard-core** -- Import from `starboard_core.log_parser`, not a separate package
+4. **SDK wraps, does not duplicate** -- SDK reuses CLI/agent internals
+5. **MCP and CLI are the integration surfaces** -- No web frontend; external clients use MCP or the CLI
 
 ---
 
@@ -228,7 +197,7 @@ User Input
 
 - [System Architecture](../architecture/SYSTEM_ARCHITECTURE.md) -- Full system design
 - [starboard-core](../packages/starboard-core/index.md) -- Core package docs
-- [starboard-server](../packages/starboard-server/index.md) -- Server package docs
+- [starboard](../packages/starboard/index.md) -- Server/CLI/SDK package docs
 - [Configuration Guide](../CONFIGURATION.md) -- Environment variables
 
 ---

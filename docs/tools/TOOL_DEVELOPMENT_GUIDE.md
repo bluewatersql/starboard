@@ -75,7 +75,7 @@ Tools follow a three-layer architecture:
 
 Create pure business logic in `tools/domain/`:
 
-**File**: `packages/starboard-server/starboard/tools/domain/example/analyzer.py`
+**File**: `packages/starboard/starboard/tools/domain/example/analyzer.py`
 
 ```python
 """Domain logic for example analysis."""
@@ -131,7 +131,7 @@ def analyze_example_data(data: dict[str, Any]) -> AnalysisResult:
 
 Create service in `tools/services/`:
 
-**File**: `packages/starboard-server/starboard/tools/services/example_service.py`
+**File**: `packages/starboard/starboard/tools/services/example_service.py`
 
 ```python
 """Service layer for example tool operations."""
@@ -225,7 +225,7 @@ class ExampleService:
 
 Create adapter in `tools/adapters/`:
 
-**File**: `packages/starboard-server/starboard/tools/adapters/example_tools.py`
+**File**: `packages/starboard/starboard/tools/adapters/example_tools.py`
 
 ```python
 """Adapter interface for example tools."""
@@ -518,7 +518,7 @@ async def test_analyze_resource_minimal_output(mock_service):
 
 ### Step 1: Define Tool Metadata
 
-**File**: `packages/starboard-server/starboard/agents/tools/registry.py`
+**File**: `packages/starboard/starboard/agents/tools/registry.py`
 
 ```python
 from starboard.agents.tools.tool_registry import ToolMetadata
@@ -550,7 +550,7 @@ ANALYZE_RESOURCE_METADATA = ToolMetadata(
 
 ### Step 2: Register Tool
 
-**File**: `packages/starboard-server/starboard/agents/tools/tool_factory.py`
+**File**: `packages/starboard/starboard/agents/tools/tool_factory.py`
 
 ```python
 def create_tool_registry(...) -> ToolRegistry:

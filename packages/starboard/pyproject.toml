@@ -1,7 +1,7 @@
 [project]
 name = "starboard"
 version = "0.1.0"
-description = "Starboard AI Agent - FastAPI Backend Server"
+description = "Starboard AI Agent - MCP server, CLI, agents, and tools"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "Databricks Open Model License"}

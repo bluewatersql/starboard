@@ -52,7 +52,7 @@ Domain (Pure Logic) --> Service (Orchestration) --> Adapters (Tools)
 ## Directory Structure
 
 ```
-packages/starboard-server/starboard/tools/
+packages/starboard/starboard/tools/
 |-- domain/                     # Pure business logic
 |   |-- query/                  # Query resolution and analysis
 |   |-- job/                    # Job analysis and optimization
@@ -114,7 +114,7 @@ The 80/20 strategy means:
 - **80%** of operations: Agents complete independently using strategic tool overlap
 - **20%** of complex operations: Agents delegate to domain specialists (no tool needed)
 
-**Source**: `packages/starboard-server/starboard/agents/tool_categories.py`
+**Source**: `packages/starboard/starboard/agents/tool_categories.py`
 
 ---
 

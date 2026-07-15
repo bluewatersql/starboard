@@ -1,6 +1,6 @@
 # AWS S3 Connector Guide
 
-**Package**: `starboard-log-parser`  
+**Package**: `starboard-core`
 **Version**: 0.2.0+  
 **Status**: Production-Ready
 
@@ -17,6 +17,7 @@ The S3 connector enables memory-efficient streaming of Spark event logs stored i
 ### 1. Install with S3 Support
 
 ```bash
+pip install starboard-core[aws]  # Includes S3 support
 pip install boto3  # Required for S3 access
 ```
 
@@ -33,8 +34,8 @@ export AWS_REGION="us-west-2"
 ### 3. Use S3Adapter
 
 ```python
-from starboard_log_parser.auth.providers import EnvironmentCredentialProvider
-from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+from starboard_core.log_parser.auth.providers import EnvironmentCredentialProvider
+from starboard_core.log_parser.adapters.cloud.s3 import S3Adapter
 
 # Create credential provider
 provider = EnvironmentCredentialProvider(cloud="aws")
@@ -124,7 +125,7 @@ print(f"File size: {size:,} bytes")
 ### Environment Variables (Recommended)
 
 ```python
-from starboard_log_parser.auth.providers import EnvironmentCredentialProvider
+from starboard_core.log_parser.auth.providers import EnvironmentCredentialProvider
 
 provider = EnvironmentCredentialProvider(cloud="aws")
 ```
@@ -138,7 +139,7 @@ provider = EnvironmentCredentialProvider(cloud="aws")
 ### Static Credentials (Development Only)
 
 ```python
-from starboard_log_parser.auth.providers import StaticCredentialProvider
+from starboard_core.log_parser.auth.providers import StaticCredentialProvider
 
 provider = StaticCredentialProvider(
     access_key="MY_AWS_ACCESS_KEY_ID",
@@ -195,7 +196,7 @@ files = s3.list_files("s3://bucket/year=2024/month=11/", pattern="*.json")
 ### 4. Handle Errors Gracefully
 
 ```python
-from starboard_log_parser.exceptions import CloudStorageError
+from starboard_core.log_parser.exceptions import CloudStorageError
 
 try:
     size = s3.get_file_size("s3://bucket/file.gz")
@@ -282,8 +283,8 @@ provider = StaticCredentialProvider(
 ### Example 1: Parse Spark Event Log from S3
 
 ```python
-from starboard_log_parser.auth.providers import EnvironmentCredentialProvider
-from starboard_log_parser.adapters.cloud.s3 import S3Adapter
+from starboard_core.log_parser.auth.providers import EnvironmentCredentialProvider
+from starboard_core.log_parser.adapters.cloud.s3 import S3Adapter
 
 provider = EnvironmentCredentialProvider(cloud="aws")
 s3 = S3Adapter(credential_provider=provider)
@@ -333,7 +334,7 @@ for file_info in files:
 
 ## See Also
 
-- [Log Parser Architecture](packages/starboard-log-parser/architecture.md) - System overview
+- [Log Parser Architecture](packages/starboard-core/architecture.md) - System overview
 - [API Reference](api/API_REFERENCE.md) - Complete API documentation
 
 ---

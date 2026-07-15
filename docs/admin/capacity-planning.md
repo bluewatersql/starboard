@@ -28,7 +28,7 @@ Capacity planning for Starboard involves four dimensions:
 | **Compute** | CPU cores and memory | Concurrent conversations |
 | **Storage** | Database size | Total conversations and memory entries |
 | **LLM API** | Tokens per month | Conversations per day and complexity |
-| **Network** | SSE connections | Concurrent Web UI users |
+| **Network** | SSE connections | Concurrent MCP/CLI clients |
 
 ---
 
@@ -41,8 +41,6 @@ The following table provides reference configurations for three deployment sizes
 | **Conversations/day** | 5--20 | 20--100 | 100--500+ |
 | **Backend CPU** | 2 cores | 4 cores | 8+ cores (2+ instances) |
 | **Backend Memory** | 4 GB | 8 GB | 16 GB per instance |
-| **Frontend CPU** | 1 core | 2 cores | 2 cores per instance |
-| **Frontend Memory** | 1 GB | 2 GB | 2 GB per instance |
 | **State DB (Postgres)** | 1 GB initial | 5 GB initial | 20 GB initial |
 | **Vector Store** | 500 MB | 2 GB | 10 GB |
 | **Redis Cache** | 256 MB | 1 GB | 4 GB |
@@ -73,11 +71,9 @@ The backend is CPU-bound during request parsing and tool execution, and I/O-boun
 | 20--50 | 4 cores x 2 instances | 8 GB each |
 | 50+ | 4 cores x N instances | 8 GB each |
 
-### Frontend (Next.js)
+### MCP and CLI Integration
 
-The frontend is lightweight. A single instance handles hundreds of concurrent browser sessions. SSE connections are long-lived but consume minimal server resources.
-
-**Recommendation:** 1--2 cores, 1--2 GB memory for all tiers. Scale only if serving 100+ concurrent browser sessions.
+The primary integration surfaces are MCP (used by Claude Code, Cursor, and other MCP-compatible clients) and the CLI. There is no web frontend. Both interfaces are thin clients to the backend FastAPI process; they do not require separate compute resources beyond the backend itself.
 
 ---
 

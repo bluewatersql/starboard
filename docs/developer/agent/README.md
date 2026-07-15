@@ -49,7 +49,7 @@ See [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md) for complete details.
 | `discovery` | Workspace health assessment (4-phase) | 6 | `discovery` |
 | `diagnostic` | Troubleshooting and root cause analysis | ALL | `advisor` |
 
-Tool counts sourced from `packages/starboard-server/starboard/agents/tool_categories.py`.
+Tool counts sourced from `packages/starboard/starboard/agents/tool_categories.py`.
 
 ---
 
@@ -83,12 +83,12 @@ Tool counts sourced from `packages/starboard-server/starboard/agents/tool_catego
 
 | Category | Location | Purpose |
 |----------|----------|---------|
-| Agent Prompts | `packages/starboard-server/starboard/prompts/` | System prompts for each domain |
-| Shared Handoff | `packages/starboard-server/starboard/prompts/shared/` | Shared handoff context components |
+| Agent Prompts | `packages/starboard/starboard/prompts/` | System prompts for each domain |
+| Shared Handoff | `packages/starboard/starboard/prompts/shared/` | Shared handoff context components |
 | Report Schemas | `packages/starboard-core/starboard_core/domain/models/` | Pydantic models for report types |
-| Report Formatters | `packages/starboard-server/starboard/agents/report_formatters/` | Markdown formatters |
-| Tool Display Config | `packages/starboard-server/starboard/agents/tool_display.py` | Friendly names, thinking steps, UI metadata |
-| Tool Categories | `packages/starboard-server/starboard/agents/tool_categories.py` | Domain --> tool mappings |
+| Report Formatters | `packages/starboard/starboard/agents/report_formatters/` | Markdown formatters |
+| Tool Display Config | `packages/starboard/starboard/agents/tool_display.py` | Friendly names, thinking steps, UI metadata |
+| Tool Categories | `packages/starboard/starboard/agents/tool_categories.py` | Domain --> tool mappings |
 
 ### Frontend
 

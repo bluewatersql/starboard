@@ -53,7 +53,7 @@ curl -s http://localhost:8000/health/live | jq .
 2. **Restart the service:**
    ```bash
    # Systemd
-   sudo systemctl restart starboard-server
+   sudo systemctl restart starboard
 
    # Manual
    uvicorn starboard.main:create_app --factory --host 0.0.0.0 --port 8000
@@ -133,7 +133,7 @@ curl -s http://localhost:8000/health/ready | jq .
 ### Resolution
 
 1. **Reduce `max_steps`** -- Lower the maximum reasoning steps per turn via the
-   `LLM_MAX_TOKENS` environment variable or the frontend Configuration page.
+   `LLM_MAX_TOKENS` environment variable.
 2. **Enable message compression** -- Reduces context window usage by 30-50%.
 3. **Check Databricks API status** -- External API degradation is the most common
    cause of high latency.
@@ -316,7 +316,7 @@ jq 'select(.level == "error")' < /dev/stdin | wc -l
    cases.
 4. **Service catalog issues** -- Verify the catalog file is valid:
    ```bash
-   python -c "import yaml; yaml.safe_load(open('packages/starboard-server/starboard/config/service_catalog.yaml'))"
+   python -c "import yaml; yaml.safe_load(open('packages/starboard/starboard/config/service_catalog.yaml'))"
    ```
 
 ### Verification
@@ -390,7 +390,7 @@ groups:
           severity: critical
 
       - alert: HealthCheckFailing
-        expr: up{job="starboard-server"} == 0
+        expr: up{job="starboard"} == 0
         for: 1m
         labels:
           severity: critical
@@ -590,15 +590,15 @@ export LOG_LEVEL=INFO
 
 ```bash
 # All errors in the last hour
-journalctl -u starboard-server --since "1 hour ago" | \
+journalctl -u starboard --since "1 hour ago" | \
   jq 'select(.level == "error")'
 
 # High-latency LLM calls
-journalctl -u starboard-server --since "1 hour ago" | \
+journalctl -u starboard --since "1 hour ago" | \
   jq 'select(.event == "llm_call_completed" and .latency_ms > 10000)'
 
 # Cost tracking
-journalctl -u starboard-server --since "1 day ago" | \
+journalctl -u starboard --since "1 day ago" | \
   jq 'select(.cost_usd != null) | .cost_usd' | \
   awk '{sum+=$1} END {printf "Total cost: $%.2f\n", sum}'
 ```
@@ -607,20 +607,20 @@ journalctl -u starboard-server --since "1 day ago" | \
 
 ```bash
 # All errors
-docker logs starboard-server 2>&1 | jq 'select(.level == "error")'
+docker logs starboard 2>&1 | jq 'select(.level == "error")'
 
 # Trace a specific request
-docker logs starboard-server 2>&1 | jq 'select(.trace_id == "TARGET_TRACE_ID")'
+docker logs starboard 2>&1 | jq 'select(.trace_id == "TARGET_TRACE_ID")'
 ```
 
 **Kubernetes:**
 
 ```bash
 # All errors
-kubectl logs deployment/starboard-server | jq 'select(.level == "error")'
+kubectl logs deployment/starboard | jq 'select(.level == "error")'
 
 # Follow logs in real time
-kubectl logs -f deployment/starboard-server | jq 'select(.level == "error")'
+kubectl logs -f deployment/starboard | jq 'select(.level == "error")'
 ```
 
 #### Common Log Queries

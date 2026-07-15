@@ -585,4 +585,4 @@ config.validate()  # Raises ValueError with all issues listed
 | `infra/rag/services/vector_store_factory.py` | Vector store factory with automatic fallback |
 | `infra/cache/semantic_cache.py` | `SemanticCache` using vector similarity |
 
-All paths are relative to `packages/starboard-server/starboard/`.
+All paths are relative to `packages/starboard/starboard/`.

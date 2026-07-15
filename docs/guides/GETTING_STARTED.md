@@ -27,8 +27,6 @@
 |------|---------|---------|--------------|
 | **Python** | 3.12+ | Backend runtime | [python.org](https://python.org) |
 | **uv** | Latest | Package manager | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
-| **Node.js** | 18+ | Frontend runtime | [nodejs.org](https://nodejs.org) |
-| **npm** | 9+ | Frontend package manager | Comes with Node.js |
 | **Git** | 2.0+ | Version control | [git-scm.com](https://git-scm.com) |
 
 ### Optional Tools
@@ -61,7 +59,6 @@
 
 **Helpful**:
 - FastAPI or similar web frameworks
-- React/Next.js (for frontend work)
 - Databricks or Spark (for domain understanding)
 - LLM/AI agent concepts
 
@@ -91,18 +88,15 @@ make setup
 **What this does**:
 1. Creates Python virtual environment (`.venv/`)
 2. Installs all workspace packages via `uv`
-3. Installs frontend dependencies via `npm`
-4. Sets up Git hooks
-5. Verifies installation
+3. Sets up Git hooks
+4. Verifies installation
 
 **Expected output**:
 ```
 ✓ Created virtual environment at .venv
 ✓ Installed starboard-core
-✓ Installed starboard-log-parser
-✓ Installed starboard-server
-✓ Installed starboard-cli
-✓ Installed frontend dependencies
+✓ Installed starboard
+✓ Installed starboard-skills
 ✓ Git hooks configured
 ✅ Setup complete!
 ```
@@ -115,9 +109,6 @@ make setup
 # If uv is not installed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.bashrc  # or ~/.zshrc
-
-# If Node.js is not installed
-# Install from nodejs.org or use nvm
 ```
 
 ---
@@ -200,29 +191,34 @@ print('✓ OpenAI connected')
 
 ## First Run
 
-### Step 6: Start Development Servers
-
-#### Option A: Start Everything (Recommended)
+### Step 6: Start Development Server
 
 ```bash
-# Start both backend and frontend
-make dev
+# Start backend server
+make dev-server
 ```
 
 **Services started**:
 - Backend API: http://localhost:8000
-- Frontend UI: http://localhost:3000
 - API Docs: http://localhost:8000/docs
 
-#### Option B: Start Individually
+### Step 6b: Configure MCP (Claude Code / Cursor)
 
-```bash
-# Terminal 1: Backend only
-make dev-server
+To use Starboard via MCP tools in Claude Code or Cursor, add the server to your MCP configuration:
 
-# Terminal 2: Frontend only
-make dev-frontend
+```json
+{
+  "mcpServers": {
+    "starboard": {
+      "command": "uv",
+      "args": ["run", "starboard-skills"],
+      "cwd": "/path/to/job-agent"
+    }
+  }
+}
 ```
+
+Then restart your editor and Starboard tools will be available.
 
 ### Step 7: Verify Services
 
@@ -249,10 +245,6 @@ curl http://localhost:8000/health/ready
 ```
 
 Note: the `checks` object contains only the probes that are configured (database, cache, compute, ai, backpressure). A response with no configured probes returns `{"status": "ready", "checks": {}}`. When any probe is unhealthy the top-level `status` becomes `"degraded"`. The endpoint returns HTTP 200 in both cases; a `503` is only returned when the service itself has not yet initialised.
-
-**Frontend**:
-- Open http://localhost:3000
-- Should see Starboard AI Agent interface
 
 **API Documentation**:
 - Open http://localhost:8000/docs
@@ -314,24 +306,6 @@ Options:
 starboard --goal "What agents are available?" --mode offline
 ```
 
-### Step 10: Try API Call
-
-```bash
-# Create a conversation
-curl -X POST http://localhost:8000/api/chat/conversations \
-  -H "Content-Type: application/json" \
-  -d '{"initial_message": "Hello, what can you help me with?"}'
-```
-
-**Expected response**:
-```json
-{
-  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
-  "created_at": "2024-01-01T00:00:00Z",
-  "status": "active"
-}
-```
-
 ---
 
 ## Your First Contribution
@@ -344,13 +318,13 @@ Let's add a simple tool to get familiar with the codebase.
 
 ```bash
 # Create file
-touch packages/starboard-server/starboard/tools/domain/example/hello.py
+touch packages/starboard/starboard/tools/domain/example/hello.py
 ```
 
 **2. Add domain logic**:
 
 ```python
-# packages/starboard-server/starboard/tools/domain/example/hello.py
+# packages/starboard/starboard/tools/domain/example/hello.py
 """Example tool domain logic."""
 
 def greet(name: str) -> str:
@@ -414,7 +388,7 @@ test_hello.py::test_greet_different_name PASSED
 **5. Commit your change**:
 
 ```bash
-git add packages/starboard-server/starboard/tools/domain/example/
+git add packages/starboard/starboard/tools/domain/example/
 git add tests/unit/tools/domain/example/
 git commit -m "feat: Add example hello tool
 
@@ -493,8 +467,7 @@ pytest --cov=starboard tests/unit/
 
 ### Hot Reloading
 
-**Backend**: Auto-reloads on file changes (FastAPI)  
-**Frontend**: Auto-reloads on file changes (Next.js)  
+**Backend**: Auto-reloads on file changes (FastAPI)
 **Docs**: Auto-reloads on file changes (MkDocs)
 
 Just save your files and see changes immediately!
@@ -592,22 +565,6 @@ ls -la dev_data/
 pytest -v -s
 ```
 
-### Issue: Frontend build errors
-
-**Solution**:
-```bash
-cd frontend
-
-# Clean node_modules
-rm -rf node_modules package-lock.json
-
-# Reinstall
-npm install
-
-# Try build
-npm run build
-```
-
 ---
 
 ## Cheat Sheet
@@ -619,9 +576,7 @@ npm run build
 make setup              # First-time setup
 
 # Development
-make dev                # Start all services
-make dev-server         # Backend only
-make dev-frontend       # Frontend only
+make dev-server         # Start backend server
 
 # Code Quality
 make format             # Auto-format
@@ -645,10 +600,9 @@ make clean              # Clean build artifacts
 ### File Locations
 
 ```
-packages/starboard-server/  - Multi-agent system
+packages/starboard/         - Multi-agent system
 packages/starboard-core/    - Domain models
-packages/starboard-cli/     - CLI tool
-frontend/                   - Web UI
+packages/starboard-skills/  - MCP skill definitions
 docs/                       - Documentation
 tests/                      - Test suite
 .env                        - Your credentials (gitignored)
@@ -657,7 +611,6 @@ tests/                      - Test suite
 ### Quick Links
 
 - Backend: http://localhost:8000
-- Frontend: http://localhost:3000
 - API Docs: http://localhost:8000/docs
 - Documentation: http://localhost:8000 (after `make docs-serve`)
 
@@ -667,13 +620,12 @@ tests/                      - Test suite
 
 Before you start contributing, make sure you have:
 
-- [ ] Installed all prerequisites (Python, uv, Node.js)
+- [ ] Installed all prerequisites (Python, uv)
 - [ ] Cloned repository
 - [ ] Run `make setup` successfully
 - [ ] Created `.env` with credentials
-- [ ] Started dev servers (`make dev`)
+- [ ] Started dev server (`make dev-server`)
 - [ ] Verified backend health check
-- [ ] Accessed frontend UI
 - [ ] Run tests successfully (`make test`)
 - [ ] Made first small change
 - [ ] Read system architecture docs

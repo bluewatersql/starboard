@@ -60,7 +60,7 @@ Tool Domain Logic (domain/*)
 External APIs (Databricks, etc.)
 ```
 
-**Source**: `packages/starboard-server/starboard/tools/`
+**Source**: `packages/starboard/starboard/tools/`
 
 ---
 
@@ -365,7 +365,7 @@ The tool system uses the **Pragmatic Hybrid (80/20)** approach:
 4. **Domain experts get ALL tools in their domain**
 5. **Diagnostic agent gets ALL tools** -- special unrestricted case
 
-**Source**: `packages/starboard-server/starboard/agents/tool_categories.py`
+**Source**: `packages/starboard/starboard/agents/tool_categories.py`
 
 ---
 

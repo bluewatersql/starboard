@@ -32,7 +32,7 @@ Tools are how agents interact with external systems. Follow the three-layer arch
 
 Create pure business logic with no I/O dependencies.
 
-**File**: `packages/starboard-server/starboard/tools/domain/compute/cost_analyzer.py`
+**File**: `packages/starboard/starboard/tools/domain/compute/cost_analyzer.py`
 
 ```python
 """Domain logic for cost analysis."""
@@ -105,7 +105,7 @@ def analyze_costs(
 
 Add orchestration and external I/O.
 
-**File**: `packages/starboard-server/starboard/tools/services/cost_service.py`
+**File**: `packages/starboard/starboard/tools/services/cost_service.py`
 
 ```python
 """Service layer for cost analysis."""
@@ -193,7 +193,7 @@ class CostService:
 
 Create clean interface for LLM consumption.
 
-**File**: `packages/starboard-server/starboard/tools/adapters/cost_tools.py`
+**File**: `packages/starboard/starboard/tools/adapters/cost_tools.py`
 
 ```python
 """Adapter interface for cost analysis tools."""
@@ -268,7 +268,7 @@ class CostTools:
 
 Add to tool factory.
 
-**File**: `packages/starboard-server/starboard/agents/tools/tool_factory.py`
+**File**: `packages/starboard/starboard/agents/tools/tool_factory.py`
 
 ```python
 # ... existing imports ...
@@ -442,7 +442,7 @@ Agents are domain specialists. Follow this process to add a new agent.
 
 Create system prompts in the server package under the prompts directory.
 
-**File**: `packages/starboard-server/starboard/prompts/security/v1.py`
+**File**: `packages/starboard/starboard/prompts/security/v1.py`
 
 ```python
 """Prompts for security agent."""
@@ -482,7 +482,7 @@ Analyze the security implications and provide recommendations.
 
 ### Step 2: Create Agent Class
 
-**File**: `packages/starboard-server/starboard/agents/domain/security_agent.py`
+**File**: `packages/starboard/starboard/agents/domain/security_agent.py`
 
 ```python
 """Security and governance agent."""
@@ -518,7 +518,7 @@ class SecurityAgent(DomainAgent):
 
 ### Step 3: Register in AgentFactory
 
-**File**: `packages/starboard-server/starboard/agents/agent_factory.py`
+**File**: `packages/starboard/starboard/agents/agent_factory.py`
 
 ```python
 class AgentFactory:
@@ -543,7 +543,7 @@ class AgentFactory:
 
 ### Step 4: Update Intent Router
 
-**File**: `packages/starboard-server/starboard/agents/routing/intent_router.py`
+**File**: `packages/starboard/starboard/agents/routing/intent_router.py`
 
 ```python
 # Update classification prompt to include security domain
@@ -659,7 +659,7 @@ NEW ADDITION: Always check for partitioning before suggesting indexes.
 
 ### Step 2: Update Agent to Use New Version
 
-**File**: `packages/starboard-server/starboard/agents/domain/query_agent.py`
+**File**: `packages/starboard/starboard/agents/domain/query_agent.py`
 
 ```python
 # Change import
@@ -727,7 +727,7 @@ async def compare_prompt_versions():
 
 ### Step 1: Define Request/Response Models
 
-**File**: `packages/starboard-server/starboard/api/models/security.py`
+**File**: `packages/starboard/starboard/api/models/security.py`
 
 ```python
 """Security API models."""
@@ -753,7 +753,7 @@ class CheckAccessResponse(BaseModel):
 
 ### Step 2: Create Route Handler
 
-**File**: `packages/starboard-server/starboard/api/security.py`
+**File**: `packages/starboard/starboard/api/security.py`
 
 ```python
 """Security API endpoints."""
@@ -817,7 +817,7 @@ async def check_access(
 
 ### Step 3: Register Router
 
-**File**: `packages/starboard-server/starboard/api/__init__.py`
+**File**: `packages/starboard/starboard/api/__init__.py`
 
 ```python
 """API package."""
@@ -832,7 +832,7 @@ __all__ = [
 ]
 ```
 
-**File**: `packages/starboard-server/starboard/api/main.py`
+**File**: `packages/starboard/starboard/api/main.py`
 
 ```python
 from starboard.api import chat_router, security_router
@@ -922,7 +922,7 @@ class Message:
 
 ### Step 2: Update Repository
 
-**File**: `packages/starboard-server/starboard/repositories/conversation_repository.py`
+**File**: `packages/starboard/starboard/repositories/conversation_repository.py`
 
 ```python
 # Update save method to include new field
@@ -945,7 +945,7 @@ async def save_message(self, message: Message) -> None:
 
 ### Step 3: Create Migration
 
-**File**: `packages/starboard-server/starboard/infra/storage/migrations/007_add_token_count.sql`
+**File**: `packages/starboard/starboard/infra/storage/migrations/007_add_token_count.sql`
 
 ```sql
 -- Add token_count column to messages table

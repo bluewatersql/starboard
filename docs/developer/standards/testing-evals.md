@@ -36,7 +36,7 @@ make test-coverage      # With coverage report
 make test-parallel      # Parallel execution (faster)
 
 # Single test file
-cd packages/starboard-server && pytest tests/unit/path/to/test_file.py -v
+cd packages/starboard && pytest tests/unit/path/to/test_file.py -v
 
 # By marker
 pytest -m unit

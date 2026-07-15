@@ -405,6 +405,6 @@ graph TD
 - [Agent Implementation Guide](../../developer/agent/IMPLEMENTATION_GUIDE.md)
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
-- [Warehouse Prompt Source](../../../packages/starboard-server/starboard/prompts/warehouse/v1.py)
-- [Tool Categories](../../../packages/starboard-server/starboard/agents/tool_categories.py)
+- [Warehouse Prompt Source](../../../packages/starboard/starboard/prompts/warehouse/v1.py)
+- [Tool Categories](../../../packages/starboard/starboard/agents/tool_categories.py)
 

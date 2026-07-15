@@ -48,7 +48,7 @@ A **domain agent** is a specialized AI assistant that handles a specific categor
 | `discovery` | Workspace health assessment (4-phase) | 6 | `discovery` |
 | `diagnostic` | Troubleshooting (unrestricted tools) | ALL | `advisor` |
 
-Tool counts sourced from `packages/starboard-server/starboard/agents/tool_categories.py`.
+Tool counts sourced from `packages/starboard/starboard/agents/tool_categories.py`.
 
 ### Tool Sharing Strategy (80/20 Rule)
 
@@ -110,7 +110,7 @@ Tool counts sourced from `packages/starboard-server/starboard/agents/tool_catego
 | Prompt Factories | `prompts/factories.py` | Prompt builders per domain |
 | IntentRouter | `agents/routing/intent_router.py` | Routes requests to domains |
 
-All paths relative to `packages/starboard-server/starboard/`.
+All paths relative to `packages/starboard/starboard/`.
 
 ---
 
@@ -120,7 +120,7 @@ All paths relative to `packages/starboard-server/starboard/`.
 
 Add the domain to the `AgentDomain` type literal in **two files**:
 
-**File 1:** `packages/starboard-server/starboard/prompts/base.py`
+**File 1:** `packages/starboard/starboard/prompts/base.py`
 
 ```python
 AgentDomain = Literal[
@@ -130,7 +130,7 @@ AgentDomain = Literal[
 ]
 ```
 
-**File 2:** `packages/starboard-server/starboard/agents/routing/routing_models.py`
+**File 2:** `packages/starboard/starboard/agents/routing/routing_models.py`
 
 ```python
 AgentDomain = Literal[
@@ -145,7 +145,7 @@ AgentDomain = Literal[
 Create prompt directory and files:
 
 ```
-packages/starboard-server/starboard/prompts/my_new_domain/
+packages/starboard/starboard/prompts/my_new_domain/
     __init__.py
     v1.py
 ```
@@ -188,7 +188,7 @@ You MUST call the `complete` tool with an OptimizerAdvisorReport...
 
 ### Step 3: Register Prompt Builder
 
-**File:** `packages/starboard-server/starboard/prompts/factories.py`
+**File:** `packages/starboard/starboard/prompts/factories.py`
 
 ```python
 from starboard.prompts.my_new_domain.v1 import build_system_prompt as my_new_domain_prompt
@@ -201,7 +201,7 @@ PROMPT_BUILDERS: dict[str, Callable] = {
 
 ### Step 4: Configure Tools
 
-**File:** `packages/starboard-server/starboard/agents/tool_categories.py`
+**File:** `packages/starboard/starboard/agents/tool_categories.py`
 
 ```python
 TOOL_CATEGORIES: dict[str, list[str] | str] = {
@@ -218,13 +218,13 @@ TOOL_CATEGORIES: dict[str, list[str] | str] = {
 
 ### Step 5: Add Routing Rules
 
-**File:** `packages/starboard-server/starboard/agents/routing/intent_router.py`
+**File:** `packages/starboard/starboard/agents/routing/intent_router.py`
 
 Add keyword patterns and domain description for the Intent Router to recognize your domain.
 
 ### Step 6: Register Tool Display Config
 
-**File:** `packages/starboard-server/starboard/agents/tool_display.py`
+**File:** `packages/starboard/starboard/agents/tool_display.py`
 
 ```python
 TOOL_DISPLAY: dict[str, ToolDisplayConfig] = {
@@ -252,7 +252,7 @@ Required tests for every new agent:
 make test-golden
 
 # Run specific test file
-cd packages/starboard-server
+cd packages/starboard
 pytest tests/unit/agents/test_my_new_domain.py -v
 ```
 
@@ -336,4 +336,4 @@ Before submitting a PR for a new agent:
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md) -- Three-layer tool design
 - [Tool Development Guide](../../tools/TOOL_DEVELOPMENT_GUIDE.md) -- Building new tools
 - [Report UI Guidelines](REPORT_UI_GUIDELINES.md) -- Output format design
-- [Tool Categories Source](../../../packages/starboard-server/starboard/agents/tool_categories.py) -- Canonical tool mappings
+- [Tool Categories Source](../../../packages/starboard/starboard/agents/tool_categories.py) -- Canonical tool mappings

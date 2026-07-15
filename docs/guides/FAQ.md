@@ -39,7 +39,7 @@ When you ask a question, an **Intent Router** classifies your request and dispat
 
 ### What interfaces are available?
 
-Starboard provides three ways to interact: a **Web UI** (Next.js), a **CLI** (Python), and a **REST API** (FastAPI). All three share the same multi-agent backend and produce identical analysis results.
+Starboard provides two primary ways to interact: an **MCP server** (used by Claude Code, Cursor, and other MCP clients) and a **CLI** (Python). Both share the same multi-agent backend and produce identical analysis results.
 
 ---
 
@@ -77,13 +77,12 @@ Yes. Agents follow a handoff protocol where they pass context (resource IDs, par
 | Requirement | Version | Notes |
 |-------------|---------|-------|
 | Python | 3.12+ | Required for all backend components |
-| Node.js | 18+ | Required for the Web UI frontend |
 | Databricks workspace | Any | With API token and SQL warehouse access |
 | LLM API key | -- | OpenAI, Azure OpenAI, or Databricks Model Serving |
 
 ### How long does setup take?
 
-First-time setup takes 15-30 minutes, mostly waiting for dependency installation. After that, starting development servers takes under 2 minutes with `make dev`.
+First-time setup takes 15-30 minutes, mostly waiting for dependency installation. After that, starting the development server takes under 2 minutes with `make dev-server`.
 
 ### Can I run Starboard without a Databricks connection?
 

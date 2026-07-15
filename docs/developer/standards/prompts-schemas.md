@@ -26,7 +26,7 @@ Every LLM call must be constrained:
 | PRs that modify prompts must include updated snapshots | MUST |
 | Version prompts in code (e.g., `PROMPT_VERSION = "1.0.0"`) | MUST |
 
-**Prompt location:** `packages/starboard-server/starboard/prompts/`
+**Prompt location:** `packages/starboard/starboard/prompts/`
 
 Each domain agent has versioned prompts:
 ```
