@@ -17,7 +17,7 @@ from starboard.agents.conversation.multi_agent_manager import (
     MultiAgentConversationManager,
 )
 from starboard.agents.routing.intent_router import IntentRouter
-from starboard.api.models import (
+from starboard.domain.conversation.api_types import (
     ConversationConfig,
     ConversationResponse,
     MessageResponse,

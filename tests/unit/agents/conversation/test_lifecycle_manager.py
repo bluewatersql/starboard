@@ -19,7 +19,7 @@ import pytest
 from starboard_core.models.conversation import ConversationMetadata
 from starboard.agents.conversation import ConversationLifecycleManager
 from starboard.agents.state.shared_context import SharedAgentContext
-from starboard.api.models import ConversationConfig, ConversationResponse
+from starboard.domain.conversation.api_types import ConversationConfig, ConversationResponse
 
 
 @pytest.fixture

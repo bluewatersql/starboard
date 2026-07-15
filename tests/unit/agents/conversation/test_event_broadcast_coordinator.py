@@ -20,7 +20,7 @@ import pytest
 from starboard.agents.conversation.event_broadcast_coordinator import (
     EventBroadcastCoordinator,
 )
-from starboard.api.models import ChatEvent, EventType
+from starboard.domain.conversation.api_types import ChatEvent, EventType
 
 
 @pytest.fixture

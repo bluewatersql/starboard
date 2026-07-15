@@ -100,7 +100,7 @@ from starboard.agents.tools.tool_factory import create_tool_registry
 # ---------------------------------------------------------------------------
 # API utilities
 # ---------------------------------------------------------------------------
-from starboard.api.conversation_state_manager import (
+from starboard.adapters.state.inmemory.conversation_state_manager import (
     InMemoryConversationStateManager,
 )
 

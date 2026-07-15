@@ -29,7 +29,7 @@ from starboard.agents.events.user_events import FinalOutputEvent
 from starboard.agents.routing.routing_models import RouteDecision
 from starboard.agents.state.agent_state import Message, WorkingMemory
 from starboard.agents.state.shared_context import SharedAgentContext
-from starboard.api.models import ConversationConfig
+from starboard.domain.conversation.api_types import ConversationConfig
 
 
 @pytest.fixture

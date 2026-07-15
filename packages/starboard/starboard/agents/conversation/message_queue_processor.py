@@ -44,9 +44,6 @@ from uuid import uuid4
 
 from starboard_core.domain.models.llm import OptimizationMode
 
-from starboard.adapters.conversation.event_converter import (
-    convert_streaming_event_to_chat_event,
-)
 from starboard.agents.events import (
     UserInputRequestEvent,
 )
@@ -438,6 +435,12 @@ class MessageQueueProcessor:
                     )
 
                     # Broadcast the event first, then send MESSAGE_END
+                    # Lazy import to avoid a circular import at module load time
+                    # (event_converter -> agents package -> this module).
+                    from starboard.adapters.conversation.event_converter import (
+                        convert_streaming_event_to_chat_event,
+                    )
+
                     chat_event = convert_streaming_event_to_chat_event(
                         event, conversation_id, message_id=message_id
                     )
@@ -462,6 +465,10 @@ class MessageQueueProcessor:
                 )
 
                 # Convert to ChatEvent and broadcast
+                from starboard.adapters.conversation.event_converter import (
+                    convert_streaming_event_to_chat_event,
+                )
+
                 chat_event = convert_streaming_event_to_chat_event(
                     event, conversation_id, message_id=effective_message_id
                 )
