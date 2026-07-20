@@ -30,6 +30,39 @@ def _split_comma_list(s: str) -> list[str]:
     return [x.strip() for x in s.split(",") if x.strip()]
 
 
+def _coerce_number(value: Any) -> int | float | None:
+    """Coerce a metric value to a number.
+
+    Databricks REST APIs (e.g. the SQL query history endpoint) serialize
+    ``int64`` fields such as byte counts and durations as JSON strings. This
+    helper normalizes those to numeric types so downstream arithmetic and
+    comparisons don't raise ``TypeError``.
+
+    Args:
+        value: Raw metric value (int, float, or numeric string).
+
+    Returns:
+        The value as an ``int`` or ``float``, or ``None`` if it is missing or
+        not numeric.
+    """
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return value
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            return int(text)
+        except ValueError:
+            try:
+                return float(text)
+            except ValueError:
+                return None
+    return None
+
+
 def _strip_nulls(data: Any) -> Any:
     """Recursively remove None, empty strings, dicts, and lists from data structure."""
     if isinstance(data, dict):
@@ -204,7 +237,9 @@ def transform_query_metrics(metrics: dict[str, Any] | None) -> dict[str, Any] | 
     ]
     for key in time_keys:
         if key in metrics:
-            result[key] = metrics[key]
+            coerced = _coerce_number(metrics[key])
+            if coerced is not None:
+                result[key] = coerced
 
     # I/O metrics
     io_keys = [
@@ -221,7 +256,9 @@ def transform_query_metrics(metrics: dict[str, Any] | None) -> dict[str, Any] | 
     ]
     for key in io_keys:
         if key in metrics:
-            result[key] = metrics[key]
+            coerced = _coerce_number(metrics[key])
+            if coerced is not None:
+                result[key] = coerced
 
     # Compute metrics
     compute_keys = [
@@ -231,7 +268,9 @@ def transform_query_metrics(metrics: dict[str, Any] | None) -> dict[str, Any] | 
     ]
     for key in compute_keys:
         if key in metrics:
-            result[key] = metrics[key]
+            coerced = _coerce_number(metrics[key])
+            if coerced is not None:
+                result[key] = coerced
 
     # Add derived insights
     if result:
