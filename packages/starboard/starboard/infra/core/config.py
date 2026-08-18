@@ -266,6 +266,16 @@ class EnvConfig(BaseSettings):
             return None
         return v
 
+    @field_validator("llm_base_url", "embedding_base_url", mode="before")
+    @classmethod
+    def _ensure_url_scheme(cls, v: Any) -> Any:
+        # Prepend https:// when a non-empty base URL lacks a scheme so the
+        # OpenAI/httpx client receives a connectable host (empty string is left
+        # untouched — it means "use the SDK/provider default").
+        if isinstance(v, str) and v and not v.startswith(("http://", "https://")):
+            return f"https://{v}"
+        return v
+
     # --- Derived properties ---
 
     def _strip_http_scheme(self, url: str) -> str:
