@@ -1,0 +1,16 @@
+# Bootstrap data for in-memory vector store
+#
+# This directory contains exported vector store data for bootstrapping
+# the in-memory vector store in CLI and development environments.
+#
+# Files:
+# - tables.json: Core system table metadata
+# - tables_embeddings.npz: Precomputed embeddings for tables
+# - nuance.json: SQL patterns and best practices
+# - nuance_embeddings.npz: Precomputed embeddings for nuance
+# - codebook.json: Field definitions and mappings
+# - codebook_embeddings.npz: Precomputed embeddings for codebook
+# - manifest.json: Export metadata and statistics
+#
+# To regenerate:
+#   python scripts/export_vector_store_snapshot.py
