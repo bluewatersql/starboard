@@ -943,6 +943,11 @@ class OpenAIProvider(BaseLLMClient):
         if tools:
             params["tools"] = prepare_tools_for_model(tools, params["model"])
             params["tool_choice"] = "auto"
+            # Provider constraint: GPT-5 models reject a non-"none" reasoning_effort
+            # alongside function tools on /v1/chat/completions (Databricks endpoint
+            # defaults reasoning_effort server-side). Force it off so tool calls work.
+            if is_gpt5_model(params["model"]):
+                params["reasoning_effort"] = "none"
 
         async def _make_tool_call_request() -> Any:
             try:
@@ -1069,6 +1074,11 @@ class OpenAIProvider(BaseLLMClient):
         if tools:
             params["tools"] = prepare_tools_for_model(tools, params["model"])
             params["tool_choice"] = "auto"
+            # Provider constraint: GPT-5 models reject a non-"none" reasoning_effort
+            # alongside function tools on /v1/chat/completions (Databricks endpoint
+            # defaults reasoning_effort server-side). Force it off so tool calls work.
+            if is_gpt5_model(params["model"]):
+                params["reasoning_effort"] = "none"
 
         async def _make_streaming_request() -> AsyncIterator[dict[str, Any]]:
             try:
