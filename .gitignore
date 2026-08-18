@@ -139,6 +139,7 @@ packages/starboard-server/experiment/
 
 # Internal AI-assistant / IDE tooling (not for OSS distribution)
 .cursor/
+.isaac/
 AGENTS.md
 **/AGENTS.md
 # Keep the published docs page (matched case-insensitively by **/AGENTS.md on

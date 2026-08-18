@@ -11,7 +11,7 @@ This package contains pure domain logic with no I/O dependencies:
 - Shared exceptions
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Re-export commonly used types for convenience
 from starboard_core.domain.models import *  # noqa: F401, F403
