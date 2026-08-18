@@ -100,6 +100,60 @@ def redact_credentials(
     return _redact_dict(event_dict)
 
 
+def _configure_structlog(
+    json_output: bool = False,
+    enable_pii_redaction: bool = False,
+) -> None:
+    """Configure structlog processors and logger factory.
+
+    Extracted so it can be called both at import time (to set a safe default)
+    and from ``setup_structured_logging`` (which also handles the stdlib side).
+    """
+    # Configure structlog processors
+    shared_processors: list[Any] = [
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+    ]
+
+    # Credential redaction is opt-in via ENABLE_PII_REDACTION.
+    # When enabled, redact_credentials MUST come after content-adding
+    # processors but BEFORE renderers to ensure credentials are scrubbed.
+    if enable_pii_redaction:
+        shared_processors.append(redact_credentials)
+
+    if json_output:
+        # JSON output for production
+        # format_exc_info needed for JSON to serialize exception info
+        structlog.configure(
+            processors=shared_processors  # type: ignore[arg-type]
+            + [
+                structlog.processors.format_exc_info,
+                structlog.processors.JSONRenderer(),
+            ],
+            wrapper_class=structlog.stdlib.BoundLogger,
+            context_class=dict,
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            cache_logger_on_first_use=True,
+        )
+    else:
+        # Console output for development
+        # Note: Don't include format_exc_info here - ConsoleRenderer handles
+        # exception formatting itself when pretty_exceptions=True (default)
+        structlog.configure(
+            processors=shared_processors  # type: ignore[arg-type]
+            + [
+                structlog.dev.ConsoleRenderer(colors=True),
+            ],
+            wrapper_class=structlog.stdlib.BoundLogger,
+            context_class=dict,
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            cache_logger_on_first_use=True,
+        )
+
+
 def setup_structured_logging(
     level: int = logging.INFO,
     json_output: bool = False,
@@ -148,49 +202,7 @@ def setup_structured_logging(
 
     logging.getLogger("databricks.sdk").setLevel(logging.WARNING)
 
-    # Configure structlog processors
-    shared_processors: list[Any] = [
-        structlog.contextvars.merge_contextvars,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.add_logger_name,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-    ]
-
-    # Credential redaction is opt-in via ENABLE_PII_REDACTION.
-    # When enabled, redact_credentials MUST come after content-adding
-    # processors but BEFORE renderers to ensure credentials are scrubbed.
-    if enable_pii_redaction:
-        shared_processors.append(redact_credentials)
-
-    if json_output:
-        # JSON output for production
-        # format_exc_info needed for JSON to serialize exception info
-        structlog.configure(
-            processors=shared_processors  # type: ignore[arg-type]
-            + [
-                structlog.processors.format_exc_info,
-                structlog.processors.JSONRenderer(),
-            ],
-            wrapper_class=structlog.stdlib.BoundLogger,
-            context_class=dict,
-            logger_factory=structlog.stdlib.LoggerFactory(),
-            cache_logger_on_first_use=True,
-        )
-    else:
-        # Console output for development
-        # Note: Don't include format_exc_info here - ConsoleRenderer handles
-        # exception formatting itself when pretty_exceptions=True (default)
-        structlog.configure(
-            processors=shared_processors  # type: ignore[arg-type]
-            + [
-                structlog.dev.ConsoleRenderer(colors=True),
-            ],
-            wrapper_class=structlog.stdlib.BoundLogger,
-            context_class=dict,
-            logger_factory=structlog.stdlib.LoggerFactory(),
-            cache_logger_on_first_use=True,
-        )
+    _configure_structlog(json_output, enable_pii_redaction)
 
 
 def get_logger(name: str | None = None) -> structlog.BoundLogger:
@@ -206,3 +218,11 @@ def get_logger(name: str | None = None) -> structlog.BoundLogger:
     if name:
         return structlog.get_logger(name)
     return structlog.get_logger()
+
+
+# Configure structlog at import time so logs emitted during module import
+# (e.g. registration side effects) are gated by the stdlib logger's level
+# (root defaults to WARNING) instead of structlog's unconfigured PrintLogger,
+# which bypasses level filtering. setup_structured_logging() overrides this.
+if not structlog.is_configured():
+    _configure_structlog()
