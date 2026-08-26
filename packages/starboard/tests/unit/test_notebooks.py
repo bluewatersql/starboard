@@ -199,13 +199,34 @@ def test_list_serving_endpoints_custom_prefix() -> None:
 
 
 def test_get_workspace_authenticates(monkeypatch: pytest.MonkeyPatch) -> None:
-    import databricks.sdk as sdk
+    # get_workspace now routes through the unified auth resolver (A1). Host+token
+    # still yield a client (back-compat), but the resolver builds the client from
+    # a Config that carries only the set fields, so we patch the resolver seam.
+    from starboard.infra.auth import resolver as resolver_mod
+
+    captured: dict[str, object] = {}
+
+    class FakeConfig:
+        def __init__(self, **kwargs: object) -> None:
+            captured["config_kwargs"] = kwargs
+            self.host = kwargs.get("host")
+            self.auth_type = "pat"
+            self.profile = kwargs.get("profile")
 
     fake_client = MagicMock()
     fake_client.current_user.me.return_value = SimpleNamespace(user_name="me@x.com")
-    ctor = MagicMock(return_value=fake_client)
-    monkeypatch.setattr(sdk, "WorkspaceClient", ctor)
+
+    def fake_wc(*, config: object) -> object:
+        fake_client.config = config
+        return fake_client
+
+    monkeypatch.setattr(resolver_mod, "Config", FakeConfig)
+    monkeypatch.setattr(resolver_mod, "WorkspaceClient", fake_wc)
 
     result = notebooks.get_workspace("https://x.cloud.databricks.com", "tok")
-    ctor.assert_called_once_with(host="https://x.cloud.databricks.com", token="tok")
+    # Only the set fields (host, token) reach the SDK Config — nothing empty.
+    assert captured["config_kwargs"] == {
+        "host": "https://x.cloud.databricks.com",
+        "token": "tok",
+    }
     assert result is fake_client

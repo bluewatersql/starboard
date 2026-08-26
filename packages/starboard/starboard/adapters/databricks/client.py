@@ -153,11 +153,19 @@ class AsyncDatabricksClient:
         if self._initialized:
             return
 
-        # Create SDK client (sync, but we wrap calls)
-        self._sdk_client = WorkspaceClient(
-            host=self._host,
-            token=self._token,
+        # Create SDK client via the unified auth resolver (auth by subtraction):
+        # host/token are optional and only passed through when set; everything
+        # else (profile, OAuth, .databrickscfg, ambient runtime) resolves via the
+        # SDK's DefaultCredentials chain.
+        from starboard.infra.auth.resolver import (
+            WorkspaceTarget,
+            resolve_workspace_client,
         )
+
+        target = WorkspaceTarget.resolve(
+            host=self._host, token=self._token, cfg=self._cfg
+        )
+        self._sdk_client = resolve_workspace_client(target)
 
         # Verify authentication
         if not await self._verify_auth():

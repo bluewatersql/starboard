@@ -37,6 +37,7 @@ import yaml  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 from rich.console import Console  # noqa: E402
 from starboard_core.domain.models.llm import OptimizationMode  # noqa: E402
+
 from starboard.bootstrap import (  # noqa: E402
     AgentConfig,
     AgentFactory,
@@ -61,7 +62,6 @@ from starboard.bootstrap import (  # noqa: E402
     create_vector_store,
     get_config,
 )
-
 from starboard.cli.cli.exit_codes import (  # noqa: E402
     AUTH_ERROR,
     CONFIG_ERROR,
@@ -262,6 +262,19 @@ def merge_env_config(
         overrides["llm_temperature"] = args.llm_temperature
     if args.llm_max_tokens:
         overrides["llm_max_tokens"] = args.llm_max_tokens
+
+    # Auth-by-subtraction (A1): profile / OAuth / auth-type flags steer the SDK
+    # credential chain via env vars that the resolver reads. These are not fields
+    # on EnvConfig; export them so resolve_workspace_client() and _auth_resolvable()
+    # pick them up.
+    if getattr(args, "profile", None):
+        os.environ["DATABRICKS_CONFIG_PROFILE"] = args.profile
+    if getattr(args, "client_id", None):
+        os.environ["DATABRICKS_CLIENT_ID"] = args.client_id
+    if getattr(args, "client_secret", None):
+        os.environ["DATABRICKS_CLIENT_SECRET"] = args.client_secret
+    if getattr(args, "auth_type", None):
+        os.environ["DATABRICKS_AUTH_TYPE"] = args.auth_type
 
     # Create new config with overrides
     return base_config.model_copy(update=overrides)
@@ -891,13 +904,46 @@ Environment Variables:
     db_group = parser.add_argument_group("Databricks Configuration")
     db_group.add_argument(
         "--databricks-host",
+        "--host",
+        dest="databricks_host",
         type=str,
-        help="Databricks workspace URL (or set DATABRICKS_HOST)",
+        help="Databricks workspace URL (or set DATABRICKS_HOST). Alias: --host",
     )
     db_group.add_argument(
         "--databricks-token",
+        "--token",
+        dest="databricks_token",
         type=str,
-        help="Databricks personal access token (or set DATABRICKS_TOKEN)",
+        help="Databricks personal access token (or set DATABRICKS_TOKEN). Alias: --token",
+    )
+    db_group.add_argument(
+        "--profile",
+        type=str,
+        help=(
+            "Databricks config profile name (~/.databrickscfg). "
+            "Also settable via STARBOARD_WORKSPACE / DATABRICKS_CONFIG_PROFILE."
+        ),
+    )
+    db_group.add_argument(
+        "--client-id",
+        dest="client_id",
+        type=str,
+        help="Databricks OAuth client ID / service-principal (or set DATABRICKS_CLIENT_ID)",
+    )
+    db_group.add_argument(
+        "--client-secret",
+        dest="client_secret",
+        type=str,
+        help="Databricks OAuth client secret (or set DATABRICKS_CLIENT_SECRET)",
+    )
+    db_group.add_argument(
+        "--auth-type",
+        dest="auth_type",
+        type=str,
+        help=(
+            "Force an SDK auth strategy (e.g. pat, databricks-cli, oauth-m2m). "
+            "Or set DATABRICKS_AUTH_TYPE."
+        ),
     )
 
     # -- LLM Configuration ----------------------------------------------------
@@ -1068,6 +1114,7 @@ async def run_discovery_mode(
         console: Rich console for output.
     """
     from rich.table import Table
+
     from starboard.bootstrap import (
         AsyncSQLExecutor,
         DiscoveryEngine,
@@ -1334,13 +1381,21 @@ async def async_main(args: argparse.Namespace) -> None:
         # Merge configuration
         config = merge_env_config(file_config, args)
 
-        # Validate required configuration
-        if not config.databricks_host or not config.databricks_token:
+        # Validate Databricks auth (auth by subtraction, A1): host/token are no
+        # longer hard-required. Attempt to resolve *some* credential (inline
+        # host+token, a --profile / env profile, OAuth client creds, a
+        # ~/.databrickscfg, or an ambient runtime). Only error when nothing
+        # resolves. The actual credential check happens in the client's
+        # _verify_auth() during connection.
+        if not config.offline_mode and not config._auth_resolvable():
             err_console.print(
-                "[bold red]Missing Databricks credentials[/bold red]\n"
-                "Set DATABRICKS_HOST and DATABRICKS_TOKEN environment variables,\n"
-                "or provide --databricks-host and --databricks-token arguments,\n"
-                "or specify them in a config file with --config"
+                "[bold red]No Databricks auth resolved[/bold red]\n"
+                "Provide one of:\n"
+                "  --profile <name>            (a ~/.databrickscfg profile)\n"
+                "  --databricks-host + --databricks-token   (or --host/--token)\n"
+                "  --client-id + --client-secret            (OAuth service principal)\n"
+                "or set DATABRICKS_CONFIG_PROFILE / STARBOARD_WORKSPACE,\n"
+                "DATABRICKS_HOST + DATABRICKS_TOKEN, or run on a Databricks runtime."
             )
             sys.exit(CONFIG_ERROR)
 
