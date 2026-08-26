@@ -42,13 +42,13 @@ PRODUCT_TO_DOMAIN_PACKS: dict[str, list[str]] = {
     "VECTOR_SEARCH": ["vector_search"],
     "DATA_SHARING": ["delta_sharing"],
     "LAKEHOUSE_MONITORING": ["monitoring"],
-    "DATA_QUALITY_MONITORING": ["monitoring"],
+    "DATA_QUALITY_MONITORING": ["data_quality"],
     # Governance / storage
-    "PREDICTIVE_OPTIMIZATION": ["governance"],
-    "DATA_CLASSIFICATION": ["governance"],
+    "PREDICTIVE_OPTIMIZATION": ["predictive_optimization"],
+    "DATA_CLASSIFICATION": ["data_classification"],
     "FINE_GRAINED_ACCESS_CONTROL": ["governance"],
     "DEFAULT_STORAGE": ["governance"],
-    "NETWORKING": ["governance"],
+    "NETWORKING": ["networking"],
 }
 
 ALWAYS_RUN_PACKS: frozenset[str] = frozenset(
@@ -199,6 +199,12 @@ def create_default_registry() -> QueryPackRegistry:
     from starboard.discovery.query_packs.audit import AUDIT_PACK
     from starboard.discovery.query_packs.billing import BILLING_PACK
     from starboard.discovery.query_packs.compute import COMPUTE_PACK
+
+    # System-table packs that fill previously-empty product routes.
+    from starboard.discovery.query_packs.data_classification import (
+        DATA_CLASSIFICATION_PACK,
+    )
+    from starboard.discovery.query_packs.data_quality import DATA_QUALITY_PACK
     from starboard.discovery.query_packs.dlt_pipelines import DLT_PIPELINES_PACK
     from starboard.discovery.query_packs.governance import GOVERNANCE_PACK
     from starboard.discovery.query_packs.jobs import JOBS_PACK
@@ -209,6 +215,10 @@ def create_default_registry() -> QueryPackRegistry:
     from starboard.discovery.query_packs.migration import MIGRATION_PACK
     from starboard.discovery.query_packs.ml import ML_PACK
     from starboard.discovery.query_packs.mlflow import MLFLOW_PACK
+    from starboard.discovery.query_packs.networking import NETWORKING_PACK
+    from starboard.discovery.query_packs.predictive_optimization import (
+        PREDICTIVE_OPTIMIZATION_PACK,
+    )
     from starboard.discovery.query_packs.product_surfaces import (
         DELTA_SHARING_PACK,
         MONITORING_PACK,
@@ -247,5 +257,10 @@ def create_default_registry() -> QueryPackRegistry:
             MLFLOW_PACK,
             AI_GATEWAY_PACK,
             LAKEFLOW_CONNECT_PACK,
+            # System-table packs filling previously-empty product routes
+            PREDICTIVE_OPTIMIZATION_PACK,
+            DATA_QUALITY_PACK,
+            DATA_CLASSIFICATION_PACK,
+            NETWORKING_PACK,
         )
     )

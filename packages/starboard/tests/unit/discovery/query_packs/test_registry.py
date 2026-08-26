@@ -11,13 +11,13 @@ Tests cover:
 """
 
 import pytest
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
 from starboard.discovery.query_packs.registry import (
     ALWAYS_RUN_PACKS,
     PRODUCT_TO_DOMAIN_PACKS,
     QueryPackRegistry,
     create_default_registry,
 )
+from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
 
 
 def _make_pack(pack_id: str, gating: frozenset[str] = frozenset()) -> QueryPack:
@@ -211,7 +211,7 @@ class TestProductMapping:
 class TestDefaultRegistry:
     def test_creates_all_packs(self):
         registry = create_default_registry()
-        assert registry.pack_count == 20
+        assert registry.pack_count == 24
 
     def test_audit_pack_present(self):
         registry = create_default_registry()
@@ -261,3 +261,62 @@ class TestDefaultRegistry:
                 assert "pricing.default" not in sql_lower, (
                     f"{query.query_id} contains 'pricing.default'"
                 )
+
+
+class TestPreviouslyEmptyRoutes:
+    """Regression: 4 products used to route to a pack that never queried their
+    system table. Each must now resolve to a pack whose queries read the
+    intended ``system.*`` table (A5 in the Phase-0 plan)."""
+
+    # product -> (expected pack_id, required system table)
+    _CASES = {
+        "PREDICTIVE_OPTIMIZATION": (
+            "predictive_optimization",
+            "system.storage.predictive_optimization_operations_history",
+        ),
+        "DATA_QUALITY_MONITORING": (
+            "data_quality",
+            "system.data_quality_monitoring.table_results",
+        ),
+        "DATA_CLASSIFICATION": (
+            "data_classification",
+            "system.data_classification.results",
+        ),
+        "NETWORKING": ("networking", "system.access.outbound_network"),
+    }
+
+    def test_routes_point_to_new_packs(self):
+        for product, (pack_id, _table) in self._CASES.items():
+            assert PRODUCT_TO_DOMAIN_PACKS[product] == [pack_id], (
+                f"{product} should route to [{pack_id!r}]"
+            )
+
+    def test_packs_query_their_target_table(self):
+        registry = create_default_registry()
+        for _product, (pack_id, table) in self._CASES.items():
+            pack = registry.get_pack(pack_id)
+            assert pack is not None, f"pack {pack_id} not registered"
+            tables = {t for q in pack.queries for t in q.required_tables}
+            assert table in tables, (
+                f"pack {pack_id} must query {table}; queries: {sorted(tables)}"
+            )
+
+    def test_preview_queries_degrade_gracefully(self):
+        """Preview/Beta tables should be optional (required=False)."""
+        registry = create_default_registry()
+        for _product, (pack_id, _table) in self._CASES.items():
+            pack = registry.get_pack(pack_id)
+            assert pack is not None
+            for query in pack.queries:
+                assert query.required is False, (
+                    f"{query.query_id} reads a Preview table and must be "
+                    "required=False to degrade gracefully"
+                )
+
+    def test_products_selection_includes_new_packs(self):
+        registry = create_default_registry()
+        for product, (pack_id, _table) in self._CASES.items():
+            selected = registry.get_packs_for_products({product})
+            assert pack_id in {p.pack_id for p in selected}, (
+                f"selecting product {product} should include pack {pack_id}"
+            )
