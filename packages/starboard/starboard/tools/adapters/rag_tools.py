@@ -6,19 +6,30 @@ This module intentionally exposes a SINGLE agent-callable tool:
 `build_analytics_context`.
 
 Key design points:
-- Always retrieve Tables + Nuance collections
-- Optionally retrieve Codebook / Facets / Learnings collections
+- Default path (``vector_backend="none"``) is embedding-free: query tables are
+  mapped to RAG resource domains and the matching curated reference files are
+  read from disk via ``starboard_core.rag.reference_loader`` (progressive
+  disclosure). No embedding round-trip, no vector store.
+- When a vector store IS provided (opt-in ``sqlite`` / managed Vector Search),
+  the original agentic-RAG embedding path is used unchanged.
 - Uses `rag_resource_domain` as the RAG resource-model domain field
   (distinct from agent routing domains like job/query/warehouse/etc.)
-- Gracefully degrades when embedding endpoint is unavailable
+- Gracefully degrades to an empty context when a domain file is missing or the
+  embedding endpoint is unavailable — the downstream context-handle contract is
+  identical on every path.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from typing import TYPE_CHECKING, Any
 
 from starboard_core.rag.models import RAGContext
+from starboard_core.rag.reference_loader import load_domain_references
+from starboard_core.rag.resource_domains import (
+    map_system_table_to_rag_resource_domains,
+)
 
 from starboard.exceptions import AdapterError
 from starboard.infra.observability.logging import get_logger
@@ -32,21 +43,29 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# Matches fully-qualified system tables (``system.<schema>.<table>``) referenced
+# in a free-text query, used to derive RAG resource domains when the caller does
+# not supply ``rag_resource_domains`` explicitly.
+_SYSTEM_TABLE_RE = re.compile(r"\bsystem\.[a-z_]+\.[a-z_]+\b", re.IGNORECASE)
+
 
 class AnalyticsContextTools(BaseToolAdapter):
     """Agent-callable tool to build RAG context for analytics SQL generation."""
 
     def __init__(
         self,
-        vector_store: MultiCollectionStore,
-        embedding_provider: EmbeddingProvider,
+        vector_store: MultiCollectionStore | None = None,
+        embedding_provider: EmbeddingProvider | None = None,
         analytics_sql_tools: Any | None = None,
     ):
         """Initialize analytics context tools.
 
         Args:
-            vector_store: Multi-collection vector store
-            embedding_provider: Provider for generating embeddings
+            vector_store: Optional multi-collection vector store. When ``None``
+                (the default ``vector_backend="none"`` path) context is built
+                from on-disk reference files with no embeddings.
+            embedding_provider: Optional embedding provider (only used by the
+                vector-store path).
             analytics_sql_tools: Optional SQL tools instance for context handle storage
         """
         super().__init__()
@@ -126,27 +145,43 @@ class AnalyticsContextTools(BaseToolAdapter):
                 "collections": collections,
                 "n_results_per_collection": n_results_per_collection,
                 "agent_domain": agent_domain,
+                "source": (
+                    "vector_store"
+                    if self.vector_store is not None
+                    else "reference_files"
+                ),
             },
         )
 
-        try:
-            rag_context = await self.vector_store.search_multi_collection(
-                query=query,
-                collections=collections,
-                n_results_per_collection=n_results_per_collection,
+        if self.vector_store is not None:
+            # Opt-in embedding path (vector_backend=sqlite / managed Vector Search)
+            try:
+                rag_context = await self.vector_store.search_multi_collection(
+                    query=query,
+                    collections=collections,
+                    n_results_per_collection=n_results_per_collection,
+                    domains=domains,
+                )
+            except (AdapterError, ValueError):
+                logger.warning(
+                    "embedding_search_failed_using_empty_context",
+                    extra={
+                        "query": query,
+                        "collections": collections,
+                        "domains": domains,
+                    },
+                    exc_info=True,
+                )
+                rag_context = RAGContext()
+        else:
+            # Default path: deterministic, embedding-free reference-file lookup.
+            # Resolve domains (explicit or extracted from the query) so the
+            # returned summary reports what was actually searched.
+            domains = domains or self._resolve_domains_from_query(query) or None
+            rag_context = self._build_context_from_reference_files(
                 domains=domains,
+                collections=collections,
             )
-        except (AdapterError, ValueError):
-            logger.warning(
-                "embedding_search_failed_using_empty_context",
-                extra={
-                    "query": query,
-                    "collections": collections,
-                    "domains": domains,
-                },
-                exc_info=True,
-            )
-            rag_context = RAGContext()
 
         if include_learnings:
             rag_context.learnings = []
@@ -179,3 +214,43 @@ class AnalyticsContextTools(BaseToolAdapter):
                 extra={"message": "Returning full context instead of handle"},
             )
             return rag_context.model_dump()
+
+    def _resolve_domains_from_query(self, query: str) -> list[str]:
+        """Derive RAG resource domains from system tables named in the query.
+
+        Deterministic fallback used when the caller does not supply
+        ``rag_resource_domains``: extracts ``system.<schema>.<table>`` references
+        and maps each to its resource domain(s). Order-preserving, de-duplicated.
+        """
+        seen: dict[str, None] = {}
+        for table in _SYSTEM_TABLE_RE.findall(query):
+            for domain in map_system_table_to_rag_resource_domains(table):
+                seen.setdefault(domain.value, None)
+        return list(seen)
+
+    def _build_context_from_reference_files(
+        self,
+        *,
+        domains: list[str] | None,
+        collections: list[str],
+    ) -> RAGContext:
+        """Assemble a ``RAGContext`` from curated on-disk reference files.
+
+        Loads the matching ``knowledge/domains/<domain>.md`` files for the
+        (already-resolved) domains. No domains, or missing files, degrade to an
+        empty context (no exception) — matching the embedding path's
+        graceful-degradation contract.
+        """
+        if not domains:
+            logger.info("reference_context_no_domains_resolved")
+            return RAGContext()
+
+        try:
+            return load_domain_references(domains, sections=collections)
+        except Exception:  # noqa: BLE001 - reference lookup must never crash the agent
+            logger.warning(
+                "reference_context_load_failed_using_empty_context",
+                extra={"domains": domains},
+                exc_info=True,
+            )
+            return RAGContext()

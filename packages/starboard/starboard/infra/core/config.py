@@ -146,10 +146,13 @@ class EnvConfig(BaseSettings):
     cache_ttl: int = 300  # 5 minutes default
 
     # Vector Store Backend
-    # Default is the driver-free in-memory store; `sqlite`/others are opt-in.
+    # Default is `none`: the analytics agent builds context from on-disk curated
+    # reference files (starboard_core/rag/knowledge/domains/*.md) with no
+    # embeddings and no vector store (Phase 2 C1, D-2.3). `inmemory`/`sqlite` and
+    # the managed `vectorsearch` path are opt-in escape hatches for ANN recall.
     vector_backend: Literal[
-        "inmemory", "sqlite", "chroma", "databricks", "postgres"
-    ] = "inmemory"
+        "none", "inmemory", "sqlite", "chroma", "databricks", "postgres", "vectorsearch"
+    ] = "none"
     embedding_dimension: int = 1024
     vector_metadata_llm_model: str = "databricks-gpt-5-mini"
     vector_metadata_llm_temperature: float = 1.0

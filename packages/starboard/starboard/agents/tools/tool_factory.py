@@ -175,36 +175,33 @@ def create_tool_registry(
         MultiCollectionStore,
     )
 
-    # Create analytics context tools only if vector store and embedding service are available
-    analytics_context_tools = None
-    if vector_store is not None and embedding_service is not None:
-        # Type guard for vector_store and embedding_service
-        if not isinstance(vector_store, MultiCollectionStore):
-            raise TypeError(
-                f"vector_store must be MultiCollectionStore, got {type(vector_store)}"
-            )
-        if not isinstance(embedding_service, EmbeddingProvider):
-            raise TypeError(
-                f"embedding_service must be EmbeddingProvider, got {type(embedding_service)}"
-            )
+    # Create analytics context tools. The default path (vector_backend="none")
+    # builds context from on-disk reference files and needs no vector store or
+    # embedding service; when a vector store IS present (opt-in sqlite / managed
+    # Vector Search) the embedding path is used instead.
+    use_vector_path = vector_store is not None and embedding_service is not None
+    if vector_store is not None and not isinstance(vector_store, MultiCollectionStore):
+        raise TypeError(
+            f"vector_store must be MultiCollectionStore, got {type(vector_store)}"
+        )
+    if embedding_service is not None and not isinstance(
+        embedding_service, EmbeddingProvider
+    ):
+        raise TypeError(
+            f"embedding_service must be EmbeddingProvider, got {type(embedding_service)}"
+        )
 
-        analytics_context_tools = AnalyticsContextTools(
-            vector_store=vector_store,
-            embedding_provider=embedding_service,
-            analytics_sql_tools=analytics_sql_tools,  # Inject for context handle storage
-        )
-        logger.info(
-            "analytics_context_tools_initialized",
-            workflow="agentic_rag",
-            tools=["build_analytics_context"],
-        )
-    else:
-        logger.warning(
-            "analytics_context_tools_disabled",
-            reason="vector_store or embedding_service not provided",
-            vector_store_provided=vector_store is not None,
-            embedding_service_provided=embedding_service is not None,
-        )
+    analytics_context_tools = AnalyticsContextTools(
+        vector_store=vector_store if use_vector_path else None,
+        embedding_provider=embedding_service if use_vector_path else None,
+        analytics_sql_tools=analytics_sql_tools,  # Inject for context handle storage
+    )
+    logger.info(
+        "analytics_context_tools_initialized",
+        workflow="agentic_rag",
+        tools=["build_analytics_context"],
+        source="vector_store" if use_vector_path else "reference_files",
+    )
 
     # Create warehouse tools
     logger.debug("Creating warehouse portfolio tools")

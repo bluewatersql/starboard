@@ -57,7 +57,50 @@ async def create_vector_store(
         return None
 
     # Determine backend
-    backend = getattr(config, "vector_backend", "inmemory")
+    backend = getattr(config, "vector_backend", "none")
+
+    # Default (Phase 2 C1, D-2.3): reference-file RAG needs no vector store.
+    # The analytics context tool reads curated reference files from disk.
+    if backend == "none":
+        logger.info(
+            "vector_store_none_reference_file_path",
+            reason="vector_backend=none (default); analytics context uses reference files",
+        )
+        return None
+
+    # Opt-in escape hatch: managed Databricks Vector Search (behind
+    # starboard[vectorsearch]). Lazy-imported so the default install never
+    # touches databricks-vectorsearch.
+    if backend == "vectorsearch":
+        try:
+            from starboard.infra.rag.adapters.storage.databricks_vector_store import (
+                DatabricksVectorSearchStore,
+            )
+
+            vectorsearch_store = DatabricksVectorSearchStore(
+                config=config,
+                embedding_provider=embedding_provider,
+            )
+            await vectorsearch_store.initialize()
+            logger.info("databricks_vector_search_store_initialized")
+            return cast(MultiCollectionStore, vectorsearch_store)
+        except ImportError as e:
+            logger.warning(
+                "databricks_vector_search_import_failed",
+                error=str(e),
+                error_type="ImportError",
+                fallback="none",
+                suggestion="Install managed Vector Search: pip install 'starboard[vectorsearch]'",
+            )
+            return None
+        except Exception as e:  # noqa: BLE001 - RAG infrastructure boundary
+            logger.warning(
+                "databricks_vector_search_initialization_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                fallback="none",
+            )
+            return None
 
     # Try SQLite vector store (production)
     if backend == "sqlite":
@@ -165,7 +208,7 @@ def get_vector_store_backend(config: EnvConfig) -> str:
     if getattr(config, "disable_vector_store", False):
         return "none"
 
-    backend = getattr(config, "vector_backend", "inmemory")
+    backend = getattr(config, "vector_backend", "none")
 
     # Check if SQLite backend is actually available
     if backend == "sqlite":

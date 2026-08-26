@@ -288,8 +288,10 @@ class TestToolFactory:
             assert "get_table_metadata" in registry
             assert "request_user_input" in registry
 
-            # Verify analytics context tool is NOT present (requires vector store)
-            assert "build_analytics_context" not in registry
+            # Phase 2 C1: the analytics context tool now works WITHOUT a vector
+            # store — it builds context from on-disk reference files by default
+            # (vector_backend="none"). So it is present even in CLI mode.
+            assert "build_analytics_context" in registry
 
             # Verify analytics SQL tools ARE present (don't require vector store)
             assert "build_sql_query" in registry
