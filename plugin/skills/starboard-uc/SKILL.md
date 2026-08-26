@@ -1,7 +1,7 @@
 ---
 name: starboard-uc
 description: "Analyze Unity Catalog metadata and governance — explore catalogs, schemas, tables, lineage, and governance posture. Use when the user asks about Unity Catalog, data governance, catalog/schema/table structure, or data lineage."
-allowed-tools: Bash(starboard-helper:*), Read
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
 ---
 
 # Starboard: Unity Catalog Analysis
@@ -32,9 +32,28 @@ When `mcp__starboard__*` tools are available:
 1. Call the relevant MCP tool — the full agent stack handles orchestration, analysis, and recommendations.
 2. Return the agent's response directly.
 
-## Non-MCP Path
+## Tier 1 — bundled helper (pure analyzer, no I/O)
 
-When MCP tools are NOT available, follow these steps:
+If MCP tools are unavailable but `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, and
+you have a table's **schema JSON** on disk (columns + optional `table_name`),
+analyze it locally with the pure UC analyzer — no `databricks-sdk`, no network.
+It emits the stable JSON envelope to stdout and is pre-approved (no permission
+prompt):
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/run.sh analyze --input <table.json>
+```
+
+Input shape:
+`{"table_name": "cat.sch.tbl", "columns": [{"name": ..., "data_type": ..., "nullable": ...}, ...]}`.
+Read the returned `data.anomalies`, `data.classification` (table type + medallion
+layer), `data.semantic_patterns`, and `data.schema_health`, then produce the
+report. Requires `pip install "starboard-core[uc]"`. To explore live catalog
+metadata instead, use the Tier-0 `starboard-helper` commands below.
+
+## Non-MCP Path (Tier 0 — raw fetch)
+
+When neither MCP nor the bundled helper is available, follow these steps:
 
 ### Step 1: Explore the catalog hierarchy
 ```bash

@@ -1,7 +1,7 @@
 ---
 name: starboard-warehouse
 description: "Analyze Databricks SQL warehouses — inspect configuration, monitor state, and identify sizing and cost issues. Use when the user asks about SQL warehouse configuration, warehouse sizing, autostop, or warehouse cost and performance."
-allowed-tools: Bash(starboard-helper:*), Read
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
 ---
 
 # Starboard: Warehouse Analysis
@@ -30,9 +30,28 @@ When `mcp__starboard__*` tools are available:
 1. Call the relevant MCP tool — the full agent stack handles orchestration, analysis, and recommendations.
 2. Return the agent's response directly.
 
-## Non-MCP Path
+## Tier 1 — bundled helper (pure analyzer, no I/O)
 
-When MCP tools are NOT available, follow these steps:
+If MCP tools are unavailable but `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, and
+you already have a warehouse **query-history JSON** on disk (e.g. from
+`starboard-helper` or `system.query.history`), score it locally with the pure
+fingerprint + health analyzer — no `databricks-sdk`, no network. It emits the
+stable JSON envelope to stdout and is pre-approved (no permission prompt):
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/run.sh analyze --history <history.json> [--warehouse-id <ID>]
+```
+
+The history is either a JSON list of query records or an object
+`{"records": [...], "warehouse_id": ..., "warehouse_name": ...}`. Read the
+returned `data.fingerprint` + `data.health` (score, status, risk factors,
+recommendations) and produce the report. Requires
+`pip install "starboard-core[warehouse]"`. To fetch live warehouse config/state
+instead, use the Tier-0 `starboard-helper` commands below.
+
+## Non-MCP Path (Tier 0 — raw fetch)
+
+When neither MCP nor the bundled helper is available, follow these steps:
 
 ### Step 1: List all warehouses
 ```bash

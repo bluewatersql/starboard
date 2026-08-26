@@ -178,6 +178,25 @@ forbidden_modules = [
     "starboard",
 ]
 
+# The Phase-2 D4 pure analyzers (`warehouse analyze` / `uc analyze`) wrap the
+# kernel's SDK-free analyzers. They must stay off `databricks-sdk` (the kernel
+# boundary) and must not reach back into the heavy server package. (discovery /
+# sparklog legitimately reach the SDK behind their extras and are excluded.)
+[[tool.importlinter.contracts]]
+name = "starboard_x pure analyzers (warehouse/uc) are SDK-free"
+type = "forbidden"
+source_modules = [
+    "starboard_x.warehouse",
+    "starboard_x.uc",
+]
+forbidden_modules = [
+    "databricks",
+    "openai",
+    "fastapi",
+    "mcp",
+    "starboard",
+]
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"
