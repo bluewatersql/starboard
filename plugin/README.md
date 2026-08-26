@@ -61,9 +61,12 @@ isaac -- plugin list | grep starboard   # verify
 
 ### Databricks customers (external)
 
-Distribution to external Databricks customers is via `databricks aitools` (skills-only bundle).
-That packaging flow is tracked as Task **B4** and documented there once the exact `aitools` CLI /
-manifest surface is confirmed with the owner.
+Distribution to external Databricks customers is via the first-party `databricks aitools` command
+group and/or the open-source Skills CLI (skills-only bundle, no server). The command surface is now
+publicly documented; whether a third-party bundle like Starboard is installable through
+`databricks aitools` (vs. the Skills CLI) is still owner-gated. The full flow, the Agent Skills
+standard conformance, and the confirmation-needed items live in
+[`docs/distribution/databricks-aitools.md`](../docs/distribution/databricks-aitools.md).
 
 ## What is bundled
 
