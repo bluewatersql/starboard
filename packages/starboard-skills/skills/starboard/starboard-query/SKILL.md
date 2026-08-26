@@ -1,3 +1,9 @@
+---
+name: starboard-query
+description: "Analyze Databricks SQL query performance — fetch query history, find slow or failed queries, diagnose, and recommend optimizations. Use when the user asks about query performance, slow queries, warehouse query load, or SQL failures."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Query Analysis
 
 Analyze Databricks SQL queries — fetch query history, identify slow queries, diagnose failures, and recommend optimizations.

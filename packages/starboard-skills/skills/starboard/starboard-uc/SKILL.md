@@ -1,3 +1,9 @@
+---
+name: starboard-uc
+description: "Analyze Unity Catalog metadata and governance — explore catalogs, schemas, tables, lineage, and governance posture. Use when the user asks about Unity Catalog, data governance, catalog/schema/table structure, or data lineage."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Unity Catalog Analysis
 
 Analyze Unity Catalog metadata — explore catalogs, schemas, tables, lineage, and governance posture.

@@ -87,7 +87,7 @@ Or use a `.env` file — `python-dotenv` is included.
 
 ## Dual-Mode Skills
 
-Each skill file in `skills/starboard/<domain>/skill.md` instructs Claude to:
+Each skill file in `skills/starboard/<domain>/SKILL.md` instructs Claude to:
 
 1. **Check for MCP tools**: If `mcp__starboard__*` tools are available (i.e., `starboard-mcp` server is running), use them for full agent orchestration with multi-step analysis.
 

@@ -1,3 +1,9 @@
+---
+name: starboard-warehouse
+description: "Analyze Databricks SQL warehouses — inspect configuration, monitor state, and identify sizing and cost issues. Use when the user asks about SQL warehouse configuration, warehouse sizing, autostop, or warehouse cost and performance."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Warehouse Analysis
 
 Analyze Databricks SQL warehouses — inspect configuration, monitor state, identify sizing and cost issues.
