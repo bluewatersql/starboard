@@ -57,7 +57,7 @@ async def create_vector_store(
         return None
 
     # Determine backend
-    backend = getattr(config, "vector_backend", "sqlite")
+    backend = getattr(config, "vector_backend", "inmemory")
 
     # Try SQLite vector store (production)
     if backend == "sqlite":
@@ -165,7 +165,7 @@ def get_vector_store_backend(config: EnvConfig) -> str:
     if getattr(config, "disable_vector_store", False):
         return "none"
 
-    backend = getattr(config, "vector_backend", "sqlite")
+    backend = getattr(config, "vector_backend", "inmemory")
 
     # Check if SQLite backend is actually available
     if backend == "sqlite":

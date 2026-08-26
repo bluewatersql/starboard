@@ -125,7 +125,11 @@ class EnvConfig(BaseSettings):
     environment: Literal["dev", "test", "staging", "production"] = "dev"
 
     # Database Backend
-    database_backend: Literal["postgres", "databricks", "sqlite"] = "sqlite"
+    # Default is store-free (in-memory). Driver-backed backends (sqlite/postgres/databricks)
+    # require their opt-in extra; `uc` (Unity Catalog native state) is reserved for Phase 2.
+    database_backend: Literal[
+        "memory", "sqlite", "postgres", "databricks", "uc"
+    ] = "memory"
     database_url: str | None = None
     sqlite_state_path: str = "./dev_data/starboard_state.db"
     sqlite_memory_path: str = "./dev_data/starboard_memory.db"
@@ -142,7 +146,10 @@ class EnvConfig(BaseSettings):
     cache_ttl: int = 300  # 5 minutes default
 
     # Vector Store Backend
-    vector_backend: Literal["sqlite", "chroma", "databricks", "postgres"] = "sqlite"
+    # Default is the driver-free in-memory store; `sqlite`/others are opt-in.
+    vector_backend: Literal[
+        "inmemory", "sqlite", "chroma", "databricks", "postgres"
+    ] = "inmemory"
     embedding_dimension: int = 1024
     vector_metadata_llm_model: str = "databricks-gpt-5-mini"
     vector_metadata_llm_temperature: float = 1.0
