@@ -1,0 +1,52 @@
+# Seed workload-review rules — query domain (Phase-1 D3, data only).
+# Generic/public checks; no internal namespaces or references.
+version: "1.0.0"
+domain: query
+rules:
+  - id: select_star_projection
+    name: Avoid SELECT * in production queries
+    category: query
+    short_description: >-
+      Reading every column forces the engine to scan and shuffle data the
+      query never uses.
+    rationale: >-
+      Wide projections defeat column pruning, inflate I/O and shuffle volume,
+      and make downstream schemas brittle when upstream columns change.
+    severity: medium
+    default_effort: XS
+    default_impact: 3
+    bad: SELECT * FROM sales_orders
+    good: SELECT order_id, customer_id, amount FROM sales_orders
+    suggested_fix: >-
+      Project only the columns the query consumes so the optimizer can prune
+      unused columns.
+    detect: >-
+      Query text contains an unqualified SELECT * against a base table (not a
+      COUNT(*) or an EXISTS subquery).
+    evidence_query: query_performance.slowest_queries
+    source: null
+    enabled: true
+
+  - id: non_sargable_partition_filter
+    name: Keep partition filters sargable
+    category: query
+    short_description: >-
+      Wrapping a partition column in a function stops the engine from pruning
+      partitions.
+    rationale: >-
+      A predicate like CAST(event_date AS STRING) = '2026-01-01' cannot use
+      partition metadata, so the scan reads every partition instead of one.
+    severity: high
+    default_effort: S
+    default_impact: 4
+    bad: WHERE CAST(event_date AS STRING) = '2026-01-01'
+    good: WHERE event_date = DATE '2026-01-01'
+    suggested_fix: >-
+      Compare the partition column directly (or push the cast onto the literal)
+      so partition pruning applies.
+    detect: >-
+      A WHERE clause applies a function/cast to a partition column before
+      comparing it to a literal.
+    evidence_query: query_performance.full_partition_scans
+    source: null
+    enabled: true

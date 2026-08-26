@@ -1,0 +1,51 @@
+# Seed workload-review rules — warehouse domain (Phase-1 D3, data only).
+# Generic/public checks over public system.* signals; no internal references.
+version: "1.0.0"
+domain: warehouse
+rules:
+  - id: warehouse_auto_stop_disabled
+    name: Enable auto-stop on SQL warehouses
+    category: warehouse
+    short_description: >-
+      A warehouse left running with no queries bills compute for idle time.
+    rationale: >-
+      Disabling auto-stop (or setting a very long idle timeout) is a common
+      source of avoidable cost; idle running minutes produce no query value.
+    severity: high
+    default_effort: XS
+    default_impact: 4
+    bad: auto_stop_mins = 0  # never stops
+    good: auto_stop_mins = 10
+    suggested_fix: >-
+      Set a short auto-stop window (for example 5-10 minutes) unless a
+      documented low-latency SLA requires the warehouse to stay warm.
+    detect: >-
+      Warehouse config reports auto-stop disabled while warehouse_events show
+      long RUNNING stretches with zero query activity.
+    evidence_query: warehouse.auto_stop_waste
+    source: null
+    enabled: true
+
+  - id: warehouse_persistently_underutilized
+    name: Right-size persistently under-utilized warehouses
+    category: warehouse
+    short_description: >-
+      A warehouse whose utilization stays well below its capacity is oversized
+      for its workload.
+    rationale: >-
+      Sustained low utilization (active tasks far below total task slots) means
+      the size or count of clusters exceeds demand and can be reduced.
+    severity: medium
+    default_effort: S
+    default_impact: 3
+    bad: Large warehouse holding steady under 30% utilization all week
+    good: Size the warehouse to the observed utilization band with headroom
+    suggested_fix: >-
+      Reduce the warehouse size (or max clusters) toward the observed
+      utilization band, then re-measure over a full trend window.
+    detect: >-
+      Utilization band (active_tasks / total_task_slots) sits in the
+      under-utilized range across the trend window.
+    evidence_query: warehouse.utilization_bands
+    source: null
+    enabled: true

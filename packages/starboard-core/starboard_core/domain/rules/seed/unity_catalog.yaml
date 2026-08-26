@@ -1,0 +1,28 @@
+# Seed workload-review rules — Unity Catalog domain (Phase-1 D3, data only).
+# Generic/public governance checks; no internal namespaces or references.
+version: "1.0.0"
+domain: uc
+rules:
+  - id: table_missing_maintenance
+    name: Schedule OPTIMIZE and VACUUM for Delta tables
+    category: uc
+    short_description: >-
+      Delta tables that are never optimized accumulate small files and stale
+      data files, degrading read performance and storage efficiency.
+    rationale: >-
+      Frequent small-file writes without periodic OPTIMIZE lead to many tiny
+      files; skipping VACUUM leaves tombstoned files consuming storage.
+    severity: medium
+    default_effort: S
+    default_impact: 3
+    bad: High-churn Delta table with no OPTIMIZE or VACUUM history
+    good: Regular OPTIMIZE (with ZORDER where useful) plus a VACUUM policy
+    suggested_fix: >-
+      Add a scheduled maintenance step that runs OPTIMIZE on high-write tables
+      and VACUUM within your retention policy.
+    detect: >-
+      Table history shows sustained small-file writes with no OPTIMIZE/VACUUM
+      operations over the trend window.
+    evidence_query: uc.table_maintenance_history
+    source: null
+    enabled: true
