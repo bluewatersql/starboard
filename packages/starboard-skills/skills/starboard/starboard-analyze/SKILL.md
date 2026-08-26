@@ -1,3 +1,9 @@
+---
+name: starboard-analyze
+description: "Run a comprehensive, cross-domain analysis of a Databricks workload — combining job, cluster, query, and cost data into a unified optimization report. Use when the user asks for an overall workload review, a full optimization report, or a combined health-and-cost assessment spanning multiple domains."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Comprehensive Analysis
 
 Run a comprehensive analysis of a Databricks workload — combining job, cluster, query, and cost data into a unified optimization report.

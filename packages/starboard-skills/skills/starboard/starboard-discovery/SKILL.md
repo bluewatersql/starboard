@@ -1,3 +1,9 @@
+---
+name: starboard-discovery
+description: "Discover and map a Databricks workspace — enumerate jobs, clusters, warehouses, and Unity Catalog assets to build a comprehensive inventory. Use when the user wants a workspace inventory, a health assessment, or to explore what exists in a workspace."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Workspace Discovery
 
 Discover and map a Databricks workspace — enumerate jobs, clusters, warehouses, and Unity Catalog assets to build a comprehensive inventory.

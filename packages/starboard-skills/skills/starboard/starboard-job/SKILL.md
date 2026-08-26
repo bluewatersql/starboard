@@ -1,3 +1,9 @@
+---
+name: starboard-job
+description: "Analyze Databricks jobs and workflows — fetch configuration, inspect run history, diagnose failures, and recommend optimizations. Use when the user asks about job failures, job or workflow performance, run history, or job scheduling."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Job Analysis
 
 Analyze Databricks jobs — fetch configuration, inspect run history, diagnose failures, and recommend optimizations.

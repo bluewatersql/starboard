@@ -1,3 +1,9 @@
+---
+name: starboard-cluster
+description: "Analyze Databricks clusters — inspect configuration, review events, diagnose failures, and recommend optimizations. Use when the user asks about cluster performance, autoscaling, node types, cluster failures, or compute sizing."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Cluster Analysis
 
 Analyze Databricks clusters — inspect configuration, review events, diagnose failures, and recommend optimizations.

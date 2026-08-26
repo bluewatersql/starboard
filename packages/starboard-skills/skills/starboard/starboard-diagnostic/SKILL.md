@@ -1,3 +1,9 @@
+---
+name: starboard-diagnostic
+description: "Run diagnostics on Databricks workspace components — inspect run states, cluster logs, node types, and workspace configuration. Use when the user needs troubleshooting or root-cause analysis of a failing run, cluster, or workspace component."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: Diagnostic Analysis
 
 Run diagnostics on Databricks workspace components — inspect run states, cluster logs, node types, and workspace configuration.

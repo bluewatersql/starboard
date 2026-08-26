@@ -1,3 +1,9 @@
+---
+name: starboard-finops
+description: "Analyze Databricks cost and usage — fetch billable usage, review budgets, and identify cost optimization opportunities. Use when the user asks about spend, billing, cost drivers, budgets, or FinOps and cost optimization."
+allowed-tools: Bash(starboard-helper:*), Read
+---
+
 # Starboard: FinOps Analysis
 
 Analyze Databricks cost and usage — fetch billable usage, review budgets, and identify cost optimization opportunities.
