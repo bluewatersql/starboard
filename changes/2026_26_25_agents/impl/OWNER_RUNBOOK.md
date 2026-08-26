@@ -82,6 +82,14 @@ they should be run against a real workspace before anyone relies on their output
 `system.access.outbound_network`), plus `system.compute.warehouse_events`/`system.query.history` for
 the warehouse framings. A running SQL warehouse.
 
+**RESULT (2026-08-26, run against `e2-demo-field-eng`): ✅ PASS.** All four Preview-table packs
+(predictive_optimization, data_quality, data_classification, networking) and the warehouse framings
+(W-W01…W-W05, incl. the `system.query.history` `compute.warehouse_id`/`execution_duration_ms`/
+`executed_by`/`client_application` columns) executed and returned data as expected — no
+`UNRESOLVED_COLUMN`/`TABLE_NOT_FOUND`. Column-drift risk from the review (H1–H3) is closed for this
+workspace. Follow-up still recommended: a CI schema-validation step (recorded column manifest or
+`LIMIT 0` integration test) so future drift is caught automatically.
+
 **Steps.**
 1. For each pack, run its `sql_template` (fill `{lookback_days}`, e.g. 30) directly in the SQL editor
    or via `starboard-helper`.
