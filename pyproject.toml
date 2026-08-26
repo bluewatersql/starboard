@@ -86,6 +86,11 @@ all = [
     "starboard[server,cli,sdk]",
 ]
 
+# Developer tooling (lint/type/import-contract gates).
+dev = [
+    "import-linter>=2.0",
+]
+
 [project.scripts]
 starboard = "starboard.cli.main:main"
 starboard-server = "starboard.main:run"
@@ -123,6 +128,35 @@ starboard-skills = { workspace = true }
 # =============================================================================
 # Tool configurations
 # =============================================================================
+
+# =============================================================================
+# import-linter — kernel boundary contract (Phase-1 B1)
+# =============================================================================
+# Enforces that the pure starboard-core kernel surface (domain models,
+# analyzers, transformers, Finding) never imports the heavy runtime
+# dependencies. databricks-sdk lives behind the starboard-core[databricks]
+# extra (used only by the DBFS log loader, via a lazy import); openai/fastapi/
+# mcp belong to the Tier-2 server package. Run with: `lint-imports`
+# (or `python -m importlinter lint`) from the repo root.
+[tool.importlinter]
+root_package = "starboard_core"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Kernel is free of databricks-sdk / openai / fastapi / mcp"
+type = "forbidden"
+source_modules = [
+    "starboard_core.domain",
+]
+forbidden_modules = [
+    # import-linter requires top-level names for external packages; forbidding
+    # the whole `databricks` namespace is stricter than just `databricks.sdk`
+    # and correct here (the kernel imports no `databricks.*` at all).
+    "databricks",
+    "openai",
+    "fastapi",
+    "mcp",
+]
 
 [tool.ruff]
 line-length = 88

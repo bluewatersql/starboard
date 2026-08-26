@@ -18,7 +18,6 @@ from starboard_core.log_parser.loaders import (
     AbstractFileDataLoader,
     ArchiveExtractionThresholds,
 )
-from starboard_core.log_parser.loaders.dbfs import DBFSFileLinesDataLoader
 from starboard_core.log_parser.loaders.https import HTTPFileLinesDataLoader
 from starboard_core.log_parser.loaders.json import JSONLinesDataLoader
 from starboard_core.log_parser.loaders.local_file import (
@@ -58,6 +57,29 @@ def _build_s3_loader(
         s3_adapter=s3_adapter,
         extraction_thresholds=thresholds,
     )
+
+
+def _build_dbfs_loader(
+    thresholds: ArchiveExtractionThresholds,
+) -> AbstractFileDataLoader:
+    """Construct a DBFS/Unity Catalog Volumes lines-data loader.
+
+    Lazy-imports the dbfs loader module so that importing this factory (and
+    therefore the whole ``starboard_core.log_parser`` public surface) does not
+    transitively pull ``databricks-sdk`` at module load. The SDK is required
+    only when a ``dbfs:`` / ``/Volumes/`` path is actually loaded, and the
+    loader raises an actionable ``pip install 'starboard-core[databricks]'``
+    error at that point if the optional extra is missing.
+
+    Args:
+        thresholds: Archive extraction thresholds for the loader.
+
+    Returns:
+        A DBFSFileLinesDataLoader ready to load files.
+    """
+    from starboard_core.log_parser.loaders.dbfs import DBFSFileLinesDataLoader
+
+    return DBFSFileLinesDataLoader(extraction_thresholds=thresholds)
 
 
 def create_spark_application(
@@ -139,7 +161,7 @@ def create_spark_application(
 
     file_loader: AbstractFileDataLoader
     if is_volume_path or parsed_path.scheme == "dbfs":
-        file_loader = DBFSFileLinesDataLoader(extraction_thresholds=thresholds)
+        file_loader = _build_dbfs_loader(thresholds)
     elif parsed_path.scheme == "s3":
         file_loader = _build_s3_loader(thresholds)
     elif parsed_path.scheme in ("http", "https"):

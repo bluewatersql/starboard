@@ -13,10 +13,17 @@ dependencies = [
     "numpy>=2.0.0,<3.0.0",
     "polars>=1.17.0,<2.0.0",
     "httpx>=0.28.1",
-    "databricks-sdk>=0.60.0",
 ]
 
 [project.optional-dependencies]
+# DBFS / Unity Catalog Volumes log loader (Databricks SDK).
+# Kept OUT of the hard dependencies so the pure kernel + log-parser surface
+# imports without databricks-sdk (Phase-1 B1). The dbfs loader lazily imports
+# the SDK and raises an actionable error when this extra is absent.
+databricks = [
+    "databricks-sdk>=0.73.0,<1.0.0",
+]
+
 # AWS S3 support
 aws = [
     "boto3>=1.34.0",

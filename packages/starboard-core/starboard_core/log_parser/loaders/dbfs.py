@@ -18,8 +18,6 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import ParseResult, urlparse
 
-from databricks.sdk import WorkspaceClient
-
 from starboard_core.log_parser.loaders import (
     AbstractFileDataLoader,
     BlobFileReaderMixin,
@@ -30,6 +28,34 @@ from starboard_core.log_parser.loaders.dbfs_adapter import DatabricksSDKAdapter
 from starboard_core.log_parser.loaders.protocols import DBFSClient
 
 logger = logging.getLogger(__name__)
+
+
+def _require_databricks_sdk() -> type:
+    """Import and return ``databricks.sdk.WorkspaceClient``, or raise.
+
+    ``databricks-sdk`` is an **optional** dependency of ``starboard-core`` (it
+    ships only with the ``databricks`` extra). Importing it lazily here keeps
+    the pure kernel / log-parser surface importable without the SDK; only the
+    DBFS loader — the one code path that actually needs it — pays the cost, and
+    only when a DBFS/Volume path is loaded without a client supplied.
+
+    Returns:
+        The ``WorkspaceClient`` class from ``databricks.sdk``.
+
+    Raises:
+        RuntimeError: If ``databricks-sdk`` is not installed, naming the exact
+            ``pip install`` command to fix it.
+    """
+    try:
+        from databricks.sdk import WorkspaceClient
+    except ImportError as exc:
+        raise RuntimeError(
+            "The DBFS/Unity Catalog Volumes loader requires the optional "
+            "'databricks-sdk' dependency, which is not installed. Install it "
+            "with: pip install 'starboard-core[databricks]' (or pass a "
+            "DBFSClient implementation explicitly)."
+        ) from exc
+    return WorkspaceClient
 
 
 class ChunkStreamReader:
@@ -197,12 +223,17 @@ class AbstractDBFSFileDataLoader(AbstractFileDataLoader):
             DBFSClient implementation (default: DatabricksSDKAdapter)
 
         Raises:
-            ConfigurationError: If client initialization fails
+            RuntimeError: If ``databricks-sdk`` is not installed (the
+                ``databricks`` extra is missing).
+            ConfigurationError: If client initialization otherwise fails.
         """
         if self._dbfs_client is None:
+            # Lazy SDK import: raises an actionable error if the optional
+            # 'databricks' extra is not installed.
+            workspace_client_cls = _require_databricks_sdk()
             try:
                 # Create WorkspaceClient from environment and wrap with adapter
-                workspace_client = WorkspaceClient()
+                workspace_client = workspace_client_cls()
                 self._dbfs_client = DatabricksSDKAdapter(workspace_client)
                 logger.debug("Initialized DBFSClient from environment config")
             except Exception as e:
