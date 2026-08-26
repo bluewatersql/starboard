@@ -153,6 +153,76 @@ class TestArgErrors:
 
 
 @pytest.mark.unit
+class TestLazyPackageInit:
+    """Review fix #5: importing the package must not eagerly pull the whole trio.
+
+    ``starboard_x.diagnostic.__init__`` re-exports the trio for convenience but
+    must do so lazily (module-level ``__getattr__``), so ``import
+    starboard_x.diagnostic`` does not drag in evidence_extractor /
+    exit_code_triager / models / root_cause_synthesizer unless an attribute is
+    actually accessed. The public re-exports must still resolve.
+    """
+
+    def test_bare_package_import_does_not_load_submodules(self) -> None:
+        body = """
+import importlib
+import sys
+
+importlib.import_module("starboard_x.diagnostic")
+
+eager = sorted(
+    m for m in (
+        "starboard_x.diagnostic.evidence_extractor",
+        "starboard_x.diagnostic.exit_code_triager",
+        "starboard_x.diagnostic.models",
+        "starboard_x.diagnostic.root_cause_synthesizer",
+    )
+    if m in sys.modules
+)
+assert not eager, f"package __init__ eagerly imported submodules: {eager}"
+print("OK")
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", body],
+            capture_output=True,
+            text=True,
+            cwd=str(_CORE_DIR),
+        )
+        assert result.returncode == 0, (
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+        assert "OK" in result.stdout
+
+    def test_public_reexports_resolve_lazily(self) -> None:
+        import starboard_x.diagnostic as diag
+        from starboard_x.diagnostic.evidence_extractor import EvidenceWindowExtractor
+        from starboard_x.diagnostic.exit_code_triager import ExitCodeTriager
+        from starboard_x.diagnostic.models import PrimarySymptom
+        from starboard_x.diagnostic.root_cause_synthesizer import RootCauseSynthesizer
+
+        # Lazy attribute access resolves to the exact same objects.
+        assert diag.ExitCodeTriager is ExitCodeTriager
+        assert diag.EvidenceWindowExtractor is EvidenceWindowExtractor
+        assert diag.RootCauseSynthesizer is RootCauseSynthesizer
+        assert diag.PrimarySymptom is PrimarySymptom
+        # The Phase-1 spec alias must still be exposed.
+        assert diag.EvidenceExtractor is EvidenceWindowExtractor
+
+    def test_dir_and_all_advertise_public_names(self) -> None:
+        import starboard_x.diagnostic as diag
+
+        for name in ("ExitCodeTriager", "EvidenceExtractor", "RootCauseSynthesizer"):
+            assert name in diag.__all__, f"{name} missing from __all__"
+            assert name in dir(diag), f"{name} missing from dir()"
+
+    def test_unknown_attribute_raises_attribute_error(self) -> None:
+        import starboard_x.diagnostic as diag
+
+        with pytest.raises(AttributeError):
+            _ = diag.NoSuchThing
+
+
+@pytest.mark.unit
 class TestStdlibOnlyGuarantee:
     """The ``diagnostics-core`` trio must import with no pyyaml/pydantic/SDK."""
 

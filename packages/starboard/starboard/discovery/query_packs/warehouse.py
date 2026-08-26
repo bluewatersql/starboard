@@ -175,6 +175,11 @@ SELECT
   CASE
     WHEN COALESCE(r.running_seconds, 0) = 0                   THEN 'Offline'
     WHEN COALESCE(q.total_queries, 0) = 0                     THEN 'No-utilization'
+    -- A NULL ratio (e.g. busy_seconds is NULL) never satisfies the < / <=
+    -- comparisons below (SQL 3-valued logic), so without this explicit branch
+    -- such a row would fall through to 'Resource-starved'. Map it to
+    -- 'No-utilization' to match the Python classify_utilization_band labeler.
+    WHEN TRY_DIVIDE(q.busy_seconds, r.running_seconds) IS NULL THEN 'No-utilization'
     WHEN TRY_DIVIDE(q.busy_seconds, r.running_seconds) < 0.30 THEN 'Under-utilized'
     WHEN TRY_DIVIDE(q.busy_seconds, r.running_seconds) <= 0.80 THEN 'Optimal'
     ELSE                                                           'Resource-starved'

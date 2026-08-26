@@ -25,6 +25,8 @@ from starboard.discovery.query_packs.registry import (
     create_default_registry,
 )
 from starboard.discovery.query_packs.warehouse import (
+    OPTIMAL_MAX,
+    UNDER_UTILIZED_MAX,
     WAREHOUSE_PACK,
     classify_client_app,
     classify_load_bucket,
@@ -168,6 +170,94 @@ class TestUtilizationBandLogic:
         util = next(q for q in WAREHOUSE_PACK.queries if q.query_id == "W-W01")
         assert "0.30" in util.sql_template
         assert "0.80" in util.sql_template
+
+
+class TestSqlPythonBandAgreement:
+    """Review fix #4: the W-W01 SQL CASE and the Python ``classify_utilization_band``
+    must agree — in particular on the NULL-ratio row.
+
+    A warehouse that was running with queries but whose utilization ratio is
+    NULL (e.g. ``busy_seconds`` is NULL so ``TRY_DIVIDE`` yields NULL) must land
+    in the same band from both labelers. The Python classifier returns
+    ``No-utilization``; the SQL used to fall through to ``Resource-starved``
+    because ``NULL < 0.30`` / ``NULL <= 0.80`` are both non-TRUE. The SQL now
+    carries an explicit ``... IS NULL THEN 'No-utilization'`` branch.
+    """
+
+    @staticmethod
+    def _sql_band(
+        *,
+        running_seconds: float | None,
+        total_queries: int,
+        utilization_ratio: float | None,
+    ) -> str:
+        """Faithful mirror of the W-W01 SQL CASE branch order (SQL NULL semantics).
+
+        ``COALESCE(running_seconds, 0) = 0`` -> Offline; ``COALESCE(total_queries,
+        0) = 0`` -> No-utilization; ``TRY_DIVIDE(...) IS NULL`` -> No-utilization;
+        ``< 0.30`` -> Under-utilized; ``<= 0.80`` -> Optimal; else Resource-starved.
+        A NULL ratio never satisfies the ``<``/``<=`` comparisons (SQL 3-valued
+        logic), so without the explicit IS NULL branch it would fall to ELSE.
+        """
+        if (running_seconds or 0) == 0:
+            return "Offline"
+        if (total_queries or 0) == 0:
+            return "No-utilization"
+        if utilization_ratio is None:
+            return "No-utilization"
+        if utilization_ratio < UNDER_UTILIZED_MAX:
+            return "Under-utilized"
+        if utilization_ratio <= OPTIMAL_MAX:
+            return "Optimal"
+        return "Resource-starved"
+
+    def test_sql_case_has_explicit_null_ratio_branch(self):
+        """The W-W01 SQL must map a NULL utilization ratio to 'No-utilization'."""
+        util = next(q for q in WAREHOUSE_PACK.queries if q.query_id == "W-W01")
+        sql = util.sql_template
+        # An explicit IS NULL -> 'No-utilization' branch (COALESCE would also do,
+        # but the committed fix uses an IS NULL WHEN clause).
+        assert "IS NULL" in sql, "W-W01 CASE must handle the NULL utilization ratio"
+        null_branch = re.search(
+            r"WHEN\s+TRY_DIVIDE\([^)]*\)\s+IS NULL\s+THEN\s+'No-utilization'",
+            sql,
+        )
+        assert null_branch is not None, (
+            "W-W01 must contain a `WHEN TRY_DIVIDE(...) IS NULL THEN 'No-utilization'` "
+            "branch so the SQL agrees with classify_utilization_band on the NULL-ratio row"
+        )
+
+    @pytest.mark.parametrize(
+        ("running_seconds", "total_queries", "ratio"),
+        [
+            # The disagreement case: running with queries but a NULL ratio.
+            (3600, 5, None),
+            # A couple of normal band cases (both labelers already agree here).
+            (0, 0, None),
+            (3600, 0, None),
+            (3600, 5, 0.05),
+            (3600, 100, 0.55),
+            (3600, 200, 0.99),
+        ],
+    )
+    def test_python_and_sql_labelers_agree(
+        self, running_seconds, total_queries, ratio
+    ):
+        python_band = classify_utilization_band(
+            running_seconds=running_seconds,
+            total_queries=total_queries,
+            utilization_ratio=ratio,
+        )
+        sql_band = self._sql_band(
+            running_seconds=running_seconds,
+            total_queries=total_queries,
+            utilization_ratio=ratio,
+        )
+        assert python_band == sql_band, (
+            f"labelers disagree for running={running_seconds}, "
+            f"queries={total_queries}, ratio={ratio}: "
+            f"python={python_band!r} sql={sql_band!r}"
+        )
 
 
 class TestLoadBucketLogic:

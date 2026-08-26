@@ -1,20 +1,23 @@
 # Copyright (c) 2025 Databricks, Inc.
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
-"""Phase-1 B3 + B6 guardrails: Claude Code plugin + marketplace manifest.
+"""Phase-1 B3 guardrails: Claude Code plugin + marketplace manifest.
 
-Enforces Task B3 (PHASE_1.md §7) and Task B6 (PHASE_1.md §9b) with the *verified*
-current manifest formats (code.claude.com/docs/en/plugins-reference +
-/plugin-marketplaces, 2026-08-26; agent_integration/technical.md §1.3):
+Enforces Task B3 (PHASE_1.md §7) with the *verified* current manifest formats
+(code.claude.com/docs/en/plugins-reference + /plugin-marketplaces, 2026-08-26;
+agent_integration/technical.md §1.3):
 
 - ``plugin/.claude-plugin/plugin.json`` is valid JSON with the B3 field set
   (``name``/``displayName``/``version``/``description``/``author``/``keywords``/
   ``license``) and **declares ``skills``** — the dual-mode invariant stays intact.
-- B6 optional-MCP toggle: ``plugin.json`` declares ``mcpServers`` (pointing at the
-  bundled ``./.mcp.json``) and a ``userConfig.enable_mcp`` boolean (``title`` +
-  ``description``, ``required: false``) so users opt into the full agent stack.
-- ``plugin/.mcp.json`` is valid JSON declaring the ``starboard`` stdio server
-  (``command: starboard-mcp``) with env passthrough for ``DATABRICKS_HOST`` /
-  ``LLM_*`` and **no hard-coded secrets**.
+- The committed plugin is **skills-only by default** (review fix #1): it does
+  **not** declare ``mcpServers`` and carries no inert ``userConfig.enable_mcp``.
+  Claude Code launches any declared bundled ``mcpServers`` on plugin load, so a
+  declared server would break a skills-only install (no ``starboard-mcp``, no LLM
+  creds). MCP is an explicit opt-in the user wires up themselves (see README).
+- ``plugin/.mcp.json`` stays in the repo as a valid-JSON opt-in template: it
+  declares the ``starboard`` stdio server (``command: starboard-mcp``) with env
+  passthrough for ``DATABRICKS_HOST`` / ``LLM_*`` and **no hard-coded secrets**,
+  so users who want the full agent stack can copy it into their own ``.mcp.json``.
 - ``.claude-plugin/marketplace.json`` (repo root) is valid JSON with ``name``,
   an ``owner`` **object**, and a ``plugins`` array listing the ``starboard`` plugin
   whose ``source`` (``./plugin``) resolves to a dir containing
@@ -101,51 +104,50 @@ def test_plugin_json_declares_skills() -> None:
 
 
 def test_plugin_json_still_declares_skills_dual_mode_intact() -> None:
-    """B6 layers the MCP toggle ON TOP OF the skills — the dual-mode invariant holds.
+    """The skills declaration is the plugin's whole surface (skills-only default).
 
-    The skills declaration (and the vendored tree) must survive the B6 change so the
-    ``enable_mcp: false`` / server-absent path still routes through ``starboard-helper``.
+    The skills-only committed plugin routes every skill through ``starboard-helper``
+    with no server present; the skills declaration must always survive.
     """
     manifest = _load_json(PLUGIN_JSON)
-    assert "skills" in manifest, "B6 must not drop the skills declaration (dual-mode fallback)"
+    assert "skills" in manifest, "the committed plugin must always declare skills"
 
 
 # --------------------------------------------------------------------------- #
-# B6 optional-MCP toggle (PHASE_1.md §9b, agent_integration §1.3)             #
+# skills-only default (review fix #1): no bundled mcpServers, no inert toggle   #
 # --------------------------------------------------------------------------- #
 
 
-def test_plugin_json_declares_mcp_servers_pointing_at_bundled_file() -> None:
-    """B6: ``plugin.json`` opts into MCP by pointing ``mcpServers`` at ``./.mcp.json``."""
-    manifest = _load_json(PLUGIN_JSON)
-    assert "mcpServers" in manifest, "B6 must declare mcpServers for the optional-MCP toggle"
-    mcp_servers = manifest["mcpServers"]
-    # Verified form: a string path to a bundled .mcp.json (agent_integration §1.3).
-    assert isinstance(mcp_servers, str), "mcpServers should be a string path to the bundled .mcp.json"
-    resolved = (PLUGIN_DIR / mcp_servers).resolve()
-    assert resolved == MCP_JSON.resolve(), f"mcpServers {mcp_servers!r} must resolve to plugin/.mcp.json"
-    assert resolved.is_file(), "the bundled .mcp.json must exist"
+def test_plugin_json_is_skills_only_no_mcp_servers() -> None:
+    """Review fix #1: the committed plugin must NOT declare ``mcpServers``.
 
-
-def test_plugin_json_declares_user_config_enable_mcp() -> None:
-    """B6: a ``userConfig.enable_mcp`` boolean lets users opt into the full agent stack."""
+    Claude Code launches declared bundled ``mcpServers`` on plugin load, so a
+    committed ``mcpServers`` would break the skills-only install (no ``starboard-mcp``
+    binary, no LLM creds). MCP is an explicit, user-wired opt-in (see README).
+    """
     manifest = _load_json(PLUGIN_JSON)
-    assert "userConfig" in manifest, "B6 must declare userConfig"
-    user_config = manifest["userConfig"]
-    assert isinstance(user_config, dict), "userConfig must be an object"
-    assert "enable_mcp" in user_config, "userConfig must define the enable_mcp toggle"
-    entry = user_config["enable_mcp"]
-    assert entry.get("type") == "boolean", "enable_mcp must be a boolean userConfig entry"
-    assert entry.get("title"), "enable_mcp must carry a human-readable title"
-    assert isinstance(entry.get("description"), str) and entry["description"].strip(), (
-        "enable_mcp must carry a non-empty description"
+    assert "mcpServers" not in manifest, (
+        "the committed plugin must be skills-only: drop mcpServers so a skills-only "
+        "install does not try to launch starboard-mcp on load (MCP is an opt-in)"
     )
-    # Opt-in: not required so the skills-only path stays the default.
-    assert entry.get("required") is False, "enable_mcp must be required: false (opt-in)"
+
+
+def test_plugin_json_has_no_inert_enable_mcp_toggle() -> None:
+    """Review fix #1: the inert ``userConfig.enable_mcp`` toggle is removed.
+
+    The toggle never gated MCP startup (Claude Code launches declared servers
+    unconditionally), so it is misleading and must not be shipped.
+    """
+    manifest = _load_json(PLUGIN_JSON)
+    user_config = manifest.get("userConfig")
+    if user_config is not None:
+        assert "enable_mcp" not in user_config, (
+            "remove the inert enable_mcp toggle: it never gated MCP startup"
+        )
 
 
 def test_bundled_mcp_json_declares_starboard_server() -> None:
-    """B6: ``plugin/.mcp.json`` parses and declares the ``starboard`` stdio server."""
+    """The opt-in ``plugin/.mcp.json`` template parses and declares ``starboard``."""
     mcp = _load_json(MCP_JSON)
     assert "mcpServers" in mcp, ".mcp.json must contain an mcpServers object"
     servers = mcp["mcpServers"]
@@ -160,7 +162,7 @@ def test_bundled_mcp_json_declares_starboard_server() -> None:
 
 
 def test_bundled_mcp_json_env_passthrough_without_secrets() -> None:
-    """B6: env passes through DATABRICKS_HOST / LLM_* by reference, no hard-coded secrets."""
+    """Opt-in template: env passes through DATABRICKS_HOST / LLM_* by reference, no secrets."""
     mcp = _load_json(MCP_JSON)
     env = mcp["mcpServers"]["starboard"].get("env", {})
     assert isinstance(env, dict) and env, "starboard server must declare an env block"
