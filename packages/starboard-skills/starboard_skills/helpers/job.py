@@ -1,4 +1,6 @@
 """Job domain helper — fetch Databricks job data."""
+import itertools
+
 from starboard_skills.helpers.contract import make_client as _client
 from starboard_skills.helpers.contract import raise_api_error
 
@@ -38,7 +40,11 @@ def cmd_fetch(args):
 def cmd_runs(args):
     w = _client()
     try:
-        runs = list(w.jobs.list_runs(job_id=args.job_id, limit=args.limit))
+        # SDK `limit` is the page size on an auto-paginating iterator, not a total
+        # cap — enforce the requested cap client-side with islice.
+        runs = list(
+            itertools.islice(w.jobs.list_runs(job_id=args.job_id), args.limit)
+        )
         return {
             "job_id": args.job_id,
             "runs": [
@@ -59,16 +65,19 @@ def cmd_runs(args):
 def cmd_list(args):
     w = _client()
     try:
-        jobs = list(w.jobs.list(limit=args.limit))
-        result = [
-            {
-                "job_id": j.job_id,
-                "name": j.settings.name if j.settings else None,
-            }
-            for j in jobs
-        ]
-        if args.name_filter:
-            result = [r for r in result if args.name_filter.lower() in (r["name"] or "").lower()]
+        # `w.jobs.list()` is an auto-paginating iterator (the SDK `limit` is only
+        # the page size), so materializing it returns ALL jobs. Iterate and stop
+        # once we have `--limit` results — applying `--name-filter` inline so the
+        # cap counts matches, not raw rows.
+        name_filter = args.name_filter.lower() if args.name_filter else None
+        result = []
+        for j in w.jobs.list():
+            name = j.settings.name if j.settings else None
+            if name_filter and name_filter not in (name or "").lower():
+                continue
+            result.append({"job_id": j.job_id, "name": name})
+            if len(result) >= args.limit:
+                break
         return {"jobs": result, "count": len(result)}
     except Exception as e:
         raise_api_error(e)

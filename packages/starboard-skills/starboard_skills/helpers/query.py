@@ -1,4 +1,6 @@
 """Query domain helper — fetch Databricks SQL query history data."""
+import itertools
+
 from starboard_skills.helpers.contract import ArgError, HelperError, raise_api_error
 from starboard_skills.helpers.contract import make_client as _client
 
@@ -60,7 +62,11 @@ def cmd_history(args):
                 filter_by = QueryFilter(query_start_time_range=None, statuses=[status], warehouse_ids=[args.warehouse_id] if args.warehouse_id else None)
             except KeyError as ke:
                 raise ArgError(f"Unknown status: {args.status}") from ke
-        queries = list(w.query_history.list(filter_by=filter_by, max_results=args.limit))
+        # `max_results` is the page size on an auto-paginating iterator, not a
+        # total cap — enforce the requested cap client-side with islice.
+        queries = list(
+            itertools.islice(w.query_history.list(filter_by=filter_by), args.limit)
+        )
         return {
             "queries": [_query_to_dict(q) for q in queries],
             "count": len(queries),
@@ -74,7 +80,9 @@ def cmd_history(args):
 def cmd_slow(args):
     w = _client()
     try:
-        queries = list(w.query_history.list(max_results=200))
+        # Bound the scan to 200 rows (islice caps the auto-paginating iterator;
+        # max_results alone is only the page size, so list() would drain ALL).
+        queries = list(itertools.islice(w.query_history.list(), 200))
         slow = [
             q for q in queries
             if (getattr(q, "duration", 0) or 0) >= args.min_duration_ms

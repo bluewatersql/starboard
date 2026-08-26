@@ -233,3 +233,40 @@ def test_exit_code_arg_error_bad_choice(monkeypatch, capsys):
         client=c,
     )
     assert code == contract.EXIT_ARG == 4
+
+
+# --- regression: --limit must cap results (SDK .list() auto-paginates; limit is
+# only the page size, so a bare list() returns ALL rows). ---
+
+def _fake_jobs(n, name=lambda i: f"job{i}"):
+    return [
+        SimpleNamespace(job_id=i, settings=SimpleNamespace(name=name(i)))
+        for i in range(n)
+    ]
+
+
+def test_job_list_honors_limit(monkeypatch, capsys):
+    c = MagicMock()
+    c.jobs.list.return_value = _fake_jobs(19)  # more than the requested limit
+    code, env = run_cli(
+        ["job", "list", "--limit", "5"], monkeypatch, capsys, client=c
+    )
+    assert code == 0 and env["ok"] is True
+    assert env["data"]["count"] == 5
+    assert len(env["data"]["jobs"]) == 5
+
+
+def test_job_list_limit_counts_filtered_matches(monkeypatch, capsys):
+    c = MagicMock()
+    c.jobs.list.return_value = _fake_jobs(
+        20, name=lambda i: ("keep" if i % 2 == 0 else "skip") + str(i)
+    )
+    code, env = run_cli(
+        ["job", "list", "--limit", "3", "--name-filter", "keep"],
+        monkeypatch,
+        capsys,
+        client=c,
+    )
+    assert code == 0
+    assert env["data"]["count"] == 3
+    assert all("keep" in j["name"] for j in env["data"]["jobs"])
