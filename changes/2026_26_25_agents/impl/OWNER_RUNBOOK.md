@@ -52,6 +52,19 @@ workspaces per `databricks_auth/opportunities.md`); `pip install "starboard-x[di
 `changes/2026_26_25_agents/agent_integration/open_questions.md` under I5, and tell the assistant —
 it gates whether the plugin README leads with "zero setup" or "one-time `auth login`".
 
+**RESULT (2026-08-26, verified under `isaac --claude`): ⚠️ PARTIAL.** `starboard-helper` is installed
+and works, but bare `WorkspaceClient()` finds **no default credentials** in the Isaac env
+("Authentication error: default auth credentials") — **Isaac does NOT inject Databricks auth onto the
+SDK default-credential chain** the helper reads. The resolver is correct; the chain simply has nothing
+to resolve until the user sets up auth. Consequences (actioned):
+- The no-MCP path is **"one-time `databricks auth login`"**, not zero-config. The plugin README + skills
+  must document this setup step (do NOT claim "zero setup").
+- **Pull forward the `starboard auth login` wrapper** (auth R3) so users get one guided command instead
+  of raw `databricks auth login` + host.
+- Internal FE workspaces (e.g. `e2-demo-field-eng`, Okta) → OAuth via `databricks auth login` is the
+  right path (auto-refreshing); a `.databrickscfg` profile (`--profile` / `DATABRICKS_CONFIG_PROFILE`)
+  also works. Both are honored by the resolver's precedence.
+
 ---
 
 ## G2 — Preview-table query-pack validation against a live workspace
