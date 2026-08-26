@@ -1,5 +1,6 @@
 """FinOps domain helper — fetch Databricks cost and usage data."""
-import sys
+from starboard_skills.helpers.contract import make_account_client as _account_client
+from starboard_skills.helpers.contract import raise_api_error
 
 
 def register(subparsers) -> None:
@@ -18,15 +19,6 @@ def register(subparsers) -> None:
     log_delivery.set_defaults(func=cmd_log_delivery)
 
 
-def _account_client():
-    try:
-        from databricks.sdk import AccountClient
-        return AccountClient()
-    except Exception as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
 def cmd_usage(args):
     a = _account_client()
     try:
@@ -41,11 +33,10 @@ def cmd_usage(args):
             "count": len(logs),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
-def cmd_budgets(args):
+def cmd_budgets(args):  # noqa: ARG001
     a = _account_client()
     try:
         budgets = list(a.budgets.list())
@@ -64,11 +55,10 @@ def cmd_budgets(args):
             "count": len(budgets),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
-def cmd_log_delivery(args):
+def cmd_log_delivery(args):  # noqa: ARG001
     a = _account_client()
     try:
         configs = list(a.log_delivery.list())
@@ -85,5 +75,4 @@ def cmd_log_delivery(args):
             "count": len(configs),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)

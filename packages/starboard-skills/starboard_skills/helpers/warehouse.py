@@ -1,5 +1,6 @@
 """Warehouse domain helper — fetch Databricks SQL warehouse data."""
-import sys
+from starboard_skills.helpers.contract import make_client as _client
+from starboard_skills.helpers.contract import raise_api_error
 
 
 def register(subparsers) -> None:
@@ -16,15 +17,6 @@ def register(subparsers) -> None:
     metrics = sp.add_parser("metrics", help="Fetch warehouse metrics/events")
     metrics.add_argument("--warehouse-id", required=True, type=str)
     metrics.set_defaults(func=cmd_metrics)
-
-
-def _client():
-    try:
-        from databricks.sdk import WorkspaceClient
-        return WorkspaceClient()
-    except Exception as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
-        sys.exit(1)
 
 
 def _warehouse_to_dict(w) -> dict:
@@ -50,14 +42,12 @@ def cmd_fetch(args):
         wh = w.warehouses.get(args.warehouse_id)
         return _warehouse_to_dict(wh)
     except Exception as e:
-        if "not found" in str(e).lower():
-            print(f"Warehouse {args.warehouse_id} not found", file=sys.stderr)
-            sys.exit(2)
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(
+            e, not_found_message=f"Warehouse {args.warehouse_id} not found"
+        )
 
 
-def cmd_list(args):
+def cmd_list(args):  # noqa: ARG001
     w = _client()
     try:
         warehouses = list(w.warehouses.list())
@@ -66,14 +56,12 @@ def cmd_list(args):
             "count": len(warehouses),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_metrics(args):
     w = _client()
     try:
-        events = w.warehouses.get_permission_levels(args.warehouse_id)
         # Also try to get the warehouse state
         wh = w.warehouses.get(args.warehouse_id)
         return {
@@ -84,5 +72,4 @@ def cmd_metrics(args):
             "health": wh.health.as_dict() if getattr(wh, "health", None) else None,
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)

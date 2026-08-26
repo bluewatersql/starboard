@@ -1,5 +1,6 @@
 """Query domain helper — fetch Databricks SQL query history data."""
-import sys
+from starboard_skills.helpers.contract import ArgError, HelperError, raise_api_error
+from starboard_skills.helpers.contract import make_client as _client
 
 
 def register(subparsers) -> None:
@@ -23,26 +24,13 @@ def register(subparsers) -> None:
     slow.set_defaults(func=cmd_slow)
 
 
-def _client():
-    try:
-        from databricks.sdk import WorkspaceClient
-        return WorkspaceClient()
-    except Exception as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
 def cmd_fetch(args):
     w = _client()
     try:
         q = w.query_history.get_query(args.query_id)
         return q.as_dict() if hasattr(q, "as_dict") else vars(q)
     except Exception as e:
-        if "not found" in str(e).lower():
-            print(f"Query {args.query_id} not found", file=sys.stderr)
-            sys.exit(2)
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e, not_found_message=f"Query {args.query_id} not found")
 
 
 def _query_to_dict(q) -> dict:
@@ -70,17 +58,17 @@ def cmd_history(args):
                 status = QueryStatus[args.status.upper()]
                 from databricks.sdk.service.sql import QueryFilter
                 filter_by = QueryFilter(query_start_time_range=None, statuses=[status], warehouse_ids=[args.warehouse_id] if args.warehouse_id else None)
-            except KeyError:
-                print(f"Unknown status: {args.status}", file=sys.stderr)
-                sys.exit(4)
+            except KeyError as ke:
+                raise ArgError(f"Unknown status: {args.status}") from ke
         queries = list(w.query_history.list(filter_by=filter_by, max_results=args.limit))
         return {
             "queries": [_query_to_dict(q) for q in queries],
             "count": len(queries),
         }
+    except HelperError:
+        raise
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_slow(args):
@@ -101,5 +89,4 @@ def cmd_slow(args):
             "min_duration_ms": args.min_duration_ms,
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)

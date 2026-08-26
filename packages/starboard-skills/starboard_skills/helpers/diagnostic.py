@@ -1,5 +1,6 @@
 """Diagnostic domain helper — fetch Databricks diagnostic/observability data."""
-import sys
+from starboard_skills.helpers.contract import make_client as _client
+from starboard_skills.helpers.contract import raise_api_error
 
 
 def register(subparsers) -> None:
@@ -25,26 +26,16 @@ def register(subparsers) -> None:
     cluster_log.set_defaults(func=cmd_cluster_log)
 
 
-def _client():
-    try:
-        from databricks.sdk import WorkspaceClient
-        return WorkspaceClient()
-    except Exception as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-def cmd_workspace(args):
+def cmd_workspace(args):  # noqa: ARG001
     w = _client()
     try:
         conf = w.workspace_conf.get_status(keys="enableIpAccessLists,enableTokensConfig")
         return {"workspace_config": dict(conf) if conf else {}}
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
-def cmd_node_types(args):
+def cmd_node_types(args):  # noqa: ARG001
     w = _client()
     try:
         node_types = list(w.clusters.list_node_types().node_types or [])
@@ -63,11 +54,10 @@ def cmd_node_types(args):
             "count": len(node_types),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
-def cmd_spark_versions(args):
+def cmd_spark_versions(args):  # noqa: ARG001
     w = _client()
     try:
         versions = list(w.clusters.spark_versions().versions or [])
@@ -82,8 +72,7 @@ def cmd_spark_versions(args):
             "count": len(versions),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_run_state(args):
@@ -111,11 +100,7 @@ def cmd_run_state(args):
             "execution_duration": run.execution_duration,
         }
     except Exception as e:
-        if "not found" in str(e).lower():
-            print(f"Run {args.run_id} not found", file=sys.stderr)
-            sys.exit(2)
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e, not_found_message=f"Run {args.run_id} not found")
 
 
 def cmd_cluster_log(args):
@@ -138,5 +123,4 @@ def cmd_cluster_log(args):
             ],
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)

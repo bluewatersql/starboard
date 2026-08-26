@@ -1,5 +1,6 @@
 """Job domain helper — fetch Databricks job data."""
-import sys
+from starboard_skills.helpers.contract import make_client as _client
+from starboard_skills.helpers.contract import raise_api_error
 
 
 def register(subparsers) -> None:
@@ -21,15 +22,6 @@ def register(subparsers) -> None:
     list_jobs.set_defaults(func=cmd_list)
 
 
-def _client():
-    try:
-        from databricks.sdk import WorkspaceClient
-        return WorkspaceClient()
-    except Exception as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
 def cmd_fetch(args):
     w = _client()
     try:
@@ -40,11 +32,7 @@ def cmd_fetch(args):
             "settings": job.settings.as_dict() if job.settings else {},
         }
     except Exception as e:
-        if "not found" in str(e).lower():
-            print(f"Job {args.job_id} not found", file=sys.stderr)
-            sys.exit(2)
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e, not_found_message=f"Job {args.job_id} not found")
 
 
 def cmd_runs(args):
@@ -65,8 +53,7 @@ def cmd_runs(args):
             ],
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_list(args):
@@ -84,5 +71,4 @@ def cmd_list(args):
             result = [r for r in result if args.name_filter.lower() in (r["name"] or "").lower()]
         return {"jobs": result, "count": len(result)}
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
