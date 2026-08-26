@@ -17,10 +17,10 @@ logger = get_logger(__name__)
 PRODUCT_TO_DOMAIN_PACKS: dict[str, list[str]] = {
     # Core workloads
     "JOBS": ["jobs", "workflow"],
-    "SQL": ["query_perf", "serverless_sql", "aibi", "warehouse"],
-    "ALL_PURPOSE": ["compute"],
-    "INTERACTIVE": ["compute"],
-    "BASE_ENVIRONMENTS": ["compute"],
+    "SQL": ["query_perf", "serverless_sql", "aibi", "warehouse", "compute_reliability"],
+    "ALL_PURPOSE": ["compute", "compute_reliability"],
+    "INTERACTIVE": ["compute", "compute_reliability"],
+    "BASE_ENVIRONMENTS": ["compute", "compute_reliability"],
     # DLT / Pipelines
     "DLT": ["dlt_pipelines"],
     "LAKEFLOW_CONNECT": ["lakeflow_connect"],
@@ -46,8 +46,8 @@ PRODUCT_TO_DOMAIN_PACKS: dict[str, list[str]] = {
     # Governance / storage
     "PREDICTIVE_OPTIMIZATION": ["predictive_optimization"],
     "DATA_CLASSIFICATION": ["data_classification"],
-    "FINE_GRAINED_ACCESS_CONTROL": ["governance"],
-    "DEFAULT_STORAGE": ["governance"],
+    "FINE_GRAINED_ACCESS_CONTROL": ["governance", "column_lineage"],
+    "DEFAULT_STORAGE": ["governance", "column_lineage"],
     "NETWORKING": ["networking"],
 }
 
@@ -198,7 +198,11 @@ def create_default_registry() -> QueryPackRegistry:
     from starboard.discovery.query_packs.apps import APPS_PACK
     from starboard.discovery.query_packs.audit import AUDIT_PACK
     from starboard.discovery.query_packs.billing import BILLING_PACK
+    from starboard.discovery.query_packs.column_lineage import COLUMN_LINEAGE_PACK
     from starboard.discovery.query_packs.compute import COMPUTE_PACK
+    from starboard.discovery.query_packs.compute_reliability import (
+        COMPUTE_RELIABILITY_PACK,
+    )
 
     # System-table packs that fill previously-empty product routes.
     from starboard.discovery.query_packs.data_classification import (
@@ -265,5 +269,8 @@ def create_default_registry() -> QueryPackRegistry:
             NETWORKING_PACK,
             # Warehouse operational framings (D2)
             WAREHOUSE_PACK,
+            # Phase-2 D5 net-new packs
+            COMPUTE_RELIABILITY_PACK,
+            COLUMN_LINEAGE_PACK,
         )
     )

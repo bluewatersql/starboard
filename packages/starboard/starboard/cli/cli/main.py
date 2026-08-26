@@ -1050,6 +1050,11 @@ Environment Variables:
         action="store_true",
         help="Skip LLM analysis in discovery mode (raw data only)",
     )
+    discovery_group.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable discovery result caching (re-run every hot-table scan)",
+    )
 
     # -- Agent Options --------------------------------------------------------
     agent_group = parser.add_argument_group("Agent Options")
@@ -1149,6 +1154,7 @@ async def run_discovery_mode(
         llm_temperature=config.discovery_llm_temperature
         if hasattr(config, "discovery_llm_temperature")
         else 0.3,
+        enable_cache=not getattr(args, "no_cache", False),
     )
 
     databricks_client = AsyncDatabricksClient(cfg=config)
