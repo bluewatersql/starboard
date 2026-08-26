@@ -93,14 +93,35 @@ def build_config(target: WorkspaceTarget) -> Config:
 
     Unset fields are omitted so the SDK's credential chain can resolve them.
     Crucially, this never injects an empty host/token (the previous behavior).
+
+    Precedence is enforced by *subtraction* so the SDK is never handed conflicting
+    authorization methods (which raises "more than one authorization method
+    configured"):
+
+    - When ``profile`` is set it is the source of truth (it carries its own host
+      and auth), so inline ``host``/``token`` and ambient ``client_id``/``client_secret``
+      are dropped — honoring the documented ``--profile`` > host/token precedence.
+    - Otherwise, an explicit ``token`` (PAT) wins over ambient env
+      ``client_id``/``client_secret``. ``host`` + ``client_id``/``client_secret``
+      (OAuth M2M) remain valid together.
     """
+    host = target.host
+    token = target.token
+    client_id = target.client_id
+    client_secret = target.client_secret
+
+    if target.profile:
+        host = token = client_id = client_secret = None
+    elif token:
+        client_id = client_secret = None
+
     kwargs: dict[str, Any] = {
         k: v
         for k, v in {
-            "host": target.host,
-            "token": target.token,
-            "client_id": target.client_id,
-            "client_secret": target.client_secret,
+            "host": host,
+            "token": token,
+            "client_id": client_id,
+            "client_secret": client_secret,
             "profile": target.profile,
             "config_file": target.config_file,
             "auth_type": target.auth_type,

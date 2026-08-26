@@ -20,16 +20,21 @@ from starboard_core.domain.models.discovery.query import (
     SystemQuery,
 )
 
+# NOTE: system.data_classification.results is Public Preview; column names verified
+# against current docs (2026-08). The tag column is `class_tag` and the timestamp is
+# `latest_detected_time` (`first_detected_time` also available); catalog/schema/table/
+# column names are as below. Live-workspace validation still recommended — see
+# changes/2026_26_25_agents/impl/phase0_review_findings.md.
 DC_01_SQL = """\
 SELECT
   catalog_name,
   schema_name,
   table_name,
-  COUNT(DISTINCT column_name)     AS classified_columns,
-  COUNT(DISTINCT tag_name)        AS distinct_classifications,
-  MAX(classified_at)              AS last_classified_at
+  COUNT(DISTINCT column_name)       AS classified_columns,
+  COUNT(DISTINCT class_tag)         AS distinct_classifications,
+  MAX(latest_detected_time)         AS last_classified_at
 FROM system.data_classification.results
-WHERE classified_at >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+WHERE latest_detected_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
 GROUP BY ALL
 ORDER BY classified_columns DESC
 LIMIT 200

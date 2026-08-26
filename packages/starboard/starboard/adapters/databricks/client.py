@@ -179,11 +179,16 @@ class AsyncDatabricksClient:
         if self._cache_enabled:
             self._cache = CacheManager(max_size=self._cache_max_size)
 
-        # Initialize HTTP client for REST API calls
+        # Initialize HTTP client for REST API calls.
+        # Derive host + auth from the SDK client's resolved config so REST paths
+        # work under ALL auth modes (profile / OAuth / .databrickscfg / ambient),
+        # not just inline host+token. `config.authenticate()` returns fresh auth
+        # headers (refreshing OAuth tokens as needed) rather than a static
+        # `Bearer {token}` that is None under token-less auth.
         self._http_client = httpx.AsyncClient(
-            base_url=self._host or "",
+            base_url=self._effective_host(),
             headers={
-                "Authorization": f"Bearer {self._token}",
+                **self._sdk_auth_headers(),
                 "Content-Type": "application/json",
             },
             timeout=httpx.Timeout(30.0, connect=5.0),
@@ -344,12 +349,40 @@ class AsyncDatabricksClient:
         if self._rest_client_instance is None:
             from starboard.adapters.apis.http_client import HTTPClient
 
+            # Host + auth from the SDK's resolved config (see _initialize) so
+            # lineage/REST works under profile/OAuth/ambient auth, not only
+            # inline host+token.
             self._rest_client_instance = HTTPClient(
-                base_url=self._host or "",
-                auth_header={"Authorization": f"Bearer {self._token}"},
+                base_url=self._effective_host(),
+                auth_header=self._sdk_auth_headers(),
                 timeout=30.0,
             )
         return self._rest_client_instance
+
+    def _effective_host(self) -> str:
+        """Resolved workspace host: prefer the SDK client's resolved config host
+        (populated under any auth mode), falling back to the inline host."""
+        sdk = getattr(self, "_sdk_client", None)
+        sdk_host = sdk.config.host if sdk is not None else None
+        return sdk_host or self._host or ""
+
+    def _sdk_auth_headers(self) -> dict[str, str]:
+        """Fresh auth headers from the SDK's resolved credentials.
+
+        Works for every auth mode the resolver enables (PAT, OAuth U2M/M2M,
+        profile, ambient runtime); refreshes OAuth tokens as needed. Falls back
+        to a PAT header only if the SDK client is not initialized yet and a token
+        was supplied inline.
+        """
+        sdk = getattr(self, "_sdk_client", None)
+        if sdk is not None:
+            try:
+                headers = sdk.config.authenticate()
+                if headers:
+                    return dict(headers)
+            except Exception:  # noqa: BLE001 - auth boundary; fall back below
+                pass
+        return {"Authorization": f"Bearer {self._token}"} if self._token else {}
 
     def require_warehouse_id(self) -> str:
         """Get warehouse ID, raising error if not available."""

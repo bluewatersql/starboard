@@ -20,15 +20,20 @@ from starboard_core.domain.models.discovery.query import (
     SystemQuery,
 )
 
+# NOTE: system.access.outbound_network is Public Preview; column names verified
+# against current docs (2026-08). Denials are recorded in `access_type` = 'DROP'
+# (dry-run rows use a distinct value); the table exposes `event_time` (timestamp),
+# not an `event_date` column. Still worth live-workspace validation before this
+# pack is relied upon — see changes/2026_26_25_agents/impl/phase0_review_findings.md.
 NET_01_SQL = """\
 SELECT
-  event_date,
+  date(event_time)                AS event_date,
   destination_type,
   COUNT(*)                        AS denied_connections,
   COUNT(DISTINCT workspace_id)    AS affected_workspaces
 FROM system.access.outbound_network
-WHERE event_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-  AND access_result = 'DENIED'
+WHERE event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+  AND access_type = 'DROP'
 GROUP BY ALL
 ORDER BY event_date DESC, denied_connections DESC
 LIMIT 200

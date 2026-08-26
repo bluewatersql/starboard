@@ -20,19 +20,23 @@ from starboard_core.domain.models.discovery.query import (
     SystemQuery,
 )
 
+# NOTE: system.data_quality_monitoring.table_results is Public Preview; columns
+# verified against current docs (2026-08). The result is a per-snapshot table-level
+# health row: `status` domain is Healthy/Unhealthy/Unknown (NOT 'FAIL'), the
+# timestamp is `event_time` (no `evaluated_at`), and rows key on `table_id`. We
+# count Unhealthy snapshots rather than "failed checks". Live-workspace validation
+# recommended — see changes/2026_26_25_agents/impl/phase0_review_findings.md.
 DQ_01_SQL = """\
 SELECT
-  catalog_name,
-  schema_name,
-  table_name,
-  COUNT(*)                                            AS evaluations,
-  SUM(CASE WHEN status = 'FAIL' THEN 1 ELSE 0 END)    AS failed_checks,
-  MAX(evaluated_at)                                   AS last_evaluated_at
+  table_id,
+  COUNT(*)                                                AS snapshots,
+  SUM(CASE WHEN status = 'Unhealthy' THEN 1 ELSE 0 END)   AS unhealthy_snapshots,
+  MAX(event_time)                                         AS last_evaluated_at
 FROM system.data_quality_monitoring.table_results
-WHERE evaluated_at >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+WHERE event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
 GROUP BY ALL
-HAVING failed_checks > 0
-ORDER BY failed_checks DESC
+HAVING unhealthy_snapshots > 0
+ORDER BY unhealthy_snapshots DESC
 LIMIT 200
 """
 

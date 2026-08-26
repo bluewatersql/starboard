@@ -113,6 +113,49 @@ class TestBuildConfig:
         cfg = build_config(WorkspaceTarget())
         assert cfg.kwargs == {}
 
+    def test_profile_drops_host_token_and_client_creds(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """M1: --profile is the source of truth; conflicting host/token and
+        ambient client creds must be dropped so the SDK does not raise
+        'more than one authorization method configured'."""
+        monkeypatch.setattr(resolver_mod, "Config", _FakeConfig)
+        target = WorkspaceTarget(
+            profile="prod",
+            host="https://env-host",
+            token="env-tok",
+            client_id="cid",
+            client_secret="secret",
+        )
+        cfg = build_config(target)
+        assert cfg.kwargs == {"profile": "prod"}
+
+    def test_explicit_token_beats_ambient_client_creds(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """M1: an explicit PAT wins over ambient env client_id/secret."""
+        monkeypatch.setattr(resolver_mod, "Config", _FakeConfig)
+        target = WorkspaceTarget(
+            host="https://h", token="tok", client_id="cid", client_secret="sec"
+        )
+        cfg = build_config(target)
+        assert cfg.kwargs == {"host": "https://h", "token": "tok"}
+
+    def test_m2m_host_plus_client_creds_kept(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """OAuth M2M (host + client_id/secret, no token/profile) stays intact."""
+        monkeypatch.setattr(resolver_mod, "Config", _FakeConfig)
+        target = WorkspaceTarget(
+            host="https://h", client_id="cid", client_secret="sec"
+        )
+        cfg = build_config(target)
+        assert cfg.kwargs == {
+            "host": "https://h",
+            "client_id": "cid",
+            "client_secret": "sec",
+        }
+
 
 class TestResolveWorkspaceClient:
     def test_host_token_backcompat(self, monkeypatch: pytest.MonkeyPatch) -> None:
