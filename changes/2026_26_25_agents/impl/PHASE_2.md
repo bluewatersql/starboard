@@ -132,6 +132,40 @@ Format/API facts below are **verified** against the live docs (fetched 2026-08-2
 
 ---
 
+## 3b. Task A0 — `starboard auth login` wrapper (first increment, from G1)
+
+**Why (from the OWNER_RUNBOOK G1 result):** Isaac does **not** inject Databricks auth onto the SDK
+chain, so the no-MCP path needs a one-time login. Today that's raw `databricks auth login --host …`.
+This wraps it into one guided command over the auth resolver already on `main` (auth R2/R3).
+
+**Decision D-2.11 (locked):** `auth login` **prefers the Databricks CLI** (`shutil.which("databricks")`
+→ `subprocess.run(["databricks","auth","login","--host",host,"--profile",profile])`); **falls back to
+the SDK `external-browser` strategy in-process** when the CLI is absent
+(`WorkspaceClient(config=Config(host=host, auth_type="external-browser"))` then `current_user.me()` to
+trigger the flow, token cached at `~/.databricks/token-cache.json`). Verified in `databricks_auth/technical.md` §4c.
+
+**Files:**
+| File (anchor) | Change |
+|---|---|
+| `cli/cli/main.py` (auth subparser near existing `--profile` flags) | add an `auth` command group: `login [--host URL] [--profile NAME]` and `status`; wire to handlers below |
+| `cli/cli/*` (new small module, e.g. `cli/cli/auth_commands.py`) | `cmd_auth_login` (D-2.11 flow) + `cmd_auth_status` (calls `resolve_workspace_client()` + `describe_auth()` → prints host/auth_type/profile/user as JSON/table) |
+| `infra/auth/resolver.py` | reuse `describe_auth()` (`:154`) — no change expected; add a thin helper only if needed |
+
+**Scope note:** ship `auth login` + `auth status` this task. `workspace list/use` (R2, reading
+`.databrickscfg` profiles) is a nice-to-have — include only if trivial; otherwise defer.
+
+**TDD (write failing tests first):**
+- `auth status` with a mocked resolved client prints host/auth_type/profile/user and **never a token**
+- `auth login`: when `databricks` CLI present → shells out with the right args (mock `shutil.which` +
+  `subprocess.run`); when absent → constructs a `Config(auth_type="external-browser")` client (mock SDK)
+- exit codes follow the CLI's existing convention; a failed login surfaces a clear, actionable error
+
+**Acceptance:** `starboard auth login --host <ws>` completes an OAuth login (or shells to the CLI) and
+`starboard auth status` then shows the resolved identity; no secrets printed. **LOE: S.** Independent
+of the C-items (touches `cli/`), so it runs in Wave 1.
+
+---
+
 ## 4. Task C1 — RAG → progressive-disclosure reference files + query packs
 
 **Source design:** `native_simplification/technical.md` §3, §5, §6. **Objective:** replace the embedding
