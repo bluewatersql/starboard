@@ -62,6 +62,7 @@ from starboard.bootstrap import (  # noqa: E402
     create_vector_store,
     get_config,
 )
+from starboard.cli.cli.auth_commands import run_auth  # noqa: E402
 from starboard.cli.cli.exit_codes import (  # noqa: E402
     AUTH_ERROR,
     CONFIG_ERROR,
@@ -1704,6 +1705,12 @@ def main(argv: list | None = None) -> None:
     Args:
         argv: Command line arguments (defaults to sys.argv)
     """
+    # Route the `auth` command group (login / status) before the main
+    # flag-based parser, so `starboard auth …` bypasses the agent path.
+    effective_argv = argv if argv is not None else sys.argv[1:]
+    if effective_argv and effective_argv[0] == "auth":
+        sys.exit(run_auth(effective_argv[1:]))
+
     try:
         args = parse_args(argv)
         asyncio.run(async_main(args))
