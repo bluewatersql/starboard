@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 PRODUCT_TO_DOMAIN_PACKS: dict[str, list[str]] = {
     # Core workloads
     "JOBS": ["jobs", "workflow"],
-    "SQL": ["query_perf", "serverless_sql", "aibi"],
+    "SQL": ["query_perf", "serverless_sql", "aibi", "warehouse"],
     "ALL_PURPOSE": ["compute"],
     "INTERACTIVE": ["compute"],
     "BASE_ENVIRONMENTS": ["compute"],
@@ -231,6 +231,7 @@ def create_default_registry() -> QueryPackRegistry:
     from starboard.discovery.query_packs.vector_search import (
         VECTOR_SEARCH_PACK,
     )
+    from starboard.discovery.query_packs.warehouse import WAREHOUSE_PACK
 
     return QueryPackRegistry(
         packs=(
@@ -262,5 +263,7 @@ def create_default_registry() -> QueryPackRegistry:
             DATA_QUALITY_PACK,
             DATA_CLASSIFICATION_PACK,
             NETWORKING_PACK,
+            # Warehouse operational framings (D2)
+            WAREHOUSE_PACK,
         )
     )

@@ -211,7 +211,7 @@ class TestProductMapping:
 class TestDefaultRegistry:
     def test_creates_all_packs(self):
         registry = create_default_registry()
-        assert registry.pack_count == 24
+        assert registry.pack_count == 25
 
     def test_audit_pack_present(self):
         registry = create_default_registry()
