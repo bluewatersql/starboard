@@ -6,6 +6,7 @@
         dev dev-debug dev-server dev-server-debug dev-stop dev-debug-context \
         test test-unit test-sdk test-integration test-golden test-contract test-coverage test-architecture \
         lint type-check format check pre-commit audit-deps \
+        vendor-skills vendor-skills-check \
         clean clean-debug clean-deep build info
 
 # Package manager detection (prefer uv)
@@ -249,6 +250,21 @@ audit-deps:
 	@echo "$(BLUE)Auditing dependencies...$(NC)"
 	pip-audit --strict
 	@echo "$(GREEN)✓ Audit complete$(NC)"
+
+# ================================
+# Plugin skills vendoring (review fix #2)
+# ================================
+# The self-contained plugin ships real skill files under plugin/skills/, mirrored
+# from the canonical source of truth packages/starboard-skills/skills/starboard/.
+
+vendor-skills:
+	@echo "$(BLUE)Vendoring canonical skills into plugin/skills/...$(NC)"
+	@python scripts/vendor_plugin_skills.py
+	@echo "$(GREEN)✓ Plugin skills vendored$(NC)"
+
+vendor-skills-check:
+	@echo "$(BLUE)Checking plugin/skills is in sync with canonical source...$(NC)"
+	@python scripts/vendor_plugin_skills.py --check
 
 # ================================
 # Build

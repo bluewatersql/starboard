@@ -6,8 +6,9 @@ Unity Catalog, clusters, FinOps, warehouses, and diagnostics.
 This plugin bundles the canonical Starboard skills. Each skill is **dual-mode**: it prefers the
 in-context `mcp__starboard__*` agent tools when a Starboard MCP server is present, and otherwise
 falls back to the `starboard-helper` CLI. This plugin ships **skills only, no MCP** — so out of the
-box every skill takes the CLI-helper path (no server, no LLM credentials required). The optional
-MCP toggle is a separate add-on (Task B6).
+box every skill takes the CLI-helper path (no server, no LLM credentials required). Enabling the
+full 7-agent MCP stack is an explicit opt-in you wire up yourself (see
+[Optional: enable the MCP server](#optional-enable-the-mcp-server-full-agent-stack)).
 
 ## Prerequisite — install the helper CLI
 
@@ -31,6 +32,28 @@ Authentication uses the Databricks unified auth chain (`DATABRICKS_HOST`/`DATABR
 
 `${CLAUDE_PLUGIN_ROOT}` (and, per-skill, `${CLAUDE_SKILL_DIR}`) resolve the bundled `scripts/`
 helpers at runtime, so pre-approved skill commands run without a permission prompt.
+
+## Optional: enable the MCP server (full agent stack)
+
+The committed plugin is **skills-only by default** and declares **no `mcpServers`**. Claude Code
+launches any bundled `mcpServers` a plugin declares as soon as the plugin loads, so shipping a
+server entry would break a skills-only install (it would try to spawn `starboard-mcp` with no
+binary and no LLM credentials). MCP is therefore an explicit opt-in you add yourself.
+
+The repo keeps `plugin/.mcp.json` as a ready-made template for the `starboard` stdio server. To run
+the full 7-agent stack:
+
+1. Install the server and its dependencies: `pip install starboard` and set the LLM credentials
+   (`LLM_PROVIDER` / `LLM_API_KEY` / `LLM_MODEL`) plus `DATABRICKS_HOST`.
+2. Register the server with Claude Code, either by copying the `starboard` entry from
+   `plugin/.mcp.json` into your own `.mcp.json`, or with the CLI:
+
+   ```bash
+   claude mcp add starboard -- starboard-mcp --transport stdio
+   ```
+
+When the server is present, the dual-mode skills automatically prefer the in-context
+`mcp__starboard__*` tools; when it is absent they fall back to the `starboard-helper` CLI.
 
 ## Install flows
 
@@ -77,9 +100,20 @@ standard conformance, and the confirmation-needed items live in
 
 ### Skill source of truth (D-1.5)
 
-`plugin/skills` is **not** a hand copy. It is a build-time vendoring of the single canonical skills
-tree at `packages/starboard-skills/skills/starboard/` — in this repo it is a relative symlink, so the
-plugin and the wheel always ship byte-identical `SKILL.md` files. A unit test
-(`packages/starboard/tests/unit/plugin/test_plugin_manifest.py`) enforces byte-identity as a drift
-guard. When producing a standalone, extraction-based artifact (e.g. the B4 `aitools` bundle), the
-symlink is materialized into real files by the same vendoring step.
+`plugin/skills` is **not** a hand copy. It is a vendored, materialized copy of the single canonical
+skills tree at `packages/starboard-skills/skills/starboard/`. The skill folders live directly under
+`plugin/skills/` (real files — **not** a symlink) so the plugin is fully self-contained: a copied or
+published plugin ships every skill.
+
+Keep it in sync with the canonical source with the committed vendoring script (single source of
+truth stays `packages/starboard-skills/skills/starboard/`):
+
+```bash
+python scripts/vendor_plugin_skills.py          # re-vendor (overwrite + prune)
+python scripts/vendor_plugin_skills.py --check   # verify in sync (drift guard)
+# or: make vendor-skills / make vendor-skills-check
+```
+
+Two unit tests enforce this: `packages/starboard/tests/unit/plugin/test_skills_vendored.py` fails if
+`plugin/skills` is a symlink or has drifted from the canonical tree (run the script to re-sync), and
+`test_plugin_manifest.py` checks the vendored `SKILL.md` set stays byte-identical to the source.
