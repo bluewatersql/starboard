@@ -1,5 +1,6 @@
 """Unity Catalog domain helper — fetch UC metadata."""
-import sys
+from starboard_skills.helpers.contract import make_client as _client
+from starboard_skills.helpers.contract import raise_api_error
 
 
 def register(subparsers) -> None:
@@ -28,16 +29,7 @@ def register(subparsers) -> None:
     lineage.set_defaults(func=cmd_lineage)
 
 
-def _client():
-    try:
-        from databricks.sdk import WorkspaceClient
-        return WorkspaceClient()
-    except Exception as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-def cmd_catalogs(args):
+def cmd_catalogs(args):  # noqa: ARG001
     w = _client()
     try:
         cats = list(w.catalogs.list())
@@ -53,8 +45,7 @@ def cmd_catalogs(args):
             "count": len(cats),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_schemas(args):
@@ -75,8 +66,7 @@ def cmd_schemas(args):
             "count": len(schemas),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_tables(args):
@@ -102,8 +92,7 @@ def cmd_tables(args):
             "count": len(tables),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_table(args):
@@ -121,11 +110,7 @@ def cmd_table(args):
             "properties": getattr(t, "properties", None),
         }
     except Exception as e:
-        if "not found" in str(e).lower():
-            print(f"Table {args.full_name} not found", file=sys.stderr)
-            sys.exit(2)
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e, not_found_message=f"Table {args.full_name} not found")
 
 
 def cmd_lineage(args):
@@ -138,5 +123,4 @@ def cmd_lineage(args):
             "downstream_tables": [],
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)

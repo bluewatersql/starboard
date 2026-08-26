@@ -1,5 +1,6 @@
 """Cluster domain helper — fetch Databricks cluster data."""
-import sys
+from starboard_skills.helpers.contract import make_client as _client
+from starboard_skills.helpers.contract import raise_api_error
 
 
 def register(subparsers) -> None:
@@ -22,15 +23,6 @@ def register(subparsers) -> None:
     spark_ui = sp.add_parser("spark-context", help="Get Spark context info for a cluster")
     spark_ui.add_argument("--cluster-id", required=True, type=str)
     spark_ui.set_defaults(func=cmd_spark_context)
-
-
-def _client():
-    try:
-        from databricks.sdk import WorkspaceClient
-        return WorkspaceClient()
-    except Exception as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
-        sys.exit(1)
 
 
 def _cluster_to_dict(c) -> dict:
@@ -57,11 +49,7 @@ def cmd_fetch(args):
         c = w.clusters.get(args.cluster_id)
         return _cluster_to_dict(c)
     except Exception as e:
-        if "not found" in str(e).lower():
-            print(f"Cluster {args.cluster_id} not found", file=sys.stderr)
-            sys.exit(2)
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e, not_found_message=f"Cluster {args.cluster_id} not found")
 
 
 def cmd_list(args):
@@ -73,8 +61,7 @@ def cmd_list(args):
             result = [c for c in result if c["state"] == args.filter_by_state]
         return {"clusters": result, "count": len(result)}
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_events(args):
@@ -95,8 +82,7 @@ def cmd_events(args):
             "count": len(events),
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
 
 
 def cmd_spark_context(args):
@@ -113,5 +99,4 @@ def cmd_spark_context(args):
             "executors": [e.as_dict() for e in (getattr(c, "executors", None) or [])],
         }
     except Exception as e:
-        print(f"API error: {e}", file=sys.stderr)
-        sys.exit(3)
+        raise_api_error(e)
