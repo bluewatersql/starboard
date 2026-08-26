@@ -43,22 +43,45 @@ DEFAULT_SERVING_PREFIX = "databricks-"
 """Default name prefix for foundation-model serving endpoints."""
 
 
-def get_workspace(host: str, token: str) -> WorkspaceClient:
+def get_workspace(
+    host: str | None = None,
+    token: str | None = None,
+    *,
+    profile: str | None = None,
+) -> WorkspaceClient:
     """Authenticate to a Databricks workspace.
 
+    Host and token are optional: when omitted, auth falls through to the unified
+    resolver and the SDK credential chain (profile, ``.databrickscfg``, ambient
+    notebook/runtime credentials). The positional ``get_workspace(host, token)``
+    call still works for back-compat.
+
     Args:
-        host: Workspace host (with or without scheme).
-        token: Personal access token or notebook API token.
+        host: Workspace host (with or without scheme). Optional.
+        token: Personal access token or notebook API token. Optional.
+        profile: ``.databrickscfg`` profile name (preferred targeting). Optional.
 
     Returns:
         An authenticated ``WorkspaceClient``.
     """
-    from databricks.sdk import WorkspaceClient
+    from starboard.infra.auth.resolver import (
+        WorkspaceTarget,
+        resolve_workspace_client,
+    )
 
-    client = WorkspaceClient(host=host, token=token)
+    client = resolve_workspace_client(
+        WorkspaceTarget.resolve(host=host, token=token, profile=profile)
+    )
+    resolved_host = client.config.host
+    auth_type = client.config.auth_type
     user = client.current_user.me().user_name
-    logger.info("notebook_workspace_authenticated", host=host, user=user)
-    print(f"Authenticated to {host} as: {user}")
+    logger.info(
+        "notebook_workspace_authenticated",
+        host=resolved_host,
+        user=user,
+        auth_type=auth_type,
+    )
+    print(f"Authenticated to {resolved_host} as: {user} (auth={auth_type})")
     return client
 
 

@@ -48,13 +48,13 @@ dependencies = [
     "pyyaml>=6.0.3",
     "rich>=13.0.0,<14.0.0",
     "structlog>=24.0.0",
-    "redis>=5.0.0,<6.0.0",
     "slowapi>=0.1.9,<1.0.0", # Rate limiting for FastAPI
-    # Database (State Management)
-    "asyncpg>=0.29.0,<1.0.0", # Async Postgres driver
-    "pgvector>=0.3.0,<1.0.0", # Vector similarity search extension
-    "aiosqlite>=0.19.0,<1.0.0", # Async SQLite driver for dev/testing
-    "sqlite-vec>=0.1.1,<1.0.0", # Vector similarity search for SQLite
+    # State/vector-store drivers (redis, asyncpg, pgvector, aiosqlite, sqlite-vec) are NOT
+    # hard dependencies. The default install runs store-free (database_backend=memory,
+    # vector_backend=inmemory). Opt in via extras: starboard[sqlite|postgres|redis|memory|
+    # vectorsearch|all-stores]. state_factory/vector_store_factory lazy-import the driver
+    # inside the selected backend's branch and raise an actionable "pip install" error if
+    # the matching extra is absent (see infra/core/state_factory.py::_require).
     # Constrain cryptography/cffi to run on the default DBR 17.3 LTS cluster with zero package
     # changes. DBR 17.3 ships cryptography 43.0.3 (NOT affected by PYSEC-2026-36 / CVE-2026-39892 —
     # that buffer-overflow was introduced in 45.0.0), cffi 1.17.1, and msal 1.32.3.
@@ -85,6 +85,30 @@ dependencies = [
 observability = [
     "opentelemetry-instrumentation-fastapi>=0.41b0",
     "prometheus-client>=0.19.0",
+]
+
+# Opt-in state/vector-store drivers. The default install carries none of these; each
+# backend lazy-imports its driver and raises an actionable "pip install 'starboard[<extra>]'"
+# error if the extra is missing (infra/core/state_factory.py, vector_store_factory.py).
+sqlite = [
+    "aiosqlite>=0.19.0,<1.0.0", # Async SQLite driver for dev/testing
+    "sqlite-vec>=0.1.1,<1.0.0", # Vector similarity search for SQLite
+]
+postgres = [
+    "asyncpg>=0.29.0,<1.0.0", # Async Postgres driver (also used by the databricks/lakebase backend)
+]
+redis = [
+    "redis>=5.0.0,<6.0.0",
+]
+memory = [
+    "pgvector>=0.3.0,<1.0.0", # pgvector similarity search extension
+    "asyncpg>=0.29.0,<1.0.0",
+]
+vectorsearch = [
+    "sqlite-vec>=0.1.1,<1.0.0", # SQLite vector store for RAG (opt-in)
+]
+all-stores = [
+    "starboard[sqlite,postgres,redis,memory,vectorsearch]",
 ]
 
 test = [
@@ -121,10 +145,13 @@ load = [
 dev = [
     "uvicorn[standard]>=0.24.0",
     "playwright>=1.40.0",  # Browser automation for debug logging
+    # Keep the store drivers available for local dev + `make setup` (install-dev uses
+    # starboard[test,dev]) and CI now that they are no longer hard dependencies.
+    "starboard[all-stores]",
 ]
 
 all = [
-    "starboard[test,lint,observability,dev,load]",
+    "starboard[test,lint,observability,dev,load,all-stores]",
 ]
 
 [project.scripts]

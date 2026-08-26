@@ -125,7 +125,11 @@ class EnvConfig(BaseSettings):
     environment: Literal["dev", "test", "staging", "production"] = "dev"
 
     # Database Backend
-    database_backend: Literal["postgres", "databricks", "sqlite"] = "sqlite"
+    # Default is store-free (in-memory). Driver-backed backends (sqlite/postgres/databricks)
+    # require their opt-in extra; `uc` (Unity Catalog native state) is reserved for Phase 2.
+    database_backend: Literal[
+        "memory", "sqlite", "postgres", "databricks", "uc"
+    ] = "memory"
     database_url: str | None = None
     sqlite_state_path: str = "./dev_data/starboard_state.db"
     sqlite_memory_path: str = "./dev_data/starboard_memory.db"
@@ -142,7 +146,10 @@ class EnvConfig(BaseSettings):
     cache_ttl: int = 300  # 5 minutes default
 
     # Vector Store Backend
-    vector_backend: Literal["sqlite", "chroma", "databricks", "postgres"] = "sqlite"
+    # Default is the driver-free in-memory store; `sqlite`/others are opt-in.
+    vector_backend: Literal[
+        "inmemory", "sqlite", "chroma", "databricks", "postgres"
+    ] = "inmemory"
     embedding_dimension: int = 1024
     vector_metadata_llm_model: str = "databricks-gpt-5-mini"
     vector_metadata_llm_temperature: float = 1.0
@@ -295,6 +302,46 @@ class EnvConfig(BaseSettings):
             return None
         return f"/sql/1.0/warehouses/{self.databricks_warehouse_id}"
 
+    # --- Auth resolution (A1: auth by subtraction) ---
+
+    def _auth_resolvable(self) -> bool:
+        """Return True if *some* Databricks credential is resolvable.
+
+        Mirrors the resolver precedence + the SDK ``DefaultCredentials`` chain:
+        inline host+token, a profile (``STARBOARD_WORKSPACE`` /
+        ``DATABRICKS_CONFIG_PROFILE``), OAuth client creds, a ``DATABRICKS_HOST``
+        env with a token/client secret, a ``~/.databrickscfg`` file, or an ambient
+        Databricks runtime. No network calls — this is a cheap pre-flight check.
+        """
+        from pathlib import Path
+
+        if self.databricks_host and self.databricks_token:
+            return True
+        if os.environ.get("STARBOARD_WORKSPACE") or os.environ.get(
+            "DATABRICKS_CONFIG_PROFILE"
+        ):
+            return True
+        if os.environ.get("DATABRICKS_CLIENT_ID") and os.environ.get(
+            "DATABRICKS_CLIENT_SECRET"
+        ):
+            return True
+        if os.environ.get("DATABRICKS_HOST") and (
+            os.environ.get("DATABRICKS_TOKEN")
+            or (
+                os.environ.get("DATABRICKS_CLIENT_ID")
+                and os.environ.get("DATABRICKS_CLIENT_SECRET")
+            )
+        ):
+            return True
+        # ~/.databrickscfg (or DATABRICKS_CONFIG_FILE) profile store.
+        config_file = os.environ.get("DATABRICKS_CONFIG_FILE") or str(
+            Path.home() / ".databrickscfg"
+        )
+        if Path(config_file).exists():
+            return True
+        # Ambient runtime (Databricks notebook / job / model serving / Apps).
+        return bool(os.environ.get("DATABRICKS_RUNTIME_VERSION"))
+
     # --- Cross-field validation (same as original validate_config()) ---
 
     def validate_config(self) -> None:
@@ -306,12 +353,20 @@ class EnvConfig(BaseSettings):
         """
         errors = []
 
-        # Validate required fields in non-offline mode
+        # Validate required fields in non-offline mode.
+        # Auth-by-subtraction (A1): host/token are OPTIONAL. We only require that *some*
+        # Databricks credential is resolvable (inline host+token, a profile, client
+        # creds, a ~/.databrickscfg, or an ambient Databricks runtime). The SDK's unified
+        # credential chain resolves the rest.
         if not self.offline_mode:
-            if not self.databricks_host:
-                errors.append("DATABRICKS_HOST required (unless OFFLINE_MODE=true)")
-            if not self.databricks_token:
-                errors.append("DATABRICKS_TOKEN required (unless OFFLINE_MODE=true)")
+            if not self._auth_resolvable():
+                errors.append(
+                    "No Databricks auth resolved. Provide --profile (or set "
+                    "DATABRICKS_CONFIG_PROFILE / STARBOARD_WORKSPACE), pass "
+                    "--databricks-host + (--databricks-token | DATABRICKS_CLIENT_ID/"
+                    "SECRET), configure a ~/.databrickscfg profile, or run on a "
+                    "Databricks runtime (unless OFFLINE_MODE=true)."
+                )
             if not self.llm_api_key:
                 errors.append("LLM_API_KEY required (unless OFFLINE_MODE=true)")
 
