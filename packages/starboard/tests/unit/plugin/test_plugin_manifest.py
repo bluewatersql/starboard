@@ -1,14 +1,20 @@
 # Copyright (c) 2025 Databricks, Inc.
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
-"""Phase-1 B3 guardrails: skills-only Claude Code plugin + marketplace manifest.
+"""Phase-1 B3 + B6 guardrails: Claude Code plugin + marketplace manifest.
 
-Enforces Task B3 (PHASE_1.md §7) with the *verified* current manifest formats
-(code.claude.com/docs/en/plugins-reference + /plugin-marketplaces, 2026-08-26):
+Enforces Task B3 (PHASE_1.md §7) and Task B6 (PHASE_1.md §9b) with the *verified*
+current manifest formats (code.claude.com/docs/en/plugins-reference +
+/plugin-marketplaces, 2026-08-26; agent_integration/technical.md §1.3):
 
 - ``plugin/.claude-plugin/plugin.json`` is valid JSON with the B3 field set
   (``name``/``displayName``/``version``/``description``/``author``/``keywords``/
-  ``license``) and **declares ``skills`` but NOT ``mcpServers``** — the skills-only
-  invariant for B3 (MCP is the later Task B6).
+  ``license``) and **declares ``skills``** — the dual-mode invariant stays intact.
+- B6 optional-MCP toggle: ``plugin.json`` declares ``mcpServers`` (pointing at the
+  bundled ``./.mcp.json``) and a ``userConfig.enable_mcp`` boolean (``title`` +
+  ``description``, ``required: false``) so users opt into the full agent stack.
+- ``plugin/.mcp.json`` is valid JSON declaring the ``starboard`` stdio server
+  (``command: starboard-mcp``) with env passthrough for ``DATABRICKS_HOST`` /
+  ``LLM_*`` and **no hard-coded secrets**.
 - ``.claude-plugin/marketplace.json`` (repo root) is valid JSON with ``name``,
   an ``owner`` **object**, and a ``plugins`` array listing the ``starboard`` plugin
   whose ``source`` (``./plugin``) resolves to a dir containing
@@ -41,6 +47,7 @@ def _repo_root() -> Path:
 REPO_ROOT = _repo_root()
 PLUGIN_DIR = REPO_ROOT / "plugin"
 PLUGIN_JSON = PLUGIN_DIR / ".claude-plugin" / "plugin.json"
+MCP_JSON = PLUGIN_DIR / ".mcp.json"
 MARKETPLACE_JSON = REPO_ROOT / ".claude-plugin" / "marketplace.json"
 PLUGIN_SKILLS = PLUGIN_DIR / "skills"
 CANONICAL_SKILLS = REPO_ROOT / "packages" / "starboard-skills" / "skills" / "starboard"
@@ -93,12 +100,78 @@ def test_plugin_json_declares_skills() -> None:
         assert resolved.is_dir(), f"declared skills path does not resolve to a dir: {rel}"
 
 
-def test_plugin_json_is_skills_only_no_mcp() -> None:
-    """B3 is pre-B6: the skills-only plugin must NOT declare an MCP server."""
+def test_plugin_json_still_declares_skills_dual_mode_intact() -> None:
+    """B6 layers the MCP toggle ON TOP OF the skills — the dual-mode invariant holds.
+
+    The skills declaration (and the vendored tree) must survive the B6 change so the
+    ``enable_mcp: false`` / server-absent path still routes through ``starboard-helper``.
+    """
     manifest = _load_json(PLUGIN_JSON)
-    assert "mcpServers" not in manifest, "B3 is skills-only; mcpServers is the later Task B6"
-    # No stray bundled .mcp.json either (convention discovery would auto-wire it).
-    assert not (PLUGIN_DIR / ".mcp.json").exists(), "B3 must not bundle a .mcp.json (that is B6)"
+    assert "skills" in manifest, "B6 must not drop the skills declaration (dual-mode fallback)"
+
+
+# --------------------------------------------------------------------------- #
+# B6 optional-MCP toggle (PHASE_1.md §9b, agent_integration §1.3)             #
+# --------------------------------------------------------------------------- #
+
+
+def test_plugin_json_declares_mcp_servers_pointing_at_bundled_file() -> None:
+    """B6: ``plugin.json`` opts into MCP by pointing ``mcpServers`` at ``./.mcp.json``."""
+    manifest = _load_json(PLUGIN_JSON)
+    assert "mcpServers" in manifest, "B6 must declare mcpServers for the optional-MCP toggle"
+    mcp_servers = manifest["mcpServers"]
+    # Verified form: a string path to a bundled .mcp.json (agent_integration §1.3).
+    assert isinstance(mcp_servers, str), "mcpServers should be a string path to the bundled .mcp.json"
+    resolved = (PLUGIN_DIR / mcp_servers).resolve()
+    assert resolved == MCP_JSON.resolve(), f"mcpServers {mcp_servers!r} must resolve to plugin/.mcp.json"
+    assert resolved.is_file(), "the bundled .mcp.json must exist"
+
+
+def test_plugin_json_declares_user_config_enable_mcp() -> None:
+    """B6: a ``userConfig.enable_mcp`` boolean lets users opt into the full agent stack."""
+    manifest = _load_json(PLUGIN_JSON)
+    assert "userConfig" in manifest, "B6 must declare userConfig"
+    user_config = manifest["userConfig"]
+    assert isinstance(user_config, dict), "userConfig must be an object"
+    assert "enable_mcp" in user_config, "userConfig must define the enable_mcp toggle"
+    entry = user_config["enable_mcp"]
+    assert entry.get("type") == "boolean", "enable_mcp must be a boolean userConfig entry"
+    assert entry.get("title"), "enable_mcp must carry a human-readable title"
+    assert isinstance(entry.get("description"), str) and entry["description"].strip(), (
+        "enable_mcp must carry a non-empty description"
+    )
+    # Opt-in: not required so the skills-only path stays the default.
+    assert entry.get("required") is False, "enable_mcp must be required: false (opt-in)"
+
+
+def test_bundled_mcp_json_declares_starboard_server() -> None:
+    """B6: ``plugin/.mcp.json`` parses and declares the ``starboard`` stdio server."""
+    mcp = _load_json(MCP_JSON)
+    assert "mcpServers" in mcp, ".mcp.json must contain an mcpServers object"
+    servers = mcp["mcpServers"]
+    assert isinstance(servers, dict) and "starboard" in servers, (
+        ".mcp.json must declare the 'starboard' server"
+    )
+    server = servers["starboard"]
+    assert server.get("command") == "starboard-mcp", "starboard server command must be 'starboard-mcp'"
+    # stdio transport form: {command, args, env, timeout}.
+    assert isinstance(server.get("args"), list), "starboard server must declare args (stdio transport)"
+    assert isinstance(server.get("timeout"), int), "starboard server must declare an integer timeout"
+
+
+def test_bundled_mcp_json_env_passthrough_without_secrets() -> None:
+    """B6: env passes through DATABRICKS_HOST / LLM_* by reference, no hard-coded secrets."""
+    mcp = _load_json(MCP_JSON)
+    env = mcp["mcpServers"]["starboard"].get("env", {})
+    assert isinstance(env, dict) and env, "starboard server must declare an env block"
+    assert "DATABRICKS_HOST" in env, "env must pass through DATABRICKS_HOST"
+    assert any(k.startswith("LLM_") for k in env), "env must pass through the LLM_* credentials"
+    # Every value must be a ${VAR}/${user_config.*} reference — never a baked-in secret.
+    for key, value in env.items():
+        assert isinstance(value, str), f"env[{key!r}] must be a string reference"
+        assert re.fullmatch(r"\$\{[^}]+\}", value), (
+            f"env[{key!r}]={value!r} must be a ${{VAR}} reference, not a hard-coded value"
+        )
 
 
 # --------------------------------------------------------------------------- #
