@@ -139,7 +139,7 @@ starboard-skills = { workspace = true }
 # mcp belong to the Tier-2 server package. Run with: `lint-imports`
 # (or `python -m importlinter lint`) from the repo root.
 [tool.importlinter]
-root_package = "starboard_core"
+root_packages = ["starboard_core", "starboard_x"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
@@ -156,6 +156,26 @@ forbidden_modules = [
     "openai",
     "fastapi",
     "mcp",
+]
+
+# The diagnostics-core trio (Phase-1 B2) is the dep-light middle tier. It must
+# stay stdlib-only: no databricks-sdk, and none of the heavier optional deps
+# (pyyaml belongs to the `diagnostics` extra / pattern layer, not the trio).
+[[tool.importlinter.contracts]]
+name = "starboard_x diagnostics-core trio is stdlib-only (no SDK / heavy deps)"
+type = "forbidden"
+source_modules = [
+    "starboard_x.diagnostic",
+]
+forbidden_modules = [
+    "databricks",
+    "openai",
+    "fastapi",
+    "mcp",
+    "yaml",
+    "pydantic",
+    # never let the dep-light tier reach back into the heavy server package.
+    "starboard",
 ]
 
 [tool.ruff]
