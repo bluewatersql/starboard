@@ -1,0 +1,22 @@
+{
+  "name": "starboard",
+  "displayName": "Starboard — Databricks Analysis",
+  "version": "0.1.1",
+  "description": "AI-powered Databricks workload analysis: queries, jobs, Unity Catalog, clusters, FinOps, warehouses, and diagnostics. Skills-only CLI-helper mode — no server required.",
+  "author": {
+    "name": "Starboard",
+    "url": "https://github.com/databricks/starboard"
+  },
+  "homepage": "https://github.com/databricks/starboard",
+  "repository": "https://github.com/databricks/starboard",
+  "license": "Databricks Open Model License",
+  "keywords": [
+    "databricks",
+    "finops",
+    "unity-catalog",
+    "spark",
+    "optimization",
+    "diagnostics"
+  ],
+  "skills": "./skills/"
+}
