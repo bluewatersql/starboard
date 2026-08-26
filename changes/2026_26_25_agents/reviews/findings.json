@@ -1,0 +1,38 @@
+[
+  {
+    "file": "plugin/.claude-plugin/plugin.json",
+    "line": 27,
+    "summary": "plugin.json declares mcpServers unconditionally and never references the enable_mcp userConfig, so the toggle does not gate the MCP server.",
+    "failure_scenario": "A skills-only install (no starboard-mcp entry point, no LLM creds) still has mcpServers=\"./.mcp.json\" active, so Claude Code always tries to launch `starboard-mcp --transport stdio` on plugin load and errors; toggling enable_mcp off does not fall back to the skills-only path (B6 contract broken)."
+  },
+  {
+    "file": "plugin/skills",
+    "line": 1,
+    "summary": "plugin/skills is a symlink escaping the plugin root, and the vendoring/materialization build hook the README relies on is not implemented.",
+    "failure_scenario": "Copying only ./plugin (marketplace source=\"./plugin\" or the B4 databricks-aitools bundle) or checking out on a symlink-unaware/Windows host yields a dangling link to ../packages/starboard-skills/skills/starboard, so the distributed plugin ships zero skills; the byte-identity test passes locally through the live symlink and never catches it."
+  },
+  {
+    "file": "packages/starboard-core/starboard_core/domain/rules/seed/query.yaml",
+    "line": 25,
+    "summary": "Seed-rule evidence_query values reference query-pack entries that do not exist (query_performance.slowest_queries etc.).",
+    "failure_scenario": "The query-perf pack is pack_id=query_perf with ids C-Q01..C-Q05, and the warehouse pack ids are W-W01..W-W05, so evidence_query strings like query_performance.slowest_queries / warehouse.auto_stop_waste / uc.table_maintenance_history resolve to nothing; the Phase-3 engine fails to bind evidence for every seed rule, and the D3 validating test that was supposed to catch this was not implemented."
+  },
+  {
+    "file": "packages/starboard/starboard/discovery/query_packs/warehouse.py",
+    "line": 174,
+    "summary": "Utilization/load thresholds are duplicated as Python constants vs hardcoded SQL literals, and the two classifiers diverge when utilization_ratio is NULL with queries present.",
+    "failure_scenario": "Tuning UNDER_UTILIZED_MAX/OPTIMAL_MAX (0.30/0.80) or the 10/100/1000 load bounds updates only the Python classifier, silently drifting from the hardcoded W_W01/W_W03 SQL; and for running_seconds>0, total_queries>0, utilization_ratio IS NULL the SQL CASE returns 'Resource-starved' while classify_utilization_band returns 'No-utilization' for the same row."
+  },
+  {
+    "file": "packages/starboard-core/starboard_x/diagnostic/__init__.py",
+    "line": 25,
+    "summary": "The package __init__ eagerly imports the full trio despite documenting a 'trimmed __init__ so a single verb does not pull the whole diagnostic subsystem'.",
+    "failure_scenario": "import starboard_x.diagnostic pulls evidence_extractor, exit_code_triager, models, and root_cause_synthesizer even when only one verb is needed; __main__.py and the shims import submodules directly, so the eager package imports are unnecessary and contradict the stated altitude/lean-import intent (low cost since all four are stdlib-only)."
+  },
+  {
+    "file": "packages/starboard-core/starboard_x/contract.py",
+    "line": 60,
+    "summary": "starboard_x/contract.py re-implements the Phase-0 starboard_skills.helpers.contract envelope, exit codes, and error hierarchy instead of sharing one source.",
+    "failure_scenario": "The two contract modules must be hand-kept in lockstep for the documented 'same envelope' guarantee; any change to exit codes or envelope shape in one silently diverges the CLIs. Defensible because the import-linter isolates starboard_x from starboard and starboard-skills is a separate package, so a shared home would be new work."
+  }
+]
