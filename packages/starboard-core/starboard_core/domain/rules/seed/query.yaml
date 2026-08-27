@@ -23,7 +23,7 @@ rules:
     detect: >-
       Query text contains an unqualified SELECT * against a base table (not a
       COUNT(*) or an EXISTS subquery).
-    evidence_query: query_performance.slowest_queries
+    evidence_query: C-Q02
     source: null
     enabled: true
 
@@ -47,6 +47,6 @@ rules:
     detect: >-
       A WHERE clause applies a function/cast to a partition column before
       comparing it to a literal.
-    evidence_query: query_performance.full_partition_scans
+    evidence_query: C-Q02
     source: null
     enabled: true

@@ -22,7 +22,7 @@ rules:
     detect: >-
       Warehouse config reports auto-stop disabled while warehouse_events show
       long RUNNING stretches with zero query activity.
-    evidence_query: warehouse.auto_stop_waste
+    evidence_query: W-W02
     source: null
     enabled: true
 
@@ -46,6 +46,6 @@ rules:
     detect: >-
       Utilization band (active_tasks / total_task_slots) sits in the
       under-utilized range across the trend window.
-    evidence_query: warehouse.utilization_bands
+    evidence_query: W-W01
     source: null
     enabled: true
