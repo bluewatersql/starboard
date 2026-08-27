@@ -1725,6 +1725,13 @@ def main(argv: list | None = None) -> None:
 
         sys.exit(run_review(effective_argv[1:]))
 
+    # Route the `genie` command (NL→SQL over the public NLQueryPort, Phase-3 D8)
+    # before the flag-based agent parser.
+    if effective_argv and effective_argv[0] == "genie":
+        from starboard.cli.cli.genie_command import run_genie
+
+        sys.exit(run_genie(effective_argv[1:]))
+
     try:
         args = parse_args(argv)
         asyncio.run(async_main(args))
