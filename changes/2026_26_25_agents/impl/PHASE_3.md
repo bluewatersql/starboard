@@ -288,3 +288,36 @@ B5 layered catalog ─(independent; shares entry-point contract with D-3.1)─�
 - **Write-back / auto-remediation** into customer workspaces — Phase 3 is read-only advisory.
 - **A curated public Genie space** (beyond `genie ask`) — later.
 - **Multi-tenant hosting hardening** beyond the OBO auth path (rate-limits, quotas, per-tenant state).
+
+---
+
+## Implementation status (2026-08-27)
+
+Built + verified on branch **`phase3/foundations`** (off `main`; **not pushed / not landed** — awaiting
+review, per the Phase 0/1/2 pattern). Worktree-agent + verify-after-merge; suites run separately.
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **D1a** RuleRegistry + Finding scorer | ✅ built + verified | kernel `RuleRegistry`; **closed Phase-1 finding #3** (repointed 5 dangling `evidence_query` → real pack query_ids) |
+| **D-3.1** internal-package entry-point seam | ✅ built + verified | `starboard.port_adapters` contract + `starboard-internal` pkg (no-op sample) + **4th import-linter contract** "public packages import no `starboard_internal`" |
+| **D1b** Workload Review engine (flagship) | ✅ built + verified | `WorkloadReviewService` (public `system.*`, jobs+sql+warehouse v1); surfaces: `starboard review` CLI, `workload-review` skill, `python -m starboard_x.review`; evidence citations (`query_id`+row); list-price $ |
+| **D10** Apps OBO auth | ✅ built + verified | `ModelServingUserCredentials` via the A1 `credentials_strategy` seam; stub-tested; default path unchanged |
+| **D8-public** `genie ask` | ⏳ deferred (scoped) | needs the LLM-backed SQL-generator wired into `AnalyticsSqlAdapter` — a focused follow-up, not a trivial CLI wrapper |
+| **D9** host coverage + `.isaac/rules` | ⏳ deferred | design resolved (`PHASE_3_D9_host_coverage.md`); ships `.isaac/rules` in the plugin bundle |
+| **B5** layered catalog / per-domain plugins | ⏳ deferred (L) | builds on the D-3.1 entry-point contract |
+| **D1c** validator council + Action-Rate | ⏸ **gated** | needs **G5** (available model ids for the council) + the Action-Rate design decision |
+| **D6/D7** internal diagnostic/log + fleet adapters | ⏸ **gated** | need internal-tool access; **internal-package-only** (never in the public wheel) |
+| **D8-internal** curated Genie rooms | ⏸ **gated** | needs **G6** (Genie auth in the target workspace) |
+
+**Verification (phase3/foundations tip `549aeede`):** core **700** / starboard **3163** / skills **28** /
+internal **6** pass (separate invocations); **import-linter 4 contracts KEPT**; ruff + mypy clean.
+
+**Known non-blocking gaps / follow-ups:**
+- D1b engine supports the **jobs** domain but D1a ships **no `jobs` seed ruleset** yet — add one (small, D1a-style).
+- D8-public SQL-generator wiring; B5; D9 `.isaac/rules` file + host smoke tests.
+- Carried Phase-2 review items #1/#3 (managed-VS `columns`/cache backend) still apply on the opt-in path.
+
+**Learning:** worktree agents branch off **`origin/main`**, not local HEAD — an agent needing unmerged local
+work can land on a stale base (D10 did, harmlessly, since its work was self-contained). Verify each item
+branch's merge-base before merging; prefer building items that depend on unmerged local work **directly** in
+the main tree.
