@@ -118,12 +118,18 @@ members = [
     "packages/starboard-core",
     "packages/starboard",
     "packages/starboard-skills",
+    # Internal-index-only seam skeleton (Phase-3 D-3.1). A workspace member for
+    # local dev/verification only — it is NOT a dependency of any public wheel
+    # (the root wheel's [tool.hatch.build.targets.wheel] packages list omits it),
+    # and must never be published to a public index.
+    "packages/starboard-internal",
 ]
 
 [tool.uv.sources]
 starboard-core = { workspace = true }
 starboard = { workspace = true }
 starboard-skills = { workspace = true }
+starboard-internal = { workspace = true }
 
 # =============================================================================
 # Tool configurations
@@ -139,7 +145,7 @@ starboard-skills = { workspace = true }
 # mcp belong to the Tier-2 server package. Run with: `lint-imports`
 # (or `python -m importlinter lint`) from the repo root.
 [tool.importlinter]
-root_packages = ["starboard_core", "starboard_x"]
+root_packages = ["starboard_core", "starboard_x", "starboard", "starboard_skills"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
@@ -195,6 +201,29 @@ forbidden_modules = [
     "fastapi",
     "mcp",
     "starboard",
+]
+
+# =============================================================================
+# Governance boundary — the internal-package seam (Phase-3 D-3.1)
+# =============================================================================
+# The public packages ship the ports + public adapters + the registry + the
+# `starboard.port_adapters` entry-point CONTRACT only. The gated internal
+# adapters live in the separately-distributed `starboard-internal` package
+# (import package `starboard_internal`), which is internal-index-only and never
+# a dependency of a public wheel. This contract makes UNIFIED_PLAN §7 an enforced
+# build property: the dependency edge may only flow internal -> public, so no
+# public package may import `starboard_internal.*`. KEPT (do not remove).
+[[tool.importlinter.contracts]]
+name = "Public packages import no starboard_internal"
+type = "forbidden"
+source_modules = [
+    "starboard",
+    "starboard_core",
+    "starboard_x",
+    "starboard_skills",
+]
+forbidden_modules = [
+    "starboard_internal",
 ]
 
 [tool.ruff]
