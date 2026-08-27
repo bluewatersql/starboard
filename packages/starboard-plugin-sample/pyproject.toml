@@ -1,0 +1,65 @@
+# =============================================================================
+# starboard-plugin-sample — reference per-domain tool plugin (Phase-3 B5)
+# =============================================================================
+# A SCAFFOLD, not a shipped capability. It demonstrates the layered-catalog
+# plugin contract end-to-end: a thin wheel that registers a per-domain tool
+# through the public ``starboard.mcp_tools`` entry-point group (defined in
+# starboard.tools.plugins) and is discovered at runtime.
+#
+# It is deliberately NOT a uv workspace member and NOT a dependency of any
+# Starboard wheel: the layered catalog is opt-in, so a plugin is installed only
+# when a consumer explicitly wants its domain tools. With this package absent,
+# discovery returns an empty catalog and every built-in tool keeps working.
+#
+# Copy this directory as the starting point for a real per-domain plugin.
+# =============================================================================
+
+[project]
+name = "starboard-plugin-sample"
+version = "0.1.0"
+description = "Reference per-domain tool plugin for Starboard's layered catalog (B5)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Databricks Open Model License"}
+# The plugin needs only the kernel-light discovery contract at build/declare
+# time; the contract types live in `starboard`. A real plugin depends on
+# whatever tier its tool needs (kernel-only tools depend on `starboard-core`).
+dependencies = [
+    "starboard",
+]
+
+# The entry-point contract: each key maps to a ToolPlugin object
+# (see starboard.tools.plugins.ToolPlugin). Discovery loads these and registers
+# them into a ToolCatalog, keyed by the plugin's `name`.
+[project.entry-points."starboard.mcp_tools"]
+sample_jobs_health = "starboard_plugin_sample.plugin:sample_plugin"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatchling.build.targets.wheel]
+packages = ["starboard_plugin_sample"]
+
+[tool.hatchling.build.targets.sdist]
+include = [
+    "starboard_plugin_sample/**/*.py",
+    "pyproject.toml",
+    "README.md",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+]
+asyncio_mode = "auto"
