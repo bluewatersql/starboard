@@ -143,21 +143,89 @@ class Container:
         if self._config.environment != "test":
             await self._initialize_foundation_components()
 
-    async def _initialize_foundation_components(self) -> None:
-        """Initialize vector store, reflexion store, and semantic cache.
+    def _semantic_cache_uses_vector(self) -> bool:
+        """Whether the similarity-based (vector) semantic cache is opted in.
 
-        This is optional and can be skipped in test environments.
-        Uses factory pattern with automatic fallback to in-memory store.
+        The default (``vector_backend="none"``) uses the dependency-free
+        TTL-only exact-key cache. A real vector backend
+        (``inmemory``/``sqlite``/``vectorsearch``/…) opts into the
+        similarity-based :class:`SemanticCache` (Phase 2 C4, D-2.9).
         """
-        from starboard.infra.cache import SemanticCache as SemanticCacheImpl
-        from starboard.infra.rag import SQLiteVectorStore
+        return getattr(self._config, "vector_backend", "none") != "none"
+
+    def _build_ttl_semantic_cache(self):
+        """Build the default TTL-only exact-key semantic cache (no vector deps)."""
+        from starboard.infra.cache import TTLSemanticCache
+
+        return TTLSemanticCache(ttl=self._config.cache_ttl)
+
+    @staticmethod
+    def _require_reflexion_driver() -> None:
+        """Ensure the reflexion vector-store driver is importable.
+
+        Reflexion (episodic learning) is opt-in and needs a vector store. Guard
+        the driver up front so a no-extras install surfaces an actionable
+        install hint instead of silently degrading (Phase 2 C4, D-2.9).
+
+        Raises:
+            RuntimeError: naming the extra to install when ``sqlite_vec`` is
+                absent.
+        """
+        import importlib
+
+        try:
+            importlib.import_module("sqlite_vec")
+        except ImportError as e:
+            raise RuntimeError(
+                "enable_reflexion=True needs a vector-store driver for episodic "
+                "learning, but 'sqlite_vec' is not installed. Install a vector "
+                "extra: pip install 'starboard[sqlite]' (local sqlite-vec) or "
+                "'starboard[vectorsearch]' (managed Databricks Vector Search)."
+            ) from e
+
+    async def _initialize_foundation_components(self) -> None:
+        """Initialize foundation components (semantic cache; optional vector/reflexion).
+
+        Default (lean) path — ``vector_backend="none"`` and
+        ``enable_reflexion=False``: build only a TTL-only exact-key semantic
+        cache. No embedding provider, no vector store, no reflexion store, and
+        crucially **no sqlite-vec import**.
+
+        Opt-in path — a real ``vector_backend`` and/or ``enable_reflexion=True``:
+        lazily construct the embedding provider, vector store, reflexion store,
+        and (when a vector backend is selected) a similarity-based semantic
+        cache. All heavy imports are deferred so a no-extras /
+        ``vector_backend="none"`` install never touches sqlite-vec /
+        databricks-vectorsearch.
+        """
+        wants_vector = self._semantic_cache_uses_vector()
+        wants_reflexion = self._config.enable_reflexion
+        wants_semantic_cache = self._config.enable_semantic_cache
+
+        # Reflexion is opt-in and needs a vector-store driver. Guard *before* any
+        # heavy init so a missing extra raises an actionable error rather than
+        # being swallowed by the degrade path below.
+        if wants_reflexion:
+            self._require_reflexion_driver()
+
+        # --- Lean default path: TTL-only exact-key cache, nothing vector-backed. ---
+        if not wants_vector and not wants_reflexion:
+            if wants_semantic_cache:
+                self._semantic_cache = self._build_ttl_semantic_cache()
+                logger.info(
+                    "semantic_cache_ttl_only_initialized",
+                    ttl=self._config.cache_ttl,
+                    reason="vector_backend=none, enable_reflexion=False",
+                )
+            return
+
+        # --- Opt-in vector / reflexion path (behind [sqlite]/[vectorsearch]). ---
         from starboard.infra.rag.adapters.embedding import (
             LLMClientEmbeddingProvider,
         )
         from starboard.infra.rag.services.vector_store_factory import (
             create_vector_store,
         )
-        from starboard.infra.reflexion import SQLiteReflexionStore
 
         try:
             # Initialize embedding provider (used by RAG tools, reflexion, semantic cache)
@@ -176,32 +244,53 @@ class Container:
             # deterministic hash-based fakes only in offline/mock mode.
             embedding_fn = self._create_embedding_function(self._embedding_provider)
 
-            # Create reflexion store (uses its own dedicated vector store on separate database)
-            reflexion_db_path = self._config.sqlite_reflexion_path or ":memory:"
-            reflexion_vector_store = SQLiteVectorStore(
-                db_path=reflexion_db_path,
-                collection_name="learnings",  # Reflexion learnings collection
-                dimension=self._config.embedding_dimension,
-            )
-            await reflexion_vector_store.initialize()
+            # Reflexion store (opt-in): its own dedicated vector store on a
+            # separate database. Lazy-imported so sqlite-vec is only touched here.
+            if wants_reflexion:
+                from starboard.infra.rag import SQLiteVectorStore
+                from starboard.infra.reflexion import SQLiteReflexionStore
 
-            self._reflexion_store = SQLiteReflexionStore(  # type: ignore[assignment]
-                db_path=reflexion_db_path,
-                vector_store=reflexion_vector_store,
-                embedding_fn=embedding_fn,
-            )
-            await self._reflexion_store.initialize()  # type: ignore[union-attr]
+                reflexion_db_path = self._config.sqlite_reflexion_path or ":memory:"
+                reflexion_vector_store = SQLiteVectorStore(
+                    db_path=reflexion_db_path,
+                    collection_name="learnings",  # Reflexion learnings collection
+                    dimension=self._config.embedding_dimension,
+                )
+                await reflexion_vector_store.initialize()
 
-            # Create semantic cache WITHOUT vector store (use in-memory cache only)
-            # Vector-based semantic cache requires additional vector store which can
-            # cause connection issues. For now, use simple TTL-based caching.
-            # TODO(BACKLOG-003): Reuse multi-collection store for semantic cache vectors
-            self._semantic_cache = SemanticCacheImpl(
-                vector_store=reflexion_vector_store,  # Reuse reflexion vector store
-                embedding_fn=embedding_fn,
-                ttl=self._config.cache_ttl,
-                similarity_threshold=self._config.semantic_cache_threshold,
-            )
+                self._reflexion_store = SQLiteReflexionStore(  # type: ignore[assignment]
+                    db_path=reflexion_db_path,
+                    vector_store=reflexion_vector_store,
+                    embedding_fn=embedding_fn,
+                )
+                await self._reflexion_store.initialize()  # type: ignore[union-attr]
+
+            # Semantic cache: similarity-based when a vector backend is opted in,
+            # otherwise TTL-only exact-key (dependency-free).
+            if wants_semantic_cache:
+                if wants_vector:
+                    from starboard.infra.cache import (
+                        SemanticCache as SemanticCacheImpl,
+                    )
+                    from starboard.infra.rag import SQLiteVectorStore
+
+                    cache_db_path = self._config.sqlite_reflexion_path or ":memory:"
+                    cache_vector_store = SQLiteVectorStore(
+                        db_path=cache_db_path,
+                        collection_name="semantic_cache",
+                        dimension=self._config.embedding_dimension,
+                    )
+                    await cache_vector_store.initialize()
+                    self._semantic_cache = SemanticCacheImpl(
+                        vector_store=cache_vector_store,
+                        embedding_fn=embedding_fn,
+                        ttl=self._config.cache_ttl,
+                        similarity_threshold=self._config.semantic_cache_threshold,
+                    )
+                else:
+                    # Reflexion is on but no vector backend selected: keep the
+                    # semantic cache dependency-free (TTL-only exact-key).
+                    self._semantic_cache = self._build_ttl_semantic_cache()
         except Exception as e:  # noqa: BLE001 - DI container boundary
             # Log warning but don't fail initialization
             # Foundation components are optional features
