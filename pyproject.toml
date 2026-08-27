@@ -168,6 +168,9 @@ members = [
     # (the root wheel's [tool.hatch.build.targets.wheel] packages list omits it),
     # and must never be published to a public index.
     "packages/starboard-internal",
+    # Reference scaffold used by local plugin contract tests and development.
+    # It remains opt-in and is not a dependency of any Starboard wheel.
+    "packages/starboard-plugin-sample",
 ]
 
 [tool.uv.sources]
@@ -175,6 +178,7 @@ starboard-core = { workspace = true }
 starboard = { workspace = true }
 starboard-skills = { workspace = true }
 starboard-internal = { workspace = true }
+starboard-plugin-sample = { workspace = true }
 
 # =============================================================================
 # Tool configurations

@@ -6,10 +6,11 @@
 # through the public ``starboard.mcp_tools`` entry-point group (defined in
 # starboard.tools.plugins) and is discovered at runtime.
 #
-# It is deliberately NOT a uv workspace member and NOT a dependency of any
-# Starboard wheel: the layered catalog is opt-in, so a plugin is installed only
-# when a consumer explicitly wants its domain tools. With this package absent,
-# discovery returns an empty catalog and every built-in tool keeps working.
+# It is a uv workspace member for local linting, type-checking, and contract
+# tests, but is NOT a dependency of any Starboard wheel: the layered catalog is
+# opt-in, so a plugin is installed only when a consumer explicitly wants its
+# domain tools. With this package absent, discovery returns an empty catalog and
+# every built-in tool keeps working.
 #
 # Copy this directory as the starting point for a real per-domain plugin.
 # =============================================================================

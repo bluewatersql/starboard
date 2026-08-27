@@ -7,14 +7,18 @@
         test test-unit test-sdk test-integration test-golden test-contract test-coverage test-architecture \
         lint type-check format check pre-commit audit-deps \
         vendor-skills vendor-skills-check \
-        clean clean-debug clean-deep build info
+        build-rag-references clean clean-debug clean-deep build info
 
 # Package manager detection (prefer uv)
 PACKAGE_MANAGER := $(shell command -v uv >/dev/null 2>&1 && echo "uv" || echo "pip")
 
 # Python package paths
 PY_PACKAGES := packages/starboard-core/starboard_core \
-               packages/starboard/starboard
+               packages/starboard-core/starboard_x \
+               packages/starboard/starboard \
+               packages/starboard-skills/starboard_skills \
+               packages/starboard-internal/starboard_internal \
+               packages/starboard-plugin-sample/starboard_plugin_sample
 PY_TESTS := packages/*/tests tests
 
 # Colors
@@ -40,6 +44,7 @@ help:
 	@echo "  dev-debug         Start with debug logging"
 	@echo "  dev-server        Backend only (localhost:8000)"
 	@echo "  dev-stop          Stop all dev servers"
+	@echo "  dev-debug-context Save debug lint/type/test context"
 	@echo ""
 	@echo "$(GREEN)Testing:$(NC)"
 	@echo "  test              All tests (unit + integration)"
@@ -57,11 +62,17 @@ help:
 	@echo "  format            Auto-format all code"
 	@echo "  check             All checks (lint + type + test)"
 	@echo "  pre-commit        Run pre-commit hooks"
+	@echo "  audit-deps        Audit installed dependencies"
 	@echo ""
 	@echo "$(GREEN)Other:$(NC)"
 	@echo "  build             Build all packages"
+	@echo "  build-rag-references Regenerate default RAG reference files"
+	@echo "  vendor-skills     Refresh vendored plugin skills"
+	@echo "  vendor-skills-check Check vendored plugin skill drift"
 	@echo "  clean             Remove cache/build artifacts"
 	@echo "  clean-deep        Deep clean (removes .venv)"
+	@echo "  docs              Build documentation"
+	@echo "  docs-serve        Serve documentation locally"
 	@echo "  info              Show environment info"
 	@echo ""
 	@echo "$(YELLOW)Package manager: $(PACKAGE_MANAGER)$(NC)"
@@ -229,7 +240,7 @@ lint:
 
 type-check:
 	@echo "$(BLUE)Running type checker...$(NC)"
-	@mypy packages/starboard/starboard/ --config-file pyproject.toml
+	@mypy $(PY_PACKAGES) --config-file pyproject.toml
 	@echo "$(GREEN)✓ Type check passed$(NC)"
 
 format:
@@ -265,6 +276,11 @@ vendor-skills:
 vendor-skills-check:
 	@echo "$(BLUE)Checking plugin/skills is in sync with canonical source...$(NC)"
 	@python scripts/vendor_plugin_skills.py --check
+
+build-rag-references:
+	@echo "$(BLUE)Regenerating default RAG reference files...$(NC)"
+	@python scripts/build_rag_reference_files.py
+	@echo "$(GREEN)✓ RAG reference files regenerated$(NC)"
 
 # ================================
 # Build
