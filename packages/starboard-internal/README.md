@@ -29,7 +29,7 @@ Phase-3 tasks and register the same way.
 
 ## Governance
 
-- No internal namespace, backend id, host, or `go/` link appears in the sample
+- No internal namespace, backend id, host, or internal shortlink appears in the sample
   adapter — it is a pure no-op.
 - The import-linter contract *"Public packages import no `starboard_internal`"*
   (root `pyproject.toml`) enforces that the dependency edge only ever flows

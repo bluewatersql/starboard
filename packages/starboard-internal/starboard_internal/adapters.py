@@ -4,7 +4,7 @@
 
 Proves the ``starboard.port_adapters`` entry-point seam end-to-end without
 shipping any real internal capability. The adapter is a pure no-op: it names no
-internal namespace, backend, host, or ``go/`` link, and it returns an empty
+internal namespace, backend, host, or internal shortlink, and it returns an empty
 result. It is registered as an ``internal``-tier provider, so it is selected
 **only** when the internal-data enablement gate is open (§3.5): with the gate
 closed the public ``LogRetrievalPort`` adapter remains the universal path.
