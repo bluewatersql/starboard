@@ -23,6 +23,6 @@ rules:
     detect: >-
       Table history shows sustained small-file writes with no OPTIMIZE/VACUUM
       operations over the trend window.
-    evidence_query: uc.table_maintenance_history
+    evidence_query: PO-01
     source: null
     enabled: true
