@@ -2,11 +2,12 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Dependency injection container."""
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, cast
 
 from starboard_core.foundations.protocols import (
     ReflexionStore,
     SemanticCache,
+    VectorStore,
 )
 from starboard_core.ports.cache_store import CacheStore
 from starboard_core.ports.memory_store import MemoryStore
@@ -162,6 +163,14 @@ class Container:
         return TTLSemanticCache(ttl=self._config.cache_ttl)
 
     @staticmethod
+    def _supports_semantic_cache_vector_store(store: object | None) -> bool:
+        """Whether a store implements the low-level semantic-cache operations."""
+        required_methods = ("search", "upsert", "delete", "count")
+        return store is not None and all(
+            callable(getattr(store, method, None)) for method in required_methods
+        )
+
+    @staticmethod
     def _require_reflexion_driver() -> None:
         """Ensure the reflexion vector-store driver is importable.
 
@@ -276,21 +285,41 @@ class Container:
                     from starboard.infra.cache import (
                         SemanticCache as SemanticCacheImpl,
                     )
-                    from starboard.infra.rag import SQLiteVectorStore
 
-                    cache_db_path = self._config.sqlite_reflexion_path or ":memory:"
-                    cache_vector_store = SQLiteVectorStore(
-                        db_path=cache_db_path,
-                        collection_name="semantic_cache",
-                        dimension=self._config.embedding_dimension,
-                    )
-                    await cache_vector_store.initialize()
-                    self._semantic_cache = SemanticCacheImpl(
-                        vector_store=cache_vector_store,
-                        embedding_fn=embedding_fn,
-                        ttl=self._config.cache_ttl,
-                        similarity_threshold=self._config.semantic_cache_threshold,
-                    )
+                    cache_vector_store: VectorStore | None = None
+                    if self._supports_semantic_cache_vector_store(self._vector_store):
+                        cache_vector_store = cast(VectorStore, self._vector_store)
+                    elif self._config.vector_backend == "sqlite":
+                        # The multi-collection RAG store does not expose the
+                        # low-level VectorStore API, so sqlite gets a dedicated
+                        # cache collection using its selected local backend.
+                        from starboard.infra.rag import SQLiteVectorStore
+
+                        cache_db_path = self._config.sqlite_reflexion_path or ":memory:"
+                        cache_vector_store = SQLiteVectorStore(
+                            db_path=cache_db_path,
+                            collection_name="semantic_cache",
+                            dimension=self._config.embedding_dimension,
+                        )
+                        await cache_vector_store.initialize()
+
+                    if cache_vector_store is not None:
+                        self._semantic_cache = SemanticCacheImpl(
+                            vector_store=cache_vector_store,
+                            embedding_fn=embedding_fn,
+                            ttl=self._config.cache_ttl,
+                            similarity_threshold=self._config.semantic_cache_threshold,
+                        )
+                    else:
+                        # Managed/multi-collection stores cannot safely emulate
+                        # SemanticCache's search/upsert/delete/count contract.
+                        self._semantic_cache = self._build_ttl_semantic_cache()
+                        logger.warning(
+                            "semantic_cache_similarity_quarantined",
+                            vector_backend=self._config.vector_backend,
+                            reason="selected vector store lacks VectorStore protocol",
+                            fallback="ttl_only",
+                        )
                 else:
                     # Reflexion is on but no vector backend selected: keep the
                     # semantic cache dependency-free (TTL-only exact-key).

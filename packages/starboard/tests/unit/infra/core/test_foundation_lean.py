@@ -16,9 +16,11 @@ from __future__ import annotations
 import subprocess
 import sys
 import textwrap
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
-from starboard.infra.cache import TTLSemanticCache
+from starboard.infra.cache import SemanticCache, TTLSemanticCache
 from starboard.infra.core.config import EnvConfig
 from starboard.infra.core.container import Container
 
@@ -60,7 +62,7 @@ class TestLeanDefaultFoundation:
         assert container.vector_store is None
         assert container.reflexion_store is None
 
-    def test_default_path_does_not_import_sqlite_vec(self) -> None:
+    def test_default_path_does_not_import_optional_store_drivers(self) -> None:
         # Run in a fresh subprocess so the sys.modules assertion is definitive.
         code = textwrap.dedent(
             """
@@ -78,7 +80,9 @@ class TestLeanDefaultFoundation:
             )
             container = Container(cfg)
             asyncio.run(container._initialize_foundation_components())
-            assert "sqlite_vec" not in sys.modules, "sqlite_vec must not be imported on the default path"
+            optional_drivers = ("redis", "asyncpg", "pgvector", "aiosqlite", "sqlite_vec")
+            imported = [name for name in optional_drivers if name in sys.modules]
+            assert not imported, f"optional store drivers imported on default path: {imported}"
             print("OK")
             """
         )
@@ -100,6 +104,70 @@ class TestSemanticCacheBackendDecision:
     @pytest.mark.parametrize("backend", ["inmemory", "sqlite", "vectorsearch"])
     def test_real_backend_uses_vector(self, backend: str) -> None:
         assert Container(_config(vector_backend=backend))._semantic_cache_uses_vector() is True
+
+    @pytest.mark.asyncio
+    async def test_vectorsearch_backend_keeps_ttl_cache_without_sqlite(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Managed RAG stores cannot back the low-level semantic-cache protocol."""
+        import starboard.infra.rag as rag
+        from starboard.infra.rag.services import vector_store_factory
+
+        managed_store = object()
+
+        async def create_managed_store(**_kwargs):
+            return managed_store
+
+        def fail_if_sqlite_is_built(*_args, **_kwargs):
+            pytest.fail(
+                "vectorsearch semantic cache must not instantiate SQLiteVectorStore"
+            )
+
+        monkeypatch.setattr(
+            vector_store_factory,
+            "create_vector_store",
+            create_managed_store,
+        )
+        monkeypatch.setattr(rag, "SQLiteVectorStore", fail_if_sqlite_is_built)
+
+        container = Container(
+            _config(vector_backend="vectorsearch", llm_api_key="test-key")
+        )
+        await container._initialize_foundation_components()
+
+        assert container.vector_store is managed_store
+        assert isinstance(container.semantic_cache, TTLSemanticCache)
+
+    @pytest.mark.asyncio
+    async def test_compatible_vector_store_is_reused_for_similarity_cache(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A selected store with the low-level protocol backs the cache directly."""
+        from starboard.infra.rag.services import vector_store_factory
+
+        compatible_store = SimpleNamespace(
+            search=AsyncMock(),
+            upsert=AsyncMock(),
+            delete=AsyncMock(),
+            count=AsyncMock(),
+        )
+
+        async def create_compatible_store(**_kwargs):
+            return compatible_store
+
+        monkeypatch.setattr(
+            vector_store_factory,
+            "create_vector_store",
+            create_compatible_store,
+        )
+
+        container = Container(
+            _config(vector_backend="vectorsearch", llm_api_key="test-key")
+        )
+        await container._initialize_foundation_components()
+
+        assert isinstance(container.semantic_cache, SemanticCache)
+        assert container.semantic_cache.vector_store is compatible_store
 
 
 class TestReflexionGatedBehindExtra:

@@ -7,7 +7,15 @@ Organized in three architectural layers:
 - domain/: Pure logic, protocols (no I/O)
 - services/: Orchestration, business logic
 - adapters/: I/O boundaries (storage, embedding providers)
+
+Public exports are loaded on first access. This preserves the package API while
+keeping optional SQLite/aiosqlite/sqlite-vec drivers off the default import path.
 """
+
+from __future__ import annotations
+
+import importlib
+from typing import Any
 
 # Domain layer (protocols and pure logic)
 # Adapter layer (I/O implementations)
@@ -20,12 +28,6 @@ from starboard.infra.rag.adapters.embedding.llm_client_provider import (
 )
 from starboard.infra.rag.adapters.embedding.mock_provider import (
     MockEmbeddingProvider,
-)
-from starboard.infra.rag.adapters.storage.sqlite_multi_collection_store import (
-    SQLiteMultiCollectionStore,
-)
-from starboard.infra.rag.adapters.storage.sqlite_vector_store import (
-    SQLiteVectorStore,
 )
 
 # Legacy imports (for backward compatibility - will be deprecated)
@@ -72,6 +74,34 @@ from starboard.infra.rag.services.metadata_service import (
     DatabricksClient,
     MetadataExtractor,
 )
+
+_LAZY_SQLITE_EXPORTS: dict[str, tuple[str, str]] = {
+    "SQLiteMultiCollectionStore": (
+        "starboard.infra.rag.adapters.storage.sqlite_multi_collection_store",
+        "SQLiteMultiCollectionStore",
+    ),
+    "SQLiteVectorStore": (
+        "starboard.infra.rag.adapters.storage.sqlite_vector_store",
+        "SQLiteVectorStore",
+    ),
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Load an optional SQLite RAG export only when first requested."""
+    target = _LAZY_SQLITE_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute = target
+    value = getattr(importlib.import_module(module_name), attribute)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    """Return module globals plus lazy SQLite exports."""
+    return sorted(set(globals()) | set(_LAZY_SQLITE_EXPORTS))
+
 
 __all__ = [
     # Domain layer
