@@ -30,6 +30,9 @@ Exit codes::
 
 from __future__ import annotations
 
+from dataclasses import fields, is_dataclass
+from datetime import date
+from enum import Enum
 from typing import Any
 
 CONTRACT_VERSION = "1.0"
@@ -75,6 +78,28 @@ class ArgError(HelperError):
     """Bad CLI arguments."""
 
     exit_code = EXIT_ARG
+
+
+# --- Serialization -------------------------------------------------------- #
+def to_jsonable(obj: Any) -> Any:
+    """Recursively convert dataclasses/enums/tuples into JSON-able primitives.
+
+    Stdlib-only (dataclass + enum aware) so every ``python -m starboard_x.*``
+    sub-module can serialize the pure analyzers' frozen-dataclass results into
+    the stable envelope without a pydantic/orjson dependency. ``datetime`` /
+    ``date`` fall through to ``isoformat`` for a deterministic string.
+    """
+    if isinstance(obj, Enum):
+        return obj.value
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return {f.name: to_jsonable(getattr(obj, f.name)) for f in fields(obj)}
+    if isinstance(obj, (list, tuple, set)):
+        return [to_jsonable(item) for item in obj]
+    if isinstance(obj, dict):
+        return {str(k): to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, date):  # covers datetime (subclass of date)
+        return obj.isoformat()
+    return obj
 
 
 # --- Envelope ------------------------------------------------------------- #

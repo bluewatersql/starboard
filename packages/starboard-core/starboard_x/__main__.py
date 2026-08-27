@@ -4,8 +4,9 @@
 
 Delegates ``starboard-x <domain> <verb> ...`` to ``python -m starboard_x.<domain>``
 so the console-script entry point and the ``python -m`` interface share one code
-path. Only ``diagnostic`` is implemented in Phase 1; the other capabilities are
-declared in the extras taxonomy (D-1.3) and land in Phase 2.
+path. Phase 1 shipped ``diagnostic``; Phase-2 D4 adds ``discovery``,
+``sparklog``, ``warehouse``, and ``uc``. The remaining capabilities are declared
+in the extras taxonomy (D-1.3) and land later.
 
 Sub-modules are imported lazily (inside :func:`main`) so invoking one capability
 never pulls another capability's dependencies into the process.
@@ -17,18 +18,17 @@ import sys
 
 from starboard_x.contract import EXIT_ARG
 
-# Capabilities whose ``__main__`` this dispatcher can route to. Only the
-# diagnostic trio is implemented in Phase 1 (D-1.3).
+# Capabilities whose ``__main__`` this dispatcher can route to.
 _IMPLEMENTED: dict[str, str] = {
-    "diagnostic": "starboard_x.diagnostic.__main__",
+    "diagnostic": "starboard_x.diagnostic.__main__",  # Phase-1 B2
+    "discovery": "starboard_x.discovery.__main__",  # Phase-2 D4
+    "sparklog": "starboard_x.sparklog.__main__",  # Phase-2 D4
+    "warehouse": "starboard_x.warehouse.__main__",  # Phase-2 D4
+    "uc": "starboard_x.uc.__main__",  # Phase-2 D4
 }
 
-# Declared-but-not-yet-implemented capabilities (extras stubs, Phase 2+).
+# Declared-but-not-yet-implemented capabilities (extras stubs, later phases).
 _DECLARED: tuple[str, ...] = (
-    "discovery",
-    "sparklog",
-    "warehouse",
-    "uc",
     "cluster",
     "charts",
 )
@@ -39,7 +39,7 @@ def _usage() -> str:
     return (
         "usage: starboard-x <domain> <verb> [options]\n"
         f"  implemented domains: {domains}\n"
-        f"  declared (Phase 2+): {', '.join(_DECLARED)}\n"
+        f"  declared (later): {', '.join(_DECLARED)}\n"
     )
 
 
