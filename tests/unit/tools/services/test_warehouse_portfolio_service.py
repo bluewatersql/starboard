@@ -10,13 +10,13 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
+from starboard.tools.services.warehouse_portfolio_service import (
+    WarehousePortfolioService,
+)
 from starboard_core.domain.models.warehouse import (
     SLOConfig,
     SLOTarget,
     WarehouseFingerprint,
-)
-from starboard.tools.services.warehouse_portfolio_service import (
-    WarehousePortfolioService,
 )
 
 # =============================================================================

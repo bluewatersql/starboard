@@ -15,12 +15,12 @@ Following TDD approach: Write tests first, implement service to pass.
 from datetime import UTC, datetime
 
 import pytest
+from starboard.services.clarification.question_generator import QuestionGenerator
 from starboard_core.domain.models.clarification import (
     ClarificationOption,
     ClarificationRequest,
     ClarificationType,
 )
-from starboard.services.clarification.question_generator import QuestionGenerator
 
 
 class TestQuestionGeneratorMissingParameters:

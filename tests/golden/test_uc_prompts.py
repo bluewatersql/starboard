@@ -20,9 +20,9 @@ Test Coverage:
 from __future__ import annotations
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.prompts.factories import build_uc_prompt
 from starboard.prompts.uc import PROMPT_VERSION, UC_SYSTEM_PROMPT
+from starboard_core.domain.models.llm import OptimizationMode
 from syrupy.assertion import SnapshotAssertion
 
 

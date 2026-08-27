@@ -300,6 +300,7 @@ ignore = [
 "tests/**/*.py" = ["ARG", "S101", "B017"]  # Allow assert, unused args, bare exceptions in tests
 "**/tests/**/*.py" = ["ARG", "S101", "B017"]  # Allow assert, unused args, bare exceptions in all test files
 "scripts/*.py" = ["ARG001", "SIM102", "SIM105"]  # Scripts may have unused args, intentional nested ifs, and try-except-pass
+"**/tests/**/test_s3_*.py" = ["E402"]  # S3 tests mock sys.modules[boto3] before importing, so imports are intentionally not top-of-file
 
 [tool.mypy]
 python_version = "3.12"

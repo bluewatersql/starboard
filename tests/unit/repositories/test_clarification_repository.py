@@ -15,13 +15,13 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import pytest
+from starboard.repositories.clarification_repository import (
+    ClarificationRepository,
+)
 from starboard_core.domain.models.clarification import (
     ClarificationOption,
     ClarificationRequest,
     ClarificationType,
-)
-from starboard.repositories.clarification_repository import (
-    ClarificationRepository,
 )
 
 

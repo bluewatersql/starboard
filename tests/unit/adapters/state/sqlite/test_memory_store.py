@@ -5,8 +5,8 @@
 from datetime import UTC, datetime
 
 import pytest
-from starboard_core.models.memory import Episode, Fact, SemanticQuery
 from starboard.adapters.state.sqlite.memory_store import SQLiteMemoryStore
+from starboard_core.models.memory import Episode, Fact, SemanticQuery
 
 
 @pytest.fixture

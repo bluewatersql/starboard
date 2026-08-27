@@ -14,7 +14,6 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from starboard_core.rag.models import RAGContext
 from starboard.tools.domain.analytics_sql.llm_sql_generator import (
     LLMSQLGenerator,
 )
@@ -23,6 +22,7 @@ from starboard.tools.domain.analytics_sql.models import (
     QueryIntent,
     QueryIntentContext,
 )
+from starboard_core.rag.models import RAGContext
 
 
 class CapturingLLMClient:

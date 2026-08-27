@@ -10,12 +10,12 @@ This test suite verifies that:
 """
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.agents.routing.intent_router import IntentRouter
 from starboard.prompts.factories import (
     build_analytics_prompt,
     get_prompt_builder_for_domain,
 )
+from starboard_core.domain.models.llm import OptimizationMode
 
 
 class MockLLMClient:

@@ -24,7 +24,6 @@ from starboard.bootstrap import (
 from starboard.bootstrap import (
     ToolStartEvent as _ServerToolStartEvent,
 )
-
 from starboard.sdk.event_types import (
     AgentEvent,
     ErrorEvent,

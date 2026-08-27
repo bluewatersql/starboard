@@ -2,11 +2,11 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for query domain resolver."""
 
+from starboard.tools.domain.query.resolver import QueryResolver
 from starboard_core.domain.models.query import (
     QueryResolutionInput,
     QuerySource,
 )
-from starboard.tools.domain.query.resolver import QueryResolver
 
 
 class TestQueryResolver:

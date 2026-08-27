@@ -9,10 +9,10 @@ Tests multi-collection vector store with domain filtering and deduplication.
 from unittest.mock import AsyncMock
 
 import pytest
-from starboard_core.foundations.models import VectorRecord, VectorSearchResult
 from starboard.infra.rag.adapters.storage.sqlite_multi_collection_store import (
     SQLiteMultiCollectionStore,
 )
+from starboard_core.foundations.models import VectorRecord, VectorSearchResult
 
 
 class TestInit:

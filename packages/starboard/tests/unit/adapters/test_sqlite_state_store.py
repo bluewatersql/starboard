@@ -5,12 +5,12 @@
 from datetime import UTC, datetime
 
 import pytest
+from starboard.adapters.state.sqlite.state_store import SQLiteStateStore
 from starboard_core.models.conversation import (
     Conversation,
     ConversationMetadata,
     Message,
 )
-from starboard.adapters.state.sqlite.state_store import SQLiteStateStore
 
 
 @pytest.fixture

@@ -5,14 +5,14 @@
 from datetime import UTC, datetime
 
 import pytest
-from starboard_core.models.conversation import Conversation, Message
-from starboard_core.models.memory import Episode, Fact, SemanticQuery
 from starboard.adapters.state.sqlite import SQLiteMemoryStore, SQLiteStateStore
 from starboard.infra.core.config import EnvConfig
 from starboard.infra.core.state_factory import (
     create_memory_store,
     create_state_store,
 )
+from starboard_core.models.conversation import Conversation, Message
+from starboard_core.models.memory import Episode, Fact, SemanticQuery
 
 
 @pytest.mark.integration

@@ -10,9 +10,9 @@ change (intentionally), run `pytest --snapshot-update` to update snapshots.
 from __future__ import annotations
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.prompts.factories import build_router_prompt
 from starboard.prompts.router.v1 import PROMPT_VERSION, ROUTER_SYSTEM_PROMPT
+from starboard_core.domain.models.llm import OptimizationMode
 from syrupy.assertion import SnapshotAssertion
 
 

@@ -8,9 +8,9 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.sdk.client import ConversationSession, StarboardClient
 from starboard.sdk.models import AgentResponse
+from starboard_core.domain.models.llm import OptimizationMode
 
 
 def _make_final_event(output: dict | None = None):

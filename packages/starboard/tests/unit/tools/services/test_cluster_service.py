@@ -5,15 +5,15 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from starboard.tools.services.cluster_service import (
+    ClusterNotFoundError,
+    ClusterService,
+)
 from starboard_core.domain.models.cluster import (
     ClusterFingerprint,
     ClusterHealthReport,
     FingerprintScope,
     HealthScore,
-)
-from starboard.tools.services.cluster_service import (
-    ClusterNotFoundError,
-    ClusterService,
 )
 
 

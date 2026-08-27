@@ -9,8 +9,8 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from starboard_core.rag.models import AnalysisResult
 from starboard.infra.rag.services.metadata_service import MetadataExtractor
+from starboard_core.rag.models import AnalysisResult
 
 # ---------------------------------------------------------------------------
 # Helpers / Stubs

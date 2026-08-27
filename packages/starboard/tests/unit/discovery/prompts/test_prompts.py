@@ -12,7 +12,6 @@ Tests cover:
 from __future__ import annotations
 
 import polars as pl
-from starboard_core.domain.models.discovery.query import QueryResult
 from starboard.discovery.heuristics.base import HeuristicFinding
 from starboard.discovery.prompts.domain_analysis import (
     DOMAIN_PROMPT_TEMPLATES,
@@ -20,6 +19,7 @@ from starboard.discovery.prompts.domain_analysis import (
     PromptBuilder,
 )
 from starboard.discovery.prompts.v1 import PROMPT_METADATA, PROMPT_VERSION
+from starboard_core.domain.models.discovery.query import QueryResult
 
 
 class TestPromptVersion:

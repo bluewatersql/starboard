@@ -16,13 +16,13 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from starboard.repositories.feedback_repository import PostgresFeedbackRepository
 from starboard_core.domain.models.feedback import (
     FeedbackCategory,
     FeedbackContext,
     FeedbackRating,
     UserFeedback,
 )
-from starboard.repositories.feedback_repository import PostgresFeedbackRepository
 
 
 @pytest.fixture

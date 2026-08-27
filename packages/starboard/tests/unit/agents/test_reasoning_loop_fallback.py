@@ -9,7 +9,6 @@ the agent finishes without calling the `complete` tool.
 from unittest.mock import MagicMock
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.agents.config.agent_config import AgentConfig
 from starboard.agents.domain.partial_report import generate_partial_report
 from starboard.agents.domain.reasoning_loop import (
@@ -21,6 +20,7 @@ from starboard.agents.state.agent_state import (
     Message,
     WorkingMemory,
 )
+from starboard_core.domain.models.llm import OptimizationMode
 
 
 def _make_state(

@@ -15,7 +15,6 @@ Unlike unit tests, these tests use real (mocked) components working together.
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.agents.agent_factory import AgentFactory
 from starboard.agents.config.agent_config import AgentConfig
 from starboard.agents.conversation.multi_agent_manager import (
@@ -37,6 +36,7 @@ from starboard.agents.tools import ToolRegistry
 from starboard.api.conversation_state_manager import (
     InMemoryConversationStateManager,
 )
+from starboard_core.domain.models.llm import OptimizationMode
 
 # =============================================================================
 # Fixtures

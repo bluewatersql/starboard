@@ -12,10 +12,10 @@ Tests verify:
 from __future__ import annotations
 
 import pytest
-from starboard_core.ports.cache_store import CacheMetrics
 from starboard.adapters.state.inmemory.cache_store import InMemoryCacheStore
 from starboard.infra.core.cache_factory import CacheFactory
 from starboard.infra.core.namespaced_cache import NamespacedCache
+from starboard_core.ports.cache_store import CacheMetrics
 
 
 class TestCacheFactory:

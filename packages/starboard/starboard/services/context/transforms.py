@@ -56,7 +56,10 @@ from starboard_core.domain.transformers.job_transformers import (
     transform_job_runs,
     transform_system_tables_job_detail,
 )
-from starboard_core.log_parser import SparkLogPathNotFoundError, create_spark_application
+from starboard_core.log_parser import (
+    SparkLogPathNotFoundError,
+    create_spark_application,
+)
 
 from starboard.exceptions import DataProcessingError
 from starboard.infra.observability.logging import get_logger

@@ -10,7 +10,6 @@ import pytest
 from starboard.adapters.llm.openai.client import OpenAIProvider
 from starboard.infra.core.config import EnvConfig
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

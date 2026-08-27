@@ -1054,11 +1054,11 @@ class TestMakeSchemaStrict:
         """Regression: the actual DomainAnalysis and ExecutiveSummaryLLMOutput
         models used in the discovery pipeline emit no defaults after strict
         patching."""
-        from starboard_core.domain.models.discovery.analysis import DomainAnalysis
         from starboard.adapters.llm.openai.schema_adapter import (
             prepare_json_schema,
         )
         from starboard.discovery.synthesizer import ExecutiveSummaryLLMOutput
+        from starboard_core.domain.models.discovery.analysis import DomainAnalysis
 
         for model_cls in (DomainAnalysis, ExecutiveSummaryLLMOutput):
             json_schema_def, _, _ = prepare_json_schema(model_cls, "test")

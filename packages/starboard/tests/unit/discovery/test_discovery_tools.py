@@ -12,15 +12,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import polars as pl
 import pytest
+from starboard.agents.tool_categories import ONLINE_TOOLS, TOOL_CATEGORIES
+from starboard.agents.tools.registry import ALL_TOOL_METADATA
+from starboard.tools.adapters.discovery_tools import DiscoveryTools
 from starboard_core.domain.models.discovery.analysis import (
     DataCoverage,
     DiscoveryFinding,
     DomainAnalysis,
 )
 from starboard_core.domain.models.discovery.query import PackResult, QueryResult
-from starboard.agents.tool_categories import ONLINE_TOOLS, TOOL_CATEGORIES
-from starboard.agents.tools.registry import ALL_TOOL_METADATA
-from starboard.tools.adapters.discovery_tools import DiscoveryTools
 
 
 def _audit_df() -> pl.DataFrame:

@@ -5,17 +5,17 @@
 
 import numpy as np
 import pytest
-from starboard_core.rag.models import (
-    RAGCodebookContext,
-    RAGFacetContext,
-    RAGNuanceContext,
-    RAGTableContext,
-)
 from starboard.infra.rag.adapters.storage.inmemory_bootstrap import (
     InMemoryVectorStoreBootstrap,
 )
 from starboard.infra.rag.adapters.storage.inmemory_vector_store import (
     InMemoryMultiCollectionStore,
+)
+from starboard_core.rag.models import (
+    RAGCodebookContext,
+    RAGFacetContext,
+    RAGNuanceContext,
+    RAGTableContext,
 )
 
 

@@ -15,12 +15,12 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi import Request
-from starboard_core.domain.models.auth import User, UserStatus
 from starboard.domain.auth.exceptions import (
     AuthenticationError,
     UserNotFoundError,
 )
 from starboard.infra.auth.providers.databricks import DatabricksAuthProvider
+from starboard_core.domain.models.auth import User, UserStatus
 
 
 @pytest.fixture

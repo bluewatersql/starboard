@@ -8,8 +8,8 @@ from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
-from starboard_core.foundations.models import ReflexionLearning, VectorSearchResult
 from starboard.infra.reflexion import SQLiteReflexionStore
+from starboard_core.foundations.models import ReflexionLearning, VectorSearchResult
 
 
 class TestSQLiteReflexionStoreInit:

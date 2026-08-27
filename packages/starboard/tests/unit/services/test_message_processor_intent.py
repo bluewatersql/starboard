@@ -7,7 +7,6 @@ for conversation extension pattern support.
 """
 
 import pytest
-from starboard_core.models.conversation import Message
 from starboard.domain.models.conversation_patterns import (
     ActionType,
     NextStepOption,
@@ -17,6 +16,7 @@ from starboard.services.messaging.message_processor import (
     MessageProcessor,
     ProcessingType,
 )
+from starboard_core.models.conversation import Message
 
 
 class TestMessageProcessorWithIntent:

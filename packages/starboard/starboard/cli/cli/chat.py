@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from rich.console import Console
+
 from starboard.bootstrap import (
     ErrorEvent,
     FinalOutputEvent,
@@ -19,11 +20,11 @@ from starboard.bootstrap import (
     UserInputRequestEvent,
     get_logger,
 )
-
 from starboard.cli.sessions.session_manager import SessionManager
 
 if TYPE_CHECKING:
     from starboard_core.domain.models.llm import OptimizationMode
+
     from starboard.bootstrap import MultiAgentConversationManager
 
 logger = get_logger(__name__)

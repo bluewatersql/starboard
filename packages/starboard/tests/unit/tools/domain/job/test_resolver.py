@@ -2,11 +2,11 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for job domain resolver."""
 
+from starboard.tools.domain.job.resolver import JobResolver
 from starboard_core.domain.models.job import (
     AnalysisMode,
     JobResolutionInput,
 )
-from starboard.tools.domain.job.resolver import JobResolver
 
 
 class TestJobResolver:

@@ -10,10 +10,10 @@ Integration tests in tests/integration/infra/rag/ will test with the actual exte
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from starboard_core.foundations.models import VectorRecord
 from starboard.infra.rag.adapters.storage.sqlite_vector_store import (
     SQLiteVectorStore,
 )
+from starboard_core.foundations.models import VectorRecord
 
 
 class TestSQLiteVectorStoreUnit:

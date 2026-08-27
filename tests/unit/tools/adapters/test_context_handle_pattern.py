@@ -5,9 +5,9 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_core.rag.models import RAGContext, RAGTableContext
 from starboard.tools.adapters.analytics_sql_tools import AnalyticsSQLTools
 from starboard.tools.adapters.rag_tools import AnalyticsContextTools
+from starboard_core.rag.models import RAGContext, RAGTableContext
 
 
 @pytest.fixture

@@ -25,7 +25,9 @@ def test_parse_all_accum_metrics_has_recursion_limit():
     """
     # Import after defining the test to allow the test to be collected even if import fails
     try:
-        from starboard_core.log_parser.parsing_models import event_log_parser  # noqa: F401
+        from starboard_core.log_parser.parsing_models import (
+            event_log_parser,  # noqa: F401
+        )
     except ImportError:
         import pytest
 

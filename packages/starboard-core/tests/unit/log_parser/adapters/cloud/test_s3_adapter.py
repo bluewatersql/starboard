@@ -20,7 +20,9 @@ sys.modules["botocore"] = MagicMock()
 sys.modules["botocore.exceptions"] = MagicMock()
 
 from starboard_core.log_parser.auth.protocols import Credentials  # noqa: E402
-from starboard_core.log_parser.auth.providers import StaticCredentialProvider  # noqa: E402
+from starboard_core.log_parser.auth.providers import (
+    StaticCredentialProvider,  # noqa: E402
+)
 from starboard_core.log_parser.exceptions import CloudStorageError  # noqa: E402
 from starboard_core.log_parser.loaders.protocols import CloudStorageClient  # noqa: E402
 

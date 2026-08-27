@@ -10,12 +10,12 @@ change (intentionally), run `pytest --snapshot-update` to update snapshots.
 from __future__ import annotations
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.prompts.analytics.v1 import (
     ANALYTICS_SYSTEM_PROMPT,
     PROMPT_VERSION,
 )
 from starboard.prompts.factories import build_analytics_prompt
+from starboard_core.domain.models.llm import OptimizationMode
 from syrupy.assertion import SnapshotAssertion
 
 

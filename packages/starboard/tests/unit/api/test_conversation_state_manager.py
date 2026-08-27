@@ -6,11 +6,11 @@
 """
 
 import pytest
-from starboard.agents.state.agent_state import Message, WorkingMemory
-from starboard.agents.state.shared_context import SharedAgentContext
 from starboard.adapters.state.inmemory.conversation_state_manager import (
     InMemoryConversationStateManager,
 )
+from starboard.agents.state.agent_state import Message, WorkingMemory
+from starboard.agents.state.shared_context import SharedAgentContext
 
 # =============================================================================
 # Fixtures

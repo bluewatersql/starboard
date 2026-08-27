@@ -2,12 +2,12 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Unit tests for Intent Classifier service (Phase 2: Conversation Extension)."""
 
-from starboard_core.models.conversation import Message
 from starboard.domain.models.conversation_patterns import (
     AgentResponse,
     UserIntentType,
 )
 from starboard.services.intent.intent_classifier import IntentClassifierService
+from starboard_core.models.conversation import Message
 
 
 class TestIntentClassifierInit:

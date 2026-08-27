@@ -314,8 +314,8 @@ class TestAnalyzeSparkLogs:
 
     def test_analyze_spark_logs_path_not_found_error(self):
         """Test analyzing spark logs when path not found."""
-        from starboard_core.log_parser import SparkLogPathNotFoundError
         from starboard.services.context.transforms import analyze_spark_logs
+        from starboard_core.log_parser import SparkLogPathNotFoundError
 
         with patch(
             "starboard.services.context.transforms.create_spark_application"

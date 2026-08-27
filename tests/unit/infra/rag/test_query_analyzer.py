@@ -6,8 +6,8 @@ Unit tests for QueryAnalyzer (TDD).
 Tests SQL query parsing and pattern extraction following TDD principles.
 """
 
-from starboard_core.rag.models import AnalysisResult
 from starboard.infra.rag.domain.query_analyzer import QueryAnalyzer
+from starboard_core.rag.models import AnalysisResult
 
 
 class TestQueryAnalyzerInit:

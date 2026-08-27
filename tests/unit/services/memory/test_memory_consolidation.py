@@ -5,12 +5,12 @@
 from datetime import UTC, datetime
 
 import pytest
-from starboard_core.models.conversation import Message
 from starboard.infra.core.config import EnvConfig
 from starboard.infra.core.container import Container
 from starboard.services.memory.memory_consolidation import (
     MemoryConsolidationService,
 )
+from starboard_core.models.conversation import Message
 
 
 @pytest.fixture

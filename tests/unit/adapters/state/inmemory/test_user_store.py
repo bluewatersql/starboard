@@ -13,9 +13,9 @@ Tests follow Python AI Agent Engineering Standards:
 from datetime import UTC, datetime
 
 import pytest
-from starboard_core.domain.models.auth import UserStatus
 from starboard.adapters.state.inmemory.user_store import InMemoryUserStore
 from starboard.domain.auth.exceptions import UserNotFoundError
+from starboard_core.domain.models.auth import UserStatus
 
 
 @pytest.fixture

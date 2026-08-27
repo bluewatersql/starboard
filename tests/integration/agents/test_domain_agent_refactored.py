@@ -19,7 +19,6 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.agents.config import AgentConfig
 from starboard.agents.domain.domain_agent import DomainAgent
 from starboard.agents.events import (
@@ -30,6 +29,7 @@ from starboard.agents.events import (
     ToolStartEvent,
 )
 from starboard.agents.tools.tool_registry import ToolRegistry
+from starboard_core.domain.models.llm import OptimizationMode
 
 
 @pytest.fixture

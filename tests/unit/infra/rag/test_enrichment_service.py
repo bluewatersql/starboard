@@ -9,8 +9,8 @@ Tests LLM-based metadata enrichment with mocked LLM client.
 import json
 
 import pytest
-from starboard_core.rag.models import ColumnMetadata, TableMetadata
 from starboard.infra.rag.services.enrichment_service import EnrichmentService
+from starboard_core.rag.models import ColumnMetadata, TableMetadata
 
 
 class MockLLMClient:

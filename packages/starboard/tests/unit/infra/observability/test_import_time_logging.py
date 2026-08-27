@@ -12,8 +12,6 @@ import logging
 
 import pytest
 import structlog
-
-import starboard.infra.observability.logging as slog
 from starboard.infra.observability.logging import get_logger, setup_structured_logging
 
 

@@ -65,6 +65,13 @@ from starboard.adapters.databricks.async_sql_executor import AsyncSQLExecutor
 from starboard.adapters.llm import create_llm_client
 
 # ---------------------------------------------------------------------------
+# API utilities
+# ---------------------------------------------------------------------------
+from starboard.adapters.state.inmemory.conversation_state_manager import (
+    InMemoryConversationStateManager,
+)
+
+# ---------------------------------------------------------------------------
 # Adapters — State / SQLite
 # ---------------------------------------------------------------------------
 from starboard.adapters.state.sqlite.state_store import SQLiteStateStore
@@ -96,13 +103,6 @@ from starboard.agents.events import (
 from starboard.agents.report_formatters import format_agent_report
 from starboard.agents.routing.intent_router import IntentRouter
 from starboard.agents.tools.tool_factory import create_tool_registry
-
-# ---------------------------------------------------------------------------
-# API utilities
-# ---------------------------------------------------------------------------
-from starboard.adapters.state.inmemory.conversation_state_manager import (
-    InMemoryConversationStateManager,
-)
 
 # ---------------------------------------------------------------------------
 # Discovery

@@ -23,13 +23,13 @@ import os
 from datetime import UTC, datetime
 
 import pytest
-from starboard_core.models.conversation import Conversation, Message
-from starboard_core.models.memory import Episode, Fact, SemanticQuery
 from starboard.adapters.state.databricks import (
     DatabricksLakebaseConfig,
     DatabricksLakebaseMemoryStore,
     DatabricksLakebaseStateStore,
 )
+from starboard_core.models.conversation import Conversation, Message
+from starboard_core.models.memory import Episode, Fact, SemanticQuery
 
 # Skip if Lakebase not configured
 pytestmark = pytest.mark.skipif(

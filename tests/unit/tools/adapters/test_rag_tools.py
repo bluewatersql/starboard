@@ -16,13 +16,13 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from starboard.tools.adapters.rag_tools import AnalyticsContextTools
 from starboard_core.rag.models import (
     RAGCodebookContext,
     RAGContext,
     RAGFacetContext,
     RAGTableContext,
 )
-from starboard.tools.adapters.rag_tools import AnalyticsContextTools
 
 # ============================================================================
 # Test Fixtures

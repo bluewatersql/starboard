@@ -19,9 +19,9 @@ Test Coverage:
 from __future__ import annotations
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.prompts.factories import build_warehouse_prompt
 from starboard.prompts.warehouse import WAREHOUSE_SYSTEM_PROMPT
+from starboard_core.domain.models.llm import OptimizationMode
 from syrupy.assertion import SnapshotAssertion
 
 

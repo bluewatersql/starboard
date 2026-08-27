@@ -6,15 +6,15 @@ Unit tests for ChunkingService.
 Tests table chunking into semantic pieces for vector search.
 """
 
+from starboard.infra.rag.services.chunking_service import (
+    ChunkingService,
+    TableChunk,
+)
 from starboard_core.rag.models import (
     ColumnMetadata,
     RelationshipCondition,
     RelationshipMetadata,
     TableMetadata,
-)
-from starboard.infra.rag.services.chunking_service import (
-    ChunkingService,
-    TableChunk,
 )
 
 

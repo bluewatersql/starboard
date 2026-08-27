@@ -19,7 +19,9 @@ sys.modules["botocore"] = Mock()
 sys.modules["botocore.exceptions"] = Mock()
 
 from starboard_core.log_parser.adapters.cloud.s3 import S3Adapter  # noqa: E402
-from starboard_core.log_parser.auth.providers import StaticCredentialProvider  # noqa: E402
+from starboard_core.log_parser.auth.providers import (
+    StaticCredentialProvider,  # noqa: E402
+)
 
 
 def create_chunked_mock_s3(test_data: bytes) -> Mock:

@@ -16,7 +16,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from starboard_core.rag.models import RAGContext, RAGTableContext
 from starboard.tools.domain.analytics_sql.llm_sql_generator import (
     SUPPORTED_CHART_TYPES,
     LLMSQLGenerator,
@@ -26,6 +25,7 @@ from starboard.tools.domain.analytics_sql.models import (
     QueryIntent,
     QueryIntentContext,
 )
+from starboard_core.rag.models import RAGContext, RAGTableContext
 
 # ============================================================================
 # Test Fixtures

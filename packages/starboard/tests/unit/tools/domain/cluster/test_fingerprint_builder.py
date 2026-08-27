@@ -2,12 +2,6 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Tests for cluster fingerprint builder."""
 
-from starboard_core.domain.models.cluster import (
-    AccessMode,
-    ClusterFingerprint,
-    ClusterMode,
-    ClusterType,
-)
 from starboard.tools.domain.cluster.fingerprint_builder import (
     _build_node_config,
     _build_runtime_config,
@@ -16,6 +10,12 @@ from starboard.tools.domain.cluster.fingerprint_builder import (
     _extract_cluster_type,
     _is_autoscaling_enabled,
     build_cluster_fingerprint,
+)
+from starboard_core.domain.models.cluster import (
+    AccessMode,
+    ClusterFingerprint,
+    ClusterMode,
+    ClusterType,
 )
 
 

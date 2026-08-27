@@ -6,10 +6,10 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from starboard.infra.cache import SemanticCache
 from starboard_core.foundations.models import (
     VectorSearchResult,
 )
-from starboard.infra.cache import SemanticCache
 
 
 class TestSemanticCacheInit:

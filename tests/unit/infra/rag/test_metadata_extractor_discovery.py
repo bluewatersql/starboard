@@ -13,9 +13,9 @@ split between MetadataExtractor and QueryAnalyzer, and is tested in other files.
 from unittest.mock import MagicMock
 
 import pytest
-from starboard_core.rag.models import ColumnMetadata, TableMetadata
 from starboard.infra.rag.domain.query_analyzer import QueryAnalyzer
 from starboard.infra.rag.services.metadata_service import MetadataExtractor
+from starboard_core.rag.models import ColumnMetadata, TableMetadata
 
 pytestmark = pytest.mark.skip(
     reason="Tests old implementation - refactored during RAG reorganization"

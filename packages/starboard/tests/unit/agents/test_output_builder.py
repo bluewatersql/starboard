@@ -7,7 +7,6 @@ Tests reasoning trace building and output assembly from agent state.
 
 from datetime import datetime
 
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.agents.config.agent_config import AgentConfig
 from starboard.agents.domain.output_builder import OutputBuilder
 from starboard.agents.state.agent_state import (
@@ -15,6 +14,7 @@ from starboard.agents.state.agent_state import (
     Message,
     WorkingMemory,
 )
+from starboard_core.domain.models.llm import OptimizationMode
 
 
 def _make_state(

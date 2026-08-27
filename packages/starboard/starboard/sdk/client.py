@@ -24,6 +24,7 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from starboard_core.domain.models.llm import OptimizationMode
+
 from starboard.bootstrap import (
     ErrorEvent as _ServerErrorEvent,
 )
@@ -36,7 +37,6 @@ from starboard.bootstrap import (
 from starboard.bootstrap import (
     get_logger,
 )
-
 from starboard.sdk._event_mapper import map_event
 from starboard.sdk.event_types import (
     AgentEvent,
@@ -50,10 +50,10 @@ from starboard.sdk.exceptions import (
 from starboard.sdk.models import AgentResponse, RawAgentOutput
 
 if TYPE_CHECKING:
-    from starboard.cli.sessions.session_manager import SessionInfo, SessionManager
     from starboard.bootstrap import (
         MultiAgentConversationManager,
     )
+    from starboard.cli.sessions.session_manager import SessionInfo, SessionManager
 
 logger = get_logger(__name__)
 
@@ -366,9 +366,9 @@ class StarboardClient:
         load_dotenv()
 
         try:
+            from starboard.bootstrap import get_config
             from starboard.cli.cli.main import create_agent_manager
             from starboard.cli.sessions.session_manager import SessionManager
-            from starboard.bootstrap import get_config
 
             config = get_config()
 

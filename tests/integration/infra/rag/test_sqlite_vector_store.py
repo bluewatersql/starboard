@@ -6,10 +6,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from starboard_core.foundations.models import VectorRecord
 from starboard.infra.rag.adapters.storage.sqlite_vector_store import (
     SQLiteVectorStore,
 )
+from starboard_core.foundations.models import VectorRecord
 
 
 # Check if sqlite-vec is available

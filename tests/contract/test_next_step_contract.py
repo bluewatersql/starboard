@@ -365,8 +365,8 @@ class TestNextStepSchemaAlignment:
         """NextStepAction (Pydantic) and NextStepOption (dataclass) have same fields."""
         import dataclasses
 
-        from starboard_core.domain.models.llm_schemas import NextStepAction
         from starboard.domain.models.conversation_patterns import NextStepOption
+        from starboard_core.domain.models.llm_schemas import NextStepAction
 
         pydantic_fields = set(NextStepAction.model_fields.keys())
         dataclass_fields = {f.name for f in dataclasses.fields(NextStepOption)}
@@ -381,8 +381,8 @@ class TestNextStepSchemaAlignment:
         """ActionType enum values match NextStepAction action_type literals."""
         from typing import get_args
 
-        from starboard_core.domain.models.llm_schemas import NextStepAction
         from starboard.domain.models.conversation_patterns import ActionType
+        from starboard_core.domain.models.llm_schemas import NextStepAction
 
         # Get literal values from Pydantic field
         action_type_field = NextStepAction.model_fields["action_type"]

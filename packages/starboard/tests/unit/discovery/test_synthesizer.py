@@ -15,6 +15,10 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from starboard.adapters.llm.base import BaseLLMClient
+from starboard.discovery.synthesizer import (
+    ReportAssembler,
+)
 from starboard_core.domain.models.discovery.analysis import (
     DataCoverage,
     DiscoveryFinding,
@@ -22,10 +26,6 @@ from starboard_core.domain.models.discovery.analysis import (
     Remediation,
 )
 from starboard_core.domain.models.discovery.report import AnalysisContext
-from starboard.adapters.llm.base import BaseLLMClient
-from starboard.discovery.synthesizer import (
-    ReportAssembler,
-)
 
 
 def make_domain_analysis(domain="billing", grade="B", score=75, findings=None):

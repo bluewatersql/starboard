@@ -12,8 +12,8 @@ These tests capture prompt behavior for edge cases like:
 from __future__ import annotations
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.prompts.factories import build_analytics_prompt
+from starboard_core.domain.models.llm import OptimizationMode
 from syrupy.assertion import SnapshotAssertion
 
 

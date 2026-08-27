@@ -10,6 +10,10 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from starboard.tools.adapters.base import collect_tool_schemas
+from starboard.tools.adapters.warehouse_tools import (
+    WarehouseTools,
+)
 from starboard_core.domain.models.warehouse import (
     HealthSummary,
     QueryTypeDistribution,
@@ -20,10 +24,6 @@ from starboard_core.domain.models.warehouse import (
     TimeDistribution,
     WarehouseFingerprint,
     WorkloadPattern,
-)
-from starboard.tools.adapters.base import collect_tool_schemas
-from starboard.tools.adapters.warehouse_tools import (
-    WarehouseTools,
 )
 
 # =============================================================================

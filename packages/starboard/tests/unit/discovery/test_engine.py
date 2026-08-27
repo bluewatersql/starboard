@@ -16,14 +16,14 @@ from unittest.mock import AsyncMock, MagicMock
 
 import polars as pl
 import pytest
+from starboard.adapters.llm.base import BaseLLMClient
+from starboard.discovery.engine import DiscoveryEngine, EngineConfig
 from starboard_core.domain.models.discovery.query import (
     PackResult,
     QueryPack,
     QueryResult,
     SystemQuery,
 )
-from starboard.adapters.llm.base import BaseLLMClient
-from starboard.discovery.engine import DiscoveryEngine, EngineConfig
 
 
 def _valid_domain_analysis_dict(domain: str = "billing") -> dict:

@@ -8,8 +8,6 @@ preserved, and empty strings pass through unchanged.
 
 from __future__ import annotations
 
-import pytest
-
 from starboard.infra.core.config import EnvConfig
 
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from starboard.discovery.output.formatters import OutputFormatter
 from starboard_core.domain.models.discovery.analysis import (
     DataCoverage,
     DiscoveryFinding,
@@ -27,7 +28,6 @@ from starboard_core.domain.models.discovery.report import (
     ReportCard,
     ReportMetadata,
 )
-from starboard.discovery.output.formatters import OutputFormatter
 
 
 def make_finding(

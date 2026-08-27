@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import pytest
+from starboard.tools.adapters.slo_config_store import InMemorySLOConfigStore
 from starboard_core.domain.models.warehouse import (
     DEFAULT_BATCH_SLOS,
     DEFAULT_INTERACTIVE_SLOS,
     SLOTarget,
 )
-from starboard.tools.adapters.slo_config_store import InMemorySLOConfigStore
 
 
 class TestInMemorySLOConfigStore:

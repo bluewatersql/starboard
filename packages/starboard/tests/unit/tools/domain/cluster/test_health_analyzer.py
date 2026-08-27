@@ -5,6 +5,11 @@
 from datetime import UTC, datetime
 
 import pytest
+from starboard.tools.domain.cluster.health_analyzer import (
+    analyze_cluster_health,
+    calculate_health_scores,
+    identify_cluster_risks,
+)
 from starboard_core.domain.models.cluster import (
     AccessMode,
     ClusterFingerprint,
@@ -18,11 +23,6 @@ from starboard_core.domain.models.cluster import (
     RiskCategory,
     RiskSeverity,
     RuntimeConfig,
-)
-from starboard.tools.domain.cluster.health_analyzer import (
-    analyze_cluster_health,
-    calculate_health_scores,
-    identify_cluster_risks,
 )
 
 

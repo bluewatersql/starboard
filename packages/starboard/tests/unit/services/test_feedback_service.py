@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
+from starboard.services.feedback.feedback_service import FeedbackService
 from starboard_core.domain.models.feedback import (
     AgentPerformanceReport,
     FeedbackCategory,
@@ -14,7 +15,6 @@ from starboard_core.domain.models.feedback import (
     UserFeedback,
 )
 from starboard_core.models.conversation import Conversation, Message
-from starboard.services.feedback.feedback_service import FeedbackService
 
 # Fixed UUIDs for test consistency
 TEST_CONVERSATION_ID = "12345678-1234-5678-1234-567812345678"

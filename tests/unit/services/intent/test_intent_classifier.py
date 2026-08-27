@@ -8,9 +8,9 @@ Tests core functionality with minimal dependencies.
 from datetime import UTC, datetime
 
 import pytest
-from starboard_core.models.conversation import Message
 from starboard.domain.models.conversation_patterns import UserIntentType
 from starboard.services.intent.intent_classifier import IntentClassifierService
+from starboard_core.models.conversation import Message
 
 
 @pytest.fixture

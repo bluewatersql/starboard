@@ -10,11 +10,11 @@ parameters from user_constraints, ensuring cross-agent context passing works.
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from starboard_core.domain.models.llm import OptimizationMode
 from starboard.adapters.llm.base import BaseLLMClient
 from starboard.agents.config.agent_config import AgentConfig
 from starboard.agents.domain.domain_agent import DomainAgent
 from starboard.agents.tools import NativeToolAdapter, ToolMetadata, ToolRegistry
+from starboard_core.domain.models.llm import OptimizationMode
 
 
 @pytest.fixture
