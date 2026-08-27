@@ -181,20 +181,60 @@ class TestDomainFilter:
         assert {rf.finding.category for rf in review.findings} == {"warehouse"}
         assert review.finding_count == 2
 
-    def test_jobs_domain_has_no_seed_rules_and_yields_empty(
+    def test_jobs_domain_rules_fire_on_jobs_evidence(
         self, registry: RuleRegistry
     ) -> None:
+        # C-J04: one unreliable, DBU-wasting job. C-J03: one high-variance job.
+        rows = {
+            "C-J04": [
+                {
+                    "job_id": "job-flaky",
+                    "job_name": "nightly_etl",
+                    "total_runs": 50,
+                    "failure_rate_pct": 40.0,  # >= 20 → high failure rate
+                    "wasted_dbu_pct": 35.0,  # >= 25 → wasted DBU on retries
+                },
+            ],
+            "C-J03": [
+                {
+                    "job_id": "job-spiky",
+                    "name": "hourly_agg",
+                    "total_runs": 20,
+                    "max_min_ratio": 6.0,  # >= 3 → high runtime variance
+                },
+            ],
+        }
         review = build_review(
             registry=registry,
             domains=["jobs"],
-            rows_by_query_id=_GOLDEN_ROWS,
+            rows_by_query_id=rows,
+        )
+        rule_ids = {rf.finding.rule_id for rf in review.findings}
+        assert rule_ids == {
+            "job_high_failure_rate",
+            "job_wasted_dbu_on_failures_retries",
+            "job_high_runtime_variance",
+        }
+        jobs_report = review.domain_reports[0]
+        assert jobs_report.domain == "jobs"
+        assert jobs_report.rule_domain == "jobs"
+        assert set(jobs_report.evidence_query_ids) == {"C-J03", "C-J04"}
+        # Both evidence queries returned rows → not degraded.
+        assert jobs_report.degraded is False
+
+    def test_jobs_domain_degrades_when_evidence_absent(
+        self, registry: RuleRegistry
+    ) -> None:
+        # No jobs evidence rows at all → no findings, domain marked degraded.
+        review = build_review(
+            registry=registry,
+            domains=["jobs"],
+            rows_by_query_id=_GOLDEN_ROWS,  # only warehouse/query evidence
         )
         assert review.finding_count == 0
         jobs_report = review.domain_reports[0]
         assert jobs_report.domain == "jobs"
-        assert jobs_report.rule_domain == "jobs"
-        # No jobs seed rules exist yet, so there is nothing to degrade.
-        assert jobs_report.degraded is False
+        assert jobs_report.degraded is True
 
 
 @pytest.mark.unit

@@ -10,6 +10,12 @@ total order and validates each rule's ``evidence_query`` against a
 caller-supplied set of real ``query_id`` values.
 """
 
+from starboard_core.domain.rules.action_rate import (
+    SNAPSHOT_VERSION,
+    ActionRateDelta,
+    ReviewSnapshot,
+    compute_action_rate,
+)
 from starboard_core.domain.rules.detectors import DETECTORS, RowMatch
 from starboard_core.domain.rules.evaluator import (
     DEFAULT_DOMAINS,
@@ -17,6 +23,11 @@ from starboard_core.domain.rules.evaluator import (
     build_review,
     evaluate_rule,
     rank_review_findings,
+)
+from starboard_core.domain.rules.gate import (
+    GateOutcome,
+    SeverityGate,
+    apply_severity_gate,
 )
 from starboard_core.domain.rules.loader import (
     RuleLoadError,
@@ -51,4 +62,12 @@ __all__ = [
     "build_review",
     "evaluate_rule",
     "rank_review_findings",
+    # Phase-3 D1c — severity gate + Action-Rate re-scan loop (pure, kernel).
+    "SeverityGate",
+    "GateOutcome",
+    "apply_severity_gate",
+    "ReviewSnapshot",
+    "ActionRateDelta",
+    "compute_action_rate",
+    "SNAPSHOT_VERSION",
 ]

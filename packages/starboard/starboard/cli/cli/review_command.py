@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+from datetime import UTC
 
 from rich.console import Console
 from rich.table import Table
@@ -71,6 +72,41 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable the discovery scan cache (re-run every evidence query).",
     )
+    # --- D1c: validator council + severity gate (opt-in) ------------------- #
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help=(
+            "Gate findings through the bounded validator council before "
+            "surfacing them (model ids + max passes come from config)."
+        ),
+    )
+    parser.add_argument(
+        "--min-severity",
+        default=None,
+        choices=["low", "medium", "high", "critical"],
+        help="Suppress findings below this severity (severity gate floor).",
+    )
+    parser.add_argument(
+        "--min-score",
+        type=float,
+        default=None,
+        help="Suppress findings below this priority score (severity gate floor).",
+    )
+    # --- D1c: Action-Rate re-scan loop (read-only, local snapshots) -------- #
+    parser.add_argument(
+        "--since",
+        default=None,
+        help=(
+            "Path to a prior review snapshot JSON; report the resolved-rate "
+            "delta vs. this run (read-only, never writes the workspace)."
+        ),
+    )
+    parser.add_argument(
+        "--snapshot-out",
+        default=None,
+        help="Write a review snapshot JSON to this local path for a later --since.",
+    )
     parser.add_argument(
         "--json",
         action="store_true",
@@ -111,13 +147,60 @@ def _resolve_config(args: argparse.Namespace):
     return config
 
 
-async def _run_review(args: argparse.Namespace, workspace_label: str | None):
+def _build_gate(args: argparse.Namespace):
+    """Build a severity gate from --min-severity/--min-score, or None."""
+    if args.min_severity is None and args.min_score is None:
+        return None
+    from starboard_core.domain.models.finding import Severity
+    from starboard_core.domain.rules.gate import SeverityGate
+
+    kwargs: dict = {}
+    if args.min_severity is not None:
+        kwargs["min_severity"] = Severity(args.min_severity)
+    if args.min_score is not None:
+        kwargs["min_score"] = args.min_score
+    return SeverityGate(**kwargs)
+
+
+def _build_validator(args: argparse.Namespace, config, err: Console):
+    """Build the validator council from config, or None (degrades on failure).
+
+    Model ids + bounded max-passes come from :class:`CouncilConfig` (env/config),
+    never hard-coded. If no LLM client can be built (e.g. offline), the council
+    is skipped with a warning rather than failing the review.
+    """
+    if not args.validate:
+        return None
+    from starboard.adapters.llm import create_llm_client
+    from starboard.tools.services.validator_council import (
+        CouncilConfig,
+        build_council,
+    )
+
+    try:
+        llm_client = create_llm_client(config)
+    except Exception as exc:  # noqa: BLE001 - degrade to no-council, keep the review
+        err.print(
+            f"[yellow]! --validate requested but no model client is available "
+            f"({exc}); surfacing findings without council validation.[/yellow]"
+        )
+        return None
+    council_config = CouncilConfig.from_env(default_model=config.llm_model)
+    return build_council(llm_client, council_config)
+
+
+async def _run_review(
+    args: argparse.Namespace, workspace_label: str | None, err: Console
+):
     from starboard.bootstrap import AsyncDatabricksClient, AsyncSQLExecutor
     from starboard.tools.services.workload_review_service import (
         WorkloadReviewService,
     )
 
     config = _resolve_config(args)
+    gate = _build_gate(args)
+    validator = _build_validator(args, config, err)
+
     client = AsyncDatabricksClient(cfg=config)
     sql_executor = AsyncSQLExecutor(client)
     service = WorkloadReviewService(
@@ -128,7 +211,13 @@ async def _run_review(args: argparse.Namespace, workspace_label: str | None):
         workspace=workspace_label,
     )
     async with client:
-        return await service.run(_parse_domains(args.domains))
+        if gate is None and validator is None:
+            review = await service.run(_parse_domains(args.domains))
+            return review, None, None
+        validated = await service.run_validated(
+            _parse_domains(args.domains), gate=gate, validator=validator
+        )
+        return validated.review, validated.gate, validated.council
 
 
 def _render_table(review, console: Console) -> None:
@@ -184,6 +273,34 @@ def _render_table(review, console: Console) -> None:
     console.print(f"\n[dim]{review.cost_basis}[/dim]\n")
 
 
+def _load_snapshot(path: str):
+    """Load a prior :class:`ReviewSnapshot` from a local JSON file."""
+    import json
+
+    from starboard_core.domain.rules.action_rate import ReviewSnapshot
+
+    with open(path, encoding="utf-8") as fh:
+        return ReviewSnapshot.model_validate(json.load(fh))
+
+
+def _write_snapshot(review, path: str) -> None:
+    """Write a :class:`ReviewSnapshot` of ``review`` to a local JSON file.
+
+    Read-only w.r.t. the customer workspace (D-3.3): the snapshot is a local
+    diff key, never written back to Databricks.
+    """
+    import json
+    from datetime import datetime
+
+    from starboard_core.domain.rules.action_rate import ReviewSnapshot
+
+    snapshot = ReviewSnapshot.from_review(
+        review, created_at=datetime.now(UTC).isoformat()
+    )
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(snapshot.model_dump(mode="json"), fh, indent=2, default=str)
+
+
 def run_review(argv: list[str]) -> int:
     """Entry point for ``starboard review`` (returns a process exit code)."""
     out = Console()
@@ -201,7 +318,9 @@ def run_review(argv: list[str]) -> int:
     workspace_label = args.workspace or args.profile
 
     try:
-        review = asyncio.run(_run_review(args, workspace_label))
+        review, gate_outcome, council = asyncio.run(
+            _run_review(args, workspace_label, err)
+        )
     except KeyboardInterrupt:
         err.print("\n[yellow]Interrupted by user[/yellow]")
         return EXIT_API
@@ -218,11 +337,82 @@ def run_review(argv: list[str]) -> int:
             err.print(f"\n[bold red]Review failed:[/bold red] {message}")
         return exit_code
 
+    # Action-Rate re-scan delta (read-only): compare against a prior snapshot.
+    delta = None
+    if args.since:
+        try:
+            from starboard_core.domain.rules.action_rate import (
+                compute_action_rate,
+            )
+
+            delta = compute_action_rate(_load_snapshot(args.since), review)
+        except Exception as exc:  # noqa: BLE001 - bad snapshot is an arg error
+            message = f"could not read --since snapshot: {exc}"
+            if args.json:
+                _emit_json(ok=False, command="run", error=message)
+            else:
+                err.print(f"\n[bold red]{message}[/bold red]")
+            return EXIT_ARG
+
+    # Persist a snapshot for a future --since (local file, not the workspace).
+    if args.snapshot_out:
+        try:
+            _write_snapshot(review, args.snapshot_out)
+        except Exception as exc:  # noqa: BLE001 - surface but don't fail the review
+            err.print(f"[yellow]! could not write snapshot: {exc}[/yellow]")
+
     if args.json:
-        _emit_json(ok=True, command="run", data=review.model_dump(mode="json"))
+        data = review.model_dump(mode="json")
+        if gate_outcome is not None or council is not None:
+            data["validation"] = {
+                "gate_suppressed": (
+                    gate_outcome.suppressed_count if gate_outcome else 0
+                ),
+                "council_suppressed": (
+                    council.suppressed_count if council else 0
+                ),
+                "council_model_calls": (
+                    council.total_model_calls if council else 0
+                ),
+                "council_max_possible_calls": (
+                    council.max_possible_calls if council else 0
+                ),
+            }
+        if delta is not None:
+            data["action_rate"] = delta.model_dump(mode="json")
+        _emit_json(ok=True, command="run", data=data)
     else:
         _render_table(review, out)
+        _render_validation(gate_outcome, council, out)
+        _render_action_rate(delta, out)
     return EXIT_OK
+
+
+def _render_validation(gate_outcome, council, console: Console) -> None:
+    """Print a short validation summary when the D1c pipeline ran."""
+    if gate_outcome is None and council is None:
+        return
+    parts: list[str] = []
+    if gate_outcome is not None:
+        parts.append(f"severity gate suppressed {gate_outcome.suppressed_count}")
+    if council is not None:
+        parts.append(
+            f"council suppressed {council.suppressed_count} "
+            f"({council.total_model_calls}/{council.max_possible_calls} model calls)"
+        )
+    console.print(f"[dim]Validation: {'; '.join(parts)}.[/dim]\n")
+
+
+def _render_action_rate(delta, console: Console) -> None:
+    """Print the Action-Rate resolved-rate delta when --since was given."""
+    if delta is None:
+        return
+    console.print(
+        f"[bold]Action-Rate[/bold] (vs. snapshot): "
+        f"resolved {delta.resolved_count}/{delta.prior_count} "
+        f"([green]{delta.resolved_rate:.0%}[/green]), "
+        f"{len(delta.persisting_ids)} persisting, {len(delta.new_ids)} new.\n"
+    )
 
 
 def _emit_json(*, ok: bool, command: str, data=None, error: str | None = None) -> None:

@@ -15,9 +15,17 @@ import asyncio
 
 import polars as pl
 import pytest
+from starboard.tools.services.validator_council import (
+    CouncilConfig,
+    CritiqueRequest,
+    ValidatorCouncil,
+    Verdict,
+)
 from starboard.tools.services.workload_review_service import (
     WorkloadReviewService,
 )
+from starboard_core.domain.models.finding import Severity
+from starboard_core.domain.rules.gate import SeverityGate
 
 # Rows returned per evidence query, matched by a marker column in the rendered SQL.
 _W_W02_ROWS = [
@@ -115,4 +123,67 @@ class TestWorkloadReviewService:
         assert not any(
             rf.finding.rule_id == "warehouse_auto_stop_disabled"
             for rf in review.findings
+        )
+
+
+class _DropByIdModel:
+    """Fake council model that drops findings whose id is in ``drop_ids``."""
+
+    def __init__(self, drop_ids: frozenset[str]) -> None:
+        self._drop_ids = drop_ids
+
+    @property
+    def model_id(self) -> str:
+        return "fake"
+
+    async def critique(
+        self, request: CritiqueRequest, *, seed: int
+    ) -> tuple[Verdict, float]:
+        if request.finding_id in self._drop_ids:
+            return (Verdict.DROP, 0.9)
+        return (Verdict.KEEP, 0.9)
+
+
+@pytest.mark.unit
+class TestRunValidated:
+    def test_no_gate_no_validator_matches_plain_run(self) -> None:
+        service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
+        plain = _run(service.run(["warehouse"]))
+        validated = _run(service.run_validated(["warehouse"]))
+        assert [rf.finding.id for rf in validated.review.findings] == [
+            rf.finding.id for rf in plain.findings
+        ]
+        assert validated.gate is None
+        assert validated.council is None
+
+    def test_severity_gate_suppresses_sub_threshold_findings(self) -> None:
+        service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
+        validated = _run(
+            service.run_validated(
+                gate=SeverityGate(min_severity=Severity.HIGH),
+            )
+        )
+        # Only high-severity findings survive the gate.
+        assert all(
+            rf.finding.severity == Severity.HIGH
+            for rf in validated.review.findings
+        )
+        assert validated.gate is not None
+        assert validated.gate.suppressed_count >= 1
+
+    def test_council_suppresses_rejected_findings(self) -> None:
+        service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
+        council = ValidatorCouncil(
+            [_DropByIdModel(frozenset({"warehouse_auto_stop_disabled::wh-idle"}))],
+            config=CouncilConfig(model_ids=("fake",)),
+        )
+        validated = _run(service.run_validated(["warehouse"], validator=council))
+        ids = [rf.finding.id for rf in validated.review.findings]
+        assert "warehouse_auto_stop_disabled::wh-idle" not in ids
+        assert validated.council is not None
+        assert validated.council.suppressed_count == 1
+        # Spend stays under the council's bounded ceiling.
+        assert (
+            validated.council.total_model_calls
+            <= validated.council.max_possible_calls
         )

@@ -42,12 +42,17 @@ from starboard_core.domain.rules import (
 _CORE_DIR = Path(__file__).parents[4]
 
 # The distinct, real query-pack ``query_id`` values the seed rules must resolve
-# to after Phase-3 D1a repointed the Phase-1 dangling strings (finding #3):
+# to after Phase-3 D1a repointed the Phase-1 dangling strings (finding #3) and
+# Phase-3 D1c added the jobs seed ruleset:
 #   C-Q02  query_perf "Multi-Signal Optimization Candidates"
 #   W-W01  warehouse  "Warehouse Utilization Bands"
 #   W-W02  warehouse  "Auto-Stop Efficiency / Waste"
 #   PO-01  predictive_optimization "PO operations by type" (OPTIMIZE/VACUUM history)
-_EXPECTED_EVIDENCE_QUERY_IDS = {"C-Q02", "W-W01", "W-W02", "PO-01"}
+#   C-J03  jobs "Runtime Variance + DBU per Minute"
+#   C-J04  jobs "Compound Reliability Scorecard"
+_EXPECTED_EVIDENCE_QUERY_IDS = {
+    "C-Q02", "W-W01", "W-W02", "PO-01", "C-J03", "C-J04",
+}
 
 # Internal namespaces / link forms that must never appear in shipped seed data.
 _FORBIDDEN_SUBSTRINGS = [
@@ -182,7 +187,18 @@ class TestRuleRegistryLoading:
 
     def test_domains_cover_seed_domains(self) -> None:
         registry = RuleRegistry.from_seed()
-        assert set(registry.domains) == {"query", "warehouse", "uc"}
+        assert set(registry.domains) == {"query", "warehouse", "uc", "jobs"}
+
+    def test_jobs_rules_present_and_bind_to_real_query_ids(self) -> None:
+        registry = RuleRegistry.from_seed()
+        jobs_rules = registry.rules_for("jobs")
+        assert {r.id for r in jobs_rules} == {
+            "job_high_failure_rate",
+            "job_wasted_dbu_on_failures_retries",
+            "job_high_runtime_variance",
+        }
+        # Every jobs rule points at a real jobs query-pack query_id.
+        assert {r.evidence_query for r in jobs_rules} == {"C-J03", "C-J04"}
 
     def test_rules_for_returns_only_that_domain(self) -> None:
         registry = RuleRegistry.from_seed()
@@ -254,20 +270,26 @@ class TestScorerOrdering:
 
     def test_ranked_rules_expected_total_order(self) -> None:
         # Scores (severity_weight × default_impact / effort_points):
-        #   warehouse_auto_stop_disabled          high(3)*4/XS(1) = 12.0
-        #   non_sargable_partition_filter         high(3)*4/S(2)  =  6.0
-        #   select_star_projection                medium(2)*3/XS(1) = 6.0
-        #   table_missing_maintenance             medium(2)*3/S(2)  = 3.0
-        #   warehouse_persistently_underutilized  medium(2)*3/S(2)  = 3.0
+        #   warehouse_auto_stop_disabled          high(3)*4/XS(1)   = 12.0
+        #   job_high_failure_rate                 high(3)*4/S(2)    =  6.0
+        #   non_sargable_partition_filter         high(3)*4/S(2)    =  6.0
+        #   select_star_projection                medium(2)*3/XS(1) =  6.0
+        #   job_wasted_dbu_on_failures_retries    high(3)*3/S(2)    =  4.5
+        #   table_missing_maintenance             medium(2)*3/S(2)  =  3.0
+        #   warehouse_persistently_underutilized  medium(2)*3/S(2)  =  3.0
+        #   job_high_runtime_variance             medium(2)*3/M(3)  =  2.0
         # Tie-break: score desc, then severity desc, then id asc.
         registry = RuleRegistry.from_seed()
         ordered = [r.id for r in registry.ranked_rules()]
         assert ordered == [
             "warehouse_auto_stop_disabled",
+            "job_high_failure_rate",
             "non_sargable_partition_filter",
             "select_star_projection",
+            "job_wasted_dbu_on_failures_retries",
             "table_missing_maintenance",
             "warehouse_persistently_underutilized",
+            "job_high_runtime_variance",
         ]
 
     def test_ranked_rules_scores_are_non_increasing(self) -> None:
@@ -364,9 +386,10 @@ class TestEvidenceQueryValidation:
     def test_validate_raises_on_dangling_reference(self) -> None:
         registry = RuleRegistry.from_seed()
         with pytest.raises(DanglingEvidenceQueryError) as exc_info:
-            registry.validate_evidence_queries({"C-Q02", "W-W01"})  # missing W-W02, PO-01
+            # Known set omits W-W02, PO-01, and both jobs evidence queries.
+            registry.validate_evidence_queries({"C-Q02", "W-W01"})
         unresolved = exc_info.value.unresolved
-        assert set(unresolved.values()) == {"W-W02", "PO-01"}
+        assert set(unresolved.values()) == {"W-W02", "PO-01", "C-J03", "C-J04"}
 
     def test_validate_skips_rules_without_evidence_query(self) -> None:
         ruleset = load_ruleset_from_string(
