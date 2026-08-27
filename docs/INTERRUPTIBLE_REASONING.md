@@ -2,6 +2,20 @@
 
 > Last verified: 2026-03-24
 
+!!! warning "Interface status: agent/event + CLI/SDK, not the HTTP endpoints shown below"
+    The interruptible-reasoning **mechanism is real** — it is implemented in the streaming
+    event model (`checkpoint`, `solicitation`, `replan`, `tool_call_*`, `final_output`
+    events under `agents/events/`), the `request_user_input` tool, the checkpoint service
+    (`infra/rag/services/checkpoint_service.py`), and the multi-turn CLI/SDK.
+
+    However, the specific **REST/SSE endpoints in this page are illustrative of the intended
+    HTTP surface and are NOT part of the currently shipped server.** The shipped ASGI app
+    (`starboard.main`) only registers `/health/live`, `/health/ready`, `/`, and (via auth
+    middleware) `/conversations` and `/me`. There are no
+    `/api/chat/conversations/{id}/inject-input`, `/respond-to-solicitation`, `/checkpoints`,
+    or `/stream` routes in the codebase today. Drive interruptible reasoning through the CLI
+    (`starboard`) or SDK until the HTTP surface ships.
+
 ---
 
 ## Overview

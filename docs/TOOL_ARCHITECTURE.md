@@ -1,6 +1,6 @@
 # Tool Architecture
 
-> Last verified: 2026-03-24
+> Last verified: 2026-08-27
 
 ## Overview
 
@@ -9,6 +9,20 @@ The tool system uses a clean three-layer architecture:
 - **Domain Layer**: Pure business logic with no I/O dependencies
 - **Service Layer**: Orchestration with protocol-based dependency injection
 - **Adapter Layer**: Tool implementations for the multi-agent framework
+
+Beyond the built-in tools, two **entry-point seams** extend the surface at runtime
+without touching the core packages:
+
+- **Tool plugins** — per-domain tool wheels register a `ToolPlugin`
+  (`starboard.tools.plugins`) under `[project.entry-points."starboard.mcp_tools"]`; a
+  `ToolCatalog` discovers them at runtime. `starboard-plugin-sample` is the reference
+  scaffold. **Plugins are not MCP servers** — they are thin wheels, and an absent plugin
+  degrades to an empty catalog with every built-in tool still working.
+- **Port adapters** — data-access ports (`starboard_core.ports`) are satisfied by public
+  adapters; gated **internal** adapters register under
+  `[project.entry-points."starboard.port_adapters"]` in `starboard-internal` only and are
+  used **only when the internal-data gate is open** (closed by default). See
+  [Package Integration](integration/PACKAGE_INTEGRATION.md).
 
 ---
 
@@ -275,5 +289,5 @@ result = await registry.execute_tool(
 
 ---
 
-**Last Updated**: 2026-03-24
-**Version**: 4.0 -- All 9 domains documented, Pragmatic Hybrid strategy
+**Last Updated**: 2026-08-27
+**Version**: 4.1 -- All 9 categories documented, Pragmatic Hybrid strategy, plugin/adapter seams

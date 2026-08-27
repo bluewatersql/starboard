@@ -6,13 +6,16 @@
 
 ## How It Works
 
-Instead of a single chatbot, Starboard uses **8 specialized agents**, each expert in a different Databricks domain. When you ask a question, an Intent Router classifies your request and dispatches it to the right agent. That agent then:
+Starboard runs from the command line (and from AI coding assistants via skills).
+Instead of a single chatbot, it uses **8 specialized agents**, each expert in a
+different Databricks domain. When you ask a question, an Intent Router classifies
+your request and dispatches it to the right agent. That agent then:
 
 1. **Reasons** about your question step-by-step
 2. **Selects tools** dynamically based on what data it needs
 3. **Calls Databricks APIs** to gather real information
 4. **Analyzes** the results using domain expertise
-5. **Streams** a response with specific, actionable recommendations
+5. **Returns** specific, actionable recommendations (with live progress in the terminal)
 
 ```
 You: "Why is my nightly ETL job taking 3 hours?"
@@ -24,6 +27,11 @@ You: "Why is my nightly ETL job taking 3 hours?"
 → Returns: Specific optimization recommendations with expected improvement
 ```
 
+Beyond free-form goals, Starboard ships three high-signal, deterministic surfaces
+over **public `system.*` data**: **Workload Review** (`starboard review`),
+**`genie ask`** (natural language → SQL), and **workspace discovery**
+(`starboard --discover`).
+
 ---
 
 ## Domain Agents
@@ -34,12 +42,14 @@ You: "Why is my nightly ETL job taking 3 hours?"
 | **Job Agent** | Job Performance | Debugs failing jobs, optimizes configurations, analyzes task dependencies |
 | **UC Agent** | Unity Catalog | Explores metadata, traces lineage, audits governance and access patterns |
 | **Cluster Agent** | Compute | Analyzes cluster configurations, health, utilization, and right-sizing |
-| **Analytics Agent** | FinOps & Cost | Cost analysis, chargeback reports, budget forecasting, usage trends |
+| **Analytics Agent** | FinOps & Cost | Cost analysis, chargeback, usage trends (list-price DBU estimates) |
 | **Warehouse Agent** | SQL Warehouses | Portfolio optimization, topology analysis, SLO configuration |
 | **Discovery Agent** | Workspace Health | Workspace-wide assessment, resource inventory, health scoring |
 | **Diagnostic Agent** | Troubleshooting | Root cause analysis, debugging, cross-domain issue diagnosis |
 
-Each agent has access to specialized tools (45+ total) and domain-specific prompts that encode Databricks best practices.
+Each agent has access to specialized tools and domain-specific prompts that encode
+Databricks best practices. All `$` figures on the public path are **list-price DBU
+estimates**, not finance-grade billing numbers.
 
 ---
 
@@ -51,16 +61,16 @@ Each agent has access to specialized tools (45+ total) and domain-specific promp
 - **Cross-agent handoffs** — Complex questions span multiple domains automatically
 - **Interruptible reasoning** — Provide additional context mid-analysis
 
-### Real-Time Streaming
-- **Server-Sent Events (SSE)** — Watch the agent think and work in real-time
+### Live Progress
+- **Streaming terminal output** — Watch the agent think and call tools in real time
 - **Tool call visibility** — See which APIs are being called and what data is returned
-- **Progressive results** — Get partial answers as the agent works
+- **Evidence-cited findings** — `starboard review` cites the query pack + row for each finding
 
-### Production Ready
-- **Multiple interfaces** — CLI (`starboard`), MCP server (`starboard-mcp`)
-- **Pluggable state backends** — SQLite (dev), Postgres (production), Databricks Lakebase
-- **Conversation history** — Full persistence with search
-- **Caching** — Semantic cache for repeated queries, metadata cache for API results
+### Store-Free by Default
+- **Multiple entry points** — CLI (`starboard`), the `python -m starboard_x.<cap>` middle tier, skills for Claude Code / Cursor, and an optional MCP server (`starboard-mcp`)
+- **In-memory state by default** — no database to provision; a UC-native durable backend (`uc`) is available, and `sqlite`/`postgres`/`lakebase` are opt-in extras
+- **Reference-file analytics context** — the default RAG path uses curated on-disk reference files + query packs, not an embedding/vector database
+- **TTL semantic cache** — enabled by default with no vector dependency; a similarity cache is opt-in behind a real vector backend
 
 ---
 
@@ -68,11 +78,11 @@ Each agent has access to specialized tools (45+ total) and domain-specific promp
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                    User Interfaces                     │
-│         CLI (starboard)    │   MCP (starboard-mcp)   │
-└──────────┬─────────────────┴──────┬───────────────────┘
-           │                        │
-           ▼                        ▼
+│                     Entry Points                       │
+│  CLI (starboard) │ starboard_x │ skills │ MCP server   │
+└──────────┬─────────────────────────────┬──────────────┘
+           │                             │
+           ▼                             ▼
 ┌──────────────────────────────────────────────────────┐
 │                  starboard package                     │
 │  ┌─────────────┐  ┌──────────────────────────────┐   │
@@ -85,15 +95,16 @@ Each agent has access to specialized tools (45+ total) and domain-specific promp
 │  └────────────────────────┼───────────────────────┘  │
 │                           │                           │
 │  ┌────────────────────────┼───────────────────────┐  │
-│  │              45+ Tools (3-Layer)                │  │
+│  │                    Tools (3-Layer)              │  │
 │  │   Domain (Logic) → Service (I/O) → Adapter     │  │
 │  └────────────────────────┼───────────────────────┘  │
 └───────────────────────────┼──────────────────────────┘
                             │
               ┌─────────────┼─────────────┐
               ▼             ▼             ▼
-        Databricks      LLM Provider    State Store
-        APIs            (OpenAI/etc)    (SQLite/PG)
+        Databricks      LLM Provider    State
+        APIs / system.* (OpenAI / Model  (in-memory
+                         Serving)         default; UC durable)
 ```
 
 For the complete architecture deep-dive, see [System Architecture](../architecture/SYSTEM_ARCHITECTURE.md).
@@ -104,12 +115,13 @@ For the complete architecture deep-dive, see [System Architecture](../architectu
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend** | Python 3.12, asyncio, Pydantic V2, structlog |
-| **MCP** | stdio transport, Model Context Protocol |
+| **Runtime** | Python 3.12, asyncio, Pydantic V2, structlog |
+| **MCP** | stdio transport, Model Context Protocol (optional) |
 | **LLM** | OpenAI-compatible (GPT-4o, Claude via Databricks Model Serving) |
-| **State** | SQLite/Postgres/Databricks Lakebase, Redis (cache), sqlite-vec/pgvector (embeddings) |
-| **Package Manager** | uv |
-| **Quality** | ruff, mypy, pytest (3,200+ tests), pre-commit hooks |
+| **State** | In-memory by default; UC-native durable backend; `sqlite`/`postgres`/`lakebase` via opt-in extras |
+| **Analytics context** | Curated reference files + query packs by default; managed Vector Search opt-in via `[vectorsearch]` |
+| **Packaging** | `starboard`, `starboard-core` (+ `starboard_x`), `starboard-skills` |
+| **Quality** | ruff, mypy, pytest, import-linter kernel-purity contracts |
 
 ---
 

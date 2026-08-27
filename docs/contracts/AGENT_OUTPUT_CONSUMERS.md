@@ -1,9 +1,17 @@
 # Agent Output Consumers
 
-This document catalogs all downstream consumers of the `AgentOutput` and `FinalOutputEvent` SSE structures. Any changes to these schemas must be coordinated with all listed consumers.
+This document catalogs downstream consumers of the `AgentOutput` / `FinalOutputEvent`
+structures, plus the kernel **Workload Review `Finding`** contract. Any change to these
+schemas must be coordinated with the listed consumers and contract tests.
 
-**Last Updated:** 2025-12-16  
-**Related:** `tests/contract/test_agent_output_contract.py`
+**Last Updated:** 2026-08-27
+**Related:** `tests/contract/test_agent_output_contract.py` (`make test-contract`)
+
+> **Delivery note:** `FinalOutputEvent` is delivered through the **in-process** event
+> stream to the CLI/SDK — it is serialized to JSON but is **not** an HTTP SSE endpoint.
+> The "Frontend Consumers" listed below describe an **external / separate** web UI (this
+> repository ships no web frontend); the authoritative in-repo consumers are the **CLI**
+> and the **contract tests**.
 
 ---
 
@@ -16,11 +24,11 @@ DomainAgent.run()
     ↓
 AgentOutput (dataclass)
     ↓
-FinalOutputEvent.to_sse_data()
+FinalOutputEvent.to_sse_data()   # JSON serialization of the event
     ↓
-SSE Stream (JSON)
+in-process event stream (JSON)
     ↓
-Frontend / CLI consumers
+CLI / SDK consumers  (external web UI, if any, consumes the same JSON)
 ```
 
 ---
@@ -311,7 +319,49 @@ Before modifying agent output schemas:
 | `next_steps` | No | Can be null or empty |
 | `formatted_markdown` | No | Can be null |
 | `tokens_used` | Yes | Always present, >= 0 |
-| `cost_usd` | Yes | Always present, >= 0 |
+| `cost_usd` | Yes | Always present, >= 0 (list-price DBU estimate) |
 | `duration_seconds` | Yes | Always present, >= 0 |
 | `steps_taken` | Yes | Always present, >= 0 |
+
+---
+
+## Workload Review `Finding` contract
+
+The Workload Review flagship (`starboard review`, `python -m starboard_x.review`) emits a
+`WorkloadReview` of `ReviewFinding`s. The kernel-tier `Finding` model
+(`starboard_core.domain.models.finding`) is a pure-pydantic contract:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | `str` | Stable finding identifier |
+| `severity` | `Severity` | `critical` / `high` / `medium` / `low` |
+| `category` | `str` | Domain category (query, cluster, uc, warehouse, …) |
+| `summary` | `str` | One-line summary |
+| `rationale` | `str` | Why it matters |
+| `current_state` | `str` | Observed / "bad" state (validation alias `bad`) |
+| `suggested_fix` | `str` | Recommended fix (validation alias `good`) |
+| `impact` | `int` (1–5) | Impact multiplier |
+| `effort` | `Effort` | `XS`/`S`/`M`/`L`/`XL` |
+| `confidence` | `Confidence` | `low`/`medium`/`high` (default `medium`) |
+| `location` | `Location \| None` | file/line/table/entity reference |
+| `rule_id` | `str \| None` | Originating rule id |
+| `source` | `str \| None` | **Public** reference only (no internal links) |
+| `score` | `float` (computed) | `(severity_weight × impact) / effort_points` |
+| `bucket` | `Bucket` (computed) | *Fix Immediately / This Sprint / Backlog / Nice-to-Have* |
+
+**Weights:** severity `{critical:4, high:3, medium:2, low:1}`; effort
+`{XS:1, S:2, M:3, L:4, XL:5}`. **Bucket thresholds** (inclusive): ≥20 Fix Immediately,
+≥10 This Sprint, ≥4 Backlog, else Nice-to-Have. Findings are ranked deterministically
+(`rank_findings`: score desc, severity desc, id asc) and de-duplicated by concrete
+`location` (keeping the most severe).
+
+The rule that produces a finding is a `Rule`
+(`starboard_core.domain.rules.schema`): `id` / `name` / `category` /
+`short_description` / `rationale` / `severity` / `default_effort` / `default_impact` /
+`bad` / `good` / `suggested_fix` / `detect` / `evidence_query` / `source` / `enabled`.
+`evidence_query` must resolve to a real query-pack `query_id`
+(`RuleRegistry.validate_evidence_queries`, dependency-inverted to keep the kernel pure).
+
+> **Governance:** `source` is a public reference or null — never an internal `go/` link.
+> All dollar figures are **list-price DBU estimates**.
 

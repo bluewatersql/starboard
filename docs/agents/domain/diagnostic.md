@@ -467,6 +467,6 @@ graph TD
 - [Agent Implementation Guide](../../developer/agent/IMPLEMENTATION_GUIDE.md)
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
-- [Diagnostic Prompt Source](../../../packages/starboard/starboard/prompts/diagnostic/v1.py)
-- [Tool Categories](../../../packages/starboard/starboard/agents/tool_categories.py)
+- [Diagnostic Prompt Source](https://github.com/starboard-ai/job-agent/blob/main/packages/starboard/starboard/prompts/diagnostic/v1.py)
+- [Tool Categories](https://github.com/starboard-ai/job-agent/blob/main/packages/starboard/starboard/agents/tool_categories.py)
 

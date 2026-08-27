@@ -1,191 +1,155 @@
 ---
 title: Quick Reference
-description: Single-page cheat sheet for daily Starboard AI Agent development.
-last_reviewed: 2026-03-24
+description: One-page cheat sheet for running Starboard analyses from the CLI and skills.
+last_reviewed: 2026-08-27
 status: current
 ---
 
-# Starboard AI Agent -- Quick Reference
+# Starboard AI Agent — Quick Reference
 
-> **Docs** > **Developer Guide** > **Quick Reference**
-> Reading time: 5 minutes
-
----
-
-## At a Glance
-
-| Metric | Value |
-|--------|-------|
-| **Packages** | 3 Python (starboard-core, starboard, starboard-skills) |
-| **Domain Agents** | 8 + 1 Intent Router |
-| **Tools** | 45+ across 9 categories |
-| **Python** | 3.12+ |
-| **Package Manager** | uv |
-| **Streaming** | SSE (Server-Sent Events) |
+> A one-page cheat sheet for running analyses. For the full CLI, see
+> [CLI Reference](user-guide/cli.md).
 
 ---
 
-## Domain Agents
-
-| Domain | Agent | Tools | Report Type | Key Capabilities |
-|--------|-------|-------|-------------|-----------------|
-| `router` | Intent Router | 3 | N/A | Request classification, domain routing |
-| `query` | Query | 8 | `advisor` | Execution plans, SQL optimization, partitioning |
-| `job` | Job | 14 | `advisor` | Job configs, Spark logs, code quality, task analysis |
-| `uc` | UC | 18 | `advisor` | Metadata, lineage, governance, schema drift, costs |
-| `cluster` | Cluster | 8 | `compute` | Cluster sizing, health, metrics, autoscaling |
-| `analytics` | Analytics (FinOps) | 6 | `analytics` | Agentic RAG, SQL generation, cost analysis |
-| `warehouse` | Warehouse | 11 | `compute` | Portfolio optimization, SLO, topology, chargeback |
-| `discovery` | Discovery | 6 | `discovery` | Workspace health, resource inventory, 4-phase pipeline |
-| `diagnostic` | Diagnostic | ALL | `advisor` | Root cause analysis, cross-domain debugging |
-
-**Source**: `packages/starboard/starboard/agents/tool_categories.py`
-
----
-
-## Packages
-
-| Package | Purpose | Entry Point |
-|---------|---------|-------------|
-| **starboard-core** | Domain models, prompts, shared types, log parsing | Pure domain (no I/O) |
-| **starboard** | Multi-agent system, MCP server, CLI, tools | `starboard` CLI, `starboard-mcp` MCP server |
-| **starboard-skills** | Claude skill files + Databricks helper scripts | `starboard-helper` command |
-
-**Dependency flow**: starboard --> starboard-core; starboard-skills --> starboard-core
-
----
-
-## Common Commands
-
-### Development
+## Install
 
 ```bash
-make setup              # First-time bootstrap
-make dev-server         # Start MCP server / backend
+pip install starboard          # full experience: CLI + starboard_x + optional MCP
+pip install starboard-core     # kernel + `python -m starboard_x.<cap>` middle tier
+pip install starboard-skills   # skills tree + `starboard-helper` (Claude Code/Cursor)
 ```
 
-### Testing
+The default install pulls **no** store/vector drivers. Opt in only if you change a
+backend: `starboard[sqlite]`, `starboard[postgres]`, `starboard[vectorsearch]`,
+`starboard-core[discovery]`, etc.
+
+---
+
+## Authenticate
 
 ```bash
-make test               # All tests
-make test-unit          # Unit tests only
-make test-integration   # Integration tests
-make test-golden        # Snapshot/golden tests
-make test-coverage      # With coverage report
-make test-parallel      # Parallel execution
-```
-
-### Code Quality
-
-```bash
-make lint               # Ruff linter
-make type-check         # mypy
-make format             # Auto-format
-make check              # All checks (lint + type + test)
-make pre-commit         # Format + lint + type-check
-```
-
-### Documentation
-
-```bash
-make docs-serve         # Serve docs locally
-make docs-build         # Build static site
-make diagrams           # Generate diagrams
+starboard auth login --host https://ws.cloud.databricks.com --profile my-ws
+starboard auth status                     # verify identity (no secrets printed)
+# or: export DATABRICKS_HOST / DATABRICKS_TOKEN
+# or: export DATABRICKS_CLIENT_ID / DATABRICKS_CLIENT_SECRET  (OAuth SP)
+export LLM_API_KEY="<your-api-key>"
 ```
 
 ---
 
-## Environment Variables (Top 10)
+## The three flagship surfaces
 
 ```bash
-# Required
+# 1. Workload Review — ranked, evidence-cited findings over public system.* data
+starboard review                          # domains: jobs,sql,warehouse (default)
+starboard review --domains warehouse,sql --lookback-days 60
+starboard review --validate               # gate findings through the validator council
+starboard review --json                   # JSON envelope
+
+# 2. genie ask — natural language → SQL over public workspace data
+starboard genie ask "why did spend spike last week?"
+
+# 3. Workspace discovery — 30/60/90-day health assessment
+starboard --discover
+starboard --discover --lookback-days 90 --discovery-domains jobs warehouse
+starboard --discover --data-only          # skip LLM analysis, raw data only
+```
+
+---
+
+## General agent commands
+
+```bash
+starboard --goal "Optimize query with statement_id 01ef-abc123"
+starboard --goal "Analyze job 12345 for performance issues"
+starboard --goal "Optimize this SQL" --input-file query.sql
+starboard --chat                          # interactive multi-turn session
+starboard --goal "..." --session my-proj  # named, resumable session
+starboard --goal "..." --output-path ./reports/   # save JSON + Markdown
+starboard --goal "..." --json             # structured envelope to stdout
+```
+
+Modes: `--mode online` (default, full API access) · `offline` (static, no API
+calls) · `diagnostic` (focused cross-domain troubleshooting).
+
+---
+
+## Middle tier (`python -m starboard_x.<cap>`)
+
+Lightweight, per-capability commands (installable via `starboard-core` + extras):
+
+```
+diagnostic   discovery   review   sparklog   uc   warehouse
+```
+
+```bash
+python -m starboard_x.review score --rows rows.json --domains jobs,sql,warehouse
+python -m starboard_x.discovery --help
+```
+
+All emit the shared JSON envelope (`{ok, domain, command, data|error, meta}`) and
+exit codes: `0` ok · `1` auth · `2` not-found · `3` api-error · `4` arg-error.
+
+---
+
+## Key environment variables
+
+```bash
+# Databricks (any one path)
 DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
 DATABRICKS_TOKEN=dapi...
-DATABRICKS_WAREHOUSE_ID=your_warehouse_id
+DATABRICKS_CONFIG_PROFILE=my-ws          # a ~/.databrickscfg profile
+
+# LLM
 LLM_API_KEY=<your-api-key>
+LLM_MODEL=databricks-claude-sonnet-4-5   # default
+LLM_TEMPERATURE=0.4                       # default
+LLM_MAX_TOKENS=75000                      # default token budget
+LLM_BASE_URL=...                          # for Databricks Model Serving / custom
 
-# Model Configuration
-LLM_MODEL=databricks-claude-sonnet-4-5
-LLM_TEMPERATURE=0.4
-LLM_MAX_TOKENS=75000
-
-# Optional
-DOMAIN_MODEL_OVERRIDES='{"router":"gpt-4o-mini","diagnostic":"o1-preview"}'
-LOG_LEVEL=INFO
-DATABASE_URL=sqlite:///dev_data/starboard_state.db
+# Optional per-domain model overrides
+DOMAIN_MODEL_OVERRIDES='{"router":"databricks-gpt-5-mini"}'
 ```
 
-**Full reference**: [Configuration Guide](CONFIGURATION.md)
+Full reference: [Configuration Guide](CONFIGURATION.md).
 
 ---
 
-## Key File Paths
+## Defaults you should know
 
-| Category | Path |
-|----------|------|
-| Agent Factory | `packages/starboard/starboard/agents/agent_factory.py` |
-| Domain Agent Base | `packages/starboard/starboard/agents/domain/domain_agent.py` |
-| Intent Router | `packages/starboard/starboard/agents/routing/intent_router.py` |
-| Tool Categories | `packages/starboard/starboard/agents/tool_categories.py` |
-| Routing Models | `packages/starboard/starboard/agents/routing/routing_models.py` |
-| Prompt Builders | `packages/starboard/starboard/prompts/factories.py` |
-| Domain Prompts | `packages/starboard/starboard/prompts/{domain}/v1.py` |
-| Tool Adapters | `packages/starboard/starboard/tools/adapters/` |
-| Tool Services | `packages/starboard/starboard/tools/services/` |
-| Tool Domain Logic | `packages/starboard/starboard/tools/domain/` |
-| MCP Entry Point | `packages/starboard/starboard/mcp/server.py` |
-| Config | `packages/starboard/starboard/infra/core/config.py` |
-| Conversation Manager | `packages/starboard/starboard/agents/conversation/multi_agent_manager.py` |
+| Setting | Default | Notes |
+|---------|---------|-------|
+| State backend | `memory` | Durable option is UC-native (`uc`); `sqlite`/`postgres`/`lakebase` are extras |
+| Vector backend | `none` | Analytics context = curated reference files + query packs, not embeddings |
+| Semantic cache | TTL-only | Similarity cache is opt-in behind a real `vector_backend` |
+| Reflexion | off | Opt-in behind `starboard[sqlite]` / `[vectorsearch]` |
+| `$` figures | list-price DBU estimates | Public path only; labelled everywhere |
 
 ---
 
-## Common Tasks
+## Skills (Claude Code / Cursor)
 
-### Add a New Tool
+10 canonical skills ship in `starboard-skills`:
 
-1. Create domain logic in `tools/domain/`
-2. Create service in `tools/services/`
-3. Create adapter in `tools/adapters/`
-4. Register in `agents/tools/registry.py`
-5. Add to `TOOL_CATEGORIES` in `agents/tool_categories.py`
-6. Write tests with 100% coverage
+```
+starboard-analyze     starboard-cluster   starboard-diagnostic
+starboard-discovery   starboard-finops    starboard-job
+starboard-query       starboard-uc        starboard-warehouse
+starboard-workload-review
+```
 
-**Guide**: [Tool Development](tools/TOOL_DEVELOPMENT_GUIDE.md)
-
-### Add a New Agent
-
-1. Add domain to `AgentDomain` literal in `routing_models.py` and `prompts/base.py`
-2. Create prompts in `prompts/{domain}/v1.py` with `PROMPT_VERSION`
-3. Register prompt builder in `prompts/factories.py`
-4. Configure tools in `TOOL_CATEGORIES`
-5. Update IntentRouter patterns
-6. Write golden tests and routing tests
-
-**Guide**: [Agent Implementation Guide](developer/agent/IMPLEMENTATION_GUIDE.md)
-
-### Modify a Prompt
-
-1. Create new version (`v2.py` alongside `v1.py`) -- never modify existing versions
-2. Increment `PROMPT_VERSION`
-3. Update golden tests: `make test-golden`
-4. Document changes in PR description
+See [Skills](SKILLS.md) for setup and the full catalog.
 
 ---
 
-## Quick Links
+## Quick links
 
 | Resource | Link |
 |----------|------|
-| System Architecture | [architecture/SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md) |
-| Tool Catalog | [tools/TOOL_CATALOG.md](tools/TOOL_CATALOG.md) |
-| API Reference | [api/API_REFERENCE.md](api/API_REFERENCE.md) |
-| Package Integration | [integration/PACKAGE_INTEGRATION.md](integration/PACKAGE_INTEGRATION.md) |
-| Testing Guide | [TESTING.md](TESTING.md) |
+| CLI reference | [user-guide/cli.md](user-guide/cli.md) |
+| Skills | [SKILLS.md](SKILLS.md) |
 | Configuration | [CONFIGURATION.md](CONFIGURATION.md) |
-| Makefile Guide | [MAKEFILE_GUIDE.md](MAKEFILE_GUIDE.md) |
-| MCP Server | `starboard-mcp --transport stdio` |
-
----
-
-**Last Updated**: 2026-03-24
-**Version**: 2.0
+| What is Starboard? | [overview/what-is-starboard.md](overview/what-is-starboard.md) |
+| Workspace discovery workflow | [user-guide/workflows/workspace-discovery.md](user-guide/workflows/workspace-discovery.md) |
+| MCP server | `starboard-mcp --transport stdio` |

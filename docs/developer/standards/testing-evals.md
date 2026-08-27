@@ -19,23 +19,29 @@ Standards for testing practices, coverage requirements, and evaluation pipelines
 
 | Test Type | Location | Purpose |
 |-----------|----------|---------|
-| Unit tests | `tests/unit/` | Pure logic, fast, no I/O |
-| Integration tests | `tests/integration/` | Service interactions, mocked external APIs |
+| Unit tests | `packages/*/tests/unit/` | Pure logic, fast, no I/O |
+| Integration tests | `packages/starboard/tests/integration/` | Service interactions, mocked external APIs |
 | Golden tests | `tests/golden/` | Prompt snapshot + structured assertions |
-| Contract tests | `tests/contract/` | API schema compatibility (backend + frontend) |
+| Contract tests | `tests/contract/` | Output/schema compatibility |
+| Architecture (import-linter) | `pyproject.toml` contracts | Kernel purity + package boundaries |
+| Architecture (guidelines) | `tests/architecture/` | GUIDELINE-* fitness suite |
+
+> The legacy top-level `tests/unit/` tree was removed in the close-out cleanup. Package
+> unit tests live under `packages/*/tests/unit/`.
 
 ### Running Tests
 
 ```bash
-make test               # All tests (unit + integration)
-make test-unit          # Unit tests only
-make test-integration   # Integration tests only
-make test-golden        # Golden/snapshot tests
-make test-contract      # API contract tests
-make test-coverage      # With coverage report
-make test-parallel      # Parallel execution (faster)
+make test                          # unit + integration
+make test-unit                     # package unit suites
+make test-integration              # integration
+make test-golden                   # golden/snapshot tests
+make test-contract                 # output-contract tests
+make test-architecture             # import-linter contracts
+make test-architecture-guidelines  # pytest tests/architecture/
+make test-coverage                 # with coverage report
 
-# Single test file
+# Single test file (package-scoped)
 cd packages/starboard && pytest tests/unit/path/to/test_file.py -v
 
 # By marker

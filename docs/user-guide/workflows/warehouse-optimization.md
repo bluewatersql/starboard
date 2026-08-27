@@ -49,7 +49,7 @@ The Warehouse Expert agent has access to the following tools:
 
 Get a high-level view of all SQL warehouses in your workspace:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Show me all SQL warehouses with their utilization and cost breakdown.
 ```
@@ -63,7 +63,7 @@ starboard --goal "Analyze the SQL warehouse portfolio and identify optimization 
 
 Analyze a specific warehouse by name or ID:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Analyze the "Production Analytics" warehouse and check if it meets SLO targets.
 ```
@@ -77,7 +77,7 @@ starboard --goal "Deep analysis of warehouse abc123 including health, SLO compli
 
 Generate cost allocation reports for internal billing:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Generate a chargeback report for all SQL warehouses for the last month,
 broken down by team.
@@ -92,7 +92,7 @@ starboard --goal "Generate a portfolio-wide chargeback report for the last 30 da
 
 Identify warehouses that could be merged:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Are there any SQL warehouses that could be consolidated? Check for low
 utilization and overlapping workloads.
@@ -102,7 +102,7 @@ utilization and overlapping workloads.
 
 Set or review SLO targets:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 The "Production Analytics" warehouse should have a p95 query latency under
 10 seconds and queue time under 30 seconds. Configure these SLO targets.
@@ -125,7 +125,7 @@ The agent retrieves all SQL warehouses with:
 - Current state (running, stopped, auto-stopped)
 - Size configuration (cluster size, min/max scaling)
 - Utilization metrics (queries/hour, peak concurrency)
-- Cost data (DBU consumption, estimated monthly cost)
+- Cost data (DBU consumption, estimated monthly cost — list-price DBU estimates)
 
 ### Phase 2: Individual Analysis
 

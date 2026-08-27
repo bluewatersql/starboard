@@ -197,12 +197,12 @@ DISABLED_AGENT_DOMAINS=discovery,diagnostic
 
 This prevents accidental routing to expensive agents.
 
-### 5. Message Compression (Saves 15--30%)
+### 5. Automatic Context Summarization
 
-For long multi-turn conversations, message compression reduces the context window by removing redundant information:
+For long multi-turn conversations, the context strategy automatically summarizes older turns once the history exceeds internal turn thresholds, keeping recent turns verbatim:
 
-- System-level compression reduces token usage by 30--50% for conversations with 5+ turns.
-- This is handled automatically by the conversation manager.
+- This is handled automatically by the context strategy (`agents/state/context_strategy.py`) — there is **no** toggle, environment variable, or per-request setting to enable it.
+- Because it is always on, it is not an operator lever; the actionable cost controls are model overrides, token budgets, disabling unused agents, and semantic caching (above).
 
 ---
 

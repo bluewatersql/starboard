@@ -42,7 +42,7 @@ agent adjusts expectations and communicates the limited scope.
 
 For a comprehensive assessment of all active domains:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Run a workspace health check.
 ```
@@ -56,7 +56,7 @@ starboard --discover
 
 To focus on specific domains or adjust the lookback period:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Run a health check focusing on billing and compute for the last 90 days.
 ```
@@ -78,8 +78,9 @@ starboard --discover --data-only
 
 !!! tip "Use the `--discover` flag for direct execution"
     The CLI `--discover` flag runs the full 4-phase pipeline directly.
-    Alternatively, you can ask the agent conversationally in the Web UI and it
-    will route your request to the Discovery agent automatically.
+    Alternatively, you can ask conversationally in a `--chat` session (or as a
+    `--goal`) and the Intent Router will route your request to the Discovery agent
+    automatically.
 
 ---
 

@@ -35,7 +35,7 @@ databricks bundle deploy -t prod
 ### Prerequisites
 
 - Databricks workspace with Apps support
-- Databricks CLI (`pip install databricks-cli`)
+- Databricks CLI — the modern standalone CLI (e.g. `brew install databricks` or the official install script). The `databricks bundle` commands below require this new CLI, **not** the legacy `databricks-cli` pip package.
 - Docker installed
 - Personal Access Token
 
@@ -116,8 +116,11 @@ databricks bundle destroy -t dev --auto-approve
 
 ```bash
 # Create .env file
+# LLM_API_KEY is the canonical key (OPENAI_API_KEY is still accepted as a fallback).
+# DATABRICKS_HOST/TOKEN are optional under auth-by-subtraction if the SDK credential
+# chain (profile/ambient) can already resolve credentials.
 cat > .env << EOF
-OPENAI_API_KEY=<your-api-key>
+LLM_API_KEY=<your-api-key>
 DATABRICKS_HOST=https://...
 DATABRICKS_TOKEN=dapi...
 EOF
@@ -145,7 +148,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_API_KEY=${LLM_API_KEY}
       - DATABRICKS_HOST=${DATABRICKS_HOST}
       - DATABRICKS_TOKEN=${DATABRICKS_TOKEN}
     healthcheck:

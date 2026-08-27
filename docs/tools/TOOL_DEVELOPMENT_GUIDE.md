@@ -1,7 +1,7 @@
 # Tool Development Guide
 
-**Version**: 1.0  
-**Last Updated**: 2025-12-02  
+**Version**: 1.1  
+**Last Updated**: 2026-08-27  
 **Target Audience**: Developers adding new tools
 
 ---
@@ -364,7 +364,7 @@ except ToolExecutionError as e:
 
 ### Unit Tests (Domain Layer)
 
-**File**: `tests/unit/tools/domain/test_example_analyzer.py`
+**File**: `packages/starboard/tests/unit/tools/domain/test_example_analyzer.py`
 
 ```python
 """Unit tests for example analyzer."""
@@ -414,7 +414,7 @@ def test_analyze_example_data_parametrized(value, expected_score):
 
 ### Integration Tests (Service Layer)
 
-**File**: `tests/integration/tools/services/test_example_service.py`
+**File**: `packages/starboard/tests/integration/tools/services/test_example_service.py`
 
 ```python
 """Integration tests for example service."""
@@ -458,7 +458,7 @@ async def test_analyze_resource_not_found(mock_api):
 
 ### Tool Tests (Adapter Layer)
 
-**File**: `tests/unit/tools/adapters/test_example_tools.py`
+**File**: `packages/starboard/tests/unit/tools/adapters/test_example_tools.py`
 
 ```python
 """Tests for example tool adapter."""
@@ -586,6 +586,37 @@ def test_tool_registered():
     assert metadata.name == "analyze_resource"
     assert "cluster" in metadata.domains
 ```
+
+---
+
+## Out-of-tree tools: the `starboard.mcp_tools` plugin seam
+
+The three-layer flow above is for tools that ship **inside** the `starboard` package.
+To extend the tool surface from a **separate wheel** (without editing this repo), use the
+per-domain **plugin seam** in `starboard.tools.plugins` (`ENTRY_POINT_GROUP =
+"starboard.mcp_tools"`). These plugins are **not** MCP servers — they are Python
+entry points discovered at runtime and installed into the tool catalog.
+
+Each entry point resolves to a `ToolPlugin` (a structural `Protocol`) exposing:
+
+- `name` — unique, stable catalog key (collisions are rejected),
+- `domain` — capability domain (`"jobs"`, `"warehouse"`, `"billing"`, …),
+- `create()` — zero-argument factory returning the tool/analyzer instance.
+
+`SimpleToolPlugin(name, domain, factory)` is the easy path. Declare it in the
+distributing package's `pyproject.toml`:
+
+```toml
+[project.entry-points."starboard.mcp_tools"]
+my_domain_tool = "my_pkg.plugin:my_plugin"
+```
+
+Discovery is degrade-cleanly: with no plugins installed, `discover_tool_plugins()`
+returns `[]` and every built-in capability keeps working. The discovery module depends
+only on the stdlib (`importlib.metadata`), so it stays usable from a kernel-only install.
+See `packages/starboard-plugin-sample` for a complete reference scaffold. The parallel
+data-access seam is `starboard.port_adapters` (see the
+[Package Integration Guide](../integration/PACKAGE_INTEGRATION.md)).
 
 ---
 

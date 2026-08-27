@@ -336,4 +336,4 @@ Before submitting a PR for a new agent:
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md) -- Three-layer tool design
 - [Tool Development Guide](../../tools/TOOL_DEVELOPMENT_GUIDE.md) -- Building new tools
 - [Report UI Guidelines](REPORT_UI_GUIDELINES.md) -- Output format design
-- [Tool Categories Source](../../../packages/starboard/starboard/agents/tool_categories.py) -- Canonical tool mappings
+- [Tool Categories Source](https://github.com/starboard-ai/job-agent/blob/main/packages/starboard/starboard/agents/tool_categories.py) -- Canonical tool mappings

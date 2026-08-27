@@ -4,6 +4,12 @@ This guide walks through end-to-end workflows for analyzing Databricks costs,
 generating chargeback reports, and identifying optimization opportunities using the
 Starboard AI agent.
 
+!!! note "All `$` figures are list-price DBU estimates"
+    Cost analysis runs over public `system.*` usage data valued at **published list
+    prices**. The dollar amounts in this guide are directional estimates, not
+    finance-grade billing numbers, and do not reflect your negotiated discounts or
+    commitments. For authoritative billing, cross-reference the Databricks console.
+
 ---
 
 ## When to Use This Workflow
@@ -64,7 +70,7 @@ activity tracking, and chargeback generation.
 
 **Goal:** Understand how Databricks costs have changed over a time period.
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Analyze Databricks cost trends for the last 30 days. Break down by
 compute type and identify the top cost drivers.
@@ -244,7 +250,7 @@ explanation.
 > *-> Execute SQL Query*
 
 **FinOps Expert:**
-> ## Cost Analysis Report (Feb 1 -- Mar 1, 2026)
+> ## Cost Analysis Report (Feb 1 -- Mar 1, 2026) *(list-price DBU estimates)*
 >
 > ### Cost Summary
 > | Metric | Value |

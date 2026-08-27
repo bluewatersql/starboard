@@ -1,6 +1,9 @@
-# Starboard AI Agent -- Claude Code / Cursor Integration
+# Starboard AI Agent -- Optional MCP server integration
 
 Connect Starboard's Databricks analysis tools and domain agents to Claude Code, Cursor, or Claude Desktop via the Model Context Protocol (MCP).
+
+!!! info "This is the optional MCP path"
+    Starboard's **default** reach into coding assistants is the **skills-only plugin** (no server) — see the canonical reach story in **[Host coverage & integration](HOST_COVERAGE.md)**. **Plugins are not MCP servers.** The MCP server described here is an **optional, additive** channel provided by the `starboard-mcp` console script for hosts that prefer MCP tools. Install it via the server package (`pip install starboard`; the `starboard-mcp` entry point is included).
 
 ---
 
@@ -226,7 +229,7 @@ Each prompt accepts optional `goal` and `workspace_id` arguments.
 | `DATABRICKS_TOKEN` | Yes (unless using `STARBOARD_MCP_CONFIG`) | Databricks personal access token. |
 | `LLM_PROVIDER` | Yes (for agent tools) | LLM provider: `openai` or `anthropic`. |
 | `LLM_API_KEY` | Yes (for agent tools) | API key for the LLM provider. |
-| `LLM_MODEL` | No | LLM model name (default: `gpt-4o`). |
+| `LLM_MODEL` | No | LLM model name (`EnvConfig` default: `databricks-claude-sonnet-4-5`). |
 | `STARBOARD_MCP_CONFIG` | No | Full MCP configuration as a JSON string. Overrides `DATABRICKS_HOST`/`DATABRICKS_TOKEN`. |
 | `STARBOARD_MCP_TOOL_SCOPE` | No | Tool scope: `phase_a`, `phase_b`, or `full` (default: `phase_a`). |
 | `STARBOARD_MCP_SAFE_MODE` | No | Set to `true` to expose only offline-safe tools (default: `false`). |

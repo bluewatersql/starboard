@@ -1,7 +1,7 @@
 ---
 title: System Architecture
 description: Complete system architecture documentation for the Starboard AI Agent.
-last_reviewed: 2026-03-24
+last_reviewed: 2026-08-27
 status: current
 ---
 
@@ -13,24 +13,35 @@ status: current
 **What you'll learn:**
 
 - High-level system topology and component relationships
+- The 5-package layout and the kernel / `starboard_x` split
 - Multi-agent conversation system design
-- Tool system three-layer architecture
-- State management and storage backends
-- Streaming architecture (SSE)
+- Tool system three-layer architecture + entry-point plugin seam
+- The ports + internal-data enablement gate (closed-by-default)
+- Workload Review (RuleRegistry + Finding scorer)
+- State management and storage backends (memory default; UC-native durable)
+- The in-process event/streaming model
 - Design principles and patterns
 
 ---
 
 ## System Overview
 
-Starboard AI Agent is a multi-agent AI system for Databricks workload optimization. It uses LLM-driven reasoning, dynamic tool selection, and real-time SSE streaming to provide intelligent analysis and recommendations.
+Starboard AI Agent is a multi-agent AI system for Databricks workload optimization. It
+uses LLM-driven reasoning and dynamic tool selection to provide analysis and
+recommendations. It is delivered as a **CLI and an MCP server** (plus progressive
+`python -m starboard_x.<cap>` helpers) — **not** a hosted REST application. The agent
+runs **in-process** in the CLI; a minimal FastAPI process (`starboard-server`) exists
+only for health probes and an optional MCP HTTP mount.
+
+All analysis uses **public `system.*` data**; any dollar figures are **list-price DBU
+estimates**, never finance-grade.
 
 ### High-Level Architecture
 
 ```
 +---------------------------------------------------------+
 |                    User Interfaces                       |
-|       CLI (starboard)      |    MCP (starboard-mcp)     |
+|  CLI (starboard) | MCP (starboard-mcp) | starboard_x.<cap>|
 +----------+-----------------+----------+-----------------+
            |                            |
            v                            v
@@ -46,26 +57,56 @@ Starboard AI Agent is a multi-agent AI system for Databricks workload optimizati
 |  +------------------------+-------------------------+   |
 |                           |                             |
 |  +------------------------+-------------------------+   |
-|  |              45+ Tools (3-Layer)                  |   |
+|  |            Tools (3-Layer) + Plugins              |   |
 |  |   Domain (Logic) -> Service (I/O) -> Adapter      |   |
+|  +------------------------+-------------------------+   |
+|                           |                             |
+|  +------------------------+-------------------------+   |
+|  |  Ports  ->  Public adapters  |  Internal-data gate |   |
 |  +------------------------+-------------------------+   |
 +--------------------------+----------------------------+
                            |
              +-------------+-------------+
              v             v             v
        Databricks      LLM Provider    State Store
-       APIs            (Multi-provider) (SQLite/PG/Lakebase)
+       APIs            (Multi-provider) (memory / UC / extras)
 ```
 
-*High-level system topology showing CLI and MCP interfaces, multi-agent system, tool layers, and external services.*
+*High-level topology: CLI / MCP / `starboard_x` interfaces, the multi-agent system, the
+tool layers + plugin seam, the ports + internal-data gate, and external services.*
 
 ### Key Components
 
-1. **User Layer**: CLI (`starboard`), MCP server (`starboard-mcp`)
-2. **Multi-Agent System**: Intent Router + 8 domain agents with conversation management
-3. **Tool System**: 45+ tools in three-layer architecture (Domain, Service, Adapter)
-4. **State Management**: Conversation persistence with 5 storage backends
-5. **External Services**: Databricks API, multi-provider LLM (OpenAI, Azure, Databricks Model Serving), log storage
+1. **User Layer**: CLI (`starboard`), MCP server (`starboard-mcp`), progressive CLIs
+   (`python -m starboard_x.<cap>`), and a minimal FastAPI process (`starboard-server`).
+2. **Multi-Agent System**: Intent Router + 8 domain agents with conversation management.
+3. **Tool System**: three-layer tools (Domain, Service, Adapter) plus an entry-point
+   plugin seam (`starboard.mcp_tools`).
+4. **Ports + internal-data gate**: kernel ports with public adapters; internal adapters
+   registered via `starboard.port_adapters` in `starboard-internal` only, closed by default.
+5. **Workload Review**: RuleRegistry + `Finding` priority scorer + optional validator
+   council + Action-Rate re-scan.
+6. **State Management**: conversation persistence; default `memory`, durable option
+   UC-native, others behind extras.
+7. **External Services**: Databricks API, multi-provider LLM (OpenAI, Azure, Databricks
+   Model Serving).
+
+---
+
+## Packages (5)
+
+| Package | Import name(s) | Role |
+|---------|----------------|------|
+| **starboard-core** | `starboard_core`, `starboard_x` | Pure kernel (DTOs, ports, analyzers, rules, log parser) **+** `starboard_x` progressive CLIs |
+| **starboard** | `starboard` | FastAPI server + adapters + tools + CLI + MCP; the public API facade |
+| **starboard-skills** | `starboard_skills` | Canonical skills tree + `starboard-helper` |
+| **starboard-internal** | `starboard_internal` | Gated internal port adapters (internal-index-only; never in a public wheel) |
+| **starboard-plugin-sample** | `starboard_plugin_sample` | Reference per-domain tool-plugin scaffold |
+
+**Kernel purity** is a build property enforced by import-linter (`make test-architecture`,
+4 kept contracts): `starboard_core` never imports `databricks-sdk` / `openai` /
+`fastapi` / `mcp`, and no public package imports `starboard_internal`. See
+[Package Integration](../integration/PACKAGE_INTEGRATION.md) for the full boundary map.
 
 ---
 
@@ -103,9 +144,13 @@ Interfaces defined via protocols (PEP 544), not inheritance. This enables flexib
 
 Data structures are immutable by default using `@dataclass(frozen=True)` and tuples. This ensures thread safety, cacheability, and predictable behavior.
 
-### 6. Streaming First
+### 6. Event-Driven, Interruptible Reasoning
 
-Results stream to users in real-time via SSE. The event-based architecture enables interruptible reasoning -- users can provide additional context or redirect the agent mid-analysis.
+The agent emits a typed event stream (reasoning steps, tool start/end, final output,
+user-input requests, errors) as it works. These events are delivered **in-process** to
+the CLI/SDK — they are **not** an HTTP SSE endpoint. The event model enables
+interruptible reasoning: users can inject additional context or redirect the agent
+mid-analysis. See [Interruptible Reasoning](../INTERRUPTIBLE_REASONING.md).
 
 ---
 
@@ -266,15 +311,24 @@ Examples:
 
 ## State Management
 
-### Storage Backends (5)
+### Storage Backends
 
-| Backend | Use Case | Features |
-|---------|----------|----------|
-| **SQLite** | Development, testing | Embedded, aiosqlite, sqlite-vec for vectors |
-| **PostgreSQL** | Production | SQLAlchemy async, pgvector, connection pooling |
-| **Databricks Lakebase** | Cloud deployment | Postgres-compatible, OAuth refresh, serverless |
-| **Redis** | Caching | Session storage (5min TTL), rate limiting, distributed locks |
-| **InMemory** | Testing | Dictionary-based, no persistence, fast |
+State is configured by `database_backend` (`starboard.infra.core.config`). The default
+is **`memory`**; durable options are opt-in.
+
+| Backend | `database_backend` | Notes |
+|---------|--------------------|-------|
+| **InMemory** | `memory` (**default**) | Dictionary-based, no persistence |
+| **SQLite** | `sqlite` | Embedded; extra `starboard[sqlite]` (aiosqlite + sqlite-vec) |
+| **PostgreSQL** | `postgres` | Async; extra `starboard[postgres]`; needs `DATABASE_URL` |
+| **Databricks Lakebase** | `lakebase` | Postgres-compatible serverless; needs `DATABASE_URL`. `databricks` is a deprecated alias |
+| **UC-native** | `uc` | Governed low-write durable server backend; never auto-selected |
+
+Caching is a separate axis (`cache_backend`: `memory` (default), `redis`, `postgres`;
+`cache_ttl = 300`).
+
+> **Default install pulls no store/vector drivers.** Store/vector drivers lazy-import and
+> raise an actionable `pip install 'starboard[<extra>]'` error if missing.
 
 ### Data Models
 
@@ -286,17 +340,23 @@ Examples:
 | **Fact** | Long-term memory with confidence score and optional vector embedding |
 | **UserProfile** | User preferences and history |
 
-### Caching Strategy
+### RAG / memory defaults
 
-- **L1 (In-Memory)**: LRU cache for frequently accessed data, 1000 items max
-- **L2 (Redis)**: Session data (5min TTL), tool results (5min TTL), user profiles (1hr TTL)
-- **L3 (Database)**: Persistent conversation history, facts, user data
+- **`vector_backend="none"` by default** — analytics context comes from curated on-disk
+  **reference files** (`starboard_core/rag/knowledge/domains/*.md`) + query packs, not an
+  embedding/vector DB. Managed Databricks Vector Search is opt-in behind
+  `starboard[vectorsearch]` (requires explicit `vectorsearch_columns`).
+- The **semantic cache is TTL-only (exact-key)** by default; the similarity path is
+  selected only when a real `vector_backend` is configured. Reflexion/episodic-vector
+  memory is dormant (`enable_reflexion = False`, opt-in behind `[sqlite]`/`[vectorsearch]`).
 
 ---
 
-## Streaming Architecture (SSE)
+## Event / Streaming Model
 
-Starboard uses **Server-Sent Events (SSE)** for real-time streaming from server to client.
+The agent emits a typed event stream as it reasons. Delivery is **in-process** to the
+CLI and SDK (rendered in the terminal / handed to callers) — Starboard does **not**
+expose an HTTP Server-Sent-Events endpoint.
 
 ### Event Types
 
@@ -310,12 +370,51 @@ Starboard uses **Server-Sent Events (SSE)** for real-time streaming from server 
 | `FinalOutputEvent` | Structured report output |
 | `ErrorEvent` | Error with recovery status |
 
-### Why SSE Over WebSockets
+The interrupt/checkpoint model that lets a user inject context mid-run is documented in
+[Interruptible Reasoning](../INTERRUPTIBLE_REASONING.md).
 
-- **Simpler**: One-way server-to-client communication is sufficient
-- **HTTP-native**: Works through firewalls and proxies without special configuration
-- **Auto-reconnect**: Built into browser EventSource API
-- **Sufficient**: Agent reasoning only needs server-to-client data push
+---
+
+## Ports + Internal-Data Enablement Gate
+
+Kernel **ports** (`starboard_core.ports`: `state_store`, `memory_store`, `cache_store`,
+`log_retrieval`, `diagnostic_backend`, `fleet_sql`, `nl_query`) are protocol
+abstractions. Public packages ship the ports **plus public adapters** and the
+`starboard.port_adapters` entry-point **contract**.
+
+The **internal-data gate is closed by default**:
+`internal_context_host_allowlist` is empty. Internal adapters live **only** in
+`starboard-internal`, which registers providers under
+`[project.entry-points."starboard.port_adapters"]` (`log_retrieval`,
+`diagnostic_backend`, `fleet_sql`, `nl_query`). `starboard.ports.discovery` loads them
+and lets an internal-tier provider supersede the public adapter **only when the gate is
+open**. Public docs describe this **seam**, never the internal contents or namespaces.
+The `internal -> public` dependency direction is the only one allowed (import-linter).
+
+---
+
+## Workload Review
+
+`starboard review` (also the `workload-review` skill and `python -m starboard_x.review`)
+produces a ranked, evidence-cited review over **public `system.*` data**. The flow:
+
+1. **RuleRegistry** (`starboard_core.domain.rules.registry`) loads YAML seed rulesets and
+   ranks rules deterministically.
+2. The server-tier `WorkloadReviewService`
+   (`starboard.tools.services.workload_review_service`) runs only the query-pack queries
+   the matched rules need and hands rows to the pure kernel evaluator
+   (`build_review`) which emits a `WorkloadReview` of `ReviewFinding`s.
+3. Each **`Finding`** carries `severity` / `impact` / `effort` / `confidence` and a
+   computed **priority score** `(severity_weight × impact) / effort_points`, bucketed
+   into *Fix Immediately / This Sprint / Backlog / Nice-to-Have*.
+4. A pure **severity gate** drops sub-threshold noise; an optional **validator council**
+   (`starboard.tools.services.validator_council`: `CouncilConfig` / `build_council`) does
+   bounded multi-pass self-critique with configurable model ids.
+5. An **Action-Rate re-scan** (`starboard_core.domain.rules.action_rate`) compares
+   snapshots to measure which findings were acted on — read-only, never a write-back.
+
+Default domains are **`jobs`, `sql`, `warehouse`** (`DEFAULT_DOMAINS`). See
+[Agent output consumers](../contracts/AGENT_OUTPUT_CONSUMERS.md) for the `Finding` schema.
 
 ---
 
@@ -340,36 +439,44 @@ Pluggable storage strategies (`SQLiteStrategy`, `PostgresStrategy`, etc.) implem
 
 ## Deployment Architecture
 
-### Development
+The primary deployment shapes are the **CLI** (in-process) and the **MCP server**
+(stdio). The FastAPI `starboard-server` process is minimal (health probes + optional
+`/mcp` HTTP mount); it is not a hosted chat API.
+
+### Development / local
 
 ```
 Local Machine
-  +-- starboard CLI / starboard-mcp (stdio)
-  +-- SQLite (embedded state)
-  --> Databricks API (external)
-  --> LLM Provider (external)
+  +-- starboard CLI (in-process)  |  starboard-mcp (stdio)
+  +-- memory state (default; SQLite/Postgres via extras)
+  --> Databricks API (SDK credential chain)
+  --> LLM Provider
 ```
 
-### Production
+### Hosted (Databricks App)
 
 ```
-Load Balancer (if HTTP mode)
-  --> starboard (Docker, 2-N instances, auto-scaling)
-      --> PostgreSQL / Lakebase (multi-AZ, automated backups)
-      --> Redis (cluster mode, automatic failover)
-      --> Databricks API
-      --> LLM Provider
+Databricks App
+  --> starboard-server (FastAPI: health + optional /mcp)
+      --> UC-native or Lakebase durable state (opt-in)
+      --> Databricks API (per-user OBO via credentials_strategy seam)
+      --> LLM Provider (Model Serving)
 ```
+
+Per-user OBO auth is wired through the `credentials_strategy` seam and is stub-tested
+today (see open items O4); auth middleware is available but wired explicitly by the
+hosting layer.
 
 ---
 
 ## Performance and Scalability
 
-**Response times** (p95): Simple queries 2-5s, complex multi-step 10-30s, job analysis with logs 30-60s.
+**Response times** (p95): simple queries 2-5s, complex multi-step 10-30s, job analysis
+with logs 30-60s (indicative).
 
-**Horizontal scaling**: Multiple stateless backend instances behind a load balancer, with shared state in Postgres/Redis.
-
-**Rate limiting**: Configurable per-user and per-IP limits with exponential backoff for exceeded limits.
+**Scaling**: the CLI/MCP paths are single-process; durable state (UC-native / Lakebase)
+and caching (`redis`/`postgres`) are the shared-state options when hosting multiple
+instances.
 
 ---
 
@@ -378,11 +485,11 @@ Load Balancer (if HTTP mode)
 - [Quick Reference](../QUICK_REFERENCE.md) -- Single-page cheat sheet
 - [Agent Documentation](../agents/README.md) -- All 8 domain agents
 - [Tool Catalog](../tools/TOOL_CATALOG.md) -- Complete tool reference
-- [API Reference](../api/API_REFERENCE.md) -- REST API specification
+- [HTTP / MCP Reference](../api/API_REFERENCE.md) -- server surface (health + MCP)
 - [Configuration Guide](../CONFIGURATION.md) -- Environment variables
 - [Deployment Guide](../DEPLOYMENT.md) -- Production deployment
 
 ---
 
-**Last Updated**: 2026-03-24
-**Version**: 2.0
+**Last Updated**: 2026-08-27
+**Version**: 3.0 — ports+gate, kernel/`starboard_x` split, Workload Review, 5 packages

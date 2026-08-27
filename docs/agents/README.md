@@ -1,7 +1,7 @@
 ---
 title: Agent Documentation Index
 description: Complete index of all domain and framework agents in the Starboard multi-agent system.
-last_reviewed: 2026-03-24
+last_reviewed: 2026-08-27
 status: current
 ---
 
@@ -79,6 +79,17 @@ Tool counts are from `packages/starboard/starboard/agents/tool_categories.py` an
 | Agent | Domain | Purpose | Report Type |
 |-------|--------|---------|-------------|
 | **[Intent Router](framework/intent.md)** | `router` | Classifies user intent and routes to domain specialists | N/A |
+
+---
+
+## Workload Review (flagship, not an agent)
+
+`starboard review` (also the `workload-review` skill and `python -m starboard_x.review`)
+is a **deterministic rules flow**, not a conversational agent. It runs the
+`RuleRegistry` + `Finding` priority scorer over public `system.*` data (default domains
+`jobs`, `sql`, `warehouse`), with an optional validator council and an Action-Rate
+re-scan. See [System Architecture → Workload Review](../architecture/SYSTEM_ARCHITECTURE.md#workload-review)
+and the [`Finding` contract](../contracts/AGENT_OUTPUT_CONSUMERS.md#workload-review-finding-contract).
 
 ---
 

@@ -41,8 +41,50 @@ Configuration file support (config.yaml) has been removed in favor of environmen
 3. **Load environment and start**:
    ```bash
    source .env  # or use direnv, docker-compose, etc.
-   make dev-server   # Start the MCP server / backend
+   make dev-server   # Start the FastAPI backend (uvicorn)
    ```
+
+---
+
+## Installation and Extras
+
+`pip install starboard` installs the **store-free** experience wheel: **no** state/vector drivers are pulled in. The default runtime is `database_backend="memory"` and `vector_backend="none"`. Driver-backed backends lazy-import their driver and raise an actionable `pip install 'starboard[<extra>]'` error if the matching extra is missing.
+
+### `starboard` (server package) extras
+
+| Extra | Pulls in | Enables |
+|---|---|---|
+| `observability` | `opentelemetry-instrumentation-fastapi`, `prometheus-client` | OTEL/Prometheus export |
+| `sqlite` | `aiosqlite`, `sqlite-vec` | `DATABASE_BACKEND=sqlite`; SQLite ANN vector path; reflexion |
+| `postgres` | `asyncpg` | `DATABASE_BACKEND=postgres` **and** `lakebase` |
+| `redis` | `redis` | `CACHE_BACKEND=redis` / Redis rate-limit storage |
+| `memory` | `pgvector`, `asyncpg` | pgvector similarity recall in the Postgres memory store |
+| `vectorsearch` | `databricks-vectorsearch` | managed `VECTOR_BACKEND=vectorsearch` (opt-in ANN) |
+| `all-stores` | `starboard[sqlite,postgres,redis,memory,vectorsearch]` | every store/vector driver |
+| `test`, `lint`, `load`, `dev`, `all` | dev/CI tooling | development, testing, load testing |
+
+There is **no** `lakebase` extra — the Lakebase adapter reuses `asyncpg` from the `postgres` extra. There is **no** `charts` extra on the server package.
+
+### `starboard-core` extras (kernel + `starboard_x` helpers)
+
+The `starboard-core` wheel ships the pure kernel **and** the `starboard_x` progressive helpers (`python -m starboard_x.<capability>`). Its extras are per-capability:
+
+| Extra | Enables |
+|---|---|
+| `databricks` | DBFS / UC Volumes log loader (Databricks SDK) |
+| `diagnostics-core` | stdlib-only diagnostic trio |
+| `diagnostics` | + pattern registry (`pyyaml`) |
+| `discovery` | workspace discovery (`polars`, `databricks-sql-connector`, `databricks-sdk`) |
+| `sparklog` (+ `sparklog-aws` / `sparklog-azure` / `sparklog-gcp`) | Spark event-log parsing (+ cloud object stores) |
+| `warehouse` | warehouse analyzers (`sqlglot`, SQL connector, SDK) |
+| `uc` | Unity Catalog analyzers (SDK + SQL connector) |
+| `cluster` | cluster analyzers (SDK) |
+| `charts` | **stub** — reserved; the chart renderer is not shipped (see open items) |
+| `aws` / `azure` / `gcp` | S3 / ADLS / GCS credential + object-store support |
+| `all` | `diagnostics,discovery,sparklog,warehouse,uc,cluster,charts` |
+
+!!! note "Layered catalog"
+    These map to additive **layered-catalog** tiers: `kernel` (= `starboard-core`) → `capability` → `experience`. `pip install starboard` remains the full experience wheel; the tier aliases are additive and do not change the default install.
 
 ---
 
@@ -50,17 +92,23 @@ Configuration file support (config.yaml) has been removed in favor of environmen
 
 ### Required Settings
 
-These must be set for the application to function (unless `OFFLINE_MODE=true`):
+Starboard uses **auth by subtraction**: a single resolver delegates to the Databricks SDK credential chain, so `DATABRICKS_HOST`/`DATABRICKS_TOKEN` are **not** individually required. Outside `OFFLINE_MODE`, startup validation requires only that *some* Databricks credential is resolvable **and** that an LLM API key is set:
 
 ```bash
-# Databricks Connection
+# Databricks — provide ANY ONE of these (the SDK chain resolves the rest):
+#   * DATABRICKS_HOST + DATABRICKS_TOKEN (inline PAT), or
+#   * DATABRICKS_CONFIG_PROFILE / STARBOARD_WORKSPACE (a ~/.databrickscfg profile), or
+#   * DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET (OAuth), or
+#   * a ~/.databrickscfg file, or an ambient Databricks runtime (notebook/job/App).
 DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
 DATABRICKS_TOKEN=dapi_your_token_here
-DATABRICKS_WAREHOUSE_ID=your_warehouse_id
 
-# LLM Provider
-LLM_API_KEY=<your-api-key>  # OpenAI API key
+# LLM Provider — required unless OFFLINE_MODE=true (falls back to OPENAI_API_KEY)
+LLM_API_KEY=<your-api-key>
 ```
+
+!!! note "Warehouse is optional"
+    `DATABRICKS_WAREHOUSE_ID` is optional. When it is unset and `AUTOCREATE_DBX_DW=true` (the default), Starboard auto-creates a serverless SQL warehouse (`DATABRICKS_WAREHOUSE_NAME`, default `STARBOARD_AGENT_DW`; `DATABRICKS_WAREHOUSE_SIZE`, default `X-Large`).
 
 ### LLM Configuration
 
@@ -110,24 +158,29 @@ TOOL_PARALLELISM=4                           # Max parallel tool executions
 MAX_ANALYSIS_RESULT_ROWS=50                  # Max rows returned from analytics queries
 
 # Foundation Components
-SQLITE_VECTOR_PATH=./dev_data/starboard_vectors.db     # Vector store path
+SQLITE_VECTOR_PATH=./dev_data/starboard_vectors.db     # Vector store path (sqlite vector path)
 SQLITE_REFLEXION_PATH=./dev_data/starboard_reflexion.db  # Reflexion store path
-EMBEDDING_DIMENSION=1536                      # Vector embedding dimension
-SEMANTIC_CACHE_THRESHOLD=0.95                 # Similarity threshold for cache hits
+EMBEDDING_DIMENSION=1024                      # Vector embedding dimension (used only on vector paths)
+SEMANTIC_CACHE_THRESHOLD=0.95                 # Similarity threshold — consulted ONLY on the opt-in vector path
 
 # Feature Flags
-ENABLE_REFLEXION=false                        # Enable reflexion-based learning
-ENABLE_SEMANTIC_CACHE=true                    # Enable semantic caching
+ENABLE_REFLEXION=false                        # Reflexion is OFF by default; opt-in behind starboard[sqlite]/[vectorsearch]
+ENABLE_SEMANTIC_CACHE=true                    # Semantic cache runs TTL-only (exact-key) unless a vector_backend is set
 ```
+
+!!! note "Default RAG/memory is store-free"
+    With `VECTOR_BACKEND=none` (the default) the analytics context comes from on-disk curated reference files + query packs — no embeddings. The semantic cache is TTL-only and `SEMANTIC_CACHE_THRESHOLD` is ignored unless you set a real `vector_backend`. Reflexion is dormant unless `ENABLE_REFLEXION=true` **and** a vector-store extra is installed.
 
 ### Database Configuration
 
 ```bash
 # Backend Selection
-DATABASE_BACKEND=sqlite                       # Options: sqlite, postgres, databricks
-DATABASE_URL=                                 # Connection string for postgres/databricks
+DATABASE_BACKEND=memory                       # Options: memory (default), sqlite, postgres, lakebase, uc
+                                              # ("databricks" = deprecated alias for "lakebase")
+                                              # sqlite -> starboard[sqlite]; postgres/lakebase -> starboard[postgres]
+DATABASE_URL=                                 # Connection string; required for postgres and lakebase
 
-# SQLite Paths
+# SQLite Paths (used when DATABASE_BACKEND=sqlite)
 SQLITE_STATE_PATH=./dev_data/starboard_state.db
 SQLITE_MEMORY_PATH=./dev_data/starboard_memory.db
 SQLITE_VECTOR_PATH=./dev_data/starboard_vectors.db
@@ -143,12 +196,13 @@ POSTGRES_COMMAND_TIMEOUT=60                   # Seconds
 
 ```bash
 # Cache Backend
-CACHE_BACKEND=memory                          # Options: memory, redis, postgres
+CACHE_BACKEND=memory                          # Options: memory (default), redis, postgres
 CACHE_TTL=300                                 # Default cache TTL (seconds)
-REDIS_URL=redis://localhost:6379              # Redis connection string (if using redis)
+REDIS_URL=redis://localhost:6379              # Redis connection string; selects Redis when set (needs starboard[redis])
 
 # Vector Store Backend
-VECTOR_BACKEND=sqlite                         # Options: sqlite, chroma, databricks, postgres
+VECTOR_BACKEND=none                           # Options: none (default), inmemory, sqlite, chroma, databricks, postgres, vectorsearch
+VECTORSEARCH_COLUMNS=                         # JSON list; required for vectorsearch (wildcard "*" is invalid)
 ```
 
 ### Server Configuration
@@ -186,7 +240,20 @@ OFFLINE_MODE=false                            # Skip Databricks/LLM validation (
 MOCK_LLM=false                                # Use mock LLM responses (testing)
 ENABLE_CACHING=true                           # Enable response caching
 ENABLE_OBSERVABILITY=true                     # Enable metrics/tracing
+ENABLE_PII_REDACTION=true                     # Redact PII in logs/responses (EnvConfig default is true)
 ```
+
+### Internal-data enablement gate
+
+Starboard ships a **closed-by-default** seam for internal-only data sources. Public ports and public adapters ship in the public packages; internal adapters live only in the separate `starboard-internal` package (never in the public wheel).
+
+```bash
+# EMPTY by default => gate CLOSED (public path only). Comma-separated substrings.
+INTERNAL_CONTEXT_HOST_ALLOWLIST=
+ENABLE_INTERNAL_ADAPTERS=false                # Reserved; public-only by default
+```
+
+Leave these at their defaults for public deployments. `$` figures throughout Starboard are **list-price DBU estimates**.
 
 ---
 
@@ -195,7 +262,7 @@ ENABLE_OBSERVABILITY=true                     # Enable metrics/tracing
 ### How It Works
 
 1. **Startup**: `EnvConfig.from_env()` reads all values from `os.environ`
-2. **Validation**: `config.validate()` checks required fields
+2. **Validation**: `config.validate_config()` checks required fields
 3. **Singleton**: `get_config()` returns the global config instance
 
 ```python
@@ -290,14 +357,13 @@ The application validates configuration at startup:
 
 ```python
 config = get_config()
-config.validate()  # Raises ValueError if invalid
+config.validate_config()  # Raises ValueError if invalid
 ```
 
 ### Validation Rules
 
 **In Normal Mode**:
-- ✅ `DATABRICKS_HOST` required
-- ✅ `DATABRICKS_TOKEN` required
+- ✅ *Some* Databricks credential must be resolvable (auth by subtraction — inline host+token, a profile, OAuth client creds, `~/.databrickscfg`, or an ambient Databricks runtime)
 - ✅ `LLM_API_KEY` required
 
 **In Offline Mode** (`OFFLINE_MODE=true`):
@@ -305,8 +371,10 @@ config.validate()  # Raises ValueError if invalid
 - ⏭️ LLM credentials optional (if `MOCK_LLM=true`)
 
 **Database Validation**:
-- If `DATABASE_BACKEND=postgres` or `databricks`: `DATABASE_URL` required
+- If `DATABASE_BACKEND=postgres` or `lakebase`: `DATABASE_URL` required
 - If `CACHE_BACKEND=redis`: `REDIS_URL` required
+- `DATABASE_BACKEND=sqlite` is rejected for `staging`/`production`
+- Discovery: `DISCOVERY_LOOKBACK_DAYS` must be 30/60/90; `DISCOVERY_MAX_PARALLELISM` must be 1–16
 
 ---
 
@@ -365,11 +433,12 @@ LOG_LEVEL=WARNING
 
 ### Missing Required Configuration
 
-**Symptom**: `ValueError: Configuration validation failed: - DATABRICKS_HOST required`
+**Symptom**: `ValueError: Configuration validation failed: - No Databricks auth resolved...`
 
-**Solution**: Set the required environment variable:
+**Solution**: Provide any one resolvable credential — set `DATABRICKS_HOST` + `DATABRICKS_TOKEN`, or point at a profile via `DATABRICKS_CONFIG_PROFILE` / `STARBOARD_WORKSPACE`, or configure `~/.databrickscfg`:
 ```bash
 export DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
+export DATABRICKS_TOKEN=dapi_your_token_here
 ```
 
 Or add to `.env` and reload:
@@ -442,7 +511,7 @@ export LLM_MODEL=gpt-4o
 
 ## See Also
 
-- [examples/env.example](../examples/env.example) - Complete environment variable template
+- [examples/env.example](https://github.com/starboard-ai/job-agent/blob/main/examples/env.example) - Complete environment variable template
 - [QUICKSTART.md](QUICKSTART.md) - Getting started guide
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Production deployment guide
 - [RUNBOOK.md](RUNBOOK.md) - Operational procedures

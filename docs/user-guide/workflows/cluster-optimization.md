@@ -45,7 +45,7 @@ The Cluster Expert agent has access to the following tools:
 
 If you have a cluster ID (from the Databricks Clusters UI):
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Analyze cluster 0123-456789-abcdef and recommend optimizations.
 ```
@@ -66,7 +66,7 @@ Can we make it faster or cheaper?
 
 For a broad assessment of all clusters in your workspace:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 List all active clusters and identify which ones are oversized or idle.
 ```

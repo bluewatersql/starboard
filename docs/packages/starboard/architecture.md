@@ -2,28 +2,39 @@
 
 **Package**: `starboard`
 **Version**: 0.1.0
-**Purpose**: MCP server + CLI with multi-agent system
-**Last Updated**: 2026-07-12
-**Complexity**: ⭐⭐⭐⭐⭐ (Highest - 400+ files)
+**Purpose**: MCP server + CLI with multi-agent system + public API facade
+**Last Updated**: 2026-08-27
+**Complexity**: ⭐⭐⭐⭐⭐ (Highest)
 
 ---
 
 ## Overview
 
-`starboard` is the core package of the Starboard AI Agent platform. It orchestrates multiple specialized AI agents, executes 45+ tools, integrates with Databricks APIs, and exposes both a CLI (`starboard`) and MCP server (`starboard-mcp`) interface.
+`starboard` is the server/experience package of the Starboard AI Agent platform. It
+orchestrates domain-specialized AI agents, executes the tool surface, integrates with
+Databricks APIs, and is consumed primarily via a CLI (`starboard`) and an MCP server
+(`starboard-mcp`). A minimal FastAPI process (`starboard-server`) exists for health
+probes and an optional MCP HTTP mount — it is **not** a chat/REST API.
 
 ### Key Responsibilities
 
-1. **Multi-Agent Orchestration**: Coordinate domain-specialized agents (Query, Job, UC, Cluster, Analytics/FinOps, Warehouse, Diagnostic)
-2. **Real-time Streaming**: Server-Sent Events (SSE) for live agent reasoning
-3. **Tool Execution**: 45+ tools for Databricks analysis and optimization
-4. **State Management**: Conversation persistence and memory
-5. **External Integration**: Databricks API, OpenAI/LLM, storage backends
+1. **Multi-Agent Orchestration**: coordinate domain agents (Query, Job, UC, Cluster,
+   Analytics/FinOps, Warehouse, Discovery, Diagnostic) behind the Intent Router.
+2. **In-process event stream**: typed reasoning/tool/output events surfaced to the
+   CLI/SDK (not an HTTP SSE endpoint).
+3. **Tool Execution**: three-layer tools + the `starboard.mcp_tools` plugin seam.
+4. **Workload Review**: the `WorkloadReviewService` + validator council over public
+   `system.*` data.
+5. **Ports + internal-data gate**: public port adapters + the `starboard.port_adapters`
+   contract (internal adapters registered only by `starboard-internal`, closed by default).
+6. **Public API facade**: `starboard/__init__.py` re-exports a curated API (PEP 562) that
+   the CLI composes instead of reaching into internals.
+7. **State + external integration**: pluggable state backends, Databricks API, LLM adapters.
 
 ### Design Philosophy
 
 - **Async-first**: All I/O operations are non-blocking
-- **Event-driven**: Streaming events for real-time UX
+- **Event-driven**: in-process event stream for real-time UX
 - **Agent-centric**: Domain experts, not monolithic system
 - **Observable**: Comprehensive logging, tracing, metrics
 - **Resilient**: Circuit breakers, retries, graceful degradation
@@ -34,42 +45,35 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    FastAPI Server                        │
+│  Entrypoints                                             │
+│  ├── starboard          (CLI, in-process)               │
+│  ├── starboard-mcp       (stdio MCP server)             │
+│  └── starboard-server    (FastAPI: /health + /mcp only) │
 ├─────────────────────────────────────────────────────────┤
-│  API Layer (api/)                                        │
-│  ├── REST endpoints (/api/chat/*)                         │
-│  ├── SSE streaming (/api/chat/events)                    │
-│  └── Dependencies & container integration               │
+│  Public API facade (starboard/__init__.py, PEP 562)     │
 ├─────────────────────────────────────────────────────────┤
 │  Agent System (agents/)                                  │
-│  ├── MultiAgentManager (orchestrator)                   │
+│  ├── MultiAgentConversationManager (orchestrator)       │
 │  ├── IntentRouter (classification)                      │
 │  ├── DomainAgents (specialists)                         │
-│  ├── ToolRegistry (tool mapping)                        │
-│  └── EventBroadcaster (SSE)                            │
+│  └── ToolRegistry (thread-isolated execution)           │
 ├─────────────────────────────────────────────────────────┤
-│  Service Layer (services/)                               │
-│  ├── Context management                                  │
-│  ├── Intent analysis                                     │
-│  ├── Memory operations                                   │
-│  └── Feedback processing                                 │
-├─────────────────────────────────────────────────────────┤
-│  Tool System (tools/)                                    │
+│  Tool System (tools/) + plugin seam (starboard.mcp_tools)│
 │  ├── Domain logic (tools/domain/)                       │
-│  ├── Services (tools/services/)                         │
+│  ├── Services (tools/services/)  ── WorkloadReviewService│
 │  └── Adapters (tools/adapters/)                         │
 ├─────────────────────────────────────────────────────────┤
-│  Adapter Layer (adapters/)                               │
-│  ├── LLM clients (OpenAI, etc.)                        │
-│  ├── Databricks API client                              │
-│  ├── State stores (SQLite/Postgres/Redis)              │
-│  └── HTTP clients                                       │
+│  Ports + adapters (ports/, adapters/)                    │
+│  ├── Public port adapters                               │
+│  ├── starboard.port_adapters contract (internal gate)   │
+│  ├── LLM clients (multi-provider)                       │
+│  └── Databricks API client                              │
 ├─────────────────────────────────────────────────────────┤
 │  Infrastructure (infra/)                                 │
 │  ├── Configuration & DI container                       │
 │  ├── Caching (SDK LRU cache, query result cache)       │
 │  ├── Logging & observability                           │
-│  ├── Authentication & authorization                      │
+│  ├── Authentication (auth-by-subtraction resolver)     │
 │  └── Reliability (circuit breakers, retries)           │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -81,108 +85,57 @@
 ```
 starboard/
 ├── starboard/
-│   ├── main.py                 # FastAPI application entry point
+│   ├── __init__.py             # Public API facade (PEP 562 lazy re-exports)
+│   ├── main.py                 # Minimal FastAPI app (health + optional /mcp)
+│   ├── bootstrap.py            # Compose agent runtime (llm, api, tools, factory)
 │   │
-│   ├── api/                    # REST API layer (23 files)
-│   │   ├── chat/               # Chat endpoints
-│   │   ├── dependencies.py     # FastAPI dependencies
-│   │   ├── streaming.py        # SSE implementation
-│   │   ├── event_converter.py  # Event format conversion
-│   │   └── ...                 # Query, visualization, etc.
+│   ├── cli/                    # CLI: main + subcommands (review, genie, auth)
+│   ├── mcp/                    # MCP server (stdio + streamable-http transports)
 │   │
-│   ├── agents/                 # Multi-agent system (70+ files)
+│   ├── agents/                 # Multi-agent system
 │   │   ├── agent_factory.py    # Agent creation
-│   │   ├── conversation/       # Multi-agent coordination (6 files)
-│   │   │   ├── multi_agent_manager.py     # Main orchestrator
-│   │   │   ├── handoff_coordinator.py     # Agent handoffs
-│   │   │   ├── lifecycle_manager.py       # Lifecycle control
-│   │   │   └── ...
-│   │   ├── domain/             # Domain agent implementation (7 files)
-│   │   │   ├── domain_agent.py         # Base domain agent
-│   │   │   ├── reasoning_engine.py     # LLM reasoning
-│   │   │   ├── tool_executor.py        # Tool execution
-│   │   │   └── ...
-│   │   ├── routing/            # Intent routing (4 files)
-│   │   │   ├── intent_router.py        # Classify user intent
-│   │   │   └── specialist_context_builder.py
-│   │   ├── config/             # Agent configuration (5 files)
-│   │   ├── events/             # Event definitions (8 files)
-│   │   ├── state/              # Agent state management (5 files)
-│   │   ├── clarification/      # Clarification handling
-│   │   ├── output/             # Response formatting
-│   │   └── tools/              # Tool schemas and registry
+│   │   ├── conversation/       # Multi-agent coordination + handoffs
+│   │   ├── domain/             # Base domain agent + reasoning loop
+│   │   ├── routing/            # Intent router
+│   │   ├── tools/              # Tool registry (thread-isolated execution)
+│   │   └── tool_categories.py  # Domain-to-tool mappings
 │   │
-│   ├── tools/                  # Tool system (95+ files)
-│   │   ├── domain/             # Business logic (no I/O)
-│   │   │   ├── query/          # Query optimization tools
-│   │   │   ├── job/            # Job analysis tools
-│   │   │   ├── uc/             # Unity Catalog tools
-│   │   │   ├── cluster/        # Cluster config tools
-│   │   │   ├── warehouse/      # Warehouse portfolio tools
-│   │   │   ├── analytics/      # Analytics & templates
-│   │   │   └── diagnostic/     # Diagnostic tools
-│   │   ├── services/           # Service orchestration (13 files)
-│   │   └── adapters/           # LLM-facing adapters (10 files)
+│   ├── tools/                  # Tool system (3-layer)
+│   │   ├── domain/             # Business logic (no I/O): query/job/uc/cluster/
+│   │   │                       #   warehouse/analytics/discovery/diagnostic/...
+│   │   ├── services/           # Orchestration + WorkloadReviewService,
+│   │   │                       #   validator_council, direct_chart_builder
+│   │   ├── adapters/           # LLM-facing tool adapters
+│   │   └── plugins.py          # ToolPlugin contract (starboard.mcp_tools seam)
 │   │
-│   ├── services/               # Business logic layer (45 files)
-│   │   ├── context/            # Context management (23 files)
-│   │   │   ├── builders/       # Context builders per agent
-│   │   │   ├── enrichers/      # Context enrichment
-│   │   │   └── ...
-│   │   ├── intent/             # Intent analysis
-│   │   ├── memory/             # Memory operations
-│   │   ├── clarification/      # Clarification logic
-│   │   └── feedback/           # User feedback
+│   ├── ports/                  # Port registry + entry-point discovery
+│   │   ├── discovery.py        # starboard.port_adapters loader (gate)
+│   │   └── registry.py
 │   │
-│   ├── adapters/               # External integrations (30+ files)
-│   │   ├── llm/                # LLM clients
-│   │   │   ├── openai/         # OpenAI implementation
-│   │   │   └── base.py         # LLM interface
+│   ├── discovery/              # Query-pack executor + registry
+│   ├── adapters/               # External integrations
+│   │   ├── llm/                # LLM clients (multi-provider)
 │   │   ├── apis/databricks/    # Databricks API client
-│   │   ├── state/              # State storage implementations
-│   │   │   ├── sqlite/         # SQLite + sqlite-vec
-│   │   │   ├── postgres/       # PostgreSQL + pgvector
-│   │   │   ├── inmemory/       # In-memory (testing)
-│   │   │   ├── redis/          # Redis cache
-│   │   │   └── databricks/     # Lakebase (Postgres-compatible)
-│   │   └── databricks/         # SQL executor, cache
+│   │   ├── ports/              # Public port adapters (analytics_sql, ...)
+│   │   └── state/              # State backends: sqlite/postgres/inmemory/redis/lakebase
 │   │
-│   ├── infra/                  # Infrastructure (20+ files)
-│   │   ├── core/               # Config, DI container
-│   │   ├── cache/              # Caching infrastructure
-│   │   │   ├── async_lru_cache.py    # Async LRU with single-flight
-│   │   │   └── ...
-│   │   ├── observability/      # Logging, tracing, metrics
-│   │   ├── auth/               # Authentication
-│   │   ├── reliability/        # Circuit breakers, retries
-│   │   └── constraints/        # Rate limiting, budgets
-│   │
-│   ├── prompts/                # LLM prompts (20 files)
-│   │   ├── query/              # Query agent prompts
-│   │   ├── job/                # Job agent prompts
-│   │   ├── uc/                 # UC agent prompts
-│   │   ├── cluster/            # Cluster agent prompts
-│   │   ├── warehouse/          # Warehouse agent prompts
-│   │   ├── analytics/          # Analytics prompts
-│   │   ├── diagnostic/         # Diagnostic prompts
-│   │   └── router/             # Intent router prompts
-│   │
-│   ├── domain/                 # Domain models
-│   │   ├── auth/               # Auth models
-│   │   └── models/             # Domain entities
-│   │
-│   └── repositories/           # Data access
-│       ├── conversation_patterns_repository.py
-│       ├── clarification_repository.py
-│       └── feedback_repository.py
+│   ├── infra/                  # Config, DI, caching, observability, auth, reliability
+│   ├── prompts/                # Domain + router prompts
+│   ├── domain/                 # Server-tier domain models
+│   ├── sdk/                    # Programmatic client
+│   └── repositories/           # conversation_patterns_repository, feedback_repository
 │
 └── tests/
-    ├── unit/                   # Unit tests (90+ files)
-    ├── integration/            # Integration tests (7 files)
-    └── golden/                 # Golden tests (3 files)
+    ├── unit/
+    ├── integration/
+    └── golden/
 ```
 
-**Scale**: 400+ source files, 100+ test files
+> Removed in the cleanup baseline (do **not** document): `api/` REST layer, the
+> multi-agent `services/{messaging,clarification,intent,feedback}` island,
+> `services/memory/memory_consolidation.py`, `clarification_repository.py`, and the
+> chart `chart_renderer`/`chart_config_validator` (chart path is now
+> `direct_chart_builder.py`). See the close-out cleanup report.
 
 ---
 
@@ -384,76 +337,36 @@ async def analyze_query_tool(query_id: str) -> ToolResult:
 
 ---
 
-### 3. API Layer (`api/`)
+### 3. Server + entrypoints (`main.py`, `cli/`, `mcp/`)
 
-FastAPI-based REST + SSE API.
+The FastAPI app (`main.py`) is minimal — it registers `/`, `/health/live`,
+`/health/ready`, and conditionally mounts the MCP streamable-HTTP transport at `/mcp`.
+There is **no** REST chat/data/visualization API and **no** HTTP SSE endpoint. The
+agent's typed event stream is delivered **in-process** to the CLI/SDK.
 
-#### Endpoints
+Primary entrypoints:
 
-**Chat API** (`/api/chat/`):
-- `POST /conversations` - Create conversation
-- `POST /conversations/{id}/messages` - Send message
-- `GET /conversations/{id}/history` - Get history
-- `GET /events/{conversation_id}` - SSE streaming
+- **`starboard`** (`cli/main.py:main`) — flag-based CLI + subcommands `review`,
+  `genie ask`, `auth {login,status}`.
+- **`starboard-mcp`** (`mcp/cli.py:main`) — stdio MCP server.
+- **`starboard-server`** (`main.py:run`) — the minimal FastAPI process.
 
-**Data API** (`/api/data/`):
-- Data retrieval and analysis endpoints
-
-**Visualization API** (`/api/visualization/`):
-- Chart generation and data visualization
-
-#### Streaming Implementation
-
-Server-Sent Events (SSE) for real-time agent reasoning:
-
-```python
-# api/streaming.py
-@router.get("/events/{conversation_id}")
-async def stream_events(
-    conversation_id: str,
-    manager: MultiAgentManagerDep,
-):
-    async def event_generator():
-        async for event in manager.stream_events(conversation_id):
-            # Format as SSE
-            yield format_sse_event(event)
-    
-    return EventSourceResponse(event_generator())
-```
-
-**Event Types**:
-- `thinking_step`: Agent reasoning step
-- `tool_call`: Tool execution
-- `tool_result`: Tool completion
-- `agent_handoff`: Agent transition
-- `final_response`: Complete answer
-- `error`: Error occurred
+The public API facade (`starboard/__init__.py`) is what the CLI composes:
+`get_logger`, `describe_auth`, `resolve_workspace_client`, `create_llm_client`,
+`AnalyticsSqlAdapter`, `LLMSQLGenerator`, `CouncilConfig`, `build_council`,
+`WorkloadReviewService`.
 
 ---
 
-### 4. Service Layer (`services/`)
+### 4. Workload Review (`tools/services/`)
 
-Business logic not tied to agents or tools.
-
-**Context Management** (`services/context/`):
-- Build rich context for agents
-- Enrich with metadata, history, facts
-- 23 files for different context builders
-
-**Intent Analysis** (`services/intent/`):
-- Analyze user messages
-- Extract entities and intents
-- Confidence scoring
-
-**Memory Operations** (`services/memory/`):
-- Store and recall conversation summaries
-- Extract facts
-- Manage user profiles
-
-**Clarification** (`services/clarification/`):
-- Generate clarification questions
-- Parse user responses
-- Resolve ambiguities
+`WorkloadReviewService` (`tools/services/workload_review_service.py`) orchestrates the
+Phase-3 flagship: it resolves rules from the kernel `RuleRegistry`, runs only the
+evidence query-pack queries those rules need (`discovery/executor.py`), and hands rows
+to the pure kernel evaluator that returns a ranked `WorkloadReview`. Optional gates: a
+pure severity gate and the model-calling `ValidatorCouncil`
+(`tools/services/validator_council.py`, `CouncilConfig`/`build_council`). See
+[System Architecture → Workload Review](../../architecture/SYSTEM_ARCHITECTURE.md#workload-review).
 
 ---
 
@@ -848,8 +761,8 @@ await handoff_coordinator.request_handoff(
 
 **Optional**:
 - `DATABRICKS_WAREHOUSE_ID`: SQL Warehouse ID (auto-resolves from workspace default if not set)
-- `DATABASE_BACKEND`: sqlite|postgres|databricks (default: sqlite)
-- `DATABASE_URL`: Connection string
+- `DATABASE_BACKEND`: memory|sqlite|postgres|lakebase|uc (default: **memory**)
+- `DATABASE_URL`: Connection string (postgres/lakebase)
 - `REDIS_URL`: Redis connection
 - `LOG_LEVEL`: DEBUG|INFO|WARNING|ERROR (default: INFO)
 - `PORT`: Server port (default: 8000)
@@ -904,9 +817,9 @@ See [Configuration Guide](../../CONFIGURATION.md) for complete list.
 ## Related Documentation
 
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md) - Overall system design
-- [Tool Catalog](../../tools/TOOL_CATALOG.md) - All 45+ tools documented
+- [Tool Catalog](../../tools/TOOL_CATALOG.md) - Tool reference
 - [Tool Development Guide](../../tools/TOOL_DEVELOPMENT_GUIDE.md) - Build new tools
-- [API Reference](../../api/API_REFERENCE.md) - REST API docs
+- [HTTP / MCP Reference](../../api/API_REFERENCE.md) - Server surface (health + MCP)
 - [Deployment Guide](../../DEPLOYMENT.md) - Production deployment
 
 ---

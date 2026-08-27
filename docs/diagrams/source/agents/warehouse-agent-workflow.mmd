@@ -2,11 +2,11 @@ graph TD
     A[User Request] --> B[Warehouse Agent]
     B --> C{Pattern Detection}
     
-    C -->|Portfolio<br/>"show warehouses"| D[get_warehouse_portfolio]
-    C -->|Health<br/>"check health"| E[get_warehouse_health]
-    C -->|Fingerprint<br/>"analyze workload"| F[get_warehouse_fingerprint]
-    C -->|Chargeback<br/>"cost allocation"| G[generate_warehouse_chargeback]
-    C -->|Topology<br/>"consolidation"| H[analyze_warehouse_topology]
+    C -->|Portfolio<br/>show warehouses| D[get_warehouse_portfolio]
+    C -->|Health<br/>check health| E[get_warehouse_health]
+    C -->|Fingerprint<br/>analyze workload| F[get_warehouse_fingerprint]
+    C -->|Chargeback<br/>cost allocation| G[generate_warehouse_chargeback]
+    C -->|Topology<br/>consolidation| H[analyze_warehouse_topology]
     
     D --> I[Portfolio Summary<br/>Fleet Metrics]
     I --> J[complete<br/>WarehouseReport]

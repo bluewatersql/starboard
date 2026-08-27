@@ -1,639 +1,207 @@
+---
+title: Getting Started
+description: Install Starboard, authenticate, and run your first Databricks analysis.
+last_verified: 2026-08-27
+status: current
+---
+
 # Getting Started with Starboard AI Agent
 
-**Version**: 1.0  
-**Last Updated**: 2025-12-02  
-**Audience**: New developers
+This guide walks a **user** from a clean machine to a first successful analysis. If you
+want to build or contribute to Starboard itself, see the Contributing guide instead.
+
+> **In a hurry?** The [Quickstart](../QUICKSTART.md) is the 5-minute version. This guide
+> is the slightly longer, guided walkthrough.
 
 ---
 
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Configuration](#configuration)
-4. [First Run](#first-run)
-5. [Verify Installation](#verify-installation)
-6. [Your First Contribution](#your-first-contribution)
-7. [Development Workflow](#development-workflow)
-8. [Next Steps](#next-steps)
+2. [Install](#install)
+3. [Authenticate](#authenticate)
+4. [Run your first analysis](#run-your-first-analysis)
+5. [Use Starboard from Claude Code / Cursor](#use-starboard-from-claude-code-cursor)
+6. [Use Starboard from a notebook](#use-starboard-from-a-notebook)
+7. [Next steps](#next-steps)
 
 ---
 
 ## Prerequisites
 
-### Required Software
+| Requirement | Version | Check |
+|-------------|---------|-------|
+| Python | 3.12+ | `python --version` |
+| Databricks workspace | — | A profile, host + token, or OAuth service principal |
+| LLM access | — | An OpenAI-compatible key, or Databricks Model Serving |
 
-| Tool | Version | Purpose | Installation |
-|------|---------|---------|--------------|
-| **Python** | 3.12+ | Backend runtime | [python.org](https://python.org) |
-| **uv** | Latest | Package manager | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
-| **Git** | 2.0+ | Version control | [git-scm.com](https://git-scm.com) |
-
-### Optional Tools
-
-| Tool | Purpose | Installation |
-|------|---------|--------------|
-| **Make** | Build automation | Usually pre-installed on macOS/Linux |
-| **Docker** | Containerization (optional) | [docker.com](https://docker.com) |
-| **Redis** | Session caching (optional) | `brew install redis` (macOS) |
-| **PostgreSQL** | Production DB (optional) | `brew install postgresql` (macOS) |
-
-### Required Accounts
-
-1. **Databricks Account**
-   - Sign up at [databricks.com](https://databricks.com)
-   - Create workspace
-   - Generate personal access token
-
-2. **OpenAI Account** (or compatible LLM provider)
-   - Sign up at [openai.com](https://openai.com)
-   - Generate API key
-   - Note: GPT-4 access recommended
-
-### Knowledge Prerequisites
-
-**Required**:
-- Python 3.12+ (async/await, type hints)
-- Git basics (clone, commit, push, pull)
-- Command line/terminal usage
-
-**Helpful**:
-- FastAPI or similar web frameworks
-- Databricks or Spark (for domain understanding)
-- LLM/AI agent concepts
+You do **not** need Redis, Postgres, SQLite, or a vector database for the default
+experience. Those are opt-in extras (see [Install](#install)).
 
 ---
 
-## Installation
-
-### Step 1: Clone Repository
+## Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/starboard-ai/job-agent.git
-cd job-agent
-
-# Verify you're on main branch
-git branch
-# Should show: * main
+pip install starboard
 ```
 
-### Step 2: Bootstrap Environment
+This installs the flagship experience: the `starboard` CLI, the middle-tier
+`python -m starboard_x.<capability>` commands, and the optional `starboard-mcp` server.
+Verify:
 
 ```bash
-# Run first-time setup (creates .venv, installs all packages)
-make setup
-```
-
-**What this does**:
-1. Creates Python virtual environment (`.venv/`)
-2. Installs all workspace packages via `uv`
-3. Sets up Git hooks
-4. Verifies installation
-
-**Expected output**:
-```
-✓ Created virtual environment at .venv
-✓ Installed starboard-core
-✓ Installed starboard
-✓ Installed starboard-skills
-✓ Git hooks configured
-✅ Setup complete!
-```
-
-**Troubleshooting**:
-```bash
-# If make is not available
-./scripts/setup.sh
-
-# If uv is not installed
-curl -LsSf https://astral.sh/uv/install.sh | sh
-source ~/.bashrc  # or ~/.zshrc
-```
-
----
-
-## Configuration
-
-### Step 3: Create Environment File
-
-```bash
-# Copy example configuration
-cp examples/env.example .env
-
-# Open in editor
-nano .env  # or vim, code, etc.
-```
-
-### Step 4: Configure Credentials
-
-**Required Variables**:
-
-```bash
-# Databricks Configuration
-DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-DATABRICKS_TOKEN="dapi..."
-
-# LLM Configuration
-LLM_API_KEY="<your-api-key>"
-LLM_MODEL="gpt-4o"  # or gpt-4o-mini for faster/cheaper
-```
-
-**Optional Variables**:
-
-```bash
-# LLM Settings
-LLM_TEMPERATURE="0.4"
-LLM_MAX_TOKENS="120000"
-LLM_TIMEOUT_SECONDS="120"
-
-# Database (defaults to SQLite)
-DATABASE_URL="sqlite:///dev_data/starboard_state.db"
-
-# Redis (optional, for session caching)
-REDIS_URL="redis://localhost:6379"
-
-# Logging
-LOG_LEVEL="INFO"  # DEBUG, INFO, WARNING, ERROR
-LOG_FORMAT="json"  # json or text
-
-# Development
-DEBUG="false"
-SAFE_MODE="false"  # Disable external calls for testing
-```
-
-### Step 5: Verify Configuration
-
-```bash
-# Test Databricks connection
-python3 -c "
-from starboard.adapters.apis.databricks import DatabricksAPI
-api = DatabricksAPI()
-print('✓ Databricks connected:', api.get_current_user())
-"
-
-# Test OpenAI connection
-python3 -c "
-from starboard.adapters.llm.openai.client import OpenAIProvider
-from starboard.infra.core.config import get_config
-provider = OpenAIProvider(cfg=get_config())
-print('✓ OpenAI connected')
-"
-```
-
-**Expected output**:
-```
-✓ Databricks connected: {'email': 'you@company.com', ...}
-✓ OpenAI connected
-```
-
----
-
-## First Run
-
-### Step 6: Start Development Server
-
-```bash
-# Start backend server
-make dev-server
-```
-
-**Services started**:
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-### Step 6b: Configure MCP (Claude Code / Cursor)
-
-To use Starboard via MCP tools in Claude Code or Cursor, add the server to your MCP configuration:
-
-```json
-{
-  "mcpServers": {
-    "starboard": {
-      "command": "uv",
-      "args": ["run", "starboard-skills"],
-      "cwd": "/path/to/job-agent"
-    }
-  }
-}
-```
-
-Then restart your editor and Starboard tools will be available.
-
-### Step 7: Verify Services
-
-**Backend Health Check**:
-```bash
-curl http://localhost:8000/health/ready
-```
-
-**Expected response**:
-```json
-{
-  "status": "ready",
-  "checks": {
-    "database": {
-      "healthy": true,
-      "latency_ms": 1.2
-    },
-    "cache": {
-      "healthy": true,
-      "latency_ms": 0.5
-    }
-  }
-}
-```
-
-Note: the `checks` object contains only the probes that are configured (database, cache, compute, ai, backpressure). A response with no configured probes returns `{"status": "ready", "checks": {}}`. When any probe is unhealthy the top-level `status` becomes `"degraded"`. The endpoint returns HTTP 200 in both cases; a `503` is only returned when the service itself has not yet initialised.
-
-**API Documentation**:
-- Open http://localhost:8000/docs
-- Should see interactive Swagger UI
-
----
-
-## Verify Installation
-
-### Step 8: Run Tests
-
-```bash
-# Run all tests
-make test
-
-# Run only unit tests (fast)
-make test-unit
-
-# Run with coverage
-make test-coverage
-```
-
-**Expected output**:
-```
-============= test session starts =============
-collected 500+ items
-
-tests/unit/agents/test_intent_router.py ........  [  2%]
-tests/unit/tools/test_query_tools.py ...........  [  4%]
-...
-============= 500 passed in 45.23s =============
-```
-
-### Step 9: Try CLI
-
-```bash
-# Activate virtual environment
-source .venv/bin/activate
-
-# Run CLI
 starboard --help
 ```
 
-**Expected output**:
-```
-Usage: starboard [OPTIONS]
+### Install options
 
-  Starboard AI Agent - Databricks workload analysis and optimization
+| Command | What you get |
+|---------|--------------|
+| `pip install starboard` | Full experience: CLI, agents, `starboard_x`, optional MCP server. Pulls **no** store/vector drivers. |
+| `pip install starboard-core` | Pure kernel + the `starboard_x` middle-tier helpers (`python -m starboard_x.<cap>`). Lightweight. |
+| `pip install starboard-skills` | Canonical skills tree + `starboard-helper` (for Claude Code / Cursor). |
 
-Options:
-  --goal TEXT         Your goal or question
-  --mode TEXT         Mode: online, offline, diagnostic
-  --verbose           Enable verbose output
-  --help              Show this message and exit
-```
-
-**Try a simple query**:
-```bash
-starboard --goal "What agents are available?" --mode offline
-```
+Store and vector drivers are **opt-in extras**, only needed if you switch away from the
+defaults, e.g. `pip install 'starboard[sqlite]'`, `'starboard[postgres]'`,
+`'starboard[vectorsearch]'`, or `'starboard-core[discovery]'`. If a backend needs a
+driver you have not installed, Starboard raises an actionable `pip install …` error
+telling you exactly which extra to add.
 
 ---
 
-## Your First Contribution
+## Authenticate
 
-### Step 11: Make a Small Change
-
-Let's add a simple tool to get familiar with the codebase.
-
-**1. Create a new tool**:
+Starboard uses **"auth by subtraction"** — it delegates to the standard Databricks SDK
+credential chain. Provide credentials any one of these ways:
 
 ```bash
-# Create file
-touch packages/starboard/starboard/tools/domain/example/hello.py
+# Option A — a ~/.databrickscfg profile (recommended)
+starboard auth login --host https://your-workspace.cloud.databricks.com --profile my-ws
+starboard auth status          # verify the resolved identity (no secrets printed)
+
+# Option B — environment variables
+export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+export DATABRICKS_TOKEN="dapi..."
+
+# Option C — an OAuth service principal
+export DATABRICKS_CLIENT_ID="..."
+export DATABRICKS_CLIENT_SECRET="..."
 ```
 
-**2. Add domain logic**:
-
-```python
-# packages/starboard/starboard/tools/domain/example/hello.py
-"""Example tool domain logic."""
-
-def greet(name: str) -> str:
-    """
-    Greet a user by name.
-    
-    Args:
-        name: User's name
-    
-    Returns:
-        Greeting message
-    
-    Examples:
-        >>> greet("Alice")
-        "Hello, Alice! Welcome to Starboard."
-    """
-    return f"Hello, {name}! Welcome to Starboard."
-```
-
-**3. Add test**:
+Then set an LLM key (any OpenAI-compatible provider, or point at Databricks Model
+Serving):
 
 ```bash
-# Create test file
-touch tests/unit/tools/domain/example/test_hello.py
+export LLM_API_KEY="<your-api-key>"
+# optional overrides:
+export LLM_MODEL="databricks-claude-sonnet-4-5"          # default model
+export LLM_BASE_URL="https://<workspace>/serving-endpoints"  # for Model Serving
 ```
 
-```python
-# tests/unit/tools/domain/example/test_hello.py
-"""Tests for hello tool."""
-
-from starboard.tools.domain.example.hello import greet
-
-
-def test_greet():
-    """Test greet function."""
-    result = greet("Alice")
-    assert result == "Hello, Alice! Welcome to Starboard."
-
-
-def test_greet_different_name():
-    """Test with different name."""
-    result = greet("Bob")
-    assert "Bob" in result
-    assert "Welcome to Starboard" in result
-```
-
-**4. Run test**:
-
-```bash
-pytest tests/unit/tools/domain/example/test_hello.py -v
-```
-
-**Expected output**:
-```
-test_hello.py::test_greet PASSED
-test_hello.py::test_greet_different_name PASSED
-
-===== 2 passed in 0.05s =====
-```
-
-**5. Commit your change**:
-
-```bash
-git add packages/starboard/starboard/tools/domain/example/
-git add tests/unit/tools/domain/example/
-git commit -m "feat: Add example hello tool
-
-- Add greet function in domain layer
-- Add unit tests with 100% coverage
-- Simple example for new contributors"
-```
-
-🎉 **Congratulations!** You've made your first contribution!
+Starboard auto-loads a `.env` file from the current directory, so you can put these in
+`.env` instead of exporting them each session.
 
 ---
 
-## Development Workflow
+## Run your first analysis
 
-### Daily Development Cycle
+Starboard gives you three high-signal entry points plus a general natural-language mode.
 
-```bash
-# 1. Pull latest changes
-git pull origin main
+### Workload Review — ranked, evidence-cited findings
 
-# 2. Create feature branch
-git checkout -b feature/my-new-feature
-
-# 3. Make changes
-# ... edit files ...
-
-# 4. Run checks locally
-make check  # Runs lint, type-check, tests
-
-# 5. Commit changes
-git add .
-git commit -m "feat: Add new feature"
-
-# 6. Push to remote
-git push origin feature/my-new-feature
-
-# 7. Create Pull Request on GitHub
-```
-
-### Code Quality Checks
-
-**Before committing**:
+Reviews your workspace's jobs, SQL, and warehouses over **public `system.*` data only**
+and prints a ranked, evidence-cited set of findings:
 
 ```bash
-# Format code
-make format
-
-# Lint code
-make lint
-
-# Type check
-make type-check
-
-# Run tests
-make test
-
-# All checks at once
-make check
+starboard review                          # default domains: jobs,sql,warehouse
+starboard review --domains warehouse,sql  # narrow the scope
+starboard review --json                   # machine-readable envelope
 ```
 
-### Running Specific Tests
+Every finding cites the query pack and row that triggered it. Cost-based findings are
+**list-price DBU estimates**, labelled as such.
+
+### Ask a question in natural language (NL → SQL)
 
 ```bash
-# Single test file
-pytest tests/unit/agents/test_intent_router.py -v
-
-# Single test function
-pytest tests/unit/agents/test_intent_router.py::test_classify_query -v
-
-# Tests matching pattern
-pytest -k "test_agent" -v
-
-# With coverage
-pytest --cov=starboard tests/unit/
+starboard genie ask "which warehouses cost the most last month?"
 ```
 
-### Hot Reloading
+### Discover your whole workspace
 
-**Backend**: Auto-reloads on file changes (FastAPI)
-**Docs**: Auto-reloads on file changes (MkDocs)
+```bash
+starboard --discover                      # 30-day workspace health assessment
+starboard --discover --lookback-days 90   # 30 | 60 | 90
+starboard --discover --data-only          # skip LLM analysis, raw data only
+```
 
-Just save your files and see changes immediately!
+### General natural-language goals
+
+```bash
+starboard --goal "Optimize query with statement_id 01ef-abc123-def456"
+starboard --goal "Why did job 12345 fail in its last run?"
+starboard --chat                          # interactive multi-turn chat
+```
+
+Use `--output-path ./reports/` to save JSON + Markdown reports, and `--json` for a
+structured envelope suitable for scripting. Modes: `--mode online` (default) ·
+`offline` (no API calls) · `diagnostic` (cross-domain troubleshooting).
 
 ---
 
-## Next Steps
+## Use Starboard from Claude Code / Cursor
 
-### Learn the Architecture
+Starboard ships a set of **skills** that teach AI coding assistants how to run these
+analyses for you:
 
-1. **Read System Architecture**
-   - [System Overview](../architecture/SYSTEM_ARCHITECTURE.md)
-   - Understand multi-agent system
-   - Learn tool architecture
+```bash
+pip install starboard-skills
+```
 
-2. **Explore Packages**
-   - [Package Integration](../integration/PACKAGE_INTEGRATION.md)
-   - See how packages work together
-   - Understand dependencies
-
-3. **Study Tools**
-   - [Tool Catalog](../tools/TOOL_CATALOG.md)
-   - See 31 existing tools
-   - Learn tool patterns
-
-### Common Tasks
-
-Ready to contribute? Check out:
-
-- **[Common Tasks Guide](./COMMON_TASKS.md)** - Detailed how-tos
-- **[Tool Development Guide](../tools/TOOL_DEVELOPMENT_GUIDE.md)** - Build tools
-- **[API Reference](../api/API_REFERENCE.md)** - API endpoints
-
-### Get Help
-
-**Documentation**:
-- [Quick Reference](../QUICK_REFERENCE.md) - Fast lookup
-- [Runbook](../RUNBOOK.md) - Operational procedures
-- [FAQ](./FAQ.md) - Frequently asked questions
-
-**Community**:
-- GitHub Issues - Report bugs
-- GitHub Discussions - Ask questions
+See [Skills](../SKILLS.md) for the full catalog and setup.
 
 ---
 
-## Common Issues
+## Use Starboard from a notebook
 
-### Issue: `uv not found`
-
-**Solution**:
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-source ~/.bashrc  # or ~/.zshrc
-```
-
-### Issue: `Module not found` errors
-
-**Solution**:
-```bash
-# Reinstall workspace packages
-cd /path/to/project
-uv sync
-
-# Or use make
-make setup
-```
-
-### Issue: Backend won't start
-
-**Solution**:
-```bash
-# Check .env file exists
-ls -la .env
-
-# Verify credentials
-python3 -c "from starboard.infra.core.config import get_config; print(get_config())"
-
-# Check port not in use
-lsof -i :8000
-```
-
-### Issue: Tests failing
-
-**Solution**:
-```bash
-# Clean and reinstall
-make clean
-make setup
-
-# Verify test database
-ls -la dev_data/
-
-# Run tests with verbose output
-pytest -v -s
-```
+The `examples/` notebooks run Starboard directly inside Databricks. They install the
+packages and drive the agent via the in-package SDK
+(`from starboard.sdk import StarboardClient`). Start with
+`examples/Starboard AI Agent.ipynb` for the general flow and
+`examples/Starboard AI Agent - Workspace Discovery.ipynb` for discovery.
 
 ---
 
-## Cheat Sheet
+## Next steps
 
-### Essential Commands
+- [CLI Reference](../user-guide/cli.md) — every command, flag, and environment variable
+- [Quick Reference](../QUICK_REFERENCE.md) — one-page cheat sheet
+- [Common Tasks](./COMMON_TASKS.md) — step-by-step recipes
+- [Understanding Reports](../user-guide/understanding-reports.md) — read the findings
+- [What is Starboard?](../overview/what-is-starboard.md) — architecture overview
+- [FAQ](./FAQ.md) — common questions answered
+
+---
+
+## Common issues
+
+### `No Databricks auth resolved`
+
+Provide one of: `--profile <name>`, `--host` + `--token`, `--client-id` +
+`--client-secret`, or set `DATABRICKS_CONFIG_PROFILE` / `DATABRICKS_HOST` +
+`DATABRICKS_TOKEN`. Or run `starboard auth login`.
+
+### `LLM_API_KEY not set`
 
 ```bash
-# Setup
-make setup              # First-time setup
-
-# Development
-make dev-server         # Start backend server
-
-# Code Quality
-make format             # Auto-format
-make lint               # Lint
-make type-check         # Type check
-make check              # All checks
-
-# Testing
-make test               # All tests
-make test-unit          # Unit tests
-make test-coverage      # With coverage
-
-# Documentation
-make docs-serve         # Preview docs
-make diagrams           # Generate diagrams
-
-# Cleanup
-make clean              # Clean build artifacts
+export LLM_API_KEY="<your-api-key>"
 ```
 
-### File Locations
+### Agent exceeds the token budget
 
-```
-packages/starboard/         - Multi-agent system
-packages/starboard-core/    - Domain models
-packages/starboard-skills/  - MCP skill definitions
-docs/                       - Documentation
-tests/                      - Test suite
-.env                        - Your credentials (gitignored)
+```bash
+starboard --llm-max-tokens 120000 --goal "..."
 ```
 
-### Quick Links
-
-- Backend: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- Documentation: http://localhost:8000 (after `make docs-serve`)
-
----
-
-## Summary Checklist
-
-Before you start contributing, make sure you have:
-
-- [ ] Installed all prerequisites (Python, uv)
-- [ ] Cloned repository
-- [ ] Run `make setup` successfully
-- [ ] Created `.env` with credentials
-- [ ] Started dev server (`make dev-server`)
-- [ ] Verified backend health check
-- [ ] Run tests successfully (`make test`)
-- [ ] Made first small change
-- [ ] Read system architecture docs
-
-**Ready to contribute?** Check out [Common Tasks Guide](./COMMON_TASKS.md)!
-
----
-
-**Last Updated**: 2025-12-02  
-**Version**: 1.0
-
+See [Troubleshooting](../user-guide/troubleshooting.md) for more.

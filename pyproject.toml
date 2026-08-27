@@ -24,13 +24,22 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# =============================================================================
+# Legacy composition extras (pre-tier). Retained for back-compat (additive
+# guarantee). These compose the meta package's OWN extras — note the
+# `starboard-meta[...]` self-references: an earlier revision mistakenly used the
+# bare `starboard[...]` form, which resolves to the sibling `starboard` package
+# (which has none of these extras) and made `uv sync` emit spurious
+# "does not have an extra named ..." warnings. The canonical install story is the
+# tier model below (`starboard-meta[kernel|capability|experience]`).
+# =============================================================================
 core = [
     "pydantic>=2.12.3",
     "typing-extensions>=4.14.1",
 ]
 
 server = [
-    "starboard[core]",
+    "starboard-meta[core]",
     # FastAPI stack
     "fastapi>=0.104.0,<1.0.0",
     "uvicorn[standard]>=0.24.0,<1.0.0",
@@ -46,7 +55,6 @@ server = [
     "pyarrow>=18.0.0,<20.0.0",
     "numpy>=1.24.0,<3.0.0",
     "sqlglot>=27.29.0,<28.0.0",
-    # Data visualization
     # Configuration
     "pydantic>=2.0.0,<3.0.0",
     "pydantic-settings>=2.0.0,<3.0.0",
@@ -73,15 +81,15 @@ server = [
 ]
 
 cli = [
-    "starboard[server]",
+    "starboard-meta[server]",
 ]
 
 sdk = [
-    "starboard[server]",
+    "starboard-meta[server]",
 ]
 
 all = [
-    "starboard[server,cli,sdk]",
+    "starboard-meta[server,cli,sdk]",
 ]
 
 # =============================================================================
@@ -134,10 +142,24 @@ dev = [
     "import-linter>=2.0",
 ]
 
-[project.scripts]
-starboard = "starboard.cli.main:main"
-starboard-server = "starboard.main:run"
-starboard-mcp = "starboard.mcp.cli:main"
+# Documentation site toolchain (`make docs` / `make docs-serve`). These back the
+# mkdocs-material build declared in mkdocs.yml (mermaid2 for inline diagrams,
+# git-revision-date-localized for the "Last Updated" stamp, macros for the
+# git_revision_date_localized variable). Docs are not built in CI, so this group
+# keeps the local `mkdocs build --strict` gate reproducible.
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocs-mermaid2-plugin>=1.1",
+    "mkdocs-git-revision-date-localized-plugin>=1.2",
+    "mkdocs-macros-plugin>=1.0",
+]
+
+# NOTE: Console scripts (`starboard`, `starboard-server`, `starboard-mcp`) are
+# declared on the installable `starboard` package (packages/starboard/
+# pyproject.toml), not here — this workspace root is not an installable package
+# (`[tool.uv] package = false`), so entry points declared here would never be
+# installed.
 
 [build-system]
 requires = ["hatchling"]

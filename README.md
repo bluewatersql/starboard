@@ -23,22 +23,40 @@ Starboard AI Agent is a multi-package monorepo providing:
 
 ```
 packages/
-├── starboard-core/     # Domain models, prompts, shared types + Spark log parsing (no I/O deps)
-├── starboard/          # MCP server + CLI + SDK (primary install)
-└── starboard-skills/   # Lightweight Claude skill files + Databricks helper scripts
+├── starboard-core/          # Pure kernel: DTOs, ports, analyzers + starboard_x progressive helpers
+├── starboard/               # FastAPI server + CLI + adapters + tools (the full experience wheel)
+├── starboard-skills/        # Canonical skill files + Databricks helper scripts
+├── starboard-internal/      # Internal-only gated port adapters — never in a public wheel
+└── starboard-plugin-sample/ # Sample MCP-tools plugin (entry-point discovery demo)
 ```
 
 | Package | Description | Dependencies |
 |---------|-------------|--------------|
-| **starboard-core** | Pure domain logic, prompts, types, log parsing | None (core) |
-| **starboard** | MCP server, CLI, agents, tools | starboard-core |
-| **starboard-skills** | Claude skill files + thin helper scripts | starboard-core, databricks-sdk |
+| **starboard-core** | Pure kernel (DTOs, ports, analyzers) + `starboard_x` helpers | None heavy (kernel-pure) |
+| **starboard** | FastAPI server, CLI, agents, tools | starboard-core |
+| **starboard-skills** | Claude skill files + thin helper scripts | starboard-core |
+| **starboard-internal** | Internal-only gated adapters (not published publicly) | starboard-core, starboard |
+| **starboard-plugin-sample** | Reference MCP-tools plugin | starboard-core |
+
+Kernel purity (`starboard-core`/`starboard_x` carry no `databricks-sdk`/`openai`/`fastapi`/`mcp`) and the
+public↔internal boundary are enforced by import-linter (4 contracts). See [`CLAUDE.md`](CLAUDE.md).
 
 ### Install Tiers
 
 ```bash
-pip install starboard          # Full: CLI + MCP server + all agents + all tools
+pip install starboard          # Full experience: CLI + MCP server + agents + tools
+pip install starboard-core     # Kernel + starboard_x helpers (python -m starboard_x.<cap>)
 pip install starboard-skills   # Lightweight: Claude skill files + helper scripts only
+```
+
+The default `pip install starboard` pulls **no** store/vector drivers. Durable state and ANN retrieval are
+opt-in extras that lazy-import and raise an actionable error if missing:
+
+```bash
+pip install "starboard[sqlite]"        # local SQLite state + sqlite-vec ANN
+pip install "starboard[postgres]"      # Postgres/Lakebase state driver
+pip install "starboard[vectorsearch]"  # managed Databricks Vector Search
+pip install "starboard-core[discovery]"  # a single starboard_x capability's deps
 ```
 
 ### Multi-Agent System
@@ -151,8 +169,31 @@ starboard --goal "Review warehouse portfolio for cost savings opportunities"
 # Interactive multi-turn session
 starboard --chat
 
+# Workspace discovery + health assessment
+starboard --discover --lookback-days 30
+
 # See all available flags
 starboard --help
+```
+
+#### Focused subcommands
+
+```bash
+# Workload Review — ranked, evidence-cited findings over public system.* data
+starboard review --domains jobs,sql,warehouse --lookback-days 30
+
+# Natural-language → SQL over public workspace data
+starboard genie ask "top 10 most expensive jobs last week"
+
+# Databricks auth (delegates to the SDK credential chain)
+starboard auth status
+starboard auth login --profile my-workspace
+```
+
+Progressive helpers (kernel tier, dep-light) are also runnable standalone:
+
+```bash
+python -m starboard_x.review --help       # also: discovery, warehouse, uc, sparklog, diagnostic
 ```
 
 ### MCP Server
@@ -171,11 +212,14 @@ job-agent/
 ├── Makefile                    # Development workflow commands
 ├── CONTRIBUTING.md             # Contribution guide
 ├── packages/                   # Python packages
-│   ├── starboard-core/         # Pure domain + log parsing
-│   ├── starboard/              # MCP server + CLI + SDK
-│   └── starboard-skills/       # Claude skills + helper scripts
+│   ├── starboard-core/         # Pure kernel + starboard_x helpers
+│   ├── starboard/              # FastAPI server + CLI + adapters + tools
+│   ├── starboard-skills/       # Claude skills + helper scripts
+│   ├── starboard-internal/     # Internal-only gated adapters (not published)
+│   └── starboard-plugin-sample/# Sample MCP-tools plugin
+├── plugin/                     # Claude Code plugin bundle (skills + rules) + marketplace.json
 ├── docs/                       # MkDocs documentation site
-├── tests/                      # Cross-package tests (golden, integration)
+├── tests/                      # Cross-package tests (architecture, golden, integration, contract)
 ├── evals/                      # Evaluation assets
 ├── scripts/                    # Dev/ops scripts
 ├── examples/                   # Usage examples and env template

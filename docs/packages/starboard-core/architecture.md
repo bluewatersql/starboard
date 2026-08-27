@@ -25,34 +25,28 @@
 
 ```
 starboard-core/
-├── starboard_core/
-│   ├── domain/              # Domain models and business logic
-│   │   ├── models/          # Domain DTOs and Pydantic models
-│   │   │   ├── context_types.py    # Context and state types
-│   │   │   ├── databricks.py       # Databricks domain models
-│   │   │   ├── llm_schemas.py      # LLM request/response schemas
-│   │   │   ├── llm.py              # LLM types and enums
-│   │   │   ├── recommendations.py  # Recommendation types
-│   │   │   └── report_types.py     # Report generation types
-│   │   ├── analyzers/       # Domain analyzers
+├── starboard_core/          # THE PURE KERNEL (no SDK/LLM/FastAPI/MCP)
+│   ├── domain/
+│   │   ├── models/          # Domain DTOs (incl. finding.py, review.py)
+│   │   ├── rules/           # RuleRegistry, schema, evaluator, action_rate, gate, seed/*.yaml
+│   │   ├── analyzers/       # Pure domain analyzers
 │   │   ├── transformers/    # Data transformers
-│   │   ├── services/        # Domain services (pure logic, minimal)
-│   │   └── utils/           # Domain utilities
-│   ├── foundations/         # Core foundation types
-│   │   ├── models.py               # Foundation model types
-│   │   └── protocols.py            # Foundation protocols
-│   ├── models/              # Shared data models
-│   │   ├── conversation.py         # Conversation, Episode, Message
-│   │   └── memory.py               # Facts, UserProfile, memory types
-│   ├── ports/               # Abstract interfaces (hexagonal architecture)
-│   │   ├── cache_store.py          # Cache abstraction
-│   │   ├── memory_store.py         # Memory storage abstraction
-│   │   └── state_store.py          # State persistence abstraction
-│   ├── rag/                 # RAG utilities
+│   │   ├── services/        # Domain services (pure logic)
+│   │   └── utils/
+│   ├── foundations/         # Core foundation types + protocols
+│   ├── log_parser/          # Spark event log parser (loaders, adapters, domain)
+│   ├── models/              # Shared data models (conversation, memory)
+│   ├── ports/               # Abstract interfaces (protocols)
+│   │   ├── cache_store.py / memory_store.py / state_store.py
+│   │   └── log_retrieval.py / diagnostic_backend.py / fleet_sql.py / nl_query.py  # gated
+│   ├── rag/                 # Reference-file RAG knowledge (domains/*.md) + query packs
 │   └── repositories/        # Repository pattern implementations
-│       ├── cache.py                # Cache manager
-│       ├── conversation.py         # Conversation repository
-│       └── memory.py               # Memory repository
+│
+├── starboard_x/             # PROGRESSIVE CLIs (sibling namespace, same wheel)
+│   ├── contract.py          # Stable JSON envelope + exit codes
+│   ├── __main__.py          # `python -m starboard_x.<cap>` dispatch
+│   └── {diagnostic,discovery,review,sparklog,uc,warehouse}/  # runnable caps
+│
 └── tests/
     └── unit/                # Unit tests (no I/O)
 ```

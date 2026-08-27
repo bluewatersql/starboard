@@ -93,7 +93,7 @@ If you can stop the server:
 
 ```bash
 # Stop the server
-make stop
+make dev-stop
 
 # Copy files
 cp -r ./dev_data/ /backups/starboard/$(date +%Y%m%d)/
@@ -106,7 +106,7 @@ make dev-server
 
 1. Stop the server:
    ```bash
-   make stop
+   make dev-stop
    ```
 
 2. Replace the database files:
@@ -250,14 +250,21 @@ databricks lakebase get --instance-name starboard-state
 For additional protection, export data using `pg_dump` since Lakebase is PostgreSQL-compatible:
 
 ```bash
-pg_dump "$LAKEBASE_DATABASE_URL" \
+# $PGCONN = a Postgres connection string built with a current Lakebase OAuth token
+# (Starboard does not expose a static LAKEBASE_DATABASE_URL; see the note below).
+pg_dump "$PGCONN" \
     --format=custom \
     --compress=6 \
     --file="/backups/starboard/lakebase_$(date +%Y%m%d).sql.gz"
 ```
 
 !!! note "OAuth token refresh"
-    Lakebase connections use OAuth tokens that expire. Ensure your backup script handles token refresh. The `LAKEBASE_OAUTH_*` environment variables control OAuth configuration.
+    Lakebase connections use short-lived OAuth tokens that the Databricks SDK obtains and
+    refreshes automatically from the credential chain. Configure the instance with
+    `LAKEBASE_INSTANCE_NAME` and `LAKEBASE_DATABASE_NAME` (both required); the OAuth client is
+    resolved from `DATABRICKS_CLIENT_ID` or, if unset, the current user / ambient profile.
+    There are no `LAKEBASE_OAUTH_*` variables. For an ad-hoc `pg_dump`, mint a fresh
+    connection string with a current token immediately before running the dump.
 
 ---
 

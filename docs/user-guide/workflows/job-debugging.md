@@ -43,7 +43,7 @@ The Job Expert agent has access to the following tools:
 
 Provide the job ID and describe the failure:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Job 12345 failed in the last 3 runs. What is going wrong?
 ```

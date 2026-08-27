@@ -104,8 +104,8 @@ Logging is configured at application startup via `setup_structured_logging()` in
 
 ```
 2026-03-01T10:15:23.456Z [info     ] server_starting                version=0.1.0
-2026-03-01T10:15:24.012Z [info     ] state_container_initialized    database_backend=sqlite environment=dev
-2026-03-01T10:15:24.789Z [debug    ] creating_sqlite_state_store    db_path=./dev_data/starboard_state.db environment=dev
+2026-03-01T10:15:24.012Z [info     ] state_container_initialized    database_backend=memory environment=dev
+2026-03-01T10:15:24.789Z [debug    ] creating_inmemory_state_store  environment=dev
 ```
 
 **JSON format (production, `LOG_JSON=true`):**

@@ -189,11 +189,11 @@ make format
 
 ```bash
 # Unit tests (for domain logic)
-# Location: tests/unit/
+# Location: packages/<pkg>/tests/unit/  (run per-package; see the separate-invocation rule below)
 # Coverage: 100% for domain, 80%+ for service
 
 # Integration tests (for external I/O)
-# Location: tests/integration/
+# Location: packages/starboard/tests/integration/ (+ cross-package tests/ for golden/contract/architecture)
 # Coverage: 80%+
 
 # Run tests
@@ -202,6 +202,10 @@ make test
 # Check coverage
 make test-coverage
 ```
+
+> Tests live under each package's `tests/` dir and are run **per package** (`make test-unit` runs the
+> `starboard-core` and `starboard` suites separately). Repo-root `tests/` holds cross-package suites
+> (`tests/architecture/`, `tests/golden/`, `tests/integration/`, `tests/contract/`).
 
 See [Testing Guide](../TESTING.md) for details.
 
@@ -212,7 +216,7 @@ See [Testing Guide](../TESTING.md) for details.
 - Add new agent → Update [System Architecture](../architecture/SYSTEM_ARCHITECTURE.md)
 - Add new API → Update [API Reference](../api/API_REFERENCE.md)
 - Change prompts → Update golden tests
-- Add new diagram → Regenerate: `make diagrams`
+- Add new diagram → Regenerate: `python scripts/generate_diagrams.py`
 
 ### Step 7: Commit Changes
 
@@ -454,12 +458,12 @@ logger.info("Tool done")  # Not structured
 **Golden Tests** (for prompts):
 - Snapshot LLM prompts
 - Catch unintended changes
-- Update with `--update-snapshots`
+- Update with `--snapshot-update` (syrupy)
 
 ### Test Structure
 
 ```python
-# tests/unit/tools/domain/test_cost_analyzer.py
+# packages/starboard/tests/unit/tools/domain/test_cost_analyzer.py
 
 def test_analyze_costs_basic():
     """Test basic cost analysis."""
@@ -498,10 +502,10 @@ make test-unit
 make test-coverage
 
 # Specific file
-pytest tests/unit/path/to/test_file.py -v
+pytest packages/starboard/tests/unit/path/to/test_file.py -v
 
 # Specific function
-pytest tests/unit/path/to/test_file.py::test_function -v
+pytest packages/starboard/tests/unit/path/to/test_file.py::test_function -v
 ```
 
 ---
@@ -532,7 +536,7 @@ pytest tests/unit/path/to/test_file.py::test_function -v
 **Diagrams**:
 - Mermaid (.mmd files)
 - Source in `docs/diagrams/source/`
-- Generate with `make diagrams`
+- Generate with `python scripts/generate_diagrams.py`
 
 ### Testing Documentation
 
@@ -543,10 +547,10 @@ make docs-serve
 # Open http://localhost:8000
 
 # Generate diagrams
-make diagrams
+python scripts/generate_diagrams.py
 
-# Build static site
-make docs-build
+# Build static site (generates diagrams + mkdocs build --strict)
+make docs
 ```
 
 ---

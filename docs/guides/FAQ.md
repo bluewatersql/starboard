@@ -24,11 +24,11 @@ status: current
 
 ### What is Starboard AI Agent?
 
-Starboard AI Agent is an AI-powered analysis and optimization platform for Databricks workloads. It uses 8 domain-specialized agents that reason step-by-step, call 45+ tools, and deliver actionable recommendations for queries, jobs, clusters, warehouses, costs, and governance.
+Starboard AI Agent is an AI-powered analysis and optimization platform for Databricks workloads. It uses 8 domain-specialized agents that reason step-by-step, call specialized tools, and deliver actionable recommendations for queries, jobs, clusters, warehouses, costs, and governance — all from the command line (and from AI coding assistants via skills).
 
 ### How does it work?
 
-When you ask a question, an **Intent Router** classifies your request and dispatches it to the appropriate domain agent. That agent reasons about your question, selects tools dynamically to gather real data from Databricks APIs, analyzes the results, and streams back specific recommendations via SSE (Server-Sent Events).
+When you run `starboard --goal "…"` or `--chat`, an **Intent Router** classifies your request and dispatches it to the appropriate domain agent. That agent reasons about your question, selects tools dynamically to gather real data from Databricks APIs, analyzes the results, and streams progress to your terminal as it works. Starboard also ships three deterministic, public-data surfaces — `starboard review` (Workload Review), `starboard genie ask` (NL → SQL), and `starboard --discover` (workspace discovery) — that answer common questions without the full agent loop.
 
 ### Who is it for?
 
@@ -39,7 +39,11 @@ When you ask a question, an **Intent Router** classifies your request and dispat
 
 ### What interfaces are available?
 
-Starboard provides two primary ways to interact: an **MCP server** (used by Claude Code, Cursor, and other MCP clients) and a **CLI** (Python). Both share the same multi-agent backend and produce identical analysis results.
+The primary interface is the **`starboard` CLI**. On top of that, Starboard ships
+**skills** for AI coding assistants (Claude Code / Cursor) and an **optional
+`starboard-mcp` server** for MCP clients. Notebooks can drive the agent through the
+in-package SDK (`from starboard.sdk import StarboardClient`). All paths share the same
+multi-agent backend and produce the same analysis results.
 
 ---
 
@@ -55,7 +59,7 @@ Starboard has **8 domain agents** plus an **Intent Router** that classifies requ
 | **Job** | Job Performance | Debugs failing jobs, optimizes configurations, analyzes Spark logs |
 | **UC** | Unity Catalog | Explores metadata, traces lineage, audits governance and access |
 | **Cluster** | Compute | Analyzes cluster sizing, health, utilization, and autoscaling |
-| **Analytics** | FinOps & Cost | Cost analysis, chargeback reports, budget forecasting |
+| **Analytics** | FinOps & Cost | Cost analysis, chargeback, budget forecasting (list-price DBU estimates) |
 | **Warehouse** | SQL Warehouses | Portfolio optimization, SLO management, topology analysis |
 | **Discovery** | Workspace Health | Workspace-wide assessment, resource inventory, health scoring |
 | **Diagnostic** | Troubleshooting | Root cause analysis, debugging, cross-domain investigation |
@@ -82,11 +86,15 @@ Yes. Agents follow a handoff protocol where they pass context (resource IDs, par
 
 ### How long does setup take?
 
-First-time setup takes 15-30 minutes, mostly waiting for dependency installation. After that, starting the development server takes under 2 minutes with `make dev-server`.
+A few minutes: `pip install starboard`, authenticate (`starboard auth login` or set
+environment variables), set `LLM_API_KEY`, then run `starboard review` or
+`starboard --goal "…"`.
 
 ### Can I run Starboard without a Databricks connection?
 
-Not for live analysis, but you can use **offline mode** (`--mode offline`) for static analysis and testing. You can also enable **safe mode** (`SAFE_MODE=true`) to disable all external API calls. Unit tests run fully offline.
+Not for live analysis, but you can use **offline mode** (`--mode offline`) for static
+analysis of a file you pass with `--input-file` and best-practice guidance without any
+API calls.
 
 ### What environment variables do I need?
 
@@ -139,32 +147,40 @@ DOMAIN_MODEL_OVERRIDES='{"router": "gpt-4o-mini", "query": "gpt-4o", "diagnostic
 
 ---
 
-## Streaming and API
+## Output and integration
 
-### How does real-time streaming work?
+### Do I see progress while the agent works?
 
-Starboard uses **SSE (Server-Sent Events)** to stream agent progress in real-time. As the agent reasons and calls tools, events are pushed to the client so you can see thinking steps, tool calls, intermediate results, and the final report as they happen.
+Yes. In `--goal` and `--chat` runs, the CLI streams the agent's reasoning steps, tool
+calls, and intermediate results to your terminal as they happen, then prints the final
+report. Use `--quiet` to suppress progress, or `--json` for a structured envelope only.
 
-### Why SSE instead of WebSockets?
+### How do I get machine-readable output?
 
-SSE is simpler for one-way server-to-client streaming, works through HTTP firewalls and proxies without special configuration, and includes built-in auto-reconnect via the browser EventSource API. Since Starboard only needs to push data from server to client, SSE is the right protocol.
+Add `--json` to emit the shared JSON envelope (`{ok, domain, command, data|error,
+meta}`) to stdout, and `--output-path ./reports/` to save JSON + Markdown report files.
+The `python -m starboard_x.<cap>` middle-tier commands emit the same envelope.
 
-### Can I use the API without the Web UI?
+### Can I call Starboard programmatically?
 
-Yes. The REST API is fully standalone with OpenAPI documentation at `/docs`. You can call it from any HTTP client, the CLI, or the Python SDK.
+Yes. From Python, use the in-package SDK — `from starboard.sdk import StarboardClient`
+— which is how the `examples/` notebooks drive the agent. AI coding assistants use the
+[skills](../SKILLS.md); MCP clients can use the optional `starboard-mcp` server.
 
 ---
 
 ## Troubleshooting
 
-### The server won't start
+### `starboard` can't authenticate
 
 Check these common causes:
 
-1. **Port in use**: Run `lsof -i :8000` to find conflicting processes
-2. **Missing `.env`**: Copy `examples/env.example` to `.env` and configure credentials
-3. **Invalid credentials**: Verify `DATABRICKS_TOKEN` and `LLM_API_KEY` are correct
-4. **Dependencies missing**: Run `make setup` to install all packages
+1. **No credentials resolved**: Provide `--profile <name>`, `--host` + `--token`, or
+   `--client-id` + `--client-secret` — or run `starboard auth login`.
+2. **Missing `.env`**: Put `DATABRICKS_HOST`/`DATABRICKS_TOKEN` and `LLM_API_KEY` in a
+   `.env` file in the current directory (auto-loaded) or export them.
+3. **Invalid credentials**: Run `starboard auth status` to see the resolved identity.
+4. **`LLM_API_KEY` not set**: `export LLM_API_KEY="<your-api-key>"`.
 
 ### The agent picked the wrong domain
 
@@ -174,25 +190,23 @@ The Intent Router sometimes misclassifies ambiguous requests. Be specific in you
 
 Response times depend on the number of tool calls, LLM model speed, and network latency. To speed things up:
 
-1. Use a faster model (`gpt-4o-mini` for simple tasks)
-2. Reduce token budget if full analysis is unnecessary
-3. Check network connectivity to Databricks and LLM endpoints
+1. Use a faster model for simple tasks (set `LLM_MODEL` or `--llm-model`)
+2. Reduce the token budget if full analysis is unnecessary (`--llm-max-tokens`)
+3. Narrow the scope (e.g. `starboard review --domains warehouse`)
+4. Check network connectivity to Databricks and LLM endpoints
 
-### Tests are failing
+### A backend needs a driver I don't have installed
 
-Common causes:
-
-1. **Packages not installed**: Run `uv sync` or `make setup`
-2. **Environment variables missing**: Unit tests should not need credentials
-3. **Snapshot mismatch**: Run `make test-golden` to update golden files after prompt changes
+The default install is store-free. If you switch to a durable state backend or a vector
+backend, Starboard raises an actionable error naming the extra to install, e.g.
+`pip install 'starboard[sqlite]'`, `'starboard[postgres]'`, or `'starboard[vectorsearch]'`.
 
 ### How do I enable debug logging?
 
 ```bash
-LOG_LEVEL=DEBUG make dev-server
+starboard --debug --goal "..."                       # debug logs to stderr
+starboard --log-level DEBUG --log-file starboard.log --goal "..."
 ```
-
-Or set `LOG_LEVEL=DEBUG` in your `.env` file.
 
 ---
 

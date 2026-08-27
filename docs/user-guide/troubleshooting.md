@@ -18,25 +18,41 @@ status: current
 
 ---
 
-## Connection Issues
+## Install & Auth Issues
 
-### Cannot reach the Starboard server
+### `starboard: command not found`
 
-**Symptom:** The Web UI shows a connection error, or the CLI prints "connection refused."
+**Symptom:** The shell can't find the `starboard` command after install.
 
-**Cause:** The backend server is not running or is not reachable from your network.
+**Cause:** The package isn't installed in the active environment, or the environment's
+`bin` directory isn't on your `PATH`.
 
 **Solution:**
 
-1. Verify the backend is running:
+1. Install into the current environment: `pip install starboard`.
+2. Confirm it's available: `starboard --help`.
+3. If you use a virtualenv, make sure it is activated in the shell you're running from.
+
+---
+
+### No Databricks auth resolved
+
+**Symptom:** Starboard reports it cannot resolve Databricks credentials.
+
+**Cause:** Starboard delegates to the Databricks SDK credential chain ("auth by
+subtraction") and found no usable credentials.
+
+**Solution:**
+
+1. Run a guided login, or check what's currently resolved:
    ```bash
-   curl http://localhost:8000/health/live
+   starboard auth login --host https://your-workspace.cloud.databricks.com --profile my-ws
+   starboard auth status          # prints host / auth_type / profile / user — never a token
    ```
-   Expected response: `{"status": "ok"}`
-
-2. If using the Web UI, confirm the API URL is correct. The frontend connects to `http://localhost:8000` by default. Override it with the `NEXT_PUBLIC_API_URL` environment variable if your backend runs elsewhere.
-
-3. If the server is running but unreachable, check firewall rules and network configuration with your administrator.
+2. Or provide credentials one of these ways:
+   - A `~/.databrickscfg` profile: `--profile <name>` or `DATABRICKS_CONFIG_PROFILE`
+   - Host + token: `DATABRICKS_HOST` + `DATABRICKS_TOKEN` (or `--host` / `--token`)
+   - OAuth service principal: `DATABRICKS_CLIENT_ID` + `DATABRICKS_CLIENT_SECRET`
 
 ---
 
@@ -44,27 +60,22 @@ status: current
 
 **Symptom:** The agent responds with "permission denied" or "authentication failed" when trying to access Databricks resources.
 
-**Cause:** Your Databricks token is missing, expired, or lacks the required permissions.
+**Cause:** Your Databricks credentials are expired or lack the required permissions.
 
 **Solution:**
 
-1. Verify your Databricks token is set:
+1. Verify the resolved identity:
    ```bash
-   echo $DATABRICKS_TOKEN
+   starboard auth status
    ```
-2. Test the token directly:
-   ```bash
-   curl -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-     "$DATABRICKS_HOST/api/2.0/clusters/list"
-   ```
-3. If the token is expired, generate a new one from **Databricks Workspace** > **User Settings** > **Developer** > **Access tokens**.
-4. Ensure the token has access to the resources you are analyzing (jobs, clusters, warehouses, Unity Catalog).
+2. If a token is expired, generate a new one from **Databricks Workspace** > **User Settings** > **Developer** > **Access tokens**, or re-run `starboard auth login`.
+3. Ensure the identity has access to the resources you are analyzing (jobs, clusters, warehouses, Unity Catalog, and the public `system.*` tables used by `review` / `--discover`).
 
 ---
 
 ### LLM API key error
 
-**Symptom:** The server fails to start or returns errors about missing API keys.
+**Symptom:** Starboard fails to start or returns errors about missing API keys.
 
 **Cause:** The `LLM_API_KEY` environment variable is not set or is invalid.
 
@@ -118,12 +129,11 @@ status: current
 **Solution:**
 
 1. Wait up to 2 minutes. Complex analyses can take time, especially on the first tool call.
-2. Check the backend logs for rate limit errors (HTTP 429 from the LLM provider).
-3. If using the CLI, try increasing the timeout:
+2. Re-run with debug logging to see where it's stuck (and any rate-limit / HTTP 429 errors from the LLM provider):
    ```bash
-   starboard --goal "Your question" --timeout 600
+   starboard --debug --goal "Your question"
    ```
-4. If the issue persists, try again. Transient LLM provider issues usually resolve quickly.
+3. If the issue persists, try again. Transient LLM provider issues usually resolve quickly.
 
 ---
 
@@ -225,9 +235,9 @@ status: current
 
 **Solution:**
 
-1. Confirm you are not in offline mode. In the Web UI, check that the **Offline Mode** toggle is off.
+1. Confirm you are not in offline mode (`--mode offline` disables API-dependent tools). Use `--mode online` (the default) for live data.
 2. Provide specific resource identifiers (job IDs, statement IDs, cluster IDs) so the agent can pull real data.
-3. Check the "Tools Used" section of the report. If no tools were called, the agent likely could not connect to Databricks.
+3. Check the "Tools Used" section of the report. If no tools were called, the agent likely could not connect to Databricks — verify with `starboard auth status`.
 
 ---
 
@@ -241,7 +251,7 @@ status: current
 
 1. Check the time range. The agent uses a default lookback window (often 30 days). Specify your preferred range: `"Show costs for the last 7 days only."`
 2. System table data can lag by up to 24 hours in some Databricks configurations.
-3. For critical financial decisions, cross-reference with the Databricks billing console.
+3. Remember that all `$` figures are **list-price DBU estimates**, not finance-grade billing numbers. For critical financial decisions, cross-reference with the Databricks billing console.
 
 ---
 
@@ -261,17 +271,17 @@ status: current
 
 ---
 
-### Streaming interruptions
+### Garbled or unreadable terminal output
 
-**Symptom:** The real-time stream in the Web UI stops and then resumes, or shows partial content.
+**Symptom:** The output shows raw escape codes, or Rich formatting doesn't render well in your terminal or when piping to a file.
 
-**Cause:** Network interruptions between your browser and the server, or SSE connection timeouts.
+**Cause:** Some terminals and pipelines don't handle ANSI color / Rich formatting.
 
 **Solution:**
 
-1. Check your network connection.
-2. Refresh the page. The conversation history is preserved, so you will not lose data.
-3. If the issue happens frequently, check with your administrator about proxy or load balancer timeout settings. SSE connections need long-lived HTTP connections.
+1. Use plain text: `starboard --plain --goal "..."`.
+2. Disable color: `starboard --no-color --goal "..."` (also respects the `NO_COLOR` env var).
+3. For scripting, use `--json` to emit a structured envelope instead of formatted text.
 
 ---
 
@@ -279,17 +289,16 @@ status: current
 
 Escalate to your Starboard administrator if:
 
-- The server health endpoint (`/health/ready`) returns errors
-- You see persistent 500 errors in the Web UI
+- `starboard auth status` succeeds but analyses consistently fail with permission errors
 - The same analysis works for other users but not for you (possible permissions issue)
 - Cost figures are consistently wrong after checking time ranges and data lag
 - The agent repeatedly fails on the same request with no clear error message
 
 **Information to provide:**
 
-- The exact question or prompt you sent
-- The error message (if any)
-- The conversation ID (shown in the Web UI sidebar or CLI output)
+- The exact command or prompt you ran
+- The error message (if any) — re-run with `--debug` to capture more detail
+- The session name if you used `--session`
 - The time the error occurred
 - Your Databricks workspace URL
 
@@ -299,20 +308,19 @@ Escalate to your Starboard administrator if:
 
 | Error Message | Likely Cause | Quick Fix |
 |--------------|-------------|-----------|
-| "Connection refused" | Backend not running | Start with `make dev-server` |
-| "Authentication failed" | Invalid or expired token | Regenerate `DATABRICKS_TOKEN` |
+| "No Databricks auth resolved" | No usable credentials | `starboard auth login` or set `DATABRICKS_HOST`/`DATABRICKS_TOKEN` |
+| "LLM_API_KEY not set" | Missing LLM key | `export LLM_API_KEY="..."` |
+| "Authentication failed" | Invalid or expired credentials | `starboard auth status`, then re-login |
 | "Statement not found" | Invalid or expired statement ID | Verify the ID and workspace |
 | "Permission denied" | Insufficient Databricks permissions | Request access from admin |
-| "Token budget exhausted" | Analysis too complex | Simplify the question or increase budget |
+| "Token budget exhausted" | Analysis too complex | Simplify the question or raise `--llm-max-tokens` |
 | "Rate limit exceeded" | Too many LLM API calls | Wait and retry |
-| "Timeout" | LLM or Databricks API slow | Retry or increase timeout |
-| "Agent error" | Unhandled exception in agent | Report to administrator |
+| `pip install 'starboard[...]'` error | A chosen backend needs an extra | Install the named extra |
 
 ---
 
 ## Next Steps
 
-- [Web Interface Guide](web-ui.md) -- Full Web UI reference
 - [CLI Reference](cli.md) -- Command-line options and flags
 - [Interruptible Reasoning](interruptible-reasoning.md) -- Guide agents mid-analysis
 - [Understanding Reports](understanding-reports.md) -- Interpret agent output

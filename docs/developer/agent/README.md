@@ -131,4 +131,4 @@ See [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md#handoff-context) for ful
 - [Agent Documentation Index](../../agents/README.md) -- All agents overview
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md) -- System design
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md) -- Tool system design
-- [Frontend Architecture](../../FRONTEND_ARCHITECTURE.md) -- Frontend patterns
+- [Report UI Guidelines](REPORT_UI_GUIDELINES.md) -- Report rendering contract for consuming UIs

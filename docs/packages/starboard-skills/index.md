@@ -6,7 +6,9 @@ Lightweight Claude skill files and Databricks helper scripts for dual-mode Claud
 
 `starboard-skills` is a lightweight package providing:
 
-- **Claude Skill Files**: Nine domain-specific skills for Claude Code and Cursor
+- **Claude Skill Files**: Ten domain-specific skills for Claude Code and Cursor. This is
+  the **canonical** skills source of truth, mirrored into `plugin/skills/` by
+  `scripts/vendor_plugin_skills.py` (drift-checked by `make vendor-skills-check`).
 - **Helper Scripts**: Thin Databricks data-fetching scripts (no LLM, no agents)
 - **Dual-Mode Operation**: Works with or without a running `starboard-mcp` server
 
@@ -68,16 +70,17 @@ starboard-skills/
 │       ├── diagnostic.py   # Diagnostic data fetching
 │       └── __main__.py     # Entry: starboard-helper <domain> <command>
 └── skills/
-    └── starboard/          # Claude skill files (one per domain)
+    └── starboard/          # Claude skill files (10, canonical source of truth)
+        ├── starboard-analyze/
+        ├── starboard-cluster/
+        ├── starboard-diagnostic/
+        ├── starboard-discovery/
+        ├── starboard-finops/
         ├── starboard-job/
         ├── starboard-query/
-        ├── starboard-warehouse/
         ├── starboard-uc/
-        ├── starboard-cluster/
-        ├── starboard-finops/
-        ├── starboard-diagnostic/
-        ├── starboard-analyze/
-        └── starboard-discovery/
+        ├── starboard-warehouse/
+        └── starboard-workload-review/
 ```
 
 ## Skills
@@ -92,10 +95,11 @@ starboard-skills/
 | `starboard-finops` | Cost analysis | `mcp__starboard__analytics_agent` | `starboard-helper finops fetch` |
 | `starboard-diagnostic` | Troubleshooting | `mcp__starboard__diagnostic_agent` | `starboard-helper diagnostic fetch` |
 | `starboard-analyze` | Cross-domain | Multiple MCP tools | Multiple helper commands |
-| `starboard-discovery` | Workspace health | `mcp__starboard__job_agent` | `starboard-helper discovery fetch` |
+| `starboard-discovery` | Workspace health | `mcp__starboard__discovery_agent` | `starboard-helper discovery fetch` |
+| `starboard-workload-review` | Ranked, evidence-cited review | `mcp__starboard__*` review tools | `starboard-helper` (review flow) |
 
 ## Quick Links
 
-- [Package README](../../../packages/starboard-skills/README.md) -- Installation and quick start
+- [Package README](https://github.com/starboard-ai/job-agent/blob/main/packages/starboard-skills/README.md) -- Installation and quick start
 - [Skills Guide](../../SKILLS.md) -- Complete skills documentation
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md) -- Full system design

@@ -437,5 +437,5 @@ graph TD
 - [Agent Implementation Guide](../../developer/agent/IMPLEMENTATION_GUIDE.md)
 - [Tool Architecture](../../TOOL_ARCHITECTURE.md)
 - [System Architecture](../../architecture/SYSTEM_ARCHITECTURE.md)
-- [Discovery Prompt Source (v2)](../../../packages/starboard/starboard/prompts/discovery/v2.py)
-- [Tool Categories](../../../packages/starboard/starboard/agents/tool_categories.py)
+- [Discovery Prompt Source (v2)](https://github.com/starboard-ai/job-agent/blob/main/packages/starboard/starboard/prompts/discovery/v2.py)
+- [Tool Categories](https://github.com/starboard-ai/job-agent/blob/main/packages/starboard/starboard/agents/tool_categories.py)

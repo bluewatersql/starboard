@@ -96,9 +96,10 @@ make install-dev
 ```
 
 **Installs:**
-- All three packages (core, server, cli) in editable mode
+- All workspace packages (`starboard-core`, `starboard`, `starboard-skills`,
+  `starboard-internal`, `starboard-plugin-sample`) in editable mode
 - Test frameworks (pytest, pytest-cov, pytest-asyncio, etc.)
-- Linting/formatting tools (ruff, mypy)
+- Linting/formatting/type + import-linter tools (ruff, mypy, import-linter)
 - Development tools (uvicorn with auto-reload)
 
 **Use case:** Full development environment (recommended).
@@ -178,12 +179,27 @@ make test-integration
 make test-golden
 ```
 
-Tests for:
-- Prompt outputs
-- LLM response schemas
-- Data transformation snapshots
+Runs `tests/golden/` — prompt outputs, LLM response schemas, data-transformation
+snapshots. **Use case:** ensure prompt changes don't break existing behavior.
 
-**Use case:** Ensure prompt changes don't break existing behavior.
+#### Contract Tests
+
+```bash
+make test-contract
+```
+
+Runs `tests/contract/` — agent/tool output-contract tests.
+
+#### Architecture Tests
+
+```bash
+make test-architecture             # import-linter contracts (lint-imports)
+make test-architecture-guidelines  # pytest tests/architecture/ (GUIDELINE-* suite)
+```
+
+`make test-architecture` enforces the 4 **kept** import-linter contracts (kernel purity;
+`starboard_x` stdlib-only diagnostics; `starboard_x` SDK-free analyzers; public packages
+import no `starboard_internal`). It is part of `make check`.
 
 #### Coverage Report
 
@@ -278,10 +294,11 @@ make pre-commit
 make check
 ```
 
-**Runs:**
-1. Linting
-2. Type checking
-3. Unit tests
+**Runs (in order):**
+1. `lint`
+2. `type-check`
+3. `test-unit`
+4. `test-architecture` (import-linter contracts)
 
 **Use case:** CI/CD pipeline, final verification before merge.
 
@@ -309,6 +326,21 @@ make build
 - Source distribution (`.tar.gz`)
 
 **Use case:** Preparing for PyPI release or Docker image.
+
+---
+
+## Documentation & Other Targets
+
+```bash
+make docs                 # generate diagrams then `mkdocs build --strict`
+make docs-serve           # local preview (mkdocs serve)
+make vendor-skills        # mirror canonical skills into plugin/skills/
+make vendor-skills-check  # fail if plugin/skills drifted from canonical
+make build-rag-references # regenerate default RAG reference files
+make audit-deps           # pip-audit --strict
+```
+
+> `mkdocs build --strict` fails on stale nav; nav reconciliation is a lead task.
 
 ---
 

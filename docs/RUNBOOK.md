@@ -132,9 +132,10 @@ curl -s http://localhost:8000/health/ready | jq .
 
 ### Resolution
 
-1. **Reduce `max_steps`** -- Lower the maximum reasoning steps per turn via the
-   `LLM_MAX_TOKENS` environment variable.
-2. **Enable message compression** -- Reduces context window usage by 30-50%.
+1. **Lower the token budget** -- Reduce `LLM_MAX_TOKENS` to cap per-turn work.
+2. **Reduce reasoning depth** -- Verbose system prompts and many reasoning steps
+   inflate latency. (Context history is summarized automatically by the context
+   strategy once it exceeds internal thresholds; there is no compression toggle.)
 3. **Check Databricks API status** -- External API degradation is the most common
    cause of high latency.
 4. **Review retry backoff settings** -- Aggressive retries on rate-limited calls
@@ -163,7 +164,7 @@ curl -s http://localhost:8000/health/ready | jq .
 |-------|---------------|
 | Large conversation history | Check `tokens_used` per request |
 | Too many reasoning steps | Check `reasoning_steps` count |
-| Missing message compression | Check if compression is enabled |
+| Semantic cache disabled | Check `ENABLE_SEMANTIC_CACHE` |
 | Infinite reasoning loops | Check for repeated tool calls in logs |
 
 ### Diagnosis Steps
@@ -182,7 +183,9 @@ curl -s http://localhost:8000/health/ready | jq .
 
 ### Resolution
 
-1. **Enable message compression** if not already active (reduces token usage 30-50%).
+1. **Enable semantic caching** -- Set `ENABLE_SEMANTIC_CACHE=true` so similar queries
+   reuse cached results instead of re-running the LLM. (Context history is already
+   summarized automatically; there is no compression toggle to enable.)
 2. **Set token budgets per session** -- Configure `LLM_MAX_TOKENS` appropriately:
    - Simple queries: 50,000 tokens
    - Complex queries: 100,000 tokens

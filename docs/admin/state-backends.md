@@ -2,6 +2,9 @@
 
 This guide covers the configuration and management of Starboard's pluggable state backend system. The server uses a **repository pattern** with multiple storage backends for conversation state, long-term memory, and caching, allowing you to choose the right backend for each deployment environment.
 
+!!! info "Store-free by default"
+    Starboard defaults to `database_backend="memory"` — the in-memory adapters carry **no external driver**, so `pip install starboard` runs without any database. Every driver-backed backend (`sqlite`, `postgres`, `lakebase`) is an **opt-in extra**; the UC-native backend (`uc`) is opt-in and never auto-selected. Each driver-backed branch lazy-imports its driver and raises an actionable `pip install 'starboard[<extra>]'` error when the matching extra is missing. Source of truth: `infra/core/config.py` (`EnvConfig`) and `infra/core/state_factory.py`.
+
 ---
 
 ## Architecture Overview
@@ -10,38 +13,42 @@ Starboard manages three distinct storage concerns, each with its own backend sel
 
 | Concern | Purpose | Interface | Backends |
 |---|---|---|---|
-| **State Store** | Conversation persistence (messages, metadata) | `StateStore` | SQLite, Postgres, Databricks Lakebase, InMemory |
-| **Memory Store** | Long-term memory (episodes, facts, user profiles) | `MemoryStore` | SQLite, Postgres, Databricks Lakebase, InMemory |
-| **Cache Store** | Key-value caching (tool results, sessions) | `CacheStore` | Redis, InMemory |
+| **State Store** | Conversation persistence (messages, metadata) | `StateStore` | InMemory (default), SQLite, Postgres, Databricks Lakebase, UC-native |
+| **Memory Store** | Long-term memory (episodes, facts, user profiles) | `MemoryStore` | InMemory (default), SQLite, Postgres, Databricks Lakebase, UC-native |
+| **Cache Store** | Key-value caching (tool results, sessions) | `CacheStore` | InMemory (default), Redis |
 
 The `Container` class in `infra/core/container.py` manages the lifecycle of all stores. On startup it calls the factory functions in `infra/core/state_factory.py` to create the appropriate implementations based on your environment configuration.
 
 ```
 Container.initialize()
     |
-    +-- create_state_store(config)   --> SQLiteStateStore | PostgresStateStore | ...
-    +-- create_memory_store(config)  --> SQLiteMemoryStore | PostgresMemoryStore | ...
-    +-- create_cache_store(config)   --> RedisCacheStore | InMemoryCacheStore
+    +-- create_state_store(config)   --> InMemoryStateStore | SQLiteStateStore | PostgresStateStore | ...
+    +-- create_memory_store(config)  --> InMemoryMemoryStore | SQLiteMemoryStore | PostgresMemoryStore | ...
+    +-- create_cache_store(config)   --> InMemoryCacheStore | RedisCacheStore
     +-- _initialize_foundation_components()
-            +-- Vector store (sqlite-vec or in-memory)
-            +-- Reflexion store
-            +-- Semantic cache
+            +-- Vector store (default: none — on-disk reference files; opt-in sqlite-vec / in-memory / managed Vector Search)
+            +-- Reflexion store (off by default; opt-in behind an extra)
+            +-- Semantic cache (TTL-only by default; similarity path opt-in)
 ```
 
 ---
 
 ## Backend Selection Matrix
 
-| Backend | Environment | Persistence | Vector Search | Scaling | Use Case |
-|---|---|---|---|---|---|
-| **InMemory** | `dev`, `test` | None | No | Single process | Unit tests, quick prototyping |
-| **SQLite** | `dev` | File-based | sqlite-vec | Single instance | Local development, demos |
-| **PostgreSQL** | `staging`, `production` | Full | pgvector | Horizontal | Standard production |
-| **Databricks Lakebase** | `staging`, `production` | Full | pgvector | Horizontal | Databricks-native deployments |
-| **Redis** | Any | TTL-based | No | Clusterable | Session cache, rate limiting |
+| Backend | `DATABASE_BACKEND` | Environment | Required extra | Persistence | Scaling | Use Case |
+|---|---|---|---|---|---|---|
+| **InMemory** | `memory` (default) | any | none | None (lost on restart) | Single process | Default; CLI, tests, quick prototyping |
+| **SQLite** | `sqlite` | `dev`, `test` | `starboard[sqlite]` | File-based | Single instance | Local development, demos |
+| **PostgreSQL** | `postgres` | `staging`, `production` | `starboard[postgres]` + `DATABASE_URL` | Full | Horizontal | Standard production |
+| **Databricks Lakebase** | `lakebase` | `staging`, `production` | `starboard[postgres]` | Full | Horizontal | Databricks-native (OAuth) deployments |
+| **UC-native** | `uc` | any (opt-in) | — (uses the Databricks SDK) | Governed, low-write | Serverless | Zero-external-DB durable state via Statement Execution |
+| **Redis** (cache only) | via `CACHE_BACKEND=redis` | any | `starboard[redis]` + `REDIS_URL` | TTL-based | Clusterable | Session cache, rate limiting |
+
+!!! warning "`databricks` is a deprecated alias"
+    The `DATABASE_BACKEND=databricks` value is a **deprecated alias** for `lakebase` (it maps to `lakebase` with a one-time `DeprecationWarning`). Use `lakebase` for the Lakebase/Postgres adapter. Do not confuse it with `uc`, which is the separate Unity Catalog native (Statement Execution) backend.
 
 !!! tip "Quick rule of thumb"
-    Use **SQLite** for local development, **Postgres** for standard production deployments, and **Databricks Lakebase** when running inside a Databricks workspace with OAuth authentication.
+    The store-free **memory** default is fine for the CLI, notebooks, and single-process use. Add **SQLite** (`starboard[sqlite]`) for a persistent local dev store, **Postgres** (`starboard[postgres]`) for standard horizontally-scaled production, **Lakebase** for Databricks-native deployments (OAuth, also via `starboard[postgres]`), and **UC-native** (`uc`) when you want durable governed state with no external database.
 
 ---
 
@@ -52,9 +59,9 @@ Container.initialize()
 | Variable | Values | Default | Description |
 |---|---|---|---|
 | `ENVIRONMENT` | `dev`, `test`, `staging`, `production` | `dev` | Determines which factory path is used |
-| `DATABASE_BACKEND` | `sqlite`, `postgres`, `databricks` | `sqlite` | Primary state/memory backend |
-| `DATABASE_URL` | Connection string | -- | Required for `postgres` and `databricks` backends |
-| `CACHE_BACKEND` | `memory`, `redis`, `postgres` | `memory` | Cache layer backend |
+| `DATABASE_BACKEND` | `memory`, `sqlite`, `postgres`, `lakebase`, `uc` | `memory` | Primary state/memory backend (`databricks` = deprecated alias for `lakebase`) |
+| `DATABASE_URL` | Connection string | -- | Required for the `postgres` and `lakebase` backends |
+| `CACHE_BACKEND` | `memory`, `redis`, `postgres` | `memory` | Cache layer backend (Redis is selected when `REDIS_URL` is set) |
 
 ### SQLite Configuration
 
@@ -99,31 +106,39 @@ Container.initialize()
 
 | Variable | Values | Default | Description |
 |---|---|---|---|
-| `VECTOR_BACKEND` | `sqlite`, `chroma`, `databricks`, `postgres` | `sqlite` | Vector store backend |
-| `EMBEDDING_DIMENSION` | Integer | `1024` | Embedding vector dimensionality |
+| `VECTOR_BACKEND` | `none`, `inmemory`, `sqlite`, `chroma`, `databricks`, `postgres`, `vectorsearch` | `none` | Vector store backend. `none` uses on-disk curated reference files (no embeddings, no vector DB) |
+| `VECTORSEARCH_COLUMNS` | JSON list | `[]` | Required for `vectorsearch`; explicit index column names (wildcard `["*"]` is invalid → managed retrieval stays quarantined) |
+| `EMBEDDING_DIMENSION` | Integer | `1024` | Embedding vector dimensionality (only used on vector paths) |
 | `EMBEDDING_MODEL` | Model name | `databricks-bge-large-en` | Embedding model for vector generation |
 | `EMBEDDING_BASE_URL` | URL | `` | Separate base URL for embedding API (uses LLM_BASE_URL when empty) |
 | `EMBEDDING_CACHE_TTL` | Seconds | `86400` | Embedding cache TTL (24 hours) |
+
+!!! note "Default RAG path is store-free"
+    With `VECTOR_BACKEND=none` (the default), the analytics context is built from on-disk curated reference files (`starboard_core/rag/knowledge/domains/*.md`) plus query packs — **no embeddings and no vector store**. `inmemory`/`sqlite` (via `starboard[sqlite]`, sqlite-vec) and the managed `vectorsearch` path (via `starboard[vectorsearch]`) are opt-in ANN escape hatches. See [Configuration](../CONFIGURATION.md) for the full extras taxonomy.
 
 ### Semantic Cache Configuration
 
 | Variable | Default | Description |
 |---|---|---|
-| `ENABLE_SEMANTIC_CACHE` | `true` | Enable/disable semantic caching |
-| `SEMANTIC_CACHE_THRESHOLD` | `0.95` | Minimum cosine similarity for cache hit (0.0-1.0) |
+| `ENABLE_SEMANTIC_CACHE` | `true` | Enable/disable the semantic cache. Runs **TTL-only** (exact-key) by default with no vector dependency |
+| `SEMANTIC_CACHE_THRESHOLD` | `0.95` | Minimum cosine similarity for a cache hit — **only consulted on the opt-in similarity path** (selected when a real `vector_backend` is set) |
+
+!!! note "Semantic cache is TTL-only by default"
+    Even with `ENABLE_SEMANTIC_CACHE=true`, the cache is an exact-key TTL cache unless you opt into a vector backend (`inmemory`/`sqlite`/`vectorsearch`). The similarity threshold is ignored on the default path. Reflexion (episodic agent learning, `ENABLE_REFLEXION`) is likewise **off by default** and opt-in behind `starboard[sqlite]` / `starboard[vectorsearch]`.
 
 ---
 
 ## Backend Details
 
-### 1. InMemory
+### 1. InMemory (default)
 
-The in-memory backend stores all data in Python dictionaries. Data is lost when the process exits.
+The in-memory backend stores all data in Python dictionaries. Data is lost when the process exits. It is the **default** (`DATABASE_BACKEND=memory`) and carries **no external driver**, so it works on a bare `pip install starboard`.
 
 **Implementation:** `adapters/state/inmemory/state_store.py` (InMemoryStateStore)
 
 **When to use:**
 
+- The default for the CLI, notebooks, and single-process usage
 - Unit tests requiring isolation between test cases
 - Quick local prototyping without file system setup
 - CI/CD pipelines where persistence is not needed
@@ -131,20 +146,27 @@ The in-memory backend stores all data in Python dictionaries. Data is lost when 
 **Configuration:**
 
 ```bash
-ENVIRONMENT=test
-# No additional configuration needed -- InMemory is the default for test
+# In-memory is the default; no configuration is required.
+DATABASE_BACKEND=memory
 ```
 
-The factory automatically selects InMemory when `ENVIRONMENT=test` (using in-memory SQLite for the state store) or when `ENVIRONMENT=dev` with a non-sqlite `DATABASE_BACKEND`.
+**Factory selection (`state_factory.py`):**
+
+- `ENVIRONMENT=dev` with `DATABASE_BACKEND` anything other than `sqlite` → InMemory.
+- `ENVIRONMENT=staging`/`production` with `DATABASE_BACKEND=memory` → InMemory (explicit opt-in).
+- `ENVIRONMENT=test` → the state and memory stores use **in-memory SQLite** (`SQLiteStateStore(":memory:")`), which requires the `starboard[sqlite]` extra (present in CI).
 
 !!! note "Test environment behavior"
-    When `ENVIRONMENT=test`, the state store uses `SQLiteStateStore(":memory:")` -- an in-memory SQLite database that provides full SQL functionality with test isolation. The memory store also uses `SQLiteMemoryStore(":memory:")`.
+    When `ENVIRONMENT=test`, the state store uses `SQLiteStateStore(":memory:")` -- an in-memory SQLite database that provides full SQL functionality with test isolation. The memory store also uses `SQLiteMemoryStore(":memory:")`. Both require the `sqlite` extra.
 
 ---
 
 ### 2. SQLite
 
 SQLite provides file-based persistence suitable for single-instance local development. The implementation uses `aiosqlite` for async operations with WAL mode for improved concurrency.
+
+!!! warning "Requires the `sqlite` extra"
+    `DATABASE_BACKEND=sqlite` needs `pip install 'starboard[sqlite]'` (installs `aiosqlite` + `sqlite-vec`). Without it, the factory raises an actionable `RuntimeError` naming the missing driver and the exact `pip install` command.
 
 **Implementation:** `adapters/state/sqlite/state_store.py` (SQLiteStateStore)
 
@@ -160,7 +182,7 @@ SQLite provides file-based persistence suitable for single-instance local develo
 
 ```bash
 ENVIRONMENT=dev
-DATABASE_BACKEND=sqlite
+DATABASE_BACKEND=sqlite   # requires: pip install 'starboard[sqlite]'
 
 # Optional: customize file locations (defaults shown)
 SQLITE_STATE_PATH=./dev_data/starboard_state.db
@@ -186,14 +208,17 @@ CREATE TABLE IF NOT EXISTS conversations (
 
 The schema also includes `users`, `user_sessions`, and `user_feedback` tables, all created automatically on first connection.
 
-!!! warning "Not for production"
-    The configuration validator will emit a warning if `DATABASE_BACKEND=sqlite` is used with `ENVIRONMENT=staging` or `ENVIRONMENT=production`. SQLite does not support concurrent writes from multiple processes, making it unsuitable for horizontally scaled deployments.
+!!! danger "Not for production"
+    `validate_config()` **rejects** `DATABASE_BACKEND=sqlite` with `ENVIRONMENT=staging` or `ENVIRONMENT=production` (a hard validation error), and the state factory also raises `ValueError` for that combination. SQLite does not support concurrent writes from multiple processes, making it unsuitable for horizontally scaled deployments. Use `postgres`, `lakebase`, `uc`, or `memory` in staging/production.
 
 ---
 
 ### 3. PostgreSQL
 
 PostgreSQL is the standard production backend. It uses `asyncpg` for high-performance async database access with connection pooling.
+
+!!! warning "Requires the `postgres` extra + `DATABASE_URL`"
+    `DATABASE_BACKEND=postgres` needs `pip install 'starboard[postgres]'` (installs `asyncpg`) and a `DATABASE_URL`. pgvector-backed vector recall in the memory store additionally uses the `starboard[memory]` extra (`pgvector` + `asyncpg`).
 
 **Implementation:** `adapters/state/postgres/state_store.py` (PostgresStateStore)
 
@@ -240,7 +265,10 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 ### 4. Databricks Lakebase
 
-Lakebase is Databricks' managed PostgreSQL-compatible service. The Starboard adapter extends the PostgreSQL backend and adds automatic OAuth token lifecycle management.
+Lakebase is Databricks' managed PostgreSQL-compatible service. The Starboard adapter extends the PostgreSQL backend and adds automatic OAuth token lifecycle management. Select it with `DATABASE_BACKEND=lakebase`.
+
+!!! warning "Requires the `postgres` extra"
+    The Lakebase adapter reuses `asyncpg`, so it needs `pip install 'starboard[postgres]'` (there is no separate `lakebase` extra). `DATABASE_BACKEND=databricks` still works as a **deprecated alias** for `lakebase` (one-time `DeprecationWarning`).
 
 **Implementation:** `adapters/state/databricks/state_store.py` (DatabricksLakebaseStateStore)
 
@@ -258,7 +286,7 @@ The Lakebase adapter inherits all CRUD operations from `PostgresStateStore` and 
 
 ```bash
 ENVIRONMENT=production
-DATABASE_BACKEND=databricks
+DATABASE_BACKEND=lakebase   # requires: pip install 'starboard[postgres]'
 
 # Required Lakebase settings
 LAKEBASE_INSTANCE_NAME=my-starboard-lakebase
@@ -296,7 +324,29 @@ connect()
 
 ---
 
-### 5. Redis (Cache Only)
+### 5. UC-native (Unity Catalog Statement Execution)
+
+The UC-native backend (`DATABASE_BACKEND=uc`) stores governed, low-write state in Unity Catalog tables via the Databricks **Statement Execution** API — no external database, no driver extra. It is **opt-in and never auto-selected**: the factory checks for `uc` first and honors it in every environment.
+
+**Implementation:** `adapters/state/uc/` (`UCStateStore`, `UCMemoryStore`) over `infra/storage/uc_adapter.py` (`UCStorageAdapter`).
+
+**How it authenticates:** it reuses the same `WorkspaceClient` the auth resolver builds (no new credentials — see [auth by subtraction](../CONFIGURATION.md)) and a SQL warehouse. The warehouse id comes from `STARBOARD_WAREHOUSE_ID`, falling back to `DATABRICKS_WAREHOUSE_ID`.
+
+**Configuration:**
+
+```bash
+DATABASE_BACKEND=uc
+
+# Warehouse used for Statement Execution (falls back to DATABRICKS_WAREHOUSE_ID)
+STARBOARD_WAREHOUSE_ID=your_warehouse_id
+```
+
+!!! note "Recency-only memory"
+    The UC-native memory store provides recency-ordered recall (no vector similarity). Use it when you want durable, governed state without standing up Postgres/Lakebase or embedding infrastructure.
+
+---
+
+### 6. Redis (Cache Only)
 
 Redis serves as the cache backend for session data, rate limiting, and key-value caching. It does not store conversations or long-term memory.
 
@@ -459,7 +509,7 @@ Since Lakebase is PostgreSQL-compatible, migration is straightforward:
 3. **Update environment variables:**
 
     ```bash
-    DATABASE_BACKEND=databricks
+    DATABASE_BACKEND=lakebase   # requires: pip install 'starboard[postgres]'
     LAKEBASE_INSTANCE_NAME=my-starboard-lakebase
     LAKEBASE_DATABASE_NAME=starboard_db
     ```
@@ -467,7 +517,7 @@ Since Lakebase is PostgreSQL-compatible, migration is straightforward:
 4. **Remove `DATABASE_URL`** -- the Lakebase adapter builds its own connection string using the SDK.
 
 !!! tip "Test with a staging environment"
-    Always test backend migrations in a staging environment first. The configuration validator will reject `DATABASE_BACKEND=sqlite` for staging/production, helping prevent accidental misconfigurations.
+    Always test backend migrations in a staging environment first. `validate_config()` rejects `DATABASE_BACKEND=sqlite` for staging/production, helping prevent accidental misconfigurations.
 
 ---
 
@@ -553,7 +603,7 @@ Run validation manually to check your configuration:
 from starboard.infra.core.config import EnvConfig
 
 config = EnvConfig.from_env()
-config.validate()  # Raises ValueError with all issues listed
+config.validate_config()  # Raises ValueError with all issues listed
 ```
 
 ### Container not initialized

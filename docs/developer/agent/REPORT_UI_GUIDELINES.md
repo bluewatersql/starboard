@@ -1,3 +1,7 @@
+---
+render_macros: false
+---
+
 # Agent Report UI Guidelines
 
 > **Version**: 1.1.0  
@@ -250,14 +254,15 @@ A **report type** is a discriminated union that determines how agent output is r
                                     │
                                     ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ 4. SSE STREAMING                                                         │
+│ 4. EVENT SERIALIZATION (in-process stream)                              │
 │    packages/starboard/starboard/agents/                    │
 │                                                                          │
 │    - domain/domain_agent.py: complete tool unwrapping                    │
 │    - conversation/multi_agent_manager.py: attach complete_report         │
 │    - events/user_events.py: FinalOutputEvent.to_sse_data()               │
 │                                                                          │
-│    Streams complete_report + formatted_markdown to frontend              │
+│    Serializes complete_report + formatted_markdown as JSON on the        │
+│    in-process event stream (CLI/SDK). NOT an HTTP SSE endpoint.          │
 └──────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -754,8 +759,8 @@ To hide a tool from the UI, set `hidden_in_ui=True`:
 
 | Test Type | Location | Coverage |
 |-----------|----------|----------|
-| **Pydantic Schema** | `tests/unit/domain/models/test_{type}_schemas.py` | Model validation, defaults |
-| **Formatter** | `tests/unit/agents/report_formatters/test_{type}_formatter.py` | Markdown output |
+| **Pydantic Schema** | `packages/starboard/tests/unit/domain/models/test_{type}_schemas.py` | Model validation, defaults |
+| **Formatter** | `packages/starboard/tests/unit/agents/report_formatters/test_{type}_formatter.py` | Markdown output |
 | **Golden/Snapshot** | `tests/golden/test_{type}_report_schema.py` | Schema stability |
 | **Component** | `frontend/.../reports/__tests__/{Type}ReportBubble.test.tsx` | Rendering |
 | **Contract** | `tests/contract/{type}_report_schema.json` | API contract |

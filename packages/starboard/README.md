@@ -1,18 +1,27 @@
-# Starboard Server
+# Starboard
 
-> Last verified: 2026-03-24
+> Last verified: 2026-08-27
 
-FastAPI backend server for the Starboard AI Agent platform.
+The full-experience package for the Starboard AI Agent platform: the **CLI**, the
+**MCP server** (stdio + optional Streamable HTTP transport), the **multi-agent
+system**, and the **tool catalog**. It hard-depends on the `starboard-core` kernel.
 
 ## Overview
 
-`starboard-server` is the core backend package providing:
+`starboard` provides:
 
-- **REST API**: Conversation management, message handling, and health endpoints
-- **SSE Streaming**: Real-time Server-Sent Events for agent reasoning progress
-- **Multi-Agent System**: 8 domain agents + Intent Router with dynamic tool selection
-- **Tool Implementations**: 45+ tools across 9 categories for Databricks API integrations
-- **LLM Adapters**: Multi-provider support (OpenAI, Azure OpenAI, Databricks Model Serving)
+- **CLI (`starboard`)** — direct, in-process agent execution with live terminal
+  progress, plus the deterministic surfaces `starboard review`, `starboard genie ask`,
+  `starboard --discover`, and `starboard auth`.
+- **MCP server** — `starboard-mcp` (stdio transport, no FastAPI) and an optional
+  Streamable HTTP transport mounted at `/mcp` by the `starboard-server` app.
+- **Multi-Agent System** — 8 domain agents + Intent Router with dynamic tool selection.
+- **Tool Implementations** — 45+ tools across categories for Databricks API integrations.
+- **LLM Adapters** — OpenAI-compatible providers (OpenAI, Databricks Model Serving).
+
+The primary consumption paths are the **CLI** and the **stdio MCP server**. The
+FastAPI app (`starboard-server`) is a thin process that exposes health probes and
+the optional `/mcp` HTTP transport — it is not a REST/streaming chat backend.
 
 ## Installation
 
@@ -27,76 +36,55 @@ pip install -e ".[dev,test]"
 ## Quick Start
 
 ```bash
-# Set environment variables
+# Authenticate (auth-by-subtraction: reuses your Databricks CLI/SDK config)
 export DATABRICKS_HOST="https://your-workspace.databricks.com"
 export DATABRICKS_TOKEN="dapi..."
-export LLM_API_KEY="<your-llm-api-key>"
+export LLM_API_KEY="<your-llm-api-key>"   # or configure Databricks Model Serving
 
-# Start with make (recommended)
-make dev-server
+# Run an analysis from the CLI (in-process, no server required)
+starboard "Why is my nightly ETL job slow?"
 
-# Or with uvicorn directly (note the --factory flag)
+# Deterministic surfaces
+starboard review --rows 200
+starboard genie ask "top 10 most expensive queries last week"
+starboard --discover
+```
+
+To run the stdio MCP server (for Claude Code / Cursor):
+
+```bash
+starboard-mcp
+```
+
+To run the optional HTTP app (health probes + `/mcp` transport):
+
+```bash
+# via the entry point
+starboard-server
+
+# or with uvicorn directly (note the --factory flag)
 uvicorn starboard.main:create_app --factory --host 0.0.0.0 --port 8000
 ```
 
-Server starts on `http://localhost:8000`.
+Server starts on `http://localhost:8000`. **Entry point**: `starboard.main:create_app`.
 
-**Entry point**: `starboard.main:app` via `starboard.main:create_app` factory.
+## HTTP Endpoints
 
-## API Documentation
-
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **OpenAPI JSON**: http://localhost:8000/openapi.json
-
-!!! note
-    API docs are disabled in production (`ENVIRONMENT=production`) to prevent schema leakage.
-
-## API Endpoints
-
-### Health Probes
+The `starboard-server` app is intentionally minimal:
 
 ```
-GET  /health/live              # Liveness probe (process alive?)
-GET  /health/ready             # Readiness probe (dependencies connected?)
+GET  /                 # Service info (name, version, status, links)
+GET  /health/live      # Liveness probe
+GET  /health/ready     # Readiness probe
+ANY  /mcp              # Streamable HTTP MCP transport (only when MCP config is present)
 ```
 
-### Chat API (`/api/chat`)
-
-```
-POST /api/chat/conversations                           # Create conversation
-GET  /api/chat/conversations                           # List conversations
-GET  /api/chat/conversations/{id}                      # Get conversation
-HEAD /api/chat/conversations/{id}                      # Check exists
-GET  /api/chat/conversations/{id}/history              # Get history
-GET  /api/chat/conversations/{id}/export               # Export (md/json)
-DELETE /api/chat/conversations/{id}                     # Delete one
-DELETE /api/chat/conversations                          # Delete all (batch)
-POST /api/chat/conversations/{id}/messages             # Send message
-POST /api/chat/conversations/{id}/inject-input         # Inject during reasoning
-POST /api/chat/conversations/{id}/respond-to-solicitation  # Answer agent question
-GET  /api/chat/conversations/{id}/checkpoints          # Get checkpoints
-GET  /api/chat/conversations/{id}/stream               # SSE event stream
-GET  /api/chat/config                                  # Server configuration
-GET  /api/chat/health                                  # Chat API health
-GET  /api/chat/me                                      # Current user info
-```
-
-### Other APIs
-
-```
-POST /api/conversations/{id}/feedback                  # Submit feedback
-GET  /api/feedback/agents/{name}/performance           # Agent metrics
-POST /api/conversations/{id}/clarifications/{cid}/respond  # Clarification
-GET  /api/data/{data_reference}                        # Cached query data
-POST /api/visualization/render                         # Render chart
-```
-
-See [API Reference](../../docs/api/API_REFERENCE.md) for complete documentation.
+Interactive API docs (`/docs`, `/redoc`, `/openapi.json`) are served outside
+production (`ENVIRONMENT=production` disables them).
 
 ## Domain Agents
 
-The server hosts 8 domain-specialized agents plus an Intent Router:
+The package hosts 8 domain-specialized agents plus an Intent Router:
 
 | Agent | Domain | Purpose |
 |-------|--------|---------|
@@ -105,47 +93,50 @@ The server hosts 8 domain-specialized agents plus an Intent Router:
 | **Job** | Job Performance | Task analysis, Spark tuning, code quality |
 | **UC** | Unity Catalog | Metadata, lineage, governance, schema drift |
 | **Cluster** | Compute | Cluster sizing, health, utilization |
-| **Analytics** | FinOps & Cost | Cost analysis, chargeback, budget forecasting |
+| **Analytics** | FinOps & Cost | Cost analysis, chargeback, budget forecasting (list-price DBU estimates) |
 | **Warehouse** | SQL Warehouses | Portfolio optimization, SLO, topology |
 | **Discovery** | Workspace Health | Resource inventory, health scoring (4-phase) |
 | **Diagnostic** | Troubleshooting | Root cause analysis, cross-domain debugging |
 
 ## Configuration
 
-Environment variables (set in `.env` or environment):
+Environment variables (set in `.env` or the environment):
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `DATABRICKS_HOST` | Databricks workspace URL | Yes | -- |
-| `DATABRICKS_TOKEN` | Databricks access token | Yes | -- |
-| `LLM_API_KEY` | LLM provider API key | Yes | -- |
+| `DATABRICKS_HOST` | Databricks workspace URL | Yes* | -- |
+| `DATABRICKS_TOKEN` | Databricks access token | Yes* | -- |
+| `LLM_API_KEY` | LLM provider API key | Yes* | -- |
 | `LLM_MODEL` | Model name | No | `databricks-claude-sonnet-4-5` |
 | `LLM_BASE_URL` | Custom OpenAI-compatible endpoint | No | -- |
 | `LOG_LEVEL` | Logging level | No | `INFO` |
-| `DATABASE_URL` | State backend URL | No | SQLite |
+| `DATABASE_URL` | State backend URL | No | in-memory (store-free) |
 
-See [Configuration Guide](../../docs/CONFIGURATION.md) for the complete reference.
+\* Auth is resolved by subtraction: Starboard reuses your Databricks CLI/SDK
+configuration where available. State is **in-memory by default** — no database to
+provision; `uc`/`sqlite`/`postgres`/`lakebase` backends are opt-in. See the
+[Configuration Guide](../../docs/CONFIGURATION.md) for the complete reference.
 
 ## Architecture
 
 ```
 starboard/
-    main.py              # FastAPI app factory (create_app)
-    api/                 # FastAPI routes and streaming
-        chat/            # Conversation and message routes
-    agents/              # Multi-agent system
-        conversation/    # Conversation manager
-        domain/          # Base domain agent
-        routing/         # Intent router
-        tools/           # Tool registry
+    main.py              # Thin FastAPI app factory (health + optional /mcp)
+    cli/                 # CLI entry points and commands (review, genie ask, auth, --discover)
+    mcp/                 # MCP server (stdio + HTTP transport), config, workspace tools
+    agents/              # Multi-agent system (routing, domain agents, tool registry)
     tools/               # Tool implementations
         domain/          # Pure business logic
         services/        # Orchestration layer
         adapters/        # I/O adapters (Databricks, etc.)
     prompts/             # Domain-specific system prompts
-    infra/               # Config, logging, DI, observability
+    domain/              # Package-local domain models
+    ports/               # Kernel port wiring + capability discovery
+    repositories/        # State/persistence repositories
     services/            # Business services
     adapters/            # External service adapters (LLM, Databricks)
+    sdk/                 # In-process client (from starboard.sdk import StarboardClient)
+    infra/               # Config, logging, DI, observability, auth
 ```
 
 ## Development
@@ -157,9 +148,6 @@ uv pip install -e ".[dev,test]"
 # Run tests
 pytest
 
-# Run with hot reload
-uvicorn starboard.main:create_app --factory --reload --port 8000
-
 # Lint and type check
 make lint && make type-check
 ```
@@ -167,7 +155,7 @@ make lint && make type-check
 ## Documentation
 
 - [System Architecture](../../docs/architecture/SYSTEM_ARCHITECTURE.md) -- Full system design
-- [API Reference](../../docs/api/API_REFERENCE.md) -- REST API specification
-- [Tool Catalog](../../docs/tools/TOOL_CATALOG.md) -- All 45+ tools
+- [API Reference](../../docs/api/API_REFERENCE.md) -- Programmatic surfaces (CLI, MCP, SDK)
+- [Tool Catalog](../../docs/tools/TOOL_CATALOG.md) -- Tool reference
 - [Configuration Guide](../../docs/CONFIGURATION.md) -- Environment variables
 - [Testing Guide](../../docs/TESTING.md) -- Testing strategies

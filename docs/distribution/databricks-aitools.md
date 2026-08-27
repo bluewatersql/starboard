@@ -10,7 +10,7 @@
 > like Starboard is installable through `databricks aitools` at all, and by what
 > inclusion/manifest process — the docs describe that command as installing
 > **Databricks-authored** skills only. Those items are listed under
-> [Confirmation needed](#confirmation-needed-owner-questions). Per D-1.6 this task is
+> [Confirmation needed](#5-confirmation-needed-owner-questions). Per D-1.6 this task is
 > **packaging + docs**, not a redesign: the plugin/skills bundle is deliberately
 > aitools-agnostic, so adopting whatever the owner confirms is a packaging step.
 
@@ -20,7 +20,9 @@ The externally-distributed artifact is **skills only** — the canonical Starboa
 tree, with no MCP server and no LLM credentials required. Out of the box every skill
 takes the `starboard-helper` CLI path (the Tier-0/Tier-1 "no-server" UX).
 
-Canonical source of truth (single tree, vendored into the plugin at build time — D-1.5):
+Canonical source of truth (single tree, vendored into the plugin by
+`scripts/vendor_plugin_skills.py`; drift-checked by `make vendor-skills-check` — D-1.5).
+The tree has **10** skills:
 
 ```
 packages/starboard-skills/skills/starboard/
@@ -30,13 +32,14 @@ packages/starboard-skills/skills/starboard/
 │   ├── SKILL.md
 │   ├── reference.md
 │   ├── examples.md
-│   └── scripts/run.sh          # Tier-1 helper: python -m starboard_core.x.diagnostic
+│   └── scripts/run.sh          # Tier-1 helper: python -m starboard_x.diagnostic
 ├── starboard-discovery/SKILL.md
 ├── starboard-finops/SKILL.md
 ├── starboard-job/SKILL.md
 ├── starboard-query/SKILL.md
 ├── starboard-uc/SKILL.md
-└── starboard-warehouse/SKILL.md
+├── starboard-warehouse/SKILL.md
+└── starboard-workload-review/SKILL.md
 ```
 
 Each directory is a self-contained Agent Skill: a `SKILL.md` plus optional
@@ -46,8 +49,9 @@ artifacts; that "skills-tree-only" invariant is what the external channel ships.
 
 Prerequisite on the customer's machine (documented in the plugin `README.md`): the
 `starboard-helper` CLI on `PATH`, and — for the richer diagnostic Tier-1 path —
-`pip install "starboard-x[diagnostics]"` (pydantic + structlog + pyyaml; no
-`databricks-sdk`, no heavy binaries). Auth uses the Databricks unified chain
+`pip install "starboard-core[diagnostics]"` (the `starboard_x` helpers ship in the
+`starboard-core` wheel; the `diagnostics` extra adds `pyyaml`; no `databricks-sdk`,
+no heavy binaries). Auth uses the Databricks unified chain
 (`DATABRICKS_HOST`/`DATABRICKS_TOKEN` or `~/.databrickscfg`).
 
 ## 2. Agent Skills standard conformance
@@ -154,6 +158,15 @@ So the packaging work here is: (a) keep the canonical bundle standard-conformant
 confirms a concrete `aitools` manifest, adding it is a localized packaging change against
 this same bundle — not a redesign.
 
+!!! note "`databricks aitools` mirror is not yet materialized"
+    The `databricks aitools` layout (mirroring the canonical tree, optionally stamping
+    `parent: databricks-core` into each `SKILL.md`, and a **generated** `manifest.json`) is
+    **not built yet** — there is no `scripts/skills.py` in this repo. Today only the **Claude
+    Code / Isaac plugin channel** is materialized (`plugin/` + `marketplace.json`, vendored by
+    `scripts/vendor_plugin_skills.py`). Materializing the `aitools` mirror + manifest is
+    tracked as an open item; the canonical skills tree stays the single source of truth, so
+    the mirror is a packaging step, not a fork.
+
 ## 5. Confirmation needed (owner questions)
 
 Route these to the `databricks aitools` / Agent Skills owner before an external release:
@@ -203,7 +216,7 @@ Verified against live docs on 2026-08-26:
 - **UNCONFIRMED (still owner-gated):** third-party inclusion in `databricks aitools`, the
   installer-side manifest/registry shape, install locations/precedence, CLI-version/auth
   prerequisites, and the `starboard-helper` acquisition step — see
-  [Confirmation needed](#confirmation-needed-owner-questions).
+  [Confirmation needed](#5-confirmation-needed-owner-questions).
 
 > This supersedes the "web verification returned nothing authoritative" note in D-1.6 for
 > the *command surface* (now documented). The *third-party distribution mechanics* remain

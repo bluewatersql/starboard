@@ -1,7 +1,7 @@
 ---
 title: Release Process
 description: How to cut a versioned release of Starboard AI Agent.
-last_reviewed: 2026-06-25
+last_reviewed: 2026-08-27
 status: current
 ---
 
@@ -39,7 +39,19 @@ MAJOR.MINOR.PATCH
 | `MINOR` | New features that are backward compatible |
 | `PATCH` | Backward-compatible bug fixes and security patches |
 
-All three packages (`starboard-core`, `starboard`, `starboard-skills`) and the workspace root share a single version number and are released together. The current development version is `0.1.0`.
+The workspace contains **five** packages. Their release/versioning roles differ:
+
+| Package | Distribution | Notes |
+|---------|--------------|-------|
+| `starboard-core` | Public (PyPI) | Kernel + `starboard_x` helpers |
+| `starboard` | Public (PyPI) | Server + adapters + tools + CLI |
+| `starboard-skills` | Public (PyPI) | Canonical skills tree |
+| `starboard-internal` | **Internal index only** | Gated port adapters; never in a public wheel |
+| `starboard-plugin-sample` | Reference scaffold | Example `starboard.mcp_tools` plugin, not a shipped capability |
+
+Package versions are currently maintained per-package (as of this writing `starboard-core`
+and `starboard` are `0.1.1`; the others are `0.1.0`); the intent is to move them back into
+lockstep at the next minor. Verify each package `pyproject.toml` before tagging.
 
 Pre-release versions use the suffix `-alpha.N`, `-beta.N`, or `-rc.N` (e.g., `0.2.0-rc.1`).
 
@@ -97,7 +109,9 @@ Update the `version` field in every package `pyproject.toml`:
 packages/starboard-core/pyproject.toml
 packages/starboard/pyproject.toml
 packages/starboard-skills/pyproject.toml
-pyproject.toml  (workspace root)
+packages/starboard-internal/pyproject.toml         # internal index only
+packages/starboard-plugin-sample/pyproject.toml    # reference scaffold
+pyproject.toml  (workspace root, name = starboard-meta)
 ```
 
 
@@ -116,7 +130,7 @@ Mirror the same version entry in `docs/overview/changelog.md` so that the MkDocs
 ### 6. Run final checks
 
 ```bash
-make check   # lint + type-check + test
+make check   # lint + type-check + test-unit + test-architecture
 ```
 
 Fix any failures before proceeding.
@@ -165,7 +179,7 @@ After the release tag is pushed and the GitHub Release is created:
 
 1. Announce the release in the project's GitHub Discussions or community channels.
 2. Open a follow-up issue for any items intentionally deferred from this release.
-3. Verify that the MkDocs site (`make docs-build`) renders the new changelog entry correctly.
+3. Verify that the MkDocs site (`make docs`) renders the new changelog entry correctly.
 4. Monitor the issue tracker for regressions in the first 48 hours.
 
 ---
@@ -193,6 +207,6 @@ The two files diverged during an earlier documentation overhaul: `docs/overview/
 ## Related Documents
 
 - [Contributing Guide](../guides/CONTRIBUTING.md) — PR workflow and commit conventions
-- [CHANGELOG.md](../../CHANGELOG.md) — Root changelog
+- [Changelog](../overview/changelog.md) — Release notes (mirrors the root `CHANGELOG.md`)
 - [docs/overview/changelog.md](../overview/changelog.md) — Docs-site changelog
 - [Engineering Standards](./standards/) — Code quality requirements

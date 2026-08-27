@@ -23,7 +23,12 @@ status: current
 
 Traditional AI assistants work in a strict request-response pattern: you ask a question, wait for the full answer, and then course-correct if needed. This wastes time when the agent heads in the wrong direction.
 
-Starboard supports **interruptible reasoning**, which means you can communicate with the agent while it is still thinking. You can:
+Starboard supports **interruptible reasoning**, which lets you steer the agent across a
+conversation instead of only after a single request completes. In the CLI you do this
+**turn by turn** in an interactive `--chat` session (or a named `--session`): after each
+result you can add context, correct a wrong assumption, narrow the scope, or stop. The
+agent retains the full prior context — including data it already fetched — so follow-ups
+are cheap. You can:
 
 - **Add context** -- Share information the agent does not have yet
 - **Correct assumptions** -- Fix a wrong direction before the agent invests more time
@@ -31,16 +36,19 @@ Starboard supports **interruptible reasoning**, which means you can communicate 
 - **Cancel** -- Stop the analysis entirely if it is no longer needed
 
 ```
-Without interruption:                 With interruption:
+Single request:                       Interactive --chat:
 
 You: "Optimize my query"              You: "Optimize my query"
-Agent: [works for 2 minutes]          Agent: [starts working]
-Agent: "Here are 10 findings"         Agent: [analyzing indexes...]
-You: "I only care about indexes"      You: "Focus on indexes only"
-Agent: [works for 2 more minutes]     Agent: [replans immediately]
+Agent: [works, returns 10 findings]   Agent: [returns initial findings]
+You: run again, more specific         You: "Focus on indexes only"
+Agent: [works again from scratch]     Agent: [continues with full context]
 Agent: "Here are index findings"      Agent: "Here are index findings"
-                                              (saved 2 minutes!)
 ```
+
+> **CLI is turn-based.** In the CLI you provide input between turns, not while a single
+> turn is mid-execution. Fine-grained, mid-flight injection (interrupting the agent
+> during a running turn) is available programmatically via the in-package SDK and the
+> optional server — see [Programmatic use](#programmatic-mid-flight-injection).
 
 ---
 
@@ -63,29 +71,39 @@ Agent: "Here are index findings"      Agent: "Here are index findings"
 - The task is fully specified and does not need course correction
 
 !!! tip "Watch the tool calls"
-    In the Web UI, you can see which tools the agent is calling in real time. This helps you decide whether an interrupt is needed. If the agent is calling the right tools on the right resources, let it work.
+    The CLI streams the agent's reasoning steps and tool calls to your terminal as they happen. This helps you decide whether to steer the next turn. If the agent is calling the right tools on the right resources, let it finish the turn.
 
 ---
 
 ## How to Interrupt
 
-### In the Web UI
+### Interactive chat (`--chat`)
 
-While the agent is working, the chat input remains active. Simply type your message and press **Enter**. The agent processes your input at its next checkpoint (typically after the current tool call completes).
+Start an interactive session and steer the agent between turns:
 
-1. Watch the agent's progress in the conversation panel. You will see thinking steps and tool calls appear in real time.
-2. When you want to provide input, type your message in the chat box.
-3. Press **Enter** to send. The message appears in the conversation immediately.
-4. The agent acknowledges your input and adjusts its approach.
+```bash
+starboard --chat
+```
 
-!!! note "Processing delay"
-    The agent processes interrupts at checkpoint boundaries (between reasoning steps or tool calls). There may be a brief delay before your input takes effect.
+1. Ask your question and let the current turn complete (progress streams to the terminal).
+2. Type a follow-up to add context, correct, narrow, or stop.
+3. Because the session keeps full context, the agent builds on prior work instead of
+   starting over.
 
-### In the CLI
+### Named sessions (`--session`)
 
-The CLI operates in a single-turn mode by default. For interruptible sessions, use the Web UI or the SDK.
+Continue a conversation across separate invocations by reusing a session name:
 
-With the SDK, you can use streaming to monitor progress and send follow-up messages:
+```bash
+starboard --goal "Analyze job 12345" --session my-project
+starboard --goal "Focus on the cluster configuration you mentioned" --session my-project
+```
+
+### Programmatic mid-flight injection
+
+For true mid-turn interruption (sending input while a single turn is still executing),
+use the in-package SDK — `from starboard.sdk import StarboardClient` — or the optional
+server. This is how the `examples/` notebooks and MCP integrations drive the agent:
 
 ```python
 session = await client.create_session()
@@ -96,27 +114,6 @@ r1 = await session.ask("Analyze job 12345")
 # Redirect based on initial findings
 r2 = await session.ask("Focus on the cluster configuration you mentioned")
 ```
-
-### Via the API
-
-Send an interrupt to an active conversation using the inject endpoint:
-
-```bash
-curl -X POST http://localhost:8000/api/chat/conversations/{id}/inject-input \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input_type": "context_injection",
-    "content": "Focus on partition pruning"
-  }'
-```
-
-**Interrupt types:**
-
-| Type | Purpose | Example |
-|------|---------|---------|
-| `context_injection` | Add information | "The table has 500M rows and is partitioned by date." |
-| `replan_request` | Change approach | "Skip the code review and focus on cluster sizing." |
-| `cancel_request` | Stop immediately | "Cancel -- I found the issue myself." |
 
 ---
 
@@ -172,11 +169,11 @@ Agent: "Understood. Focusing on billing and compute domains only..."
 
 ## What Happens When You Interrupt
 
-When you send a message during an active analysis, the agent goes through this process:
+When you send your next turn, the agent incorporates it like this:
 
-1. **Checkpoint** -- The agent finishes its current tool call or reasoning step.
-2. **Evaluate** -- The agent reads your input and decides how it affects the current plan.
-3. **Decide** -- The agent chooses one of four strategies:
+1. **Read** -- The agent reads your new message alongside the retained session context.
+2. **Evaluate** -- It decides how your input affects the current plan.
+3. **Decide** -- It chooses one of four strategies:
    - **Continue** -- Your input is acknowledged but does not change the plan (e.g., "thanks for the info").
    - **Soft Replan** -- The agent adjusts its approach to incorporate your input while keeping prior work.
    - **Hard Replan** -- Your input fundamentally changes the direction. The agent starts fresh with new context.
@@ -197,25 +194,17 @@ Sometimes the agent asks you a question instead of the other way around. This ha
 - The request is ambiguous and could go in multiple directions
 - The agent is stuck and cannot make progress
 
-When the agent asks a question:
-
-**Web UI:** The question appears in the chat. Type your answer and press **Enter**.
-
-**API:** The agent emits a `UserInputRequestEvent`. Respond via the solicitation endpoint:
-
-```bash
-curl -X POST http://localhost:8000/api/chat/conversations/{id}/respond-to-solicitation \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "The job ID is 12345"
-  }'
-```
+When the agent asks a question in an interactive `--chat` session, it pauses for your
+answer — just type your reply at the prompt and press **Enter** (e.g. "The job ID is
+12345"). In a single `--goal` run the agent proceeds with best-effort assumptions; if
+you need to answer a clarifying question, re-run in `--chat` or continue with a
+`--session` so the context is preserved.
 
 ---
 
 ## Next Steps
 
-- [Web Interface Guide](web-ui.md) -- Learn the full Web UI interface
 - [CLI Reference](cli.md) -- Command-line usage reference
-- [SDK Usage Guide](sdk.md) -- Programmatic access with streaming
+- [Understanding Reports](understanding-reports.md) -- Interpret agent output
+- [Common Tasks](../guides/COMMON_TASKS.md) -- Recipes including multi-turn sessions
 - [Troubleshooting](troubleshooting.md) -- Common issues and solutions

@@ -2,9 +2,9 @@ graph TD
     A[User Request] --> B[Cluster Agent]
     B --> C{Request Type}
     
-    C -->|Fleet Discovery<br/>"show clusters"| D[list_clusters]
-    C -->|Health Check<br/>"check health"| E[get_cluster_health]
-    C -->|Deep Analysis<br/>"optimize"| F[get_cluster_config]
+    C -->|Fleet Discovery<br/>show clusters| D[list_clusters]
+    C -->|Health Check<br/>check health| E[get_cluster_health]
+    C -->|Deep Analysis<br/>optimize| F[get_cluster_config]
     
     D --> G[Portfolio Summary<br/>by state/source/size]
     G --> H[complete<br/>ClusterOptimizationReport]

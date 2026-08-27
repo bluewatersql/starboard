@@ -43,7 +43,7 @@ The UC Expert agent has access to the following tools:
 
 If you know the fully qualified table name, ask directly:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Audit the access and governance posture of analytics.gold.customer_orders.
 Who can read it, who writes to it, and are there any policy gaps?
@@ -58,7 +58,7 @@ starboard --goal "Audit governance for table analytics.gold.customer_orders"
 
 For broader governance reviews across multiple tables:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Review policy coverage across the analytics.gold schema.
 Are there tables without proper access controls?
@@ -73,7 +73,7 @@ starboard --goal "Analyze policy coverage for the analytics.gold schema"
 
 If you suspect uncontrolled schema changes:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Has the schema of analytics.gold.customer_orders changed recently?
 Show me what changed and when.
@@ -83,7 +83,7 @@ Show me what changed and when.
 
 If you need to understand where data comes from or where it goes:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Trace the lineage of analytics.gold.customer_orders.
 Where does the data originate and which downstream tables consume it?

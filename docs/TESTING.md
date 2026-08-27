@@ -6,73 +6,78 @@ Testing structure and practices for the Starboard AI Agent monorepo.
 
 ## Test Organization
 
-Tests are co-located with code in each package:
+Unit tests are co-located with each package; cross-cutting suites (golden, contract,
+architecture, integration, benchmarks) live under the **root `tests/`** tree.
 
 ```
 packages/
-├── starboard-core/
-│   └── tests/
-│       ├── conftest.py
-│       └── unit/
-│
-└── starboard/
-    └── tests/
-        ├── conftest.py
-        ├── unit/
-        ├── golden/        # Snapshot tests for prompts
-        └── integration/   # Integration tests
+├── starboard-core/tests/unit/          # kernel + starboard_x unit tests
+├── starboard/tests/{unit,integration,golden}/
+├── starboard-internal/tests/           # gated-adapter parity tests
+└── starboard-plugin-sample/tests/      # plugin-contract tests
 
-tests/                      # Root-level cross-package tests
-└── integration/            # Cross-package integration
+tests/                      # root cross-cutting suites
+├── unit/  ...              # (the legacy root tests/unit tree was REMOVED — see below)
+├── integration/
+├── golden/                 # prompt/schema snapshot tests
+├── contract/               # output-contract tests
+├── architecture/           # GUIDELINE-* pytest fitness suite
+└── benchmarks/
 ```
+
+> **Note:** the old top-level `tests/unit/` convention was removed in the close-out
+> cleanup (it ran in no CI target). Package unit tests live under
+> `packages/*/tests/unit/`. Golden/contract/architecture suites live under `tests/`.
 
 ### Test Types
 
-| Type | Location | Purpose | Speed |
-|------|----------|---------|-------|
-| **Unit** | `packages/*/tests/unit/` | Test individual functions/classes | Fast |
-| **Golden** | `packages/starboard/tests/golden/` | Snapshot tests for prompts | Fast |
-| **Package Integration** | `packages/*/tests/integration/` | Test package components together | Medium |
-| **Cross-Package** | `tests/integration/` | Test package interactions | Medium |
+| Type | Location | Make target | Purpose |
+|------|----------|-------------|---------|
+| **Unit** | `packages/*/tests/unit/` | `make test-unit` | Fast, isolated logic |
+| **Package Integration** | `packages/starboard/tests/integration/` | `make test-integration` | Components together |
+| **Golden** | `tests/golden/` | `make test-golden` | Prompt/schema snapshots |
+| **Contract** | `tests/contract/` | `make test-contract` | Output contracts |
+| **Architecture (import-linter)** | `pyproject.toml` contracts | `make test-architecture` | Kernel purity + boundaries (4 kept contracts) |
+| **Architecture (guidelines)** | `tests/architecture/` | `make test-architecture-guidelines` | GUIDELINE-* fitness suite |
 
 ---
 
 ## Running Tests
 
-### Single Package
+### Via Make (recommended)
 
 ```bash
-# From package directory
-cd packages/starboard
-pytest
-
-# Or from root
-pytest packages/starboard/tests/
-
-# Specific test types
-pytest -m unit                # Only unit tests
-pytest -m golden              # Only golden tests
-pytest -m integration         # Only integration tests
+make test-unit                 # package unit suites
+make test-integration          # package + cross-package integration
+make test-golden               # tests/golden/
+make test-contract             # tests/contract/
+make test-architecture         # import-linter contracts (lint-imports)
+make test-architecture-guidelines  # pytest tests/architecture/
+make check                     # lint + type-check + test-unit + test-architecture
 ```
 
-### All Packages
+### Architecture contracts (import-linter)
+
+`make test-architecture` runs `lint-imports` against the 4 **kept** contracts in
+`pyproject.toml`:
+
+1. Kernel is free of `databricks-sdk` / `openai` / `fastapi` / `mcp`.
+2. `starboard_x` diagnostics-core trio is stdlib-only.
+3. `starboard_x` pure analyzers (warehouse / uc / review) are SDK-free.
+4. Public packages import no `starboard_internal`.
+
+### Direct pytest
 
 ```bash
-# Run all package tests
-pytest packages/
+# Single package
+cd packages/starboard && pytest tests/unit/
 
-# Run in parallel (faster)
-pytest packages/ -n auto
-```
+# Specific markers
+pytest -m unit
+pytest -m integration
 
-### Integration Tests
-
-```bash
-# Package integration
-pytest packages/starboard/tests/integration/
-
-# Cross-package integration
-pytest tests/integration/
+# Cross-cutting suites (from repo root)
+pytest tests/golden/ tests/contract/ tests/architecture/
 ```
 
 ### With Coverage
@@ -236,5 +241,5 @@ pytest --cov=starboard packages/starboard/tests/
 
 ---
 
-**Last Updated**: November 19, 2025  
-**Version**: 2.0.0
+**Last Updated**: 2026-08-27
+**Version**: 3.0 — architecture/contract suites, root `tests/unit` removed

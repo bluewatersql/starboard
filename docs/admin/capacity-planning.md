@@ -107,9 +107,9 @@ The state database stores conversations, messages, episodes, facts, and user pro
 
 ### Vector Store
 
-The vector store holds embeddings for semantic search and caching. Each embedding is approximately 6 KB (1536 dimensions x 4 bytes).
+The vector store holds embeddings for semantic search and caching. Each embedding is approximately 4 KB (1024 dimensions x 4 bytes; `EMBEDDING_DIMENSION` default is 1024).
 
-**Estimated size:** ~100 MB per 10,000 embeddings. Growth depends on the `ENABLE_SEMANTIC_CACHE` setting and conversation volume.
+**Estimated size:** ~40 MB per 10,000 embeddings. Growth depends on the `ENABLE_SEMANTIC_CACHE` setting and conversation volume. The default `VECTOR_BACKEND=none` stores no embeddings at all.
 
 ### Redis Cache
 
@@ -157,7 +157,7 @@ LLM API costs are typically the largest operational expense. The cost depends on
 2. **Enable semantic caching.** Set `ENABLE_SEMANTIC_CACHE=true` to cache similar queries (default TTL: 5 minutes for tool results).
 3. **Set token budgets.** Use `LLM_MAX_TOKENS` to cap per-conversation spend.
 4. **Disable unused agents.** Set `DISABLED_AGENT_DOMAINS=diagnostic,discovery` if those domains are not needed.
-5. **Use message compression.** Reduces context window usage by 30--50% for long conversations.
+5. **Rely on automatic context summarization.** Long conversation history is compacted automatically by the context strategy once it exceeds internal turn thresholds — there is no toggle or environment variable to enable, and no per-request configuration.
 
 ---
 

@@ -37,7 +37,7 @@ The Query Expert agent has access to the following tools:
 If you have a Databricks query statement ID (e.g., from the Query History UI), use
 it directly:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Why is query 01ef-abc123-def456 running slowly?
 ```
@@ -54,7 +54,7 @@ plan, and runtime metrics automatically.
 
 Paste or upload the SQL directly:
 
-**Web UI:**
+**Ask (natural language):**
 ```
 Optimize this query:
 
@@ -84,9 +84,9 @@ starboard --input-file queries/slow_report.sql \
 
 If you do not want the agent to run queries against Databricks:
 
-**Web UI:** Toggle the **Offline Mode** switch before submitting.
+Use `--mode offline` so the agent works purely from the file you pass, without any
+Databricks API calls:
 
-**CLI:**
 ```bash
 starboard --mode offline \
           --input-file queries/slow_report.sql \

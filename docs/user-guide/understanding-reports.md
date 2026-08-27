@@ -129,15 +129,16 @@ Each recommendation includes enough detail to act on it:
 
 After implementing a recommendation, you can ask Starboard to verify the improvement:
 
-**Web UI:**
+```bash
+starboard --goal "Re-analyze query 01ef-abc123-def456 after optimization"
+```
+
+In an interactive `--chat` or named `--session`, you can phrase it conversationally and
+Starboard keeps the prior context:
+
 ```
 I applied the partition pruning recommendation from the last analysis.
 Can you re-analyze query 01ef-abc123-def456 and compare the results?
-```
-
-**CLI:**
-```bash
-starboard --goal "Re-analyze query 01ef-abc123-def456 after optimization"
 ```
 
 ---
@@ -181,12 +182,12 @@ Diagnostic reports focus on root cause analysis. They investigate failures, erro
 
 Produced by: **Discovery Agent**
 
-Discovery reports provide a workspace-wide health assessment. They grade multiple domains (billing, compute, governance, jobs) and identify the highest-impact optimization opportunities across your entire Databricks workspace.
+Discovery reports provide a workspace-wide health assessment. They grade multiple domains (billing, compute, governance, jobs) and identify the highest-impact optimization opportunities across your entire Databricks workspace. All `$` figures are **list-price DBU estimates**.
 
 **Example summary:**
 
 > **Workspace Discovery Report**
-> Assessed 6 active products across 4 domains. Overall health: B+ (82/100). Two critical findings: (1) 12 idle clusters consuming $840/month, (2) 3 Unity Catalog tables with no access controls. Top opportunity: decommissioning idle clusters would save an estimated $10,000/year.
+> Assessed 6 active products across 4 domains. Overall health: B+ (82/100). Two critical findings: (1) 12 idle clusters consuming an estimated $840/month (list price), (2) 3 Unity Catalog tables with no access controls. Top opportunity: decommissioning idle clusters would save an estimated $10,000/year (list price).
 
 **Key sections to focus on:**
 - **Domain grades** -- A--F grade for each domain (billing, compute, governance, jobs)
@@ -197,18 +198,49 @@ Discovery reports provide a workspace-wide health assessment. They grade multipl
 
 Produced by: **Analytics Agent** (FinOps)
 
-Analytics reports answer data-driven questions about costs, usage, and trends. They generate and execute SQL queries against Databricks system tables to produce numerical answers.
+Analytics reports answer data-driven questions about costs, usage, and trends. They generate and execute SQL queries against Databricks public `system.*` tables to produce numerical answers. All `$` figures are **list-price DBU estimates**, not finance-grade billing numbers.
 
 **Example summary:**
 
-> **Cost Analysis Report**
-> Total Databricks spend for the last 30 days: $47,230. Top cost driver: SQL Warehouses ($28,100, 59.5%). Month-over-month change: +12.3%. Three warehouses account for 78% of total warehouse spend.
+> **Cost Analysis Report** *(list-price DBU estimates)*
+> Estimated Databricks spend for the last 30 days: $47,230. Top cost driver: SQL Warehouses ($28,100, 59.5%). Month-over-month change: +12.3%. Three warehouses account for 78% of total warehouse spend.
 
 **Key sections to focus on:**
 - **Data tables** -- Raw numbers the agent queried
 - **Trends** -- How metrics changed over time
 - **Breakdowns** -- Cost or usage split by dimension (team, warehouse, job, etc.)
 - **Anomalies** -- Unexpected spikes or drops
+
+### Workload Review Reports
+
+Produced by: **`starboard review`**
+
+Workload Review is a deterministic, evidence-cited review of jobs, SQL, and warehouses
+over **public `system.*` data only**. Instead of a free-form narrative, it returns a
+**ranked list of findings**, each with:
+
+- **Severity** — `critical` / `high` / `medium` / `low`
+- **Priority score** — an impact/effort ranking used to order the list
+- **Suggested fix** — the concrete change to make
+- **Evidence citation** — the query-pack `query_id` and the row that triggered the finding
+
+**Example summary:**
+
+> **Workload Review** *(jobs, sql, warehouse · 30-day lookback · list-price DBU estimates)*
+> 14 findings. Top item (high, score 0.82): warehouse `wh-analytics` is oversized for its
+> peak concurrency — estimated $1,200/mo (list price) savings by dropping one size.
+> Evidence: `warehouse.utilization.p95` row for `wh-analytics`.
+
+**Key things to know:**
+
+- Use `--validate` to gate findings through the validator council, and `--min-severity`
+  / `--min-score` to suppress low-signal items.
+- The review is **read-only** — it never writes back to your workspace.
+- Use `--snapshot-out` then `--since` on a later run to see the **resolved-rate delta**
+  (how many findings you've fixed).
+- `--json` emits the shared envelope for scripting.
+
+See [Common Tasks → Run a workload review](../guides/COMMON_TASKS.md#run-a-workload-review).
 
 ---
 

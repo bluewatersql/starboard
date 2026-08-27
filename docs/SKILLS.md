@@ -1,6 +1,13 @@
 # Starboard Skills for Claude Code & Cursor
 
-Starboard ships a set of **Claude Code / Cursor skills** that give AI assistants deep knowledge of how to use Starboard's MCP tools for Databricks workspace analysis. Skills act as domain-specific playbooks — they teach the assistant which tools to call, in what order, and how to interpret the results.
+Starboard ships a set of **Claude Code / Cursor skills** that give AI assistants deep knowledge of how to run Starboard's Databricks workspace analyses. Skills act as domain-specific playbooks — they teach the assistant which tools to call, in what order, and how to interpret the results.
+
+The canonical skills live in the **`starboard-skills`** package
+(`packages/starboard-skills/skills/starboard/`) and install with `pip install
+starboard-skills`. Skills are **dual-mode**: they drive the optional
+`starboard-mcp` server when it is available, and otherwise fall back to the
+`starboard` / `python -m starboard_x.<cap>` CLI. The MCP server is **optional** —
+you can use the skills against the CLI without running it.
 
 ---
 
@@ -24,7 +31,7 @@ Starboard ships a set of **Claude Code / Cursor skills** that give AI assistants
   - [starboard-warehouse](#starboard-warehouse)
   - [starboard-diagnostic](#starboard-diagnostic)
   - [starboard-discovery](#starboard-discovery)
-  - [starboard-workspace](#starboard-workspace)
+  - [starboard-workload-review](#starboard-workload-review)
 - [Usage Scenarios](#usage-scenarios)
   - [Scenario 1: Investigate a Slow Query](#scenario-1-investigate-a-slow-query)
   - [Scenario 2: Debug a Failing Nightly Job](#scenario-2-debug-a-failing-nightly-job)
@@ -46,7 +53,10 @@ Starboard ships a set of **Claude Code / Cursor skills** that give AI assistants
 
 ## Overview
 
-Starboard skills are Markdown files in the `skills/starboard/` directory. Each skill maps to a Databricks analysis domain and provides:
+Starboard skills are Markdown files in the canonical
+`packages/starboard-skills/skills/starboard/` tree (installed to your assistant's
+skills directory via `pip install starboard-skills` or a copy). Each skill maps to a
+Databricks analysis domain and provides:
 
 - **Trigger keywords** that tell the assistant when the skill applies
 - **Quick path** with two orchestration modes (direct orchestration or auto-pilot agent)
@@ -68,22 +78,28 @@ Direct orchestration fetches the same expert prompts that power the server-side 
 ### Skill Architecture
 
 ```
-skills/starboard/
-├── starboard-analyze/SKILL.md     # Meta-router — dispatches to domain skills
-├── starboard-query/SKILL.md       # SQL query performance
-├── starboard-job/SKILL.md         # Job/workflow analysis
-├── starboard-uc/SKILL.md          # Unity Catalog governance
-├── starboard-cluster/SKILL.md     # Cluster & compute
-├── starboard-finops/SKILL.md      # Cost analysis & billing
-├── starboard-warehouse/SKILL.md   # SQL warehouse portfolio
-├── starboard-diagnostic/SKILL.md  # Troubleshooting & RCA
-├── starboard-discovery/SKILL.md   # Workspace health assessment
-└── starboard-workspace/SKILL.md   # Workspace switching & management
+packages/starboard-skills/skills/starboard/
+├── starboard-analyze/SKILL.md          # Meta-router — dispatches to domain skills
+├── starboard-query/SKILL.md            # SQL query performance
+├── starboard-job/SKILL.md              # Job/workflow analysis
+├── starboard-uc/SKILL.md               # Unity Catalog governance
+├── starboard-cluster/SKILL.md          # Cluster & compute
+├── starboard-finops/SKILL.md           # Cost analysis & billing (list-price DBU)
+├── starboard-warehouse/SKILL.md        # SQL warehouse portfolio
+├── starboard-diagnostic/SKILL.md       # Troubleshooting & RCA
+├── starboard-discovery/SKILL.md        # Workspace health assessment
+└── starboard-workload-review/SKILL.md  # Ranked, evidence-cited workload review
 ```
 
 The **starboard-analyze** skill is a meta-router. When a user mentions "analyze", "optimize", or "Databricks", it reads the request, matches against a routing table, and invokes the appropriate domain skill. For requests that span multiple domains, it triggers multiple agent tools in parallel.
 
-The **starboard-workspace** skill handles switching between Databricks workspaces. Credentials are managed via the `starboard-mcp workspace` CLI — never exposed to AI assistants.
+The **starboard-workload-review** skill drives `starboard review` — a ranked,
+evidence-cited review of jobs, SQL, and warehouses over public `system.*` data.
+
+> **Workspace management is not a skill.** Switching between Databricks workspaces is
+> handled by the `starboard-mcp workspace` CLI and the `list_workspaces` /
+> `switch_workspace` MCP tools (see [Multi-Workspace Configuration](#multi-workspace-configuration)).
+> Credentials are managed outside the AI assistant and never exposed to it.
 
 ---
 
@@ -237,11 +253,20 @@ Restart Claude Desktop. Starboard tools will be available in new conversations.
 
 ### 5. Install Skills
 
-Skills are SKILL.md files that teach the AI assistant which MCP tools to call and how to interpret results. They need to live in a location the AI agent can discover.
+Skills are SKILL.md files that teach the AI assistant which tools to call and how to interpret results. They need to live in a location the AI agent can discover.
+
+#### Recommended: install the packaged skills
+
+```bash
+pip install starboard-skills
+```
+
+This installs the canonical skills tree and the `starboard-helper` script. Point your
+assistant's skills directory at the installed tree, or copy it in (see below).
 
 #### Cursor (local project)
 
-Skills in `skills/starboard/` are picked up automatically when the workspace is open. No additional installation needed — Cursor reads SKILL.md files from the project tree.
+Skills in `packages/starboard-skills/skills/starboard/` are picked up automatically when the workspace is open. No additional installation needed — Cursor reads SKILL.md files from the project tree.
 
 #### Claude Code (local clone)
 
@@ -253,7 +278,7 @@ Copy skills into the Claude Code skills directory:
 # Choose "y" when prompted to install Claude Code skills
 
 # Manual
-cp -r skills/starboard ~/.claude/skills/starboard
+cp -r packages/starboard-skills/skills/starboard ~/.claude/skills/starboard
 ```
 
 This copies all 10 skills into `~/.claude/skills/starboard/`, making them available in every Claude Code session.
@@ -269,19 +294,19 @@ mkdir -p ~/starboard-skills && cd ~/starboard-skills
 git init
 git remote add origin https://github.com/YOUR_ORG/job-agent.git
 git sparse-checkout init --cone
-git sparse-checkout set skills/starboard
+git sparse-checkout set packages/starboard-skills/skills/starboard
 git pull origin main
 
 # Symlink or copy into your skills directory
-cp -r skills/starboard ~/.claude/skills/starboard     # Claude Code
-cp -r skills/starboard ~/.cursor/skills/starboard     # Cursor (global)
+cp -r packages/starboard-skills/skills/starboard ~/.claude/skills/starboard     # Claude Code
+cp -r packages/starboard-skills/skills/starboard ~/.cursor/skills/starboard     # Cursor (global)
 ```
 
 To update later:
 
 ```bash
 cd ~/starboard-skills && git pull origin main
-cp -r skills/starboard ~/.claude/skills/starboard
+cp -r packages/starboard-skills/skills/starboard ~/.claude/skills/starboard
 ```
 
 **Option B — Download via GitHub API (no git required):**
@@ -289,15 +314,15 @@ cp -r skills/starboard ~/.claude/skills/starboard
 ```bash
 # Download and extract just the skills directory
 curl -L https://github.com/YOUR_ORG/job-agent/archive/refs/heads/main.tar.gz | \
-  tar xz --strip-components=1 -C /tmp/starboard-skills "job-agent-main/skills/starboard"
+  tar xz --strip-components=1 -C /tmp/starboard-skills "job-agent-main/packages/starboard-skills/skills/starboard"
 
-cp -r /tmp/starboard-skills/skills/starboard ~/.claude/skills/starboard
+cp -r /tmp/starboard-skills/packages/starboard-skills/skills/starboard ~/.claude/skills/starboard
 ```
 
 **Option C — degit (simple, no history):**
 
 ```bash
-npx degit YOUR_ORG/job-agent/skills/starboard ~/.claude/skills/starboard
+npx degit YOUR_ORG/job-agent/packages/starboard-skills/skills/starboard ~/.claude/skills/starboard
 ```
 
 #### Verify skills are installed
@@ -316,7 +341,7 @@ ls ~/.claude/skills/starboard/*/SKILL.md
 # ~/.claude/skills/starboard/starboard-query/SKILL.md
 # ~/.claude/skills/starboard/starboard-uc/SKILL.md
 # ~/.claude/skills/starboard/starboard-warehouse/SKILL.md
-# ~/.claude/skills/starboard/starboard-workspace/SKILL.md
+# ~/.claude/skills/starboard/starboard-workload-review/SKILL.md
 ```
 
 ### 6. Auto-Approve MCP Tool Permissions (Claude Code)
@@ -414,6 +439,7 @@ The meta-router reads the user's request and dispatches to the correct domain sk
 | Warehouse, SQL warehouse, endpoint, SLO | `starboard-warehouse` |
 | Error, debug, troubleshoot, failing, broken | `starboard-diagnostic` |
 | Discovery, assessment, audit, overview | `starboard-discovery` |
+| Review, findings, ranked issues, "what should I fix" | `starboard-workload-review` |
 
 **Identifier shortcuts:**
 
@@ -612,29 +638,27 @@ Runs comprehensive workspace health assessment and product usage discovery using
 
 ---
 
-### starboard-workspace
+### starboard-workload-review
 
-**Triggers:** switch workspace, change workspace, which workspace, production, staging, environments
+**Triggers:** review, workload review, findings, ranked issues, "what should I fix", top opportunities
 
-Manages workspace switching and discovery. Credentials are managed outside Claude via the `starboard-mcp workspace` CLI.
+Runs a ranked, evidence-cited review of jobs, SQL, and warehouses over **public
+`system.*` data only**. Each finding carries a severity, an impact/effort priority
+score, a suggested fix, and an evidence citation (query-pack `query_id` + the row that
+triggered it). The review is **read-only** — it never writes back to the workspace.
 
-**MCP tools:**
+**CLI:** `starboard review [--domains jobs,sql,warehouse] [--lookback-days N]
+[--validate] [--min-severity …] [--json]`
 
-| Tool | Purpose |
-|------|---------|
-| `list_workspaces` | List configured workspaces with IDs and hosts (no secrets) |
-| `switch_workspace` | Validate workspace ID and get instructions for switching |
+**Interpretation guidance:** findings are ordered by priority score; `--validate` gates
+them through a bounded validator council; `--min-severity` / `--min-score` suppress
+low-signal items. Cost-based findings are **list-price DBU estimates**, labelled as
+such. Use `--snapshot-out` / `--since` to track the resolved-rate delta between runs.
 
-**CLI commands** (for credential management — run from terminal, not Claude):
-
-| Command | Purpose |
-|---------|---------|
-| `starboard-mcp workspace add` | Add a workspace (interactive — prompts for token) |
-| `starboard-mcp workspace list` | List configured workspaces |
-| `starboard-mcp workspace remove <id>` | Remove a workspace profile |
-| `starboard-mcp workspace set-default <id>` | Change the default workspace |
-
-**Key concept:** Tokens are stored in `~/.starboard/.env` (mode 0600) and referenced by environment variable name in `~/.starboard/config.json`. Claude only sees workspace IDs and hosts — never credentials.
+> **Workspace management** (switching between Databricks workspaces) is handled by the
+> `starboard-mcp workspace` CLI and the `list_workspaces` / `switch_workspace` MCP
+> tools — see [Multi-Workspace Configuration](#multi-workspace-configuration). It is
+> not a skill, and credentials are never exposed to the AI assistant.
 
 ---
 
@@ -1025,7 +1049,7 @@ cluster inventory and cost differences between them.
 | `DATABRICKS_TOKEN` | Yes | Databricks personal access token |
 | `LLM_PROVIDER` | Yes (for agents) | `openai` or `anthropic` |
 | `LLM_API_KEY` | Yes (for agents) | API key for the LLM provider |
-| `LLM_MODEL` | No | Model name (default: `gpt-4o`) |
+| `LLM_MODEL` | No | Model name (default: `databricks-claude-sonnet-4-5`) |
 | `STARBOARD_MCP_TOOL_SCOPE` | No | `phase_a`, `phase_b`, or `full` (default: `phase_b`) |
 | `STARBOARD_MCP_SAFE_MODE` | No | `true` to restrict to offline-safe tools (default: `false`) |
 | `STARBOARD_MCP_CONFIG` | No | Full MCP config as JSON (overrides host/token) |
@@ -1107,7 +1131,8 @@ Step 3 — Use the workspace:
   Call MCP tool: get_cluster_health { "cluster_id": "...", "workspace_id": "staging" }
 ```
 
-Or use the `starboard-workspace` skill — it handles this flow automatically when you say "switch to staging" or "which workspace am I on?".
+The `list_workspaces` / `switch_workspace` MCP tools handle this flow when you say
+"switch to staging" or "which workspace am I on?".
 
 #### Manual JSON Configuration
 
@@ -1234,7 +1259,7 @@ The default is `phase_b`. To restrict to quick-lookup tools only, set in your MC
 
 ### Skills not activating
 
-1. Confirm the `skills/starboard/` directory exists in the workspace root
+1. Confirm the skills tree exists (`packages/starboard-skills/skills/starboard/` in the repo, or your assistant's skills directory after `pip install starboard-skills` / copy)
 2. Check that each skill directory contains a `SKILL.md` file
 3. Try mentioning a trigger keyword explicitly (e.g., "use Starboard to analyze my cluster")
 

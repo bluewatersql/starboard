@@ -69,9 +69,8 @@ See [complete architecture documentation](../../docs/packages/starboard-core/arc
 ### Project Documentation
 
 - **[Main Project README](../../README.md)** - Overall project information
-- **[System Architecture](../../docs/ARCHITECTURE.md)** - System design
-- **[starboard-server README](../starboard-server/README.md)** - Backend server (uses this package)
-- **[starboard-cli README](../starboard-cli/README.md)** - CLI tool (uses this package)
+- **[System Architecture](../../docs/architecture/SYSTEM_ARCHITECTURE.md)** - System design
+- **[starboard README](../starboard/README.md)** - Full experience package (CLI + MCP server + agents) that builds on this kernel
 
 ## Related Packages
 

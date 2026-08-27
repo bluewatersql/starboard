@@ -18,8 +18,8 @@ uv pip install -e packages/starboard-core -e packages/starboard \
                -e packages/starboard-skills -e packages/starboard-internal \
                -e packages/starboard-plugin-sample
 ```
-- [ ] `uv run python -c "import starboard, starboard_core, starboard_x, starboard_internal, starboard_skills; print('ok')"` → `ok`
-- [ ] Databricks auth available for functional steps: a `~/.databrickscfg` profile (e.g. `e2-demo-field-eng`) OR `DATABRICKS_HOST`+`DATABRICKS_TOKEN`. (Isaac/Claude Code inject this; a plain shell may need `databricks auth login`.)
+- [X] `uv run python -c "import starboard, starboard_core, starboard_x, starboard_internal, starboard_skills; print('ok')"` → `ok`
+- [X] Databricks auth available for functional steps: a `~/.databrickscfg` profile (e.g. `e2-demo-field-eng`) OR `DATABRICKS_HOST`+`DATABRICKS_TOKEN`. (Isaac/Claude Code inject this; a plain shell may need `databricks auth login`.)
 
 ## 1. 🟢 Automated gates (must all be green)
 
@@ -28,9 +28,9 @@ make lint            # ruff over all packages + tests
 make type-check      # mypy packages/starboard/starboard (528 files)
 make test-architecture   # import-linter — 4 contracts KEPT
 ```
-- [ ] `make lint` → **All checks passed**
-- [ ] `make type-check` → **Success: no issues found**
-- [ ] `make test-architecture` → **Contracts: 4 kept, 0 broken** (kernel SDK-free; starboard_x trio stdlib-only; starboard_x pure analyzers SDK-free; **public packages import no `starboard_internal`**)
+- [X] `make lint` → **All checks passed**
+- [X] `make type-check` → **Success: no issues found**
+- [X] `make test-architecture` → **Contracts: 4 kept, 0 broken** (kernel SDK-free; starboard_x trio stdlib-only; starboard_x pure analyzers SDK-free; **public packages import no `starboard_internal`**)
 
 Run unit suites **separately** (a combined run hits a cross-package basename collision):
 ```bash
@@ -40,7 +40,7 @@ uv run python -m pytest packages/starboard-skills/tests/ -q             # ~28 pa
 uv run python -m pytest packages/starboard-internal/tests/ -q           # ~39 passed
 uv run python -m pytest packages/starboard-plugin-sample/tests/ -q      # ~3 passed
 ```
-- [ ] core green · [ ] starboard green · [ ] skills green · [ ] internal green · [ ] plugin-sample green
+- [X] core green · [ ] starboard green · [X] skills green · [X] internal green · [X] plugin-sample green
 
 ## 2. 🟢 Governance grep (public artifacts stay clean)
 
@@ -49,8 +49,8 @@ grep -rniE "centralized_system_tables|fin_live_gold|gtm_|logfood|clickhouse|hmr_
   packages/starboard packages/starboard-core packages/starboard-skills plugin docs \
   --include=*.py --include=*.md --include=*.yaml --include=*.json | grep -v starboard-internal
 ```
-- [ ] **No matches** in public packages/docs/plugin (internal identifiers appear only under `packages/starboard-internal/`).
-- [ ] `python3 scripts/vendor_plugin_skills.py --check` → **in sync** (plugin skills == canonical tree).
+- [X] **No matches** in public packages/docs/plugin (internal identifiers appear only under `packages/starboard-internal/`).
+- [X] `python3 scripts/vendor_plugin_skills.py --check` → **in sync** (plugin skills == canonical tree).
 
 ## 3. 🔵 Auth (auth-by-subtraction)
 
@@ -58,7 +58,7 @@ grep -rniE "centralized_system_tables|fin_live_gold|gtm_|logfood|clickhouse|hmr_
 starboard auth status                                   # resolved identity (redacted)
 starboard auth status --profile e2-demo-field-eng
 ```
-- [ ] `auth status` prints host / auth_type / user with **no token/secret** shown.
+- [X] `auth status` prints host / auth_type / user with **no token/secret** shown.
 - [ ] `--profile` overrides the resolved workspace; unset → falls through the SDK chain.
 
 ## 4. 🔵 Discovery + query packs (public `system.*`)

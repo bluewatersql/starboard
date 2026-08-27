@@ -2,6 +2,13 @@
 
 Starboard AI Agent uses **8 domain-specialized agents**, each with dedicated tools, prompts, and Databricks expertise. An Intent Router automatically dispatches user requests to the appropriate agent.
 
+!!! note "Agents power free-form goals"
+    The multi-agent loop below runs for `starboard --goal "…"` and `starboard --chat`.
+    For quick, deterministic answers over public `system.*` data, Starboard also ships
+    three direct surfaces that do not require the full agent loop:
+    **`starboard review`** (Workload Review), **`starboard genie ask`** (NL → SQL), and
+    **`starboard --discover`** (workspace discovery).
+
 ---
 
 ## How Routing Works
@@ -91,6 +98,9 @@ The router considers confidence scores and can trigger **agent handoffs** when a
 **Domain:** Cost analysis, billing, chargeback, and budget forecasting
 
 **When to use:** You need cost breakdowns, want to generate chargeback reports, or identify spending optimization opportunities.
+
+**Cost basis:** All `$` figures are **list-price DBU estimates** derived from public
+usage tables — not finance-grade billing numbers.
 
 **Key tools:** FinOps-specific analysis and reporting tools
 
