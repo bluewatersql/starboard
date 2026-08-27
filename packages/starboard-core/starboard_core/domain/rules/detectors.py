@@ -41,6 +41,14 @@ SHUFFLE_GB_THRESHOLD = 10.0
 PRUNING_RATIO_THRESHOLD = 0.10
 # C-Q02: minimum partitions read before poor pruning is worth flagging.
 READ_PARTITIONS_THRESHOLD = 100
+# C-J04: run failure rate (%) at/above which a job is flagged unreliable.
+JOB_FAILURE_RATE_PCT_THRESHOLD = 20.0
+# C-J04: share (%) of total DBU burned on failed/retried runs worth flagging.
+JOB_WASTED_DBU_PCT_THRESHOLD = 25.0
+# C-J03: max/min successful-runtime ratio at/above which variance is flagged.
+JOB_RUNTIME_VARIANCE_RATIO_THRESHOLD = 3.0
+# C-J03: minimum successful runs before runtime variance is worth flagging.
+JOB_RUNTIME_MIN_RUNS_THRESHOLD = 5
 
 
 @dataclass(frozen=True)
@@ -224,6 +232,99 @@ def detect_non_sargable_partition_filter(
     return matches
 
 
+def detect_job_high_failure_rate(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag jobs whose run failure rate exceeds the reliability threshold.
+
+    Evidence: ``C-J04`` (compound reliability scorecard). Triggers when
+    ``failure_rate_pct >= JOB_FAILURE_RATE_PCT_THRESHOLD``.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        rate = _as_float(row.get("failure_rate_pct"))
+        if rate is None or rate < JOB_FAILURE_RATE_PCT_THRESHOLD:
+            continue
+        jid = _entity(row, "job_id", "job_name", fallback=f"row-{idx}")
+        runs = _as_float(row.get("total_runs"))
+        runs_txt = f" across {runs:g} runs" if runs is not None else ""
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Job {jid} failed {rate:g}% of its runs{runs_txt} — a high "
+                    "failure rate that re-runs compute without delivering output."
+                ),
+                location=Location(entity=jid, entity_type="job"),
+                entity_key=jid,
+            )
+        )
+    return matches
+
+
+def detect_job_wasted_dbu_on_failures_retries(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag jobs burning a large share of DBU on failed / retried runs.
+
+    Evidence: ``C-J04``. Triggers when ``wasted_dbu_pct`` (failure + retry DBU
+    as a share of total) ``>= JOB_WASTED_DBU_PCT_THRESHOLD``.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        wasted = _as_float(row.get("wasted_dbu_pct"))
+        if wasted is None or wasted < JOB_WASTED_DBU_PCT_THRESHOLD:
+            continue
+        jid = _entity(row, "job_id", "job_name", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Job {jid} spent {wasted:g}% of its DBU on failed or retried "
+                    "runs — compute paid for repeatedly with no successful output."
+                ),
+                location=Location(entity=jid, entity_type="job"),
+                entity_key=jid,
+            )
+        )
+    return matches
+
+
+def detect_job_high_runtime_variance(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag jobs whose successful runtime swings widely run-to-run.
+
+    Evidence: ``C-J03`` (runtime variance). Triggers when ``max_min_ratio >=
+    JOB_RUNTIME_VARIANCE_RATIO_THRESHOLD`` and the job has at least
+    ``JOB_RUNTIME_MIN_RUNS_THRESHOLD`` successful runs (enough to be meaningful).
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        ratio = _as_float(row.get("max_min_ratio"))
+        if ratio is None or ratio < JOB_RUNTIME_VARIANCE_RATIO_THRESHOLD:
+            continue
+        runs = _as_float(row.get("total_runs"))
+        if runs is not None and runs < JOB_RUNTIME_MIN_RUNS_THRESHOLD:
+            continue
+        jid = _entity(row, "job_id", "name", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Job {jid} has a {ratio:g}x spread between its slowest and "
+                    "fastest successful runs — unpredictable to schedule and size."
+                ),
+                location=Location(entity=jid, entity_type="job"),
+                entity_key=jid,
+            )
+        )
+    return matches
+
+
 # Registry of detectors keyed by ``rule.id``. Rules absent here produce no
 # findings (graceful no-op) rather than naive one-finding-per-row noise.
 DETECTORS: dict[str, Detector] = {
@@ -231,6 +332,9 @@ DETECTORS: dict[str, Detector] = {
     "warehouse_persistently_underutilized": detect_warehouse_persistently_underutilized,
     "select_star_projection": detect_select_star_projection,
     "non_sargable_partition_filter": detect_non_sargable_partition_filter,
+    "job_high_failure_rate": detect_job_high_failure_rate,
+    "job_wasted_dbu_on_failures_retries": detect_job_wasted_dbu_on_failures_retries,
+    "job_high_runtime_variance": detect_job_high_runtime_variance,
 }
 
 
@@ -240,6 +344,10 @@ __all__ = [
     "READ_PARTITIONS_THRESHOLD",
     "SHUFFLE_GB_THRESHOLD",
     "UNDER_UTILIZED_BAND",
+    "JOB_FAILURE_RATE_PCT_THRESHOLD",
+    "JOB_WASTED_DBU_PCT_THRESHOLD",
+    "JOB_RUNTIME_VARIANCE_RATIO_THRESHOLD",
+    "JOB_RUNTIME_MIN_RUNS_THRESHOLD",
     "DETECTORS",
     "Detector",
     "RowMatch",
@@ -247,4 +355,7 @@ __all__ = [
     "detect_select_star_projection",
     "detect_warehouse_auto_stop_disabled",
     "detect_warehouse_persistently_underutilized",
+    "detect_job_high_failure_rate",
+    "detect_job_wasted_dbu_on_failures_retries",
+    "detect_job_high_runtime_variance",
 ]
