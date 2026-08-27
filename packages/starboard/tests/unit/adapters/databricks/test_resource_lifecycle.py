@@ -15,9 +15,13 @@ Covers:
 
 from __future__ import annotations
 
+import ast
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
+_CHAT_PATH = Path(__file__).resolve().parents[4] / "starboard" / "cli" / "cli" / "chat.py"
 
 # ---------------------------------------------------------------------------
 # Item 1: _rest_client caching
@@ -218,21 +222,7 @@ class TestChatReportFormattingError:
 
     def test_format_error_handler_exists_in_source(self) -> None:
         """The chat module must have a try/except around format_agent_report."""
-        import ast
-        from pathlib import Path
-
-        chat_path = (
-            Path(__file__).resolve().parents[6]
-            / "packages"
-            / "starboard-cli"
-            / "starboard.cli"
-            / "cli"
-            / "chat.py"
-        )
-        if not chat_path.exists():
-            pytest.skip("chat.py not found")
-
-        source = chat_path.read_text()
+        source = _CHAT_PATH.read_text()
         tree = ast.parse(source)
 
         # Find that format_agent_report is called inside a try block
@@ -258,20 +248,7 @@ class TestChatReportFormattingError:
 
     def test_logger_warning_call_exists_in_handler(self) -> None:
         """The except block must call logger.warning with report_format_failed."""
-        from pathlib import Path
-
-        chat_path = (
-            Path(__file__).resolve().parents[6]
-            / "packages"
-            / "starboard-cli"
-            / "starboard.cli"
-            / "cli"
-            / "chat.py"
-        )
-        if not chat_path.exists():
-            pytest.skip("chat.py not found")
-
-        source = chat_path.read_text()
+        source = _CHAT_PATH.read_text()
         assert "report_format_failed" in source, (
             "chat.py must log 'report_format_failed' when format_agent_report raises"
         )

@@ -15,6 +15,9 @@ Unlike unit tests, these tests use real (mocked) components working together.
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from starboard.adapters.state.inmemory.conversation_state_manager import (
+    InMemoryConversationStateManager,
+)
 from starboard.agents.agent_factory import AgentFactory
 from starboard.agents.config.agent_config import AgentConfig
 from starboard.agents.conversation.multi_agent_manager import (
@@ -33,9 +36,6 @@ from starboard.agents.routing.routing_models import RouteDecision
 from starboard.agents.state.agent_state import WorkingMemory
 from starboard.agents.state.shared_context import SharedAgentContext
 from starboard.agents.tools import ToolRegistry
-from starboard.api.conversation_state_manager import (
-    InMemoryConversationStateManager,
-)
 from starboard_core.domain.models.llm import OptimizationMode
 
 # =============================================================================
@@ -47,16 +47,14 @@ from starboard_core.domain.models.llm import OptimizationMode
 def mock_llm_client():
     """Create a mock LLM client for testing."""
     client = Mock()
-    # json_response is a sync method (not async), so use Mock not AsyncMock
-    client.json_response = Mock(
+    client.json_response = AsyncMock(
         return_value={
             "domain": "query",
             "confidence": 0.9,
             "reasoning": "User provided statement ID",
         }
     )
-    # text_response is also sync
-    client.text_response = Mock(return_value="Mock LLM response")
+    client.text_response = AsyncMock(return_value="Mock LLM response")
 
     # call_with_tools_stream is an async generator - create async iterable mock
     async def mock_stream(*args, **kwargs):
@@ -317,14 +315,14 @@ async def test_ambiguous_message_triggers_clarification(agent_factory, state_man
     """
     # Create LLM client mock that returns LOW confidence to trigger clarification
     llm_client_low_confidence = Mock()
-    llm_client_low_confidence.json_response = Mock(
+    llm_client_low_confidence.json_response = AsyncMock(
         return_value={
             "domain": "diagnostic",
             "confidence": 0.4,  # Low confidence triggers clarification
             "reasoning": "Ambiguous request without specific IDs",
         }
     )
-    llm_client_low_confidence.text_response = Mock(return_value="Mock response")
+    llm_client_low_confidence.text_response = AsyncMock(return_value="Mock response")
 
     # Create intent router with low-confidence LLM
     intent_router_with_clarification = IntentRouter(

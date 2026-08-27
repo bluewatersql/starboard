@@ -15,6 +15,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import BaseModel
 from starboard.infra.storage.repository import UCRepository
 from starboard.infra.storage.uc_adapter import UCStorageAdapter
 
@@ -198,35 +199,30 @@ class TestUCRepository:
 
 
 class TestRepositoryWithPydantic:
-    """Tests for repository with Pydantic models (if available)."""
+    """Tests for repository with Pydantic models."""
 
     @pytest.mark.asyncio
     async def test_pydantic_model_conversion(self) -> None:
-        """Test Pydantic model conversion if pydantic is available."""
-        try:
-            from pydantic import BaseModel
+        """Test Pydantic model conversion."""
 
-            class PydanticModel(BaseModel):
-                id: str
-                name: str
-                value: int
+        class PydanticModel(BaseModel):
+            id: str
+            name: str
+            value: int
 
-            mock_storage = MagicMock(spec=UCStorageAdapter)
-            mock_storage.read_one = AsyncMock(
-                return_value={"id": "test", "name": "Test", "value": 42}
-            )
+        mock_storage = MagicMock(spec=UCStorageAdapter)
+        mock_storage.read_one = AsyncMock(
+            return_value={"id": "test", "name": "Test", "value": 42}
+        )
 
-            repo: UCRepository[PydanticModel] = UCRepository(
-                storage=mock_storage,
-                table_id="test",
-                model_class=PydanticModel,
-            )
+        repo: UCRepository[PydanticModel] = UCRepository(
+            storage=mock_storage,
+            table_id="test",
+            model_class=PydanticModel,
+        )
 
-            result = await repo.get(id="test")
+        result = await repo.get(id="test")
 
-            assert result is not None
-            assert isinstance(result, PydanticModel)
-            assert result.id == "test"
-
-        except ImportError:
-            pytest.skip("Pydantic not installed")
+        assert result is not None
+        assert isinstance(result, PydanticModel)
+        assert result.id == "test"

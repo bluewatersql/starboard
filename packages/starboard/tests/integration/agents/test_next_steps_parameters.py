@@ -15,6 +15,9 @@ Unlike unit tests, these use real (mocked) components working together.
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from starboard.adapters.state.inmemory.conversation_state_manager import (
+    InMemoryConversationStateManager,
+)
 from starboard.agents.agent_factory import AgentFactory
 from starboard.agents.config.agent_config import AgentConfig
 from starboard.agents.conversation.multi_agent_manager import (
@@ -23,9 +26,6 @@ from starboard.agents.conversation.multi_agent_manager import (
 from starboard.agents.routing.intent_router import IntentRouter
 from starboard.agents.routing.routing_models import RouteDecision
 from starboard.agents.tools import ToolRegistry
-from starboard.api.conversation_state_manager import (
-    InMemoryConversationStateManager,
-)
 from starboard_core.domain.models.llm import OptimizationMode
 
 # =============================================================================

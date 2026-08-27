@@ -11,6 +11,9 @@ See: /changes/ui_20251202/IMPLEMENTATION_PLAN_STREAMING_POSITIONS.md
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from starboard.adapters.state.inmemory.conversation_state_manager import (
+    InMemoryConversationStateManager,
+)
 from starboard.agents.agent_factory import AgentFactory
 from starboard.agents.config.agent_config import AgentConfig
 from starboard.agents.conversation.multi_agent_manager import (
@@ -24,9 +27,6 @@ from starboard.agents.events import (
 from starboard.agents.routing.intent_router import IntentRouter
 from starboard.agents.routing.routing_models import RouteDecision
 from starboard.agents.tools import ToolRegistry
-from starboard.api.conversation_state_manager import (
-    InMemoryConversationStateManager,
-)
 from starboard_core.domain.models.llm import OptimizationMode
 
 # =============================================================================

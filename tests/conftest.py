@@ -4,6 +4,9 @@
 
 This conftest provides fixtures for cross-package integration testing.
 Package-specific fixtures are registered in each package's root conftest.py.
+
+Run the starboard-core, starboard, and starboard-skills suites in separate
+pytest invocations; combined collection has colliding test-module basenames.
 """
 
 import os
