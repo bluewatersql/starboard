@@ -10,6 +10,14 @@ total order and validates each rule's ``evidence_query`` against a
 caller-supplied set of real ``query_id`` values.
 """
 
+from starboard_core.domain.rules.detectors import DETECTORS, RowMatch
+from starboard_core.domain.rules.evaluator import (
+    DEFAULT_DOMAINS,
+    DOMAIN_TO_RULE_DOMAIN,
+    build_review,
+    evaluate_rule,
+    rank_review_findings,
+)
 from starboard_core.domain.rules.loader import (
     RuleLoadError,
     load_ruleset_from_file,
@@ -35,4 +43,12 @@ __all__ = [
     "load_ruleset_from_string",
     "load_rulesets_from_directory",
     "seed_rules_dir",
+    # Phase-3 D1b — Workload Review engine (rows + rules → findings).
+    "DETECTORS",
+    "RowMatch",
+    "DEFAULT_DOMAINS",
+    "DOMAIN_TO_RULE_DOMAIN",
+    "build_review",
+    "evaluate_rule",
+    "rank_review_findings",
 ]
