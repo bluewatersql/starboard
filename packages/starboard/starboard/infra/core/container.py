@@ -40,6 +40,8 @@ if TYPE_CHECKING:
         SQLiteFeedbackRepository,
     )
     from starboard.adapters.state.sqlite.user_store import SQLiteUserStore
+    from starboard.adapters.state.uc.feedback_repository import UCFeedbackRepository
+    from starboard.adapters.state.uc.user_store import UCUserStore
     from starboard.repositories.feedback_repository import (
         PostgresFeedbackRepository,
     )
@@ -88,7 +90,7 @@ class Container:
 
         # User store (cached per container instance)
         self._user_store: (
-            InMemoryUserStore | SQLiteUserStore | PostgresUserStore | None
+            InMemoryUserStore | SQLiteUserStore | PostgresUserStore | UCUserStore | None
         ) = None
 
         # Foundation components
@@ -578,7 +580,9 @@ class Container:
     @property
     def feedback_repo(
         self,
-    ) -> Union["SQLiteFeedbackRepository", "PostgresFeedbackRepository"]:
+    ) -> Union[
+        "SQLiteFeedbackRepository", "PostgresFeedbackRepository", "UCFeedbackRepository"
+    ]:
         """
         Get feedback repository (database-specific).
 
@@ -596,6 +600,13 @@ class Container:
         """
         if self._state_store is None:
             raise RuntimeError("Container not initialized. Call initialize() first.")
+
+        # Capability dispatch (native_simplification §1): a state store may supply
+        # its own feedback repository (e.g. UCStateStore) rather than requiring an
+        # isinstance ladder here. Prefer that hook when present.
+        get_feedback_repo = getattr(self._state_store, "get_feedback_repo", None)
+        if callable(get_feedback_repo):
+            return get_feedback_repo()
 
         # Detect state store type and return appropriate repository
         from starboard.adapters.state.sqlite.state_store import SQLiteStateStore
@@ -625,7 +636,9 @@ class Container:
     @property
     def user_store(
         self,
-    ) -> Union["InMemoryUserStore", "SQLiteUserStore", "PostgresUserStore"]:
+    ) -> Union[
+        "InMemoryUserStore", "SQLiteUserStore", "PostgresUserStore", "UCUserStore"
+    ]:
         """
         Get user repository (database-specific).
 
@@ -646,6 +659,14 @@ class Container:
 
         if self._state_store is None:
             raise RuntimeError("Container not initialized. Call initialize() first.")
+
+        # Capability dispatch (native_simplification §1): a state store may supply
+        # its own user store (e.g. UCStateStore) rather than requiring an
+        # isinstance ladder here. Prefer that hook when present.
+        get_user_store = getattr(self._state_store, "get_user_store", None)
+        if callable(get_user_store):
+            self._user_store = get_user_store()
+            return self._user_store
 
         # Detect state store type and return appropriate repository
         from starboard.adapters.state.inmemory.state_store import (
