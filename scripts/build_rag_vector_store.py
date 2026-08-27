@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 # Copyright (c) 2025 Databricks, Inc.
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
-"""
-Build RAG vector store for Analytics Agent V2.
+"""Build the experimental, opt-in RAG vector store for Analytics Agent V2.
+
+This is a legacy ANN pipeline retained for manual experiments and snapshot
+maintenance. It is not part of the default runtime path. Phase 2 C1 made
+``scripts/build_rag_reference_files.py`` the source for the shipped,
+embedding-free reference-files path.
 
 Orchestrates the complete pipeline:
 1. Extract metadata from Databricks system tables

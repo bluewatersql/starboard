@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # Copyright (c) 2025 Databricks, Inc.
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
-"""Export production vector store for in-memory bootstrap.
+"""Export an experimental vector-store snapshot for opt-in bootstrap.
 
-This script exports a curated subset of the production vector store
+This legacy maintenance script exports a curated subset of the production vector store
 (starboard_vector.db) to JSON + compressed NumPy format for bundling
-with the starboard-server package.
+with the ``starboard`` package. It is not used by the Phase 2 C1 default
+reference-files path; use ``scripts/build_rag_reference_files.py`` for that.
 
 The exported data is used to bootstrap the in-memory vector store in
 CLI and development environments where SQLite vector extensions are unavailable.
@@ -14,7 +15,7 @@ Usage:
     python scripts/export_vector_store_snapshot.py
 
 Output:
-    packages/starboard-server/starboard/infra/rag/data/bootstrap/
+    packages/starboard/starboard/infra/rag/data/bootstrap/
     ├── tables.json              # Table metadata (readable)
     ├── tables_embeddings.npz    # Precomputed embeddings (binary)
     ├── nuance.json              # Best practices (readable)
