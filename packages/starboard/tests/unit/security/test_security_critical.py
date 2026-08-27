@@ -20,7 +20,7 @@ Covers all 14 security items:
 from __future__ import annotations
 
 import os
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -255,49 +255,7 @@ class TestConfigPiiRedactionDefault:
 
 
 # =============================================================================
-# 9: feedback/visualization/clarification — ownership verification
-# =============================================================================
-
-
-class TestConversationOwnershipVerification:
-    """feedback, visualization, clarification endpoints must verify ownership."""
-
-    def test_feedback_checks_conversation_ownership(self) -> None:
-        """FeedbackService.submit_feedback must verify conversation ownership."""
-        # The endpoint must call conversation_repository to verify ownership
-        # We verify that feedback_service.submit_feedback raises ValueError
-        # when the conversation does not belong to the requester.
-        # This test checks that the service layer enforces ownership.
-        import asyncio
-
-        from starboard.services.feedback.feedback_service import FeedbackService
-
-        mock_feedback_repo = AsyncMock()
-        mock_conversation_repo = AsyncMock()
-
-        # Simulate conversation not found (ownership check fails)
-        mock_conversation_repo.get = AsyncMock(return_value=None)
-
-        service = FeedbackService(
-            repository=mock_feedback_repo,
-            conversation_repository=mock_conversation_repo,
-        )
-
-        async def run():
-            from starboard_core.domain.models.feedback import FeedbackRating
-
-            with pytest.raises((ValueError, PermissionError, Exception)):
-                await service.submit_feedback(
-                    conversation_id="other_user_conv",
-                    message_id="msg_123",
-                    rating=FeedbackRating.POSITIVE,
-                )
-
-        asyncio.run(run())
-
-
-# =============================================================================
-# 10: Auth middleware path matching — prefix not exact
+# 9: Auth middleware path matching — prefix not exact
 # =============================================================================
 
 

@@ -183,10 +183,6 @@ class EnvConfig(BaseSettings):
     # behind ``starboard[sqlite]`` / ``starboard[vectorsearch]``).
     semantic_cache_threshold: float = 0.95  # Minimum similarity for cache hit (vector path only)
 
-    # Memory Consolidation
-    memory_consolidation_enabled: bool = False
-    memory_consolidation_interval: int = 3600  # 1 hour
-
     # Rate Limiting
     rate_limit_enabled: bool = True
     rate_limit_storage: str = "memory://"  # memory:// or redis://...
@@ -488,13 +484,6 @@ class EnvConfig(BaseSettings):
                 f"embedding_cache_ttl must be non-negative, got {self.embedding_cache_ttl}"
             )
 
-        # Validate memory consolidation interval
-        if self.memory_consolidation_interval < 0:
-            errors.append(
-                f"memory_consolidation_interval must be non-negative, "
-                f"got {self.memory_consolidation_interval}"
-            )
-
         # Validate request size
         if self.max_request_size <= 0:
             errors.append(
@@ -706,14 +695,6 @@ class EnvConfig(BaseSettings):
 
         # Semantic Cache
         os.environ["SEMANTIC_CACHE_THRESHOLD"] = str(self.semantic_cache_threshold)
-
-        # Memory Consolidation
-        os.environ["MEMORY_CONSOLIDATION_ENABLED"] = str(
-            self.memory_consolidation_enabled
-        ).lower()
-        os.environ["MEMORY_CONSOLIDATION_INTERVAL"] = str(
-            self.memory_consolidation_interval
-        )
 
         # Rate Limiting
         os.environ["RATE_LIMIT_ENABLED"] = str(self.rate_limit_enabled).lower()

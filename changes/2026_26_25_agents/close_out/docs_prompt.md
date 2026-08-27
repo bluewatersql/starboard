@@ -50,6 +50,7 @@ The docs predate Phases 0–3 and describe a heavier, store-backed system. Corre
    source describes the old architecture (`make diagrams` / `scripts/generate_diagrams.py`).
 4. **Personas end-to-end.** Each area serves the developer and/or user persona with a clear path from
    install → first success → depth.
+5. **`changes` folder is out-of-bounds.** Do not clean-up, change or alter documents captured in the `changes` folder. You may append your status, progress and reports to the relevant tracking document but this folder should not be cleaned up.
 
 ## Method (lead)
 

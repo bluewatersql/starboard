@@ -4,7 +4,8 @@
 
 .PHONY: help setup install install-dev verify \
         dev dev-debug dev-server dev-server-debug dev-stop dev-debug-context \
-        test test-unit test-sdk test-integration test-golden test-contract test-coverage test-architecture \
+        test test-unit test-sdk test-integration test-golden test-contract test-coverage \
+        test-architecture test-architecture-guidelines \
         lint type-check format check pre-commit audit-deps \
         vendor-skills vendor-skills-check \
         build-rag-references clean clean-debug clean-deep build info
@@ -54,7 +55,8 @@ help:
 	@echo "  test-golden       Golden/snapshot tests"
 	@echo "  test-contract     API contract tests"
 	@echo "  test-coverage     With coverage report"
-	@echo "  test-architecture Architecture fitness tests (GUIDELINE-001–010)"
+	@echo "  test-architecture import-linter contracts (4 KEPT)"
+	@echo "  test-architecture-guidelines Legacy GUIDELINE-* pytest suite"
 	@echo ""
 	@echo "$(GREEN)Code Quality:$(NC)"
 	@echo "  lint              Python linting (ruff)"
@@ -225,9 +227,14 @@ test-coverage:
 	@echo "$(GREEN)✓ Coverage report: htmlcov/index.html$(NC)"
 
 test-architecture:
-	@echo "$(BLUE)Running architecture fitness tests...$(NC)"
+	@echo "$(BLUE)Running import-linter contracts...$(NC)"
+	@lint-imports
+	@echo "$(GREEN)Architecture contracts complete.$(NC)"
+
+test-architecture-guidelines:
+	@echo "$(BLUE)Running legacy GUIDELINE-* pytest suite...$(NC)"
 	@pytest tests/architecture/ -v --tb=short
-	@echo "$(GREEN)Architecture tests complete.$(NC)"
+	@echo "$(GREEN)Architecture guideline tests complete.$(NC)"
 
 # ================================
 # Code Quality

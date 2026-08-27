@@ -16,11 +16,12 @@ from __future__ import annotations
 import json
 from typing import Any, Protocol
 
+from starboard_core.rag.models import RAGContext
+
 from starboard.exceptions import AdapterError
 from starboard.infra.observability.logging import get_logger
 from starboard.tools.domain.analytics_sql.models import (
     QueryIntentContext,
-    RAGContext,
 )
 
 logger = get_logger(__name__)

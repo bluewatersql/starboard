@@ -23,7 +23,6 @@ from starboard.tools.domain.analytics.visualization_models import (
     ChartType,
     Encoding,
     EncodingType,
-    VisualizationInput,
     VisualizationOutput,
 )
 
@@ -235,82 +234,6 @@ class TestChartRecommendation:
         assert "confidence" in str(exc_info.value).lower()
 
 
-class TestVisualizationInput:
-    """Test suite for VisualizationInput model."""
-
-    def test_visualizationinput_creation(self):
-        """Test creating a VisualizationInput."""
-        from starboard_core.domain.models.analytics import QueryMetadata
-
-        query_metadata = QueryMetadata(
-            id="test-123",
-            name="Test Query",
-            description="Test description",
-            long_description="Long description",
-            descriptive_name="Descriptive name",
-            domains=["FinOps"],
-            scenarios=["test"],
-            constraints=[],
-            parameters=[],
-            dependencies=[],
-            tables=["system.billing.usage"],
-            query="SELECT 1",
-            required_parameters={},
-            result_columns=[],
-            chart_metadata={
-                "allowed_chart_types": ["bar"],
-                "primary_metric": "cost",
-            },
-        )
-
-        data_profile = {
-            "row_count": 10,
-            "columns": [],
-            "numeric_stats": {},
-        }
-
-        viz_input = VisualizationInput(
-            query_metadata=query_metadata,
-            data_profile=data_profile,
-            data_reference="data_ref_abc123",
-        )
-
-        assert viz_input.query_metadata.id == "test-123"
-        assert viz_input.data_profile["row_count"] == 10
-        assert viz_input.data_reference == "data_ref_abc123"
-
-    def test_visualizationinput_immutable(self):
-        """Test VisualizationInput is immutable (frozen)."""
-        from starboard_core.domain.models.analytics import QueryMetadata
-
-        query_metadata = QueryMetadata(
-            id="test-123",
-            name="Test",
-            description="Test",
-            long_description="Test",
-            descriptive_name="Test",
-            domains=[],
-            scenarios=[],
-            constraints=[],
-            parameters=[],
-            dependencies=[],
-            tables=[],
-            query="SELECT 1",
-            required_parameters={},
-            result_columns=[],
-            chart_metadata={},
-        )
-
-        viz_input = VisualizationInput(
-            query_metadata=query_metadata,
-            data_profile={},
-            data_reference="ref123",
-        )
-
-        with pytest.raises(AttributeError):
-            viz_input.data_reference = "new_ref"  # type: ignore
-
-
 class TestVisualizationOutput:
     """Test suite for VisualizationOutput model."""
 
@@ -414,72 +337,15 @@ class TestIntegration:
     """Integration tests for visualization models working together."""
 
     def test_complete_visualization_flow(self):
-        """Test complete flow from input to output."""
-        from starboard_core.domain.models.analytics import QueryMetadata
-
-        # 1. Create input
-        query_metadata = QueryMetadata(
-            id="b733352d-a70c-452b-9890-16488d4a8ca6",
-            name="Top 10 Most Expensive Jobs",
-            description="Identify highest cost jobs",
-            long_description="Detailed cost analysis",
-            descriptive_name="Cost Analysis",
-            domains=["FinOps", "Job"],
-            scenarios=["cost optimization"],
-            constraints=[],
-            parameters=["start_date", "end_date"],
-            dependencies=[],
-            tables=["system.billing.usage"],
-            query="SELECT job_id, SUM(list_cost) as total_cost FROM ...",
-            required_parameters={
-                "start_date": {"type": "date", "description": "Start date"},
-                "end_date": {"type": "date", "description": "End date"},
-            },
-            result_columns=[
-                {"name": "job_id", "type": "string", "semantic_type": "dimension"},
-                {"name": "total_cost", "type": "float", "semantic_type": "metric"},
-            ],
-            chart_metadata={
-                "allowed_chart_types": ["bar", "table"],
-                "primary_metric": "total_cost",
-                "primary_dimension": "job_id",
-                "suggested_encodings": {
-                    "x": {"field": "job_id", "type": "nominal"},
-                    "y": {"field": "total_cost", "type": "quantitative"},
-                },
-            },
-        )
-
-        data_profile = {
-            "row_count": 10,
-            "columns": [
-                {"name": "job_id", "dtype": "Utf8", "semantic_type": "dimension"},
-                {"name": "total_cost", "dtype": "Float64", "semantic_type": "metric"},
-            ],
-            "numeric_stats": {
-                "total_cost": {
-                    "sum": 3544.21,
-                    "mean": 354.42,
-                    "min": 45.67,
-                    "max": 1234.56,
-                }
-            },
-        }
-
-        viz_input = VisualizationInput(
-            query_metadata=query_metadata,
-            data_profile=data_profile,
-            data_reference="data_ref_test123",
-        )
-
-        # 2. Create recommendation
+        """Test complete flow from recommendation to output."""
+        # 1. Create recommendation
         recommendation = ChartRecommendation(
             chart_type=ChartType.BAR,
             reasoning="Comparing costs across 10 jobs - bar chart shows ranking",
             confidence=0.95,
         )
 
-        # 3. Create chart config
+        # 2. Create chart config
         chart_config = ChartConfig(
             chart_type=ChartType.BAR,
             title="Top 10 Most Expensive Jobs",
@@ -494,7 +360,7 @@ class TestIntegration:
             options={"sort": {"field": "total_cost", "order": "descending"}},
         )
 
-        # 4. Create output
+        # 3. Create output
         output = VisualizationOutput(
             summary="The top 10 jobs consumed $3,544.21 in total DBU costs.",
             chart_recommendation=recommendation,
@@ -504,8 +370,7 @@ class TestIntegration:
         )
 
         # Verify complete flow
-        assert viz_input.query_metadata.id == query_metadata.id
-        assert viz_input.data_reference == output.data_reference
+        assert output.data_reference == "data_ref_test123"
         assert output.chart_config.chart_type == recommendation.chart_type
         assert output.has_visualization is True
 

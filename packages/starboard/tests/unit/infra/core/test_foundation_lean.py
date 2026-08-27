@@ -99,18 +99,24 @@ class TestLeanDefaultFoundation:
 
 class TestSemanticCacheBackendDecision:
     def test_none_backend_is_not_vector(self) -> None:
-        assert Container(_config(vector_backend="none"))._semantic_cache_uses_vector() is False
+        assert (
+            Container(_config(vector_backend="none"))._semantic_cache_uses_vector()
+            is False
+        )
 
     @pytest.mark.parametrize("backend", ["inmemory", "sqlite", "vectorsearch"])
     def test_real_backend_uses_vector(self, backend: str) -> None:
-        assert Container(_config(vector_backend=backend))._semantic_cache_uses_vector() is True
+        assert (
+            Container(_config(vector_backend=backend))._semantic_cache_uses_vector()
+            is True
+        )
 
     @pytest.mark.asyncio
     async def test_vectorsearch_backend_keeps_ttl_cache_without_sqlite(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Managed RAG stores cannot back the low-level semantic-cache protocol."""
-        import starboard.infra.rag as rag
+        import starboard.infra.rag.adapters.storage.sqlite_vector_store as sqlite_store
         from starboard.infra.rag.services import vector_store_factory
 
         managed_store = object()
@@ -128,7 +134,7 @@ class TestSemanticCacheBackendDecision:
             "create_vector_store",
             create_managed_store,
         )
-        monkeypatch.setattr(rag, "SQLiteVectorStore", fail_if_sqlite_is_built)
+        monkeypatch.setattr(sqlite_store, "SQLiteVectorStore", fail_if_sqlite_is_built)
 
         container = Container(
             _config(vector_backend="vectorsearch", llm_api_key="test-key")

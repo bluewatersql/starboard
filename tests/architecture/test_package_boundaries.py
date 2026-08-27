@@ -12,7 +12,11 @@ Importing internal server sub-modules (e.g. ``starboard.infra.*``,
 ``starboard.agents.*``) bypasses the public boundary and creates
 tight coupling.
 
-STATUS: Expected to FAIL because CLI imports internal server modules.
+STATUS: Enforced (passing). The CLI composes the app through the curated public API
+re-exported from ``starboard/__init__.py`` (resolved lazily via :pep:`562`) — e.g.
+``from starboard import get_logger, create_llm_client, WorkloadReviewService`` — instead of
+reaching into ``starboard.infra`` / ``starboard.adapters`` / ``starboard.tools`` directly. New
+CLI code must extend that public API rather than import internals, keeping this contract green.
 """
 
 from __future__ import annotations

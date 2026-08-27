@@ -167,10 +167,6 @@ RATE_LIMIT_ENABLED=true
 RATE_LIMIT_STORAGE=memory://                  # Storage backend for rate limits
 RATE_LIMIT_DEFAULT=100/minute                 # Default rate limit
 MAX_REQUEST_SIZE=10485760                     # Max request size in bytes (10MB)
-
-# Memory Consolidation
-MEMORY_CONSOLIDATION_ENABLED=false
-MEMORY_CONSOLIDATION_INTERVAL=3600            # Seconds between consolidation runs
 ```
 
 ### Databricks Catalog

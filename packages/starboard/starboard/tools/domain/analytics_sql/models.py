@@ -11,7 +11,6 @@ from __future__ import annotations
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
-from starboard_core.rag.models import RAGContext
 
 
 class QueryIntent(StrEnum):
@@ -163,27 +162,6 @@ class QueryIntentContext(BaseModel):
     reasoning: str = Field(..., description="LLM reasoning for classification")
 
 
-class QueryBuildContext(BaseModel):
-    """Complete context for building a SQL query.
-
-    This model combines intent classification and RAG context to provide
-    all information needed for SQL generation.
-
-    Attributes:
-        user_query: Original natural language query
-        intent_context: Classified intent and parameters
-        rag_context: RAG-retrieved context
-        validation_mode: Whether to validate SQL (online vs offline)
-    """
-
-    user_query: str = Field(..., description="Original NL query", min_length=1)
-    intent_context: QueryIntentContext = Field(..., description="Classified intent")
-    rag_context: RAGContext = Field(..., description="RAG-retrieved context")
-    validation_mode: str = Field(
-        default="online", description="Validation mode (online/offline)"
-    )
-
-
 class ValidationResult(BaseModel):
     """Result of SQL validation.
 
@@ -199,50 +177,3 @@ class ValidationResult(BaseModel):
     errors: list[str] = Field(default_factory=list, description="Validation errors")
     warnings: list[str] = Field(default_factory=list, description="Validation warnings")
     validation_method: str = Field(..., description="Validation method used")
-
-
-class AnalyticsResult(BaseModel):
-    """Complete analytics query result from pipeline.
-
-    This is the final output of the query orchestrator, containing:
-    - Generated SQL
-    - Query results (rows)
-    - Formatted profile for LLM consumption
-    - Visualization configuration
-    - Intent classification context
-    - RAG discovery context
-    - Execution metadata
-
-    Attributes:
-        sql: Generated SQL query string
-        results: Query results (list of row dicts)
-        metadata: Execution metadata (row count, timing, etc.)
-        formatted_results: LLM-friendly data profile with statistics and summaries
-        visualization: Visualization recommendation and chart config
-        intent_context: Classified intent and domain
-        rag_context: RAG-retrieved context (tables, nuances, etc.)
-        iterations: Number of Reflexion iterations used
-        cached: Whether result came from semantic cache
-        execution_time_ms: Total orchestration time in milliseconds
-    """
-
-    sql: str = Field(..., description="Generated SQL query", min_length=1)
-    results: list[dict] = Field(
-        default_factory=list, description="Query results (rows as dicts)"
-    )
-    metadata: dict = Field(default_factory=dict, description="Execution metadata")
-    formatted_results: dict = Field(
-        default_factory=dict,
-        description="LLM-friendly data profile with statistics and summaries",
-    )
-    visualization: dict = Field(
-        default_factory=dict,
-        description="Visualization recommendation and chart configuration",
-    )
-    intent_context: QueryIntentContext = Field(..., description="Intent classification")
-    rag_context: RAGContext = Field(..., description="RAG context")
-    iterations: int = Field(default=1, description="Reflexion iterations used", ge=1)
-    cached: bool = Field(default=False, description="Result from cache")
-    execution_time_ms: int = Field(
-        default=0, description="Total execution time (ms)", ge=0
-    )

@@ -260,7 +260,9 @@ class Container:
             # Reflexion store (opt-in): its own dedicated vector store on a
             # separate database. Lazy-imported so sqlite-vec is only touched here.
             if wants_reflexion:
-                from starboard.infra.rag import SQLiteVectorStore
+                from starboard.infra.rag.adapters.storage.sqlite_vector_store import (
+                    SQLiteVectorStore,
+                )
                 from starboard.infra.reflexion import SQLiteReflexionStore
 
                 reflexion_db_path = self._config.sqlite_reflexion_path or ":memory:"
@@ -293,7 +295,9 @@ class Container:
                         # The multi-collection RAG store does not expose the
                         # low-level VectorStore API, so sqlite gets a dedicated
                         # cache collection using its selected local backend.
-                        from starboard.infra.rag import SQLiteVectorStore
+                        from starboard.infra.rag.adapters.storage.sqlite_vector_store import (
+                            SQLiteVectorStore,
+                        )
 
                         cache_db_path = self._config.sqlite_reflexion_path or ":memory:"
                         cache_vector_store = SQLiteVectorStore(

@@ -36,7 +36,7 @@ from starboard_x.contract import (
     envelope,
 )
 
-from starboard.infra.observability.logging import get_logger
+from starboard import get_logger
 
 logger = get_logger(__name__)
 
@@ -57,7 +57,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Workspace to target (a ~/.databrickscfg profile name).",
     )
     ask.add_argument(
-        "--profile", default=None, help="Databricks config profile (alias of --workspace)."
+        "--profile",
+        default=None,
+        help="Databricks config profile (alias of --workspace).",
     )
     ask.add_argument("--host", default=None, help="Databricks workspace URL.")
     ask.add_argument("--token", default=None, help="Databricks personal access token.")
@@ -98,9 +100,11 @@ def _resolve_config(args: argparse.Namespace):
 
 def _default_adapter(config: Any) -> Any:
     """Build the public ``AnalyticsSqlAdapter`` over the native ``LLMSQLGenerator``."""
-    from starboard.adapters.llm import create_llm_client
-    from starboard.adapters.ports.analytics_sql import AnalyticsSqlAdapter
-    from starboard.tools.domain.analytics_sql.llm_sql_generator import LLMSQLGenerator
+    from starboard import (
+        AnalyticsSqlAdapter,
+        LLMSQLGenerator,
+        create_llm_client,
+    )
 
     llm_client = create_llm_client(config)
     generator = LLMSQLGenerator(llm_client=llm_client)  # type: ignore[arg-type]
@@ -133,11 +137,19 @@ def run_genie(argv: list[str], *, adapter_factory: Any = None) -> int:
         adapter = factory(config)
     except Exception as exc:  # noqa: BLE001 - map to the auth/arg contract
         msg = str(exc)
-        code = EXIT_AUTH if "auth" in msg.lower() or "credential" in msg.lower() else EXIT_API
+        code = (
+            EXIT_AUTH
+            if "auth" in msg.lower() or "credential" in msg.lower()
+            else EXIT_API
+        )
         if args.json:
             out.print_json(
                 data=envelope(
-                    ok=False, domain=_DOMAIN, command="ask", error=msg, meta=build_meta()
+                    ok=False,
+                    domain=_DOMAIN,
+                    command="ask",
+                    error=msg,
+                    meta=build_meta(),
                 )
             )
         else:
@@ -158,7 +170,11 @@ def run_genie(argv: list[str], *, adapter_factory: Any = None) -> int:
         if args.json:
             out.print_json(
                 data=envelope(
-                    ok=False, domain=_DOMAIN, command="ask", error=str(exc), meta=build_meta()
+                    ok=False,
+                    domain=_DOMAIN,
+                    command="ask",
+                    error=str(exc),
+                    meta=build_meta(),
                 )
             )
         else:

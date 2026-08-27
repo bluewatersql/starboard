@@ -28,8 +28,8 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import Config
 from rich.console import Console
 
+from starboard import describe_auth, resolve_workspace_client
 from starboard.cli.cli.exit_codes import AUTH_ERROR, SUCCESS, USAGE_ERROR
-from starboard.infra.auth.resolver import describe_auth, resolve_workspace_client
 
 # Cached at ~/.databricks/token-cache.json by the SDK's external-browser flow.
 _TOKEN_CACHE_HINT = "~/.databricks/token-cache.json"

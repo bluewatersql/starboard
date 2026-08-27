@@ -69,8 +69,6 @@ uc = [
 cluster = ["databricks-sdk>=0.73.0,<1.0.0"]
 # --- charts (heavy binary dep, isolated; still a stub until it ships) ---------
 charts = [
-    "altair>=5.0.0,<6.0.0",
-    "vl-convert-python>=1.0.0,<2.0.0",
     "polars>=1.17.0,<2.0.0",
 ]
 all = [

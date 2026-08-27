@@ -36,7 +36,7 @@ from starboard_x.contract import (
     envelope,
 )
 
-from starboard.infra.observability.logging import get_logger
+from starboard import get_logger
 
 logger = get_logger(__name__)
 
@@ -64,7 +64,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Databricks config profile (alias of --workspace).",
     )
     parser.add_argument("--host", default=None, help="Databricks workspace URL.")
-    parser.add_argument("--token", default=None, help="Databricks personal access token.")
+    parser.add_argument(
+        "--token", default=None, help="Databricks personal access token."
+    )
     parser.add_argument("--lookback-days", type=int, default=30)
     parser.add_argument("--max-parallelism", type=int, default=4)
     parser.add_argument(
@@ -171,11 +173,7 @@ def _build_validator(args: argparse.Namespace, config, err: Console):
     """
     if not args.validate:
         return None
-    from starboard.adapters.llm import create_llm_client
-    from starboard.tools.services.validator_council import (
-        CouncilConfig,
-        build_council,
-    )
+    from starboard import CouncilConfig, build_council, create_llm_client
 
     try:
         llm_client = create_llm_client(config)
@@ -192,10 +190,8 @@ def _build_validator(args: argparse.Namespace, config, err: Console):
 async def _run_review(
     args: argparse.Namespace, workspace_label: str | None, err: Console
 ):
+    from starboard import WorkloadReviewService
     from starboard.bootstrap import AsyncDatabricksClient, AsyncSQLExecutor
-    from starboard.tools.services.workload_review_service import (
-        WorkloadReviewService,
-    )
 
     config = _resolve_config(args)
     gate = _build_gate(args)
@@ -235,8 +231,10 @@ def _render_table(review, console: Console) -> None:
         )
 
     if not review.findings:
-        console.print("\n[green]No findings.[/green] "
-                      "(No rules fired, or evidence returned nothing to flag.)\n")
+        console.print(
+            "\n[green]No findings.[/green] "
+            "(No rules fired, or evidence returned nothing to flag.)\n"
+        )
         console.print(f"[dim]{review.cost_basis}[/dim]\n")
         return
 
@@ -257,9 +255,7 @@ def _render_table(review, console: Console) -> None:
     for i, rf in enumerate(review.findings, 1):
         f = rf.finding
         color = sev_color.get(f.severity.value, "white")
-        evidence = ", ".join(
-            f"{ref.query_id}[{ref.row_index}]" for ref in rf.evidence
-        )
+        evidence = ", ".join(f"{ref.query_id}[{ref.row_index}]" for ref in rf.evidence)
         table.add_row(
             str(i),
             f"[{color}]{f.severity.value}[/{color}]",
@@ -368,12 +364,8 @@ def run_review(argv: list[str]) -> int:
                 "gate_suppressed": (
                     gate_outcome.suppressed_count if gate_outcome else 0
                 ),
-                "council_suppressed": (
-                    council.suppressed_count if council else 0
-                ),
-                "council_model_calls": (
-                    council.total_model_calls if council else 0
-                ),
+                "council_suppressed": (council.suppressed_count if council else 0),
+                "council_model_calls": (council.total_model_calls if council else 0),
                 "council_max_possible_calls": (
                     council.max_possible_calls if council else 0
                 ),

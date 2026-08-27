@@ -18,8 +18,10 @@ The test performs a best-effort mapping:
 4. Reports (a) imports with no matching declared dependency and (b) declared
    dependencies with no matching import.
 
-STATUS: Expected to FAIL because the codebase has unused declared dependencies
-and/or imports whose mapping is missing.
+Optional store/vector drivers live in ``[project.optional-dependencies]`` extras and are
+lazy-imported inside the selected backend branch; they are enumerated in
+``_OPTIONAL_DEPENDENCIES`` so the best-effort ``[project].dependencies``-only parser does not
+flag them as undeclared. Workspace sibling packages are enumerated in ``_WORKSPACE_PACKAGES``.
 """
 
 from __future__ import annotations
@@ -36,6 +38,7 @@ _WORKSPACE_PACKAGES = {
     "starboard_core",
     "starboard",
     "starboard_skills",
+    "starboard_x",  # Workspace sibling package (packages/starboard-x)
 }
 
 # Known stdlib top-level modules — these need no declared dependency
@@ -144,7 +147,6 @@ _DIST_TO_IMPORT: dict[str, str] = {
     "numpy": "numpy",
     "pandas": "pandas",
     "polars": "polars",
-    "altair": "altair",
     "tenacity": "tenacity",
     "cachetools": "cachetools",
     "python-jose": "jose",
@@ -166,7 +168,6 @@ _DIST_TO_IMPORT: dict[str, str] = {
     "sentence-transformers": "sentence_transformers",
     "opentelemetry-api": "opentelemetry",
     "opentelemetry-sdk": "opentelemetry",
-    "vl-convert-python": "vl_convert",
     "python-dotenv": "dotenv",
     "pyyaml": "yaml",
 }
@@ -194,9 +195,16 @@ _KNOWN_TRANSITIVES = {
     "starlette",  # Transitive via fastapi
 }
 
-# Dependencies declared in optional extras, actively used
+# Dependencies declared in optional extras, actively used. Each of these is declared in
+# packages/starboard/pyproject.toml [project.optional-dependencies] and lazy-imported inside
+# the selected backend branch (state_factory/vector_store_factory), so they are legitimately
+# declared-and-used but absent from [project.dependencies].
 _OPTIONAL_DEPENDENCIES = {
     "opentelemetry",  # In [observability] extras, actively used
+    "aiosqlite",  # In [sqlite] extra; lazy-imported by the sqlite state backend
+    "sqlite_vec",  # In [sqlite] extra; loaded as a SQLite extension by the sqlite vector backend
+    "asyncpg",  # In [postgres]/[memory] extras; lazy-imported by the postgres/lakebase backends
+    "redis",  # In [redis] extra; lazy-imported by the redis state backend
 }
 
 

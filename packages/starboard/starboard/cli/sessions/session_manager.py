@@ -20,12 +20,12 @@ from uuid import uuid4
 from starboard_core.ports.state_store import StateStore
 from starboard_core.repositories.conversation import ConversationRepository
 
+from starboard import get_logger
 from starboard.cli.sessions.json_store import (
     INDEX_VERSION,
     JsonStateStore,
     atomic_write_json,
 )
-from starboard.infra.observability.logging import get_logger
 
 logger = get_logger(__name__)
 

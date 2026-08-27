@@ -9,8 +9,7 @@ Models:
     - Encoding: Single encoding specification (x, y, color, etc.)
     - ChartConfig: Complete chart configuration (Pydantic validated)
     - ChartRecommendation: LLM's reasoning for chart selection
-    - VisualizationInput: Input to VisualizationService
-    - VisualizationOutput: Output from VisualizationService
+    - VisualizationOutput: Chart summary and validated config for the frontend
 
 Design Principles:
     - Pydantic models at boundaries (external validation)
@@ -26,7 +25,6 @@ from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from starboard_core.domain.models.analytics import QueryMetadata
 
 
 class EncodingType(StrEnum):
@@ -117,7 +115,7 @@ class Encoding(BaseModel):
 class ChartConfig(BaseModel):
     """Complete chart configuration (Vega-Lite-inspired).
 
-    Declarative specification of a chart that can be rendered by ChartRenderer.
+    Declarative specification of a chart that is rendered by the frontend.
     Validated against query catalog constraints (allowed_chart_types).
 
     Attributes:
@@ -224,37 +222,6 @@ class ChartRecommendation:
         """Validate confidence is in range [0.0, 1.0]."""
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError(f"confidence must be in [0.0, 1.0], got {self.confidence}")
-
-
-@dataclass(frozen=True)
-class VisualizationInput:
-    """Input to VisualizationService.
-
-    Contains all data needed for LLM to generate chart config:
-        - Query metadata (guardrails from catalog)
-        - Data profile (statistics, samples)
-        - Data reference (for caching)
-
-    Attributes:
-        query_metadata: Query catalog metadata (name, description, chart_metadata, etc.)
-        data_profile: Statistical profile from DataProfiler (numeric_stats, categorical_stats, etc.)
-        data_reference: Unique key for cached query results
-
-    Examples:
-        >>> VisualizationInput(
-        ...     query_metadata=QueryMetadata(...),
-        ...     data_profile={
-        ...         "row_count": 10,
-        ...         "columns": [...],
-        ...         "numeric_stats": {"list_cost": {...}},
-        ...     },
-        ...     data_reference="data_ref_abc123",
-        ... )
-    """
-
-    query_metadata: QueryMetadata
-    data_profile: dict[str, Any]
-    data_reference: str
 
 
 @dataclass(frozen=True)

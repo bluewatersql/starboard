@@ -71,7 +71,7 @@ packages/starboard/starboard/tools/
 |   |-- uc_service.py
 |   |-- warehouse_service.py
 |   |-- warehouse_portfolio_service.py
-|   |-- chart_renderer.py
+|   |-- direct_chart_builder.py
 |   |-- query_result_cache.py
 |   |-- query_workload_service.py
 |   |-- validation.py
