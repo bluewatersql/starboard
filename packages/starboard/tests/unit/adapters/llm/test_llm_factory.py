@@ -90,6 +90,39 @@ class TestLLMFactory:
         assert isinstance(client, BaseLLMClient)
         assert client.__class__.__name__ == "OpenAIProvider"
 
+    def test_databricks_serving_uses_resolved_oauth_token(self) -> None:
+        """When LLM_BASE_URL is a Databricks serving endpoint, the client uses the
+        token resolved from the auth'd client — not the static LLM_API_KEY."""
+        config = EnvConfig(
+            llm_provider="openai",
+            llm_api_key="stale-pat",
+            llm_model="databricks-claude-sonnet-4-5",
+            llm_base_url="https://ws.cloud.databricks.com/serving-endpoints",
+        )
+        with patch(
+            "starboard.adapters.llm.databricks_auth.resolve_serving_bearer_token",
+            return_value="fresh-oauth-token",
+        ):
+            client = create_llm_client(cfg=config)
+        # OpenAIProvider stores the resolved key on its AsyncOpenAI client.
+        assert client.async_client.api_key == "fresh-oauth-token"
+
+    def test_falls_back_to_env_key_when_no_oauth_token(self) -> None:
+        """When no Databricks token can be resolved, the client falls back to the
+        configured LLM_API_KEY (e.g. real OpenAI, or resolution failure)."""
+        config = EnvConfig(
+            llm_provider="openai",
+            llm_api_key="env-key",
+            llm_model="gpt-4o",
+            llm_base_url="https://api.openai.com/v1",
+        )
+        with patch(
+            "starboard.adapters.llm.databricks_auth.resolve_serving_bearer_token",
+            return_value=None,
+        ):
+            client = create_llm_client(cfg=config)
+        assert client.async_client.api_key == "env-key"
+
     def test_create_llm_client_logs_provider_selection(self) -> None:
         """Test factory logs provider selection."""
         config = EnvConfig(

@@ -264,7 +264,7 @@ def parse_json(value: Any, expected_type: type = dict) -> Any:
     Returns:
         Parsed object of expected_type, or empty instance if parsing fails
     """
-    default = expected_type() if expected_type in (dict, list) else None
+    default: Any = expected_type() if expected_type in (dict, list) else None
 
     if value is None:
         return default

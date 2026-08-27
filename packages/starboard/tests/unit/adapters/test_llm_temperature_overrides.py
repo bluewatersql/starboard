@@ -94,6 +94,32 @@ class TestGPT5TemperatureOverride:
 
         assert params["temperature"] == 0.7  # Not overridden
 
+    def test_temperature_omitted_for_claude_sonnet_5(self, llm_client):
+        """Claude Sonnet 5 rejects the temperature parameter — it must be omitted."""
+        params = llm_client._build_request_params(
+            messages=[{"role": "user", "content": "test"}],
+            model="databricks-claude-sonnet-5",
+            temperature=0.4,
+        )
+        assert "temperature" not in params
+
+        # The global.anthropic.* form the serving endpoint reports is also covered.
+        params = llm_client._build_request_params(
+            messages=[{"role": "user", "content": "test"}],
+            model="global.anthropic.claude-sonnet-5",
+            temperature=0.4,
+        )
+        assert "temperature" not in params
+
+    def test_temperature_kept_for_claude_sonnet_4_5(self, llm_client):
+        """The older Claude Sonnet 4.5 still accepts temperature (no false match)."""
+        params = llm_client._build_request_params(
+            messages=[{"role": "user", "content": "test"}],
+            model="databricks-claude-sonnet-4-5",
+            temperature=0.4,
+        )
+        assert params["temperature"] == 0.4
+
     @patch("starboard.adapters.llm.openai.client.logger")
     def test_logging_when_temperature_overridden(self, mock_logger, llm_client):
         """Test that info log is emitted when temperature is overridden."""

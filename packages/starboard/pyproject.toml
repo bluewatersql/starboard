@@ -158,6 +158,7 @@ all = [
 
 [project.scripts]
 starboard = "starboard.cli.main:main"
+starboard-server = "starboard.main:run"
 starboard-mcp = "starboard.mcp.cli:main"
 
 [build-system]

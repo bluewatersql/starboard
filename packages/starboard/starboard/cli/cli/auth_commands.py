@@ -28,7 +28,7 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import Config
 from rich.console import Console
 
-from starboard import describe_auth, resolve_workspace_client
+from starboard import WorkspaceTarget, describe_auth, resolve_workspace_client
 from starboard.cli.cli.exit_codes import AUTH_ERROR, SUCCESS, USAGE_ERROR
 
 # Cached at ~/.databricks/token-cache.json by the SDK's external-browser flow.
@@ -107,7 +107,12 @@ def cmd_auth_login(
     return SUCCESS
 
 
-def cmd_auth_status(*, as_json: bool = False) -> int:
+def cmd_auth_status(
+    *,
+    as_json: bool = False,
+    profile: str | None = None,
+    host: str | None = None,
+) -> int:
     """Resolve the current auth and print a redacted description.
 
     Uses the shared resolver so it reflects exactly what the agent path will
@@ -115,6 +120,11 @@ def cmd_auth_status(*, as_json: bool = False) -> int:
 
     Args:
         as_json: Emit a JSON object on stdout instead of a table.
+        profile: ``~/.databrickscfg`` profile to resolve against (highest
+            precedence; overrides env/ambient). When omitted, the resolver's
+            normal precedence chain (env → ``.databrickscfg`` DEFAULT → ambient)
+            applies.
+        host: Explicit workspace URL to resolve against.
 
     Returns:
         A process exit code (``0`` on success, nonzero on failure).
@@ -122,7 +132,8 @@ def cmd_auth_status(*, as_json: bool = False) -> int:
     err = Console(stderr=True)
 
     try:
-        client = resolve_workspace_client()
+        target = WorkspaceTarget.resolve(profile=profile, host=host)
+        client = resolve_workspace_client(target)
         info = describe_auth(client)
     except Exception as e:  # noqa: BLE001 - any resolution/identity failure
         err.print(
@@ -182,6 +193,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show the resolved Databricks identity (no secrets).",
     )
     status.add_argument(
+        "--profile",
+        type=str,
+        default=None,
+        help="~/.databrickscfg profile to resolve against (overrides env/ambient).",
+    )
+    status.add_argument(
+        "--host",
+        type=str,
+        default=None,
+        help="Databricks workspace URL to resolve against.",
+    )
+    status.add_argument(
         "--json",
         action="store_true",
         dest="json",
@@ -206,7 +229,7 @@ def run_auth(argv: list[str]) -> int:
     if ns.auth_command == "login":
         return cmd_auth_login(host=ns.host, profile=ns.profile)
     if ns.auth_command == "status":
-        return cmd_auth_status(as_json=ns.json)
+        return cmd_auth_status(as_json=ns.json, profile=ns.profile, host=ns.host)
 
     parser.print_help(sys.stderr)
     return USAGE_ERROR

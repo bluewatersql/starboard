@@ -66,7 +66,15 @@ def create_llm_client(cfg: "EnvConfig | None" = None) -> BaseLLMClient:
     )
 
     if provider == "openai":
-        return OpenAIProvider(cfg=cfg)
+        # Prefer a fresh Databricks OAuth/PAT token from the unified auth resolver
+        # when the endpoint is a Databricks serving endpoint; fall back to the
+        # configured LLM_API_KEY otherwise (or when resolution fails).
+        from starboard.adapters.llm.databricks_auth import (
+            resolve_serving_bearer_token,
+        )
+
+        api_key = resolve_serving_bearer_token(cfg) or cfg.llm_api_key
+        return OpenAIProvider(cfg=cfg, api_key=api_key)
     else:
         raise ValueError(
             f"Unsupported LLM provider: {provider}. "

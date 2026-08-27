@@ -8,50 +8,47 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper
 
 Discover and map a Databricks workspace — enumerate jobs, clusters, warehouses, and Unity Catalog assets to build a comprehensive inventory.
 
-## Dual-Mode Behavior
+## How this skill runs — you are the analyst
 
-**Check which tools are available before proceeding:**
+You already have an LLM: **yourself**. This skill's job is to hand you the
+**deterministic workspace data**; *you* synthesize the inventory, observations,
+and recommendations. Do **not** hand the analysis off to a separate, server-side
+LLM — that defeats the purpose of a lightweight skill and breaks when the
+server's credential differs from your session's. Pick the first data source
+available, in order:
 
-If `mcp__starboard__*` tools are available in your context, use them for full agent orchestration:
-```
-mcp__starboard__discover  (or similar MCP tool)
-```
+## Tier 1 — bundled helper (deterministic, no LLM) — preferred
 
-If MCP tools are NOT available, use `starboard-helper` via Bash to enumerate workspace resources:
-
-```bash
-starboard-helper job list --limit 100
-starboard-helper cluster list
-starboard-helper warehouse list
-starboard-helper uc catalogs
-```
-
-## MCP Path
-
-When `mcp__starboard__*` tools are available:
-1. Call the relevant MCP tool — the full agent stack handles orchestration, analysis, and recommendations.
-2. Return the agent's response directly.
-
-## Tier 1 — bundled helper (deterministic, no LLM)
-
-If MCP tools are unavailable but `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, run
-the deterministic discovery pipeline (audit + query packs, **no LLM analysis**).
-It emits the stable JSON envelope (`{ok, domain, command, data|error, meta}`) to
-stdout and runs out-of-context in Python — the command is pre-approved, so no
-permission prompt appears:
+If `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, run the deterministic discovery
+pipeline (audit + query packs, **no LLM analysis**). It emits the stable JSON
+envelope (`{ok, domain, command, data|error, meta}`) to stdout and runs
+out-of-context in Python — the command is pre-approved, so no permission prompt
+appears:
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only
 ${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs finops_billing jobs
 ```
 
-Read the JSON (`data.packs`, `data.audit`) and synthesize the inventory. Requires
+The envelope's `data.packs[].results[]` carries the **actual rows** (`columns` +
+`rows`, with `row_count` and a `truncated` flag) alongside `data.audit`. Read
+those and synthesize the inventory yourself. Requires
 `pip install "starboard-core[discovery]"`. For raw per-resource enumeration
 instead, use the Tier-0 `starboard-helper` commands below.
 
-## Non-MCP Path (Tier 0 — raw fetch)
+## MCP data tools (optional — deterministic only)
 
-When neither MCP nor the bundled helper is available, follow these steps:
+If `mcp__starboard__run_discovery_queries` is available it returns the same
+deterministic query data and is an equivalent source to Tier 1. **Do not** call
+the server-side analysis/synthesis tools (`start_discovery_analysis`,
+`get_discovery_analysis_progress`, `synthesize_discovery_report`) from a host
+agent — those spin up a *second*, server-side LLM. Take the returned data and
+analyze it yourself.
+
+## Tier 0 — raw fetch via `starboard-helper`
+
+When neither the bundled helper nor MCP data tools are available, enumerate
+resources directly:
 
 ### Step 1: Enumerate all resource types
 ```bash

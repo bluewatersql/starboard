@@ -149,6 +149,7 @@ class QueryPackRegistry:
             result = [
                 pack for pack in result
                 if pack.domain in target_set
+                or pack.pack_id in target_set
                 or pack.pack_id in ALWAYS_RUN_PACKS
             ]
 
@@ -185,6 +186,19 @@ class QueryPackRegistry:
     def pack_count(self) -> int:
         """Total number of registered packs."""
         return len(self._packs)
+
+    def known_selectors(self) -> set[str]:
+        """Valid ``--packs`` selectors: every pack id and every domain.
+
+        Used to validate user-supplied domain/pack filters before a run so an
+        unknown name fails fast (arg-error) instead of silently selecting
+        nothing (or, historically, everything).
+        """
+        selectors: set[str] = set()
+        for pack in self._packs.values():
+            selectors.add(pack.pack_id)
+            selectors.add(pack.domain)
+        return selectors
 
 
 def create_default_registry() -> QueryPackRegistry:

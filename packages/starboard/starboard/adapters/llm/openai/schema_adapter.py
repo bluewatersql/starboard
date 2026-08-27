@@ -52,8 +52,12 @@ def is_gpt5_model(model: str) -> bool:
 def is_no_temperature_model(model: str) -> bool:
     """Check if a model rejects the temperature parameter entirely.
 
-    Claude Opus 4 and later Anthropic models (claude-opus-4-x, global.anthropic.claude-opus-4-x)
-    return a 400 BAD_REQUEST when temperature is included in the request.
+    Newer Anthropic models return a 400 BAD_REQUEST when ``temperature`` is
+    included in the request. This covers Claude Opus 4 (``claude-opus-4-x`` /
+    ``global.anthropic.claude-opus-4-x``) and Claude Sonnet 5
+    (``claude-sonnet-5`` / ``global.anthropic.claude-sonnet-5``). The
+    ``claude-sonnet-5`` token deliberately does not match the older
+    ``claude-sonnet-4-5``, which still accepts temperature.
 
     Args:
         model: Model identifier
@@ -62,7 +66,12 @@ def is_no_temperature_model(model: str) -> bool:
         True if temperature must be omitted from the API request
     """
     model_lower = model.lower()
-    return "claude-opus-4" in model_lower or "claude_opus_4" in model_lower
+    return (
+        "claude-opus-4" in model_lower
+        or "claude_opus_4" in model_lower
+        or "claude-sonnet-5" in model_lower
+        or "claude_sonnet_5" in model_lower
+    )
 
 
 _NO_STRUCTURED_OUTPUT_PATTERNS = (

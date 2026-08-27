@@ -73,6 +73,38 @@ class TestAuthStatus:
         assert payload == described
         assert "token" not in payload
 
+    def test_status_accepts_profile(self):
+        """`auth status --profile NAME` resolves that profile via the shared resolver."""
+        fake_client = MagicMock()
+        described = {
+            "host": "https://ws.cloud.databricks.com",
+            "auth_type": "databricks-cli",
+            "profile": "e2-demo-field-eng",
+            "user": "u@example.com",
+        }
+        with (
+            patch(f"{_MODULE}.resolve_workspace_client", return_value=fake_client) as res,
+            patch(f"{_MODULE}.describe_auth", return_value=described),
+        ):
+            rc = cmd_auth_status(profile="e2-demo-field-eng")
+
+        assert rc == SUCCESS
+        # The resolver is handed a target carrying the requested profile.
+        target = res.call_args.args[0]
+        assert target.profile == "e2-demo-field-eng"
+
+    def test_status_accepts_host(self):
+        """`auth status --host URL` resolves against that host."""
+        with (
+            patch(f"{_MODULE}.resolve_workspace_client", return_value=MagicMock()) as res,
+            patch(f"{_MODULE}.describe_auth", return_value={"host": None, "auth_type": None, "profile": None, "user": None}),
+        ):
+            rc = cmd_auth_status(host="https://ws.cloud.databricks.com")
+
+        assert rc == SUCCESS
+        target = res.call_args.args[0]
+        assert target.host == "https://ws.cloud.databricks.com"
+
     def test_status_failure_returns_auth_error(self, capsys):
         """A failed resolution surfaces an actionable error + nonzero exit."""
         with patch(
@@ -197,7 +229,15 @@ class TestRunAuthDispatch:
         with patch(f"{_MODULE}.cmd_auth_status", return_value=SUCCESS) as status:
             rc = run_auth(["status", "--json"])
         assert rc == SUCCESS
-        status.assert_called_once_with(as_json=True)
+        status.assert_called_once_with(as_json=True, profile=None, host=None)
+
+    def test_dispatch_status_with_profile(self):
+        with patch(f"{_MODULE}.cmd_auth_status", return_value=SUCCESS) as status:
+            rc = run_auth(["status", "--profile", "e2-demo-field-eng"])
+        assert rc == SUCCESS
+        status.assert_called_once_with(
+            as_json=False, profile="e2-demo-field-eng", host=None
+        )
 
     def test_no_subcommand_is_usage_error(self):
         assert run_auth([]) == USAGE_ERROR

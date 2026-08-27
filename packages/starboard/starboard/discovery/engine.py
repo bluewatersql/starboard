@@ -178,7 +178,7 @@ class DiscoveryEngine:
             selected_packs = self._query_registry.get_packs_for_products(
                 active_products=active_products,
                 min_dbu_threshold=self._config.min_dbu_threshold,
-                include=list(self._config.domains)
+                target_domains=list(self._config.domains)
                 if self._config.domains is not None
                 else None,
             )
@@ -359,7 +359,7 @@ class DiscoveryEngine:
         packs = self._query_registry.get_packs_for_products(
             active_products=active_products,
             min_dbu_threshold=self._config.min_dbu_threshold,
-            include=list(self._config.domains)
+            target_domains=list(self._config.domains)
             if self._config.domains is not None
             else None,
         )

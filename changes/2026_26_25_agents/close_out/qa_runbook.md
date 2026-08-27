@@ -40,7 +40,7 @@ uv run python -m pytest packages/starboard-skills/tests/ -q             # ~28 pa
 uv run python -m pytest packages/starboard-internal/tests/ -q           # ~39 passed
 uv run python -m pytest packages/starboard-plugin-sample/tests/ -q      # ~3 passed
 ```
-- [X] core green · [ ] starboard green · [X] skills green · [X] internal green · [X] plugin-sample green
+- [X] core green · [X] starboard green · [X] skills green · [X] internal green · [X] plugin-sample green
 
 ## 2. 🟢 Governance grep (public artifacts stay clean)
 
@@ -59,7 +59,7 @@ starboard auth status                                   # resolved identity (red
 starboard auth status --profile e2-demo-field-eng
 ```
 - [X] `auth status` prints host / auth_type / user with **no token/secret** shown.
-- [ ] `--profile` overrides the resolved workspace; unset → falls through the SDK chain.
+- [X] `--profile` overrides the resolved workspace; unset → falls through the SDK chain.
 
 ## 4. 🔵 Discovery + query packs (public `system.*`)
 
@@ -67,11 +67,11 @@ starboard auth status --profile e2-demo-field-eng
 python -m starboard_x.discovery run --data-only --profile e2-demo-field-eng
 python -m starboard_x.discovery run --data-only --packs finops_billing jobs
 ```
-- [ ] Emits the JSON envelope `{ok, domain, command, data|error, meta}`; `ok=true`; exit 0.
-- [ ] Registry has **27 packs** (`create_default_registry`); the 4 Phase-0 system-table packs
+- [X] Emits the JSON envelope `{ok, domain, command, data|error, meta}`; `ok=true`; exit 0.
+- [X] Registry has **27 packs** (`create_default_registry`); the 4 Phase-0 system-table packs
   (predictive_optimization, data_quality, data_classification, networking) + warehouse + compute_reliability
   + column_lineage resolve and Preview tables degrade gracefully (`required=False`).
-- [ ] `--limit N` on `starboard-helper job list` / `query list` returns **exactly N** (SDK-pagination bug fixed).
+- [X] `--limit N` on `starboard-helper job list` / `query list` returns **exactly N** (SDK-pagination bug fixed).
 
 ## 5. 🔵🟣 Workload Review (flagship, D1b/D1c)
 
@@ -83,14 +83,14 @@ starboard review --snapshot-out /tmp/rev1.json                    # write snapsh
 starboard review --since /tmp/rev1.json                           # Action-Rate delta (read-only)
 python -m starboard_x.review score --rows rows.json --domains jobs,sql,warehouse   # offline pure scoring
 ```
-- [ ] Produces a **ranked** Finding set: each finding has severity + impact/effort score + remediation +
+- [X] Produces a **ranked** Finding set: each finding has severity + impact/effort score + remediation +
   **evidence citation** (`query_id` + row); highest-priority first.
-- [ ] `--domains` filters; the **jobs** domain returns rules (jobs seed ruleset present).
-- [ ] Degraded/empty data → partial findings, **no crash**.
+- [X] `--domains` filters; the **jobs** domain returns rules (jobs seed ruleset present).
+- [X] Degraded/empty data → partial findings, **no crash**.
 - [ ] 🟣 `--validate` gates findings through the council with a **bounded** pass count (no runaway spend);
   `--min-severity`/`--min-score` suppress sub-threshold findings.
-- [ ] `--since` reports a resolved-rate delta and **never writes** the workspace.
-- [ ] `$` values are labeled **list-price estimates**.
+- [X] `--since` reports a resolved-rate delta and **never writes** the workspace.
+- [X] `$` values are labeled **list-price estimates**.
 
 ## 6. 🔵🟣 `genie ask` (NL→SQL, D8-public)
 
@@ -108,8 +108,8 @@ python -m starboard_x.sparklog parse --text eventlog.json
 python -m starboard_x.warehouse analyze --history wh.json
 python -m starboard_x.uc analyze --data uc.json
 ```
-- [ ] Each emits the envelope + exit codes (`0 ok · 1 auth · 2 not-found · 3 api-error · 4 arg-error`).
-- [ ] diagnostic/warehouse/uc/review run **out-of-context in pure Python** (no `databricks-sdk` import for the pure analyzers — import-linter enforces this).
+- [X] Each emits the envelope + exit codes (`0 ok · 1 auth · 2 not-found · 3 api-error · 4 arg-error`).
+- [X] diagnostic/warehouse/uc/review run **out-of-context in pure Python** (no `databricks-sdk` import for the pure analyzers — import-linter enforces this).
 
 ## 8. 🟠 Internal-data enablement gate (closed-by-default, additive)
 
@@ -139,7 +139,7 @@ scripts/dev_plugin_local.sh add        # register ./plugin under isaac plugin de
 isaac --claude                         # start a session; confirm skills are injected (no MCP)
 scripts/dev_plugin_local.sh remove     # cleanup
 ```
-- [ ] Plugin registers + skills inject under Isaac; a skill (`workload-review`, `starboard-discovery`)
+- [X] Plugin registers + skills inject under Isaac; a skill (`workload-review`, `starboard-discovery`)
   triggers and shells `python -m starboard_x.<cap>` **with no permission prompt**.
 - [ ] Skills-only default: no MCP server is started (plugins are not MCP servers).
 - [ ] Layered catalog: installing only the kernel tier works; a per-domain plugin registers a tool via the

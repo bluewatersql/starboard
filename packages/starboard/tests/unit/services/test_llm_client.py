@@ -226,6 +226,36 @@ class TestOpenAIProvider:
         assert "error" in result
         assert result["error"] == "llm_parse_failed"
 
+    def test_parse_json_content_list_blocks(self, llm_client):
+        """Claude serving endpoints may return content as a list of text blocks.
+
+        Regression: previously raised ``expected string or bytes-like object,
+        got 'list'`` and tripped the circuit breaker. The content must now be
+        flattened to text and parsed.
+        """
+        content = [
+            {"type": "text", "text": '{"status": "ok",'},
+            {"type": "text", "text": ' "value": 123}'},
+        ]
+
+        result = llm_client._parse_json_content(content, "trace-123")
+
+        assert result["status"] == "ok"
+        assert result["value"] == 123
+
+    def test_coerce_message_text_variants(self):
+        from starboard.adapters.llm.openai.response_validator import (
+            coerce_message_text,
+        )
+
+        assert coerce_message_text("hi") == "hi"
+        assert coerce_message_text(None) == ""
+        assert (
+            coerce_message_text([{"type": "text", "text": "a"}, {"text": "b"}]) == "ab"
+        )
+        # Non-text blocks (e.g. tool_use) are skipped, not stringified.
+        assert coerce_message_text([{"type": "tool_use", "id": "x"}]) == ""
+
     def test_circuit_breaker_integration(self, llm_client):
         """Test circuit breaker integration."""
         # Should have circuit breaker

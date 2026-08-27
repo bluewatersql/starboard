@@ -108,6 +108,7 @@ from starboard.agents.tools.tool_factory import create_tool_registry
 # Discovery
 # ---------------------------------------------------------------------------
 from starboard.discovery.engine import DiscoveryEngine, EngineConfig
+from starboard.discovery.query_packs.registry import create_default_registry
 
 # ---------------------------------------------------------------------------
 # Config & logging
@@ -192,4 +193,5 @@ __all__ = [
     # Discovery
     "DiscoveryEngine",
     "EngineConfig",
+    "create_default_registry",
 ]

@@ -109,6 +109,7 @@ class MinimalQueryRegistry:
         min_dbu_threshold: float = 0.0,
         include: list[str] | None = None,
         exclude: list[str] | None = None,
+        target_domains: list[str] | None = None,
     ) -> list[QueryPack]:
         return [self._billing_pack]
 

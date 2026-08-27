@@ -35,6 +35,7 @@ from starboard.adapters.llm.openai.request_lifecycle import (
     normalize_usage,
 )
 from starboard.adapters.llm.openai.response_validator import (
+    coerce_message_text,
     parse_json_content,
     validate_with_pydantic,
 )
@@ -133,22 +134,32 @@ class OpenAIProvider(BaseLLMClient):
     _DEFAULT_INPUT_PRICE_PER_1K: float = 0.01
     _DEFAULT_OUTPUT_PRICE_PER_1K: float = 0.03
 
-    def __init__(self, cfg: EnvConfig | None = None) -> None:
+    def __init__(self, cfg: EnvConfig | None = None, *, api_key: str | None = None) -> None:
         """Initialize OpenAI provider.
 
         Args:
-            cfg: Configuration containing OpenAI credentials and model
+            cfg: Configuration containing LLM credentials and model.
+            api_key: Explicit bearer token to authenticate with. When provided
+                (e.g. a fresh Databricks OAuth token resolved by
+                :func:`starboard.adapters.llm.create_llm_client`), it takes
+                precedence over ``cfg.llm_api_key``. When omitted, falls back to
+                ``cfg.llm_api_key``.
 
         Raises:
-            ValueError: If OpenAI API key is missing
+            ValueError: If no credential can be resolved.
         """
         super().__init__()
 
         if cfg is None:
             cfg = EnvConfig.from_env()
 
-        if not cfg.llm_api_key:
-            raise ValueError("LLM_API_KEY is required.")
+        # Bearer token precedence: explicit (resolved Databricks OAuth) > env key.
+        resolved_key = api_key or cfg.llm_api_key
+        if not resolved_key:
+            raise ValueError(
+                "No LLM credential resolved: configure Databricks auth for the "
+                "serving endpoint (e.g. --profile) or set LLM_API_KEY."
+            )
 
         self.cfg = cfg
         self.model = cfg.llm_model
@@ -160,7 +171,7 @@ class OpenAIProvider(BaseLLMClient):
         base_url = cfg.llm_base_url if cfg.llm_base_url else None
         llm_timeout = httpx.Timeout(300.0, connect=30.0)
         self.async_client = AsyncOpenAI(
-            api_key=cfg.llm_api_key,
+            api_key=resolved_key,
             base_url=base_url,
             timeout=llm_timeout,
         )
@@ -169,7 +180,7 @@ class OpenAIProvider(BaseLLMClient):
         embedding_base_url = getattr(cfg, "embedding_base_url", "") or ""
         if embedding_base_url and embedding_base_url != (cfg.llm_base_url or ""):
             self._embedding_client = AsyncOpenAI(
-                api_key=cfg.llm_api_key,
+                api_key=resolved_key,
                 base_url=embedding_base_url,
                 timeout=httpx.Timeout(60.0, connect=15.0),
             )
@@ -407,7 +418,7 @@ class OpenAIProvider(BaseLLMClient):
                 if content is None:
                     raise ValueError("LLM returned empty response")
 
-                return content
+                return coerce_message_text(content)
 
             except RateLimitError as e:
                 logger.warning("llm_rate_limit", trace_id=trace_id, error=str(e))
@@ -960,6 +971,10 @@ class OpenAIProvider(BaseLLMClient):
                 finish_reason = resp.choices[0].finish_reason
 
                 content = message.content
+                if isinstance(content, list):
+                    # Claude serving endpoints may return content blocks; flatten
+                    # to text while preserving ``None`` (tool-call-only replies).
+                    content = coerce_message_text(content)
 
                 tool_calls_list = []
                 if hasattr(message, "tool_calls") and message.tool_calls:

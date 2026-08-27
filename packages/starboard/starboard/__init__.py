@@ -38,6 +38,7 @@ _PUBLIC_API: dict[str, str] = {
     "get_logger": "starboard.infra.observability.logging",
     "describe_auth": "starboard.infra.auth.resolver",
     "resolve_workspace_client": "starboard.infra.auth.resolver",
+    "WorkspaceTarget": "starboard.infra.auth.resolver",
     "create_llm_client": "starboard.adapters.llm",
     "AnalyticsSqlAdapter": "starboard.adapters.ports.analytics_sql",
     "LLMSQLGenerator": "starboard.tools.domain.analytics_sql.llm_sql_generator",
@@ -53,6 +54,9 @@ if TYPE_CHECKING:
     from starboard.adapters.llm import create_llm_client as create_llm_client
     from starboard.adapters.ports.analytics_sql import (
         AnalyticsSqlAdapter as AnalyticsSqlAdapter,
+    )
+    from starboard.infra.auth.resolver import (
+        WorkspaceTarget as WorkspaceTarget,
     )
     from starboard.infra.auth.resolver import (
         describe_auth as describe_auth,

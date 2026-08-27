@@ -20,16 +20,50 @@ from starboard.infra.serialization import json_loads
 logger = get_logger(__name__)
 
 
-def parse_json_content(content: str, trace_id: str) -> dict[str, Any]:
+def coerce_message_text(content: Any) -> str:
+    """Flatten an LLM message ``content`` into plain text.
+
+    Some serving endpoints (notably Anthropic Claude via Databricks) return the
+    assistant message ``content`` as a **list of content blocks**
+    (``[{"type": "text", "text": "..."}, ...]``) rather than a bare string.
+    Downstream JSON/regex extraction expects text, so concatenate the textual
+    parts. A bare string is returned unchanged; other scalars are stringified.
+
+    Args:
+        content: Raw ``message.content`` (str, list of blocks, or None).
+
+    Returns:
+        The textual content (possibly empty).
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict):
+                text = block.get("text") or block.get("content")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "".join(parts)
+    return str(content)
+
+
+def parse_json_content(content: Any, trace_id: str) -> dict[str, Any]:
     """Parse JSON content from LLM response with fallback extraction.
 
     Args:
-        content: Raw content string from LLM
+        content: Raw content from the LLM (a string, or a list of content
+            blocks as some Claude serving endpoints return).
         trace_id: Request correlation ID for logging
 
     Returns:
         Parsed JSON dictionary or error dict if parsing fails
     """
+    content = coerce_message_text(content)
     if not content:
         logger.error(
             "json_parse_failed_empty_content",

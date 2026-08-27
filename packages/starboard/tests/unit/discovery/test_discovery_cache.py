@@ -115,6 +115,61 @@ class TestDiscoveryQueryCacheUnit:
         assert calls["n"] == 1
 
     @pytest.mark.asyncio
+    async def test_owner_only_failure_reraises_cleans_up_and_retrieves(
+        self, monkeypatch
+    ):
+        # A failing scan with no coalesced waiter (the common case — each
+        # discovery query has a unique key) must re-raise, drop the in-flight
+        # entry, AND have its future's exception retrieved so asyncio does not
+        # emit "Future exception was never retrieved".
+        cache = DiscoveryQueryCache()
+
+        loop = asyncio.get_event_loop()
+        created: list[asyncio.Future] = []
+        real_create = loop.create_future
+
+        def _spy_create_future():
+            fut = real_create()
+            created.append(fut)
+            return fut
+
+        monkeypatch.setattr(loop, "create_future", _spy_create_future)
+
+        async def loader() -> pl.DataFrame:
+            raise RuntimeError("boom")
+
+        key = DiscoveryQueryCache.make_key("SELECT boom", None)
+        with pytest.raises(RuntimeError, match="boom"):
+            await cache.get_or_execute(key, loader)
+
+        assert cache._inflight == {}, "in-flight entry must be cleaned up"
+        assert len(created) == 1
+        fut = created[0]
+        assert fut.done()
+        assert isinstance(fut.exception(), RuntimeError)
+        # CPython flags an unretrieved future exception via `_log_traceback`;
+        # the done-callback retrieves it, so this must be False (no warning).
+        assert getattr(fut, "_log_traceback", True) is False
+
+    @pytest.mark.asyncio
+    async def test_coalesced_waiter_receives_loader_exception(self):
+        # A coalesced waiter must still observe the owner's loader failure.
+        cache = DiscoveryQueryCache()
+
+        async def loader() -> pl.DataFrame:
+            await asyncio.sleep(0.02)
+            raise RuntimeError("boom")
+
+        key = DiscoveryQueryCache.make_key("SELECT 1", None)
+        results = await asyncio.gather(
+            cache.get_or_execute(key, loader),
+            cache.get_or_execute(key, loader),
+            return_exceptions=True,
+        )
+        assert all(isinstance(r, RuntimeError) for r in results), results
+        assert cache._inflight == {}
+
+    @pytest.mark.asyncio
     async def test_ttl_expiry_reruns(self, monkeypatch):
         import starboard.adapters.state.inmemory.cache_store as cs_mod
 

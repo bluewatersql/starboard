@@ -131,6 +131,14 @@ def run_genie(argv: list[str], *, adapter_factory: Any = None) -> int:
         err.print("[red]genie ask: question must be non-empty[/red]")
         return EXIT_ARG
 
+    # ``genie`` is routed before the main CLI configures logging, so structured
+    # logs would otherwise fall back to structlog's default stdout logger and
+    # corrupt the ``--json`` envelope. Route warnings+ to stderr, keeping stdout
+    # reserved for the envelope / rendered SQL.
+    from starboard.cli.cli.main import setup_cli_logging
+
+    setup_cli_logging("WARNING")
+
     factory = adapter_factory or _default_adapter
     try:
         config = _resolve_config(args)

@@ -204,6 +204,21 @@ def test_get_workspace_authenticates(monkeypatch: pytest.MonkeyPatch) -> None:
     # a Config that carries only the set fields, so we patch the resolver seam.
     from starboard.infra.auth import resolver as resolver_mod
 
+    # Hermetic env: the resolver's precedence chain reads ambient auth env vars
+    # (profile/auth-type/OAuth). If a developer's shell or `.env` exports e.g.
+    # DATABRICKS_CONFIG_PROFILE, `build_config` would drop the passed host/token
+    # in favor of that profile and this exact-kwargs assertion would break. Clear
+    # them so the test exercises only the explicit `get_workspace(host, token)`
+    # contract.
+    for _var in (
+        "STARBOARD_WORKSPACE",
+        "DATABRICKS_CONFIG_PROFILE",
+        "DATABRICKS_AUTH_TYPE",
+        "DATABRICKS_CLIENT_ID",
+        "DATABRICKS_CLIENT_SECRET",
+    ):
+        monkeypatch.delenv(_var, raising=False)
+
     captured: dict[str, object] = {}
 
     class FakeConfig:

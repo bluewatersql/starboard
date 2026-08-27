@@ -118,6 +118,14 @@ class DiscoveryQueryCache:
                 is_owner = False
             else:
                 fut = asyncio.get_event_loop().create_future()
+                # When a scan fails and no *other* caller coalesced onto this
+                # future (the common case — each discovery query has a unique
+                # key), the owner re-raises below and nobody ever awaits ``fut``.
+                # Retrieve the exception in a done-callback so asyncio does not
+                # emit a spurious "Future exception was never retrieved" warning
+                # at GC. On success ``exception()`` is a harmless no-op (returns
+                # None); ``cancelled()`` short-circuits to avoid raising.
+                fut.add_done_callback(lambda f: f.cancelled() or f.exception())
                 self._inflight[key] = fut
                 is_owner = True
 

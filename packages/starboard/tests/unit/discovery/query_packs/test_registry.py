@@ -105,6 +105,77 @@ class TestConditionalFiltering:
         pack_ids = {p.pack_id for p in result}
         assert "billing" not in pack_ids
 
+    def test_target_domains_restricts_to_domain_plus_always_run(
+        self, registry: QueryPackRegistry
+    ):
+        # All products active, but restrict to the "jobs" domain: only the jobs
+        # pack plus the always-run core packs should survive (not everything).
+        result = registry.get_packs_for_products(
+            {"JOBS", "ALL_PURPOSE", "MODEL_SERVING"}, target_domains=["jobs"]
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "compute" not in pack_ids  # ALL_PURPOSE pack filtered out
+        assert "ml" not in pack_ids  # MODEL_SERVING pack filtered out
+        # Always-run core packs are preserved even under an explicit restriction.
+        assert pack_ids >= ALWAYS_RUN_PACKS
+
+    def test_target_domains_matches_pack_id_or_domain(self):
+        # A pack whose pack_id differs from its domain must be selectable by
+        # EITHER form. Force it eligible via ``include`` first (target_domains
+        # only restricts among already-eligible packs).
+        pack = QueryPack(
+            pack_id="query_perf",
+            domain="query_performance",
+            name="Query perf",
+            description="Test",
+            queries=(
+                SystemQuery(
+                    query_id="qp-01",
+                    name="q",
+                    description="d",
+                    sql_template="SELECT 1",
+                    required_tables=("system.query.history",),
+                    domain="query_performance",
+                ),
+            ),
+            gating_products=frozenset(),
+        )
+        r = QueryPackRegistry(packs=(_make_pack("audit"), pack))
+        by_id = {
+            p.pack_id
+            for p in r.get_packs_for_products(
+                set(), include=["query_perf"], target_domains=["query_perf"]
+            )
+        }
+        assert "query_perf" in by_id
+        by_domain = {
+            p.pack_id
+            for p in r.get_packs_for_products(
+                set(), include=["query_perf"], target_domains=["query_performance"]
+            )
+        }
+        assert "query_perf" in by_domain
+
+    def test_target_domains_unknown_selects_only_always_run(
+        self, registry: QueryPackRegistry
+    ):
+        result = registry.get_packs_for_products(
+            {"JOBS"}, target_domains=["does_not_exist"]
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" not in pack_ids
+        assert pack_ids <= set(ALWAYS_RUN_PACKS)
+
+    def test_known_selectors_covers_ids_and_domains(self):
+        # Validate against the real default registry: this is the exact set the
+        # discovery CLI uses to reject stale/unknown --packs values.
+        selectors = create_default_registry().known_selectors()
+        assert "billing" in selectors  # domain + id
+        assert "warehouse" in selectors
+        assert "jobs" in selectors
+        assert "finops_billing" not in selectors  # stale name is not valid
+
     def test_exclude_overrides_always_run(self, registry: QueryPackRegistry):
         result = registry.get_packs_for_products(set(), exclude=["governance"])
         pack_ids = {p.pack_id for p in result}
