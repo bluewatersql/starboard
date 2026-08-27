@@ -7,9 +7,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from starboard_core.models.conversation import Conversation, Message
-from starboard_core.ports.state_store import StateStore
-
 from starboard.adapters.state.uc import UCStateStore
 from starboard.adapters.state.uc.tables import UC_STATE_REGISTRY
 from starboard.infra.storage.uc_adapter import (
@@ -17,6 +14,8 @@ from starboard.infra.storage.uc_adapter import (
     UCStorageAdapter,
     UCStorageConfig,
 )
+from starboard_core.models.conversation import Conversation, Message
+from starboard_core.ports.state_store import StateStore
 
 pytestmark = pytest.mark.asyncio
 
@@ -142,9 +141,8 @@ class TestRoundTrip:
 
 class TestCapabilityHooks:
     def test_exposes_user_and_feedback_stores(self) -> None:
-        from tests.unit.adapters.state.uc.conftest import FakeUCAdapter
-
         from starboard.adapters.state.uc import UCFeedbackRepository, UCUserStore
+        from tests.unit.adapters.state.uc.conftest import FakeUCAdapter
 
         store = UCStateStore(FakeUCAdapter())
         assert isinstance(store.get_user_store(), UCUserStore)

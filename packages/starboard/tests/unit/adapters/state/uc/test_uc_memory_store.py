@@ -7,10 +7,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from starboard.adapters.state.uc import UCMemoryStore
 from starboard_core.models.memory import Episode, Fact, SemanticQuery
 from starboard_core.ports.memory_store import MemoryStore
-
-from starboard.adapters.state.uc import UCMemoryStore
 
 pytestmark = pytest.mark.asyncio
 

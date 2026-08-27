@@ -8,7 +8,6 @@ import sys
 import warnings
 
 import pytest
-
 import starboard.infra.auth.resolver as resolver
 from starboard.adapters.state.uc import (
     UCFeedbackRepository,
@@ -120,9 +119,8 @@ class TestDatabricksLakebaseRename:
 
 class TestContainerCapabilityDispatch:
     def test_uc_state_store_supplies_own_user_and_feedback_stores(self) -> None:
-        from tests.unit.adapters.state.uc.conftest import FakeUCAdapter
-
         from starboard.infra.core.container import Container
+        from tests.unit.adapters.state.uc.conftest import FakeUCAdapter
 
         container = Container(_cfg(database_backend="uc"))
         container._state_store = UCStateStore(FakeUCAdapter())
