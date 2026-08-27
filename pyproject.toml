@@ -86,6 +86,51 @@ all = [
     "starboard[server,cli,sdk]",
 ]
 
+# =============================================================================
+# Capability-tier install targets (Phase-3 B5 — layered catalog / thin wheels)
+# =============================================================================
+# Stable, ADDITIVE extras that name the three tiers of the 3-tier model
+# (kernel -> capability -> experience). Each is a thin wheel that can be
+# installed on its own; a consumer installs exactly the tier they need and
+# layers the next on top. These aliases do NOT change the existing single-wheel
+# `pip install starboard` (full experience tier) — they only give the tiers
+# stable names:
+#
+#   pip install "starboard-meta[kernel]"      # kernel only: pure DTOs + analyzers
+#   pip install "starboard-meta[capability]"  # + starboard_x progressive helpers
+#   pip install "starboard-meta[experience]"  # full MCP server + CLI + agents
+#
+# The kernel tier already installs standalone (`pip install starboard-core`);
+# these extras document the composition and keep the layering explicit.
+kernel = [
+    "starboard-core",
+]
+capability = [
+    # Kernel + the dep-ful `python -m starboard_x.<domain>` middle tier (all
+    # per-capability extras). Narrow this to individual extras
+    # (e.g. starboard-core[warehouse,uc]) to install only the domains you need.
+    "starboard-core[all]",
+]
+experience = [
+    # The full experience tier. `starboard` already hard-depends on the kernel,
+    # so this pulls kernel + capability surface + the MCP server / CLI / agents.
+    "starboard",
+]
+
+# =============================================================================
+# Per-domain tool plugins (Phase-3 B5 — entry-point discovery)
+# =============================================================================
+# Optional per-domain plugins extend the built-in tool surface at runtime via
+# the `starboard.mcp_tools` entry-point group (contract:
+# starboard.tools.plugins.ToolPlugin). Plugins are separate thin wheels — never
+# a dependency of a Starboard wheel — so the catalog is opt-in and absent
+# plugins degrade cleanly (empty catalog). A distributing package declares:
+#
+#   [project.entry-points."starboard.mcp_tools"]
+#   my_domain_tool = "my_pkg.plugin:my_plugin"   # -> a ToolPlugin object
+#
+# See packages/starboard-plugin-sample for a complete reference scaffold.
+
 # Developer tooling (lint/type/import-contract gates).
 dev = [
     "import-linter>=2.0",
@@ -118,12 +163,18 @@ members = [
     "packages/starboard-core",
     "packages/starboard",
     "packages/starboard-skills",
+    # Internal-index-only seam skeleton (Phase-3 D-3.1). A workspace member for
+    # local dev/verification only — it is NOT a dependency of any public wheel
+    # (the root wheel's [tool.hatch.build.targets.wheel] packages list omits it),
+    # and must never be published to a public index.
+    "packages/starboard-internal",
 ]
 
 [tool.uv.sources]
 starboard-core = { workspace = true }
 starboard = { workspace = true }
 starboard-skills = { workspace = true }
+starboard-internal = { workspace = true }
 
 # =============================================================================
 # Tool configurations
@@ -139,7 +190,7 @@ starboard-skills = { workspace = true }
 # mcp belong to the Tier-2 server package. Run with: `lint-imports`
 # (or `python -m importlinter lint`) from the repo root.
 [tool.importlinter]
-root_packages = ["starboard_core", "starboard_x"]
+root_packages = ["starboard_core", "starboard_x", "starboard", "starboard_skills"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
@@ -178,16 +229,18 @@ forbidden_modules = [
     "starboard",
 ]
 
-# The Phase-2 D4 pure analyzers (`warehouse analyze` / `uc analyze`) wrap the
-# kernel's SDK-free analyzers. They must stay off `databricks-sdk` (the kernel
-# boundary) and must not reach back into the heavy server package. (discovery /
-# sparklog legitimately reach the SDK behind their extras and are excluded.)
+# The Phase-2 D4 pure analyzers (`warehouse analyze` / `uc analyze`) and the
+# Phase-3 D1b `review score` helper wrap the kernel's SDK-free logic. They must
+# stay off `databricks-sdk` (the kernel boundary) and must not reach back into
+# the heavy server package. (discovery / sparklog legitimately reach the SDK
+# behind their extras and are excluded.)
 [[tool.importlinter.contracts]]
-name = "starboard_x pure analyzers (warehouse/uc) are SDK-free"
+name = "starboard_x pure analyzers (warehouse/uc/review) are SDK-free"
 type = "forbidden"
 source_modules = [
     "starboard_x.warehouse",
     "starboard_x.uc",
+    "starboard_x.review",
 ]
 forbidden_modules = [
     "databricks",
@@ -195,6 +248,29 @@ forbidden_modules = [
     "fastapi",
     "mcp",
     "starboard",
+]
+
+# =============================================================================
+# Governance boundary — the internal-package seam (Phase-3 D-3.1)
+# =============================================================================
+# The public packages ship the ports + public adapters + the registry + the
+# `starboard.port_adapters` entry-point CONTRACT only. The gated internal
+# adapters live in the separately-distributed `starboard-internal` package
+# (import package `starboard_internal`), which is internal-index-only and never
+# a dependency of a public wheel. This contract makes UNIFIED_PLAN §7 an enforced
+# build property: the dependency edge may only flow internal -> public, so no
+# public package may import `starboard_internal.*`. KEPT (do not remove).
+[[tool.importlinter.contracts]]
+name = "Public packages import no starboard_internal"
+type = "forbidden"
+source_modules = [
+    "starboard",
+    "starboard_core",
+    "starboard_x",
+    "starboard_skills",
+]
+forbidden_modules = [
+    "starboard_internal",
 ]
 
 [tool.ruff]

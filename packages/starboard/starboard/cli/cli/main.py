@@ -1717,6 +1717,21 @@ def main(argv: list | None = None) -> None:
     if effective_argv and effective_argv[0] == "auth":
         sys.exit(run_auth(effective_argv[1:]))
 
+    # Route the `review` command (Workload Review flagship, Phase-3 D1b) before
+    # the flag-based agent parser, so `starboard review …` runs the deterministic
+    # public-data review path instead of the multi-agent conversation loop.
+    if effective_argv and effective_argv[0] == "review":
+        from starboard.cli.cli.review_command import run_review
+
+        sys.exit(run_review(effective_argv[1:]))
+
+    # Route the `genie` command (NL→SQL over the public NLQueryPort, Phase-3 D8)
+    # before the flag-based agent parser.
+    if effective_argv and effective_argv[0] == "genie":
+        from starboard.cli.cli.genie_command import run_genie
+
+        sys.exit(run_genie(effective_argv[1:]))
+
     try:
         args = parse_args(argv)
         asyncio.run(async_main(args))

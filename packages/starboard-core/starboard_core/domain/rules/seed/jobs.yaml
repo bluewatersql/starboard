@@ -1,0 +1,84 @@
+# Seed workload-review rules — jobs domain (Phase-3 D1c, data only).
+# Generic/public checks over public system.lakeflow.* + system.billing.usage
+# signals; no internal namespaces or references. DBU / rate based — never a
+# finance-grade dollar figure (D-3.8). Each evidence_query points at a real
+# jobs query-pack query_id (see starboard/discovery/query_packs/jobs.py).
+version: "1.0.0"
+domain: jobs
+rules:
+  - id: job_high_failure_rate
+    name: Fix jobs with a high run failure rate
+    category: jobs
+    short_description: >-
+      A job that fails a large share of its runs wastes compute and delays
+      downstream work.
+    rationale: >-
+      Persistent failures re-run compute for no delivered output and often
+      block dependent jobs; a high failure rate signals a fragile job that
+      needs a reliability fix rather than more retries.
+    severity: high
+    default_effort: S
+    default_impact: 4
+    bad: A daily job that fails 40% of its runs and is left on auto-retry.
+    good: Root-cause the failure so the job completes reliably on the first run.
+    suggested_fix: >-
+      Investigate the dominant failure mode (bad input, resource limits, flaky
+      dependency), fix the root cause, and add targeted retries only where a
+      transient failure is expected.
+    detect: >-
+      The reliability scorecard reports a run failure_rate_pct at or above the
+      review threshold over the trend window.
+    evidence_query: C-J04
+    source: null
+    enabled: true
+
+  - id: job_wasted_dbu_on_failures_retries
+    name: Reduce DBU wasted on failed and retried job runs
+    category: jobs
+    short_description: >-
+      DBU spent on runs that fail or must be retried is pure waste — it buys
+      no successful output.
+    rationale: >-
+      Failed and retried runs still consume compute; a job whose failure and
+      retry DBU is a large share of its total spend is paying repeatedly for
+      the same result and is a high-value reliability target.
+    severity: high
+    default_effort: S
+    default_impact: 3
+    bad: A job where a third of total DBU is burned on failed or retried runs.
+    good: Nearly all DBU goes to runs that succeed on the first attempt.
+    suggested_fix: >-
+      Address the failures driving the wasted spend, and cap or remove blind
+      retries that re-run expensive work without changing the outcome.
+    detect: >-
+      The reliability scorecard reports wasted_dbu_pct (failure + retry DBU as
+      a share of total) at or above the review threshold.
+    evidence_query: C-J04
+    source: null
+    enabled: true
+
+  - id: job_high_runtime_variance
+    name: Stabilize jobs with high runtime variance
+    category: jobs
+    short_description: >-
+      A job whose successful runtime swings widely is unpredictable to schedule
+      and to size for cost.
+    rationale: >-
+      Large runtime variance between the fastest and slowest successful runs
+      points at skew, contention, or unstable input volume; it makes SLAs and
+      capacity planning unreliable and often hides an avoidable slow path.
+    severity: medium
+    default_effort: M
+    default_impact: 3
+    bad: A job whose slowest successful run takes 5x as long as its fastest.
+    good: Successful runtimes cluster in a narrow, predictable band.
+    suggested_fix: >-
+      Profile the slow runs against the fast ones (data skew, shuffle,
+      contention for shared compute) and stabilize the dominant driver before
+      resizing the job.
+    detect: >-
+      Runtime-variance analysis reports a max/min successful-runtime ratio at
+      or above the review threshold for jobs with enough runs to be meaningful.
+    evidence_query: C-J03
+    source: null
+    enabled: true

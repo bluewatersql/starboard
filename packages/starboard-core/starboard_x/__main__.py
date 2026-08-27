@@ -25,6 +25,7 @@ _IMPLEMENTED: dict[str, str] = {
     "sparklog": "starboard_x.sparklog.__main__",  # Phase-2 D4
     "warehouse": "starboard_x.warehouse.__main__",  # Phase-2 D4
     "uc": "starboard_x.uc.__main__",  # Phase-2 D4
+    "review": "starboard_x.review.__main__",  # Phase-3 D1b
 }
 
 # Declared-but-not-yet-implemented capabilities (extras stubs, later phases).
