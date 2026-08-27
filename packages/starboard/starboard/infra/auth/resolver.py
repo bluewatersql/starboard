@@ -163,3 +163,128 @@ def describe_auth(w: WorkspaceClient) -> dict[str, Any]:
         "profile": w.config.profile,
         "user": w.current_user.me().user_name,
     }
+
+
+# =============================================================================
+# Internal-data enablement gate — employee-context detector (Phase-2 C5, D-2.7)
+# =============================================================================
+# A closed-by-default detector on the auth resolver. It reports whether an
+# *internal context* is present using three signals, and whether the gate should
+# open (context AND authorized). It reuses ``describe_auth()``'s host/user and
+# never inspects secrets.
+#
+# The allowlist is CONFIG-DRIVEN and EMPTY by default — no customer (or internal)
+# host is ever hard-coded here, so the default is closed (public path). Because
+# no internal adapter ships in Phase 2, a wrong signal cannot leak data: the port
+# registry still selects the public adapter (additive invariant, §3.5).
+
+# Env markers that indicate internal MCP tools / entitlements are present.
+# Values are conventional Starboard env keys; their mere presence is the signal
+# (never their content). No internal tool identifier is hard-coded.
+_INTERNAL_MCP_ENV_MARKERS: tuple[str, ...] = (
+    "STARBOARD_INTERNAL_MCP",
+    "STARBOARD_INTERNAL_ADAPTERS",
+)
+
+# Env markers that indicate an Isaac-managed identity.
+_ISAAC_IDENTITY_ENV_MARKERS: tuple[str, ...] = (
+    "ISAAC_MANAGED_IDENTITY",
+    "ISAAC_SESSION_ID",
+)
+
+
+@dataclass(frozen=True)
+class EmployeeContext:
+    """Result of employee-context detection.
+
+    Attributes:
+        is_internal_context: Whether ≥1 internal-context signal matched.
+        authorized: Whether the user/deployment is an authorized employee.
+        signals: The signals that matched (for observability; never secrets).
+    """
+
+    is_internal_context: bool
+    authorized: bool
+    signals: tuple[str, ...] = ()
+
+    @property
+    def gate_open(self) -> bool:
+        """The gate opens only with an internal context AND authorization."""
+        return self.is_internal_context and self.authorized
+
+
+def detect_employee_context(
+    *,
+    host: str | None = None,
+    user: str | None = None,  # noqa: ARG001 - reserved for future identity checks
+    allowlist: list[str] | tuple[str, ...] | None = None,
+    authorized: bool = True,
+    env: dict[str, str] | None = None,
+) -> EmployeeContext:
+    """Detect internal context from host allowlist + identity + MCP signals.
+
+    Default is **closed**: with an empty allowlist and no env markers, no signal
+    matches and ``gate_open`` is ``False`` (the public path).
+
+    Args:
+        host: Resolved workspace host (from ``describe_auth``); matched
+            case-insensitively as a substring against ``allowlist`` entries.
+        user: Resolved user (reserved; not required to detect context today).
+        allowlist: Config-driven internal workspace hosts. **Empty/None =>
+            closed.** Never hard-code a customer host here.
+        authorized: Whether the caller is an authorized employee. The gate never
+            opens when this is ``False``, even with a context signal.
+        env: Environment mapping to inspect (defaults to ``os.environ``).
+
+    Returns:
+        An :class:`EmployeeContext`.
+    """
+    env = env if env is not None else dict(os.environ)
+    allowlist = tuple(allowlist or ())
+    signals: list[str] = []
+
+    # Signal 1: resolved workspace host is in the internal allowlist.
+    if host and allowlist:
+        host_lower = host.lower()
+        for entry in allowlist:
+            if entry and entry.lower() in host_lower:
+                signals.append(f"host_allowlist:{entry}")
+                break
+
+    # Signal 2: an Isaac-managed identity is present.
+    if any(env.get(marker) for marker in _ISAAC_IDENTITY_ENV_MARKERS):
+        signals.append("isaac_identity")
+
+    # Signal 3: internal MCP tools / entitlements are present.
+    for marker in _INTERNAL_MCP_ENV_MARKERS:
+        if env.get(marker):
+            signals.append(f"internal_mcp:{marker}")
+            break
+
+    return EmployeeContext(
+        is_internal_context=bool(signals),
+        authorized=authorized,
+        signals=tuple(signals),
+    )
+
+
+def detect_employee_context_for_client(
+    w: WorkspaceClient,
+    *,
+    allowlist: list[str] | tuple[str, ...] | None = None,
+    authorized: bool = True,
+    env: dict[str, str] | None = None,
+) -> EmployeeContext:
+    """Detect employee context for a resolved client via ``describe_auth``.
+
+    Reuses the redacted ``describe_auth()`` output (host/user only — never a
+    token) so detection can never observe secrets.
+    """
+    info = describe_auth(w)
+    return detect_employee_context(
+        host=info.get("host"),
+        user=info.get("user"),
+        allowlist=allowlist,
+        authorized=authorized,
+        env=env,
+    )

@@ -194,6 +194,17 @@ class EnvConfig(BaseSettings):
     # ``vector_backend`` (see ``semantic_cache_threshold``).
     enable_semantic_cache: bool = True
 
+    # Internal-data enablement gate (Phase-2 C5, D-2.7).
+    # The allowlist is config-driven and EMPTY by default => the gate is CLOSED
+    # (public path). Never hard-code a customer or internal host here. No
+    # internal adapter ships in Phase 2, so a wrong signal cannot leak data.
+    internal_context_host_allowlist: list[str] = Field(default_factory=list)
+    """Internal workspace hosts that signal an internal context (substring match).
+    Default empty => gate closed. Accepts a comma-separated string via env."""
+    enable_internal_adapters: bool = False
+    """Reserved for Phase 3 — whether gated internal adapters may be selected.
+    Default False (public-only). No internal adapter exists in Phase 2."""
+
     # Discovery Configuration
     discovery_lookback_days: int = 30
     discovery_max_parallelism: int = 4
@@ -258,6 +269,16 @@ class EnvConfig(BaseSettings):
         if isinstance(v, str):
             items = [d.strip() for d in v.split(",") if d.strip()]
             return items if items else None
+        return v
+
+    @field_validator("internal_context_host_allowlist", mode="before")
+    @classmethod
+    def _parse_internal_allowlist(cls, v: Any) -> list[str]:
+        """Parse comma-separated string into list; empty => closed gate."""
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [h.strip() for h in v.split(",") if h.strip()]
         return v
 
     @field_validator("domain_model_overrides", mode="before")
