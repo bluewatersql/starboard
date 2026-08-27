@@ -3,8 +3,9 @@
 """Factory functions for creating state providers.
 
 Zero-store default (A3): only the driver-free in-memory adapters are imported at
-module load. Driver-backed backends (sqlite/postgres/databricks/redis) are
-imported lazily inside their selection branch and guarded by :func:`_require`,
+module load. Driver-backed backends (sqlite/postgres/lakebase/redis) and the
+UC-native (Statement Execution) ``uc`` backend are imported lazily inside their
+selection branch; driver-backed ones are guarded by :func:`_require`,
 which raises an actionable ``pip install 'starboard[<extra>]'`` error when the
 matching optional dependency is absent. This keeps ``import state_factory`` (and
 therefore the CLI / in-memory server) working on a no-extras install.
@@ -51,13 +52,41 @@ def _require(module: str, *, extra: str, backend: str) -> None:
         ) from e
 
 
-def _uc_not_implemented() -> StateStore:
-    """UC-native state is reserved for Phase 2 (C2)."""
-    raise RuntimeError(
-        "database_backend='uc' (Unity Catalog native state) is not yet "
-        "implemented (Phase 2). Use 'memory' (default), 'sqlite', 'postgres', "
-        "or 'databricks'."
+def _build_uc_adapter(config: EnvConfig):  # -> UCStorageAdapter
+    """Build a ``UCStorageAdapter`` over the auth resolver's ``WorkspaceClient``.
+
+    Reuses the same client the A1 resolver builds (no new credentials) and the
+    shared UC-native state table registry. The warehouse id falls back to
+    ``config.databricks_warehouse_id`` when ``STARBOARD_WAREHOUSE_ID`` is unset.
+    """
+    from starboard.adapters.state.uc import UC_STATE_REGISTRY
+    from starboard.infra.auth.resolver import (
+        WorkspaceTarget,
+        resolve_workspace_client,
     )
+    from starboard.infra.storage.uc_adapter import UCStorageAdapter, UCStorageConfig
+
+    client = resolve_workspace_client(WorkspaceTarget.resolve(cfg=config))
+    uc_config = UCStorageConfig.from_env()
+    if not uc_config.warehouse_id:
+        uc_config.warehouse_id = config.databricks_warehouse_id
+    return UCStorageAdapter(client, uc_config, UC_STATE_REGISTRY)
+
+
+def _create_uc_state_store(config: EnvConfig) -> StateStore:
+    """Create the UC-native state store (Phase 2 C2, opt-in via ``uc``)."""
+    from starboard.adapters.state.uc import UCStateStore
+
+    logger.debug("creating_uc_state_store", environment=config.environment)
+    return UCStateStore(_build_uc_adapter(config))
+
+
+def _create_uc_memory_store(config: EnvConfig) -> MemoryStore:
+    """Create the UC-native (recency-only) memory store (Phase 2 C2)."""
+    from starboard.adapters.state.uc import UCMemoryStore
+
+    logger.debug("creating_uc_memory_store", environment=config.environment)
+    return UCMemoryStore(_build_uc_adapter(config))
 
 
 def create_state_store(config: EnvConfig) -> StateStore:
@@ -77,14 +106,18 @@ def create_state_store(config: EnvConfig) -> StateStore:
 
     Environment Variables:
         ENVIRONMENT: "dev", "test", "staging", or "production"
-        DATABASE_BACKEND: "memory" (default), "sqlite", "postgres", "databricks", or "uc"
+        DATABASE_BACKEND: "memory" (default), "sqlite", "postgres", "lakebase", or "uc"
+            ("databricks" is a deprecated alias for "lakebase")
         DATABASE_URL: PostgreSQL connection string (for postgres backend)
         SQLITE_STATE_PATH: SQLite database path (for sqlite backend)
-        LAKEBASE_INSTANCE_NAME: Lakebase instance name (for databricks backend)
-        LAKEBASE_DATABASE_NAME: Lakebase database name (for databricks backend)
+        LAKEBASE_INSTANCE_NAME: Lakebase instance name (for lakebase backend)
+        LAKEBASE_DATABASE_NAME: Lakebase database name (for lakebase backend)
+        STARBOARD_WAREHOUSE_ID: SQL warehouse id (for the uc backend)
     """
+    # UC-native state is opt-in and independent of ``environment`` (D-2.4);
+    # check it first so ``uc`` is honored in every environment.
     if config.database_backend == "uc":
-        return _uc_not_implemented()
+        return _create_uc_state_store(config)
 
     if config.environment == "dev":
         if config.database_backend == "sqlite":
@@ -125,16 +158,16 @@ def create_state_store(config: EnvConfig) -> StateStore:
                 environment=config.environment,
             )
             return InMemoryStateStore()
-        elif config.database_backend == "databricks":
+        elif config.database_backend == "lakebase":
             # Databricks Lakebase: PostgreSQL-compatible with OAuth
-            _require("asyncpg", extra="postgres", backend="databricks")
+            _require("asyncpg", extra="postgres", backend="lakebase")
             from starboard.adapters.state.databricks import (
                 DatabricksLakebaseConfig,
                 DatabricksLakebaseStateStore,
             )
 
             logger.debug(
-                "creating_databricks_lakebase_state_store",
+                "creating_lakebase_state_store",
                 environment=config.environment,
             )
             lakebase_config = DatabricksLakebaseConfig.from_env()
@@ -212,18 +245,17 @@ def create_memory_store(config: EnvConfig) -> MemoryStore:
 
     Environment Variables:
         ENVIRONMENT: "dev", "test", "staging", or "production"
-        DATABASE_BACKEND: "memory" (default), "sqlite", "postgres", "databricks", or "uc"
+        DATABASE_BACKEND: "memory" (default), "sqlite", "postgres", "lakebase", or "uc"
+            ("databricks" is a deprecated alias for "lakebase")
         DATABASE_URL: PostgreSQL connection string (for postgres backend)
         SQLITE_MEMORY_PATH: SQLite database path (for sqlite backend)
-        LAKEBASE_INSTANCE_NAME: Lakebase instance name (for databricks backend)
-        LAKEBASE_DATABASE_NAME: Lakebase database name (for databricks backend)
+        LAKEBASE_INSTANCE_NAME: Lakebase instance name (for lakebase backend)
+        LAKEBASE_DATABASE_NAME: Lakebase database name (for lakebase backend)
+        STARBOARD_WAREHOUSE_ID: SQL warehouse id (for the uc backend)
     """
+    # UC-native memory is opt-in and independent of ``environment`` (D-2.4).
     if config.database_backend == "uc":
-        raise RuntimeError(
-            "database_backend='uc' (Unity Catalog native state) is not yet "
-            "implemented (Phase 2). Use 'memory' (default), 'sqlite', 'postgres', "
-            "or 'databricks'."
-        )
+        return _create_uc_memory_store(config)
 
     if config.environment == "dev":
         if config.database_backend == "sqlite":
@@ -264,9 +296,9 @@ def create_memory_store(config: EnvConfig) -> MemoryStore:
                 environment=config.environment,
             )
             return InMemoryMemoryStore()
-        elif config.database_backend == "databricks":
+        elif config.database_backend == "lakebase":
             # Databricks Lakebase: PostgreSQL-compatible with pgvector support
-            _require("asyncpg", extra="postgres", backend="databricks")
+            _require("asyncpg", extra="postgres", backend="lakebase")
             from starboard.adapters.state.databricks import (
                 DatabricksLakebaseConfig,
                 DatabricksLakebaseMemoryStore,

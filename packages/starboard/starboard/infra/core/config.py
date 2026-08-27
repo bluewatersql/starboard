@@ -12,10 +12,15 @@ from __future__ import annotations
 import atexit
 import json
 import os
+import warnings
 from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Module-level guard so the ``databricks``→``lakebase`` deprecation warning
+# (D-2.5) is emitted only once per process, no matter how many configs are built.
+_DATABRICKS_ALIAS_WARNED = False
 
 
 class EnvConfig(BaseSettings):
@@ -125,10 +130,15 @@ class EnvConfig(BaseSettings):
     environment: Literal["dev", "test", "staging", "production"] = "dev"
 
     # Database Backend
-    # Default is store-free (in-memory). Driver-backed backends (sqlite/postgres/databricks)
-    # require their opt-in extra; `uc` (Unity Catalog native state) is reserved for Phase 2.
+    # Default is store-free (in-memory). Driver-backed backends
+    # (sqlite/postgres/lakebase) require their opt-in extra. ``uc`` (Unity
+    # Catalog native state, Statement Execution) is the durable, zero-external-DB
+    # server backend for low-write governed state (D-2.4); it is never
+    # auto-selected. The legacy value ``databricks`` is a **deprecated alias** for
+    # ``lakebase`` (D-2.5) — mapped by ``_alias_database_backend`` with a
+    # one-time warning so existing configs keep working.
     database_backend: Literal[
-        "memory", "sqlite", "postgres", "databricks", "uc"
+        "memory", "sqlite", "postgres", "lakebase", "uc"
     ] = "memory"
     database_url: str | None = None
     sqlite_state_path: str = "./dev_data/starboard_state.db"
@@ -218,6 +228,33 @@ class EnvConfig(BaseSettings):
         "2X-Small", "X-Small", "Small", "Medium", "Large", "X-Large",
         "2X-Large", "3X-Large", "4X-Large",
     })
+
+    @field_validator("database_backend", mode="before")
+    @classmethod
+    def _alias_database_backend(cls, v: Any) -> Any:
+        """Map the deprecated ``databricks`` backend value to ``lakebase`` (D-2.5).
+
+        The Lakebase/asyncpg adapter used to own the ``databricks`` literal; it is
+        renamed to ``lakebase`` to disambiguate from the new ``uc`` (Statement
+        Execution) backend. ``databricks`` keeps working as a deprecated alias so
+        no existing config hard-breaks; a one-time ``DeprecationWarning`` is
+        emitted per process.
+        """
+        if isinstance(v, str) and v.strip().lower() == "databricks":
+            global _DATABRICKS_ALIAS_WARNED
+            if not _DATABRICKS_ALIAS_WARNED:
+                _DATABRICKS_ALIAS_WARNED = True
+                warnings.warn(
+                    "database_backend='databricks' is deprecated; use "
+                    "'lakebase' (the Lakebase/Postgres adapter). The 'databricks' "
+                    "alias will be removed in a future release. Note: the new "
+                    "'uc' backend is the Unity Catalog native (Statement "
+                    "Execution) option.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+            return "lakebase"
+        return v
 
     @field_validator("databricks_warehouse_size", mode="before")
     @classmethod
@@ -387,7 +424,7 @@ class EnvConfig(BaseSettings):
 
         # Validate database configuration
         if (
-            self.database_backend in ("postgres", "databricks")
+            self.database_backend in ("postgres", "lakebase")
             and not self.database_url
         ):
             errors.append(
