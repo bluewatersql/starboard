@@ -11,11 +11,15 @@ Part of Phase 1: Foundation - Component 7 (API Endpoints)
 from uuid import uuid4
 
 import pytest
+from starboard.adapters.conversation.event_converter import (
+    EVENT_TYPE_MAPPING,
+    convert_streaming_event_to_chat_event,
+    validate_event_coverage,
+)
 from starboard.agents.events import (
     NextStepsEvent,
 )
-from starboard.api.event_converter import convert_streaming_event_to_chat_event
-from starboard.api.models import EventType as ChatEventType
+from starboard.domain.conversation.models import EventType as ChatEventType
 from starboard.domain.models.conversation_patterns import (
     ActionType,
     NextStepOption,
@@ -214,15 +218,11 @@ class TestEventTypeMapping:
 
     def test_next_steps_event_in_mapping(self):
         """Verify NextStepsEvent is registered in event converter."""
-        from starboard.api.event_converter import EVENT_TYPE_MAPPING
-
         assert NextStepsEvent in EVENT_TYPE_MAPPING
         assert EVENT_TYPE_MAPPING[NextStepsEvent] == ChatEventType.NEXT_STEPS
 
     def test_event_coverage_validation(self):
         """Verify that all streaming events are covered in mapping."""
-        from starboard.api.event_converter import validate_event_coverage
-
         is_valid, missing = validate_event_coverage()
 
         assert is_valid, f"Missing event mappings: {missing}"
