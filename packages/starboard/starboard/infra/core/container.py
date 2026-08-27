@@ -179,10 +179,12 @@ class Container:
             importlib.import_module("sqlite_vec")
         except ImportError as e:
             raise RuntimeError(
-                "enable_reflexion=True needs a vector-store driver for episodic "
-                "learning, but 'sqlite_vec' is not installed. Install a vector "
-                "extra: pip install 'starboard[sqlite]' (local sqlite-vec) or "
-                "'starboard[vectorsearch]' (managed Databricks Vector Search)."
+                "enable_reflexion=True needs the sqlite-vec driver for episodic "
+                "learning (the reflexion store is backed by SQLiteVectorStore), "
+                "but 'sqlite_vec' is not installed. Install it with: "
+                "pip install 'starboard[sqlite]'. Note: 'starboard[vectorsearch]' "
+                "does NOT satisfy reflexion — it ships managed Databricks Vector "
+                "Search, not sqlite-vec."
             ) from e
 
     async def _initialize_foundation_components(self) -> None:
