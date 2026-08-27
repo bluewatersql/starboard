@@ -166,6 +166,68 @@ def describe_auth(w: WorkspaceClient) -> dict[str, Any]:
 
 
 # =============================================================================
+# Databricks Apps — on-behalf-of (OBO) per-user auth (Phase-3 D10, D-3.6)
+# =============================================================================
+# A multi-tenant Databricks App runs under its own service principal, but must
+# resolve Unity Catalog / Genie grants for *each request's* end user, not for the
+# App identity. The SDK exposes this as a per-request credentials strategy
+# (``ModelServingUserCredentials``). D10 wires that strategy through the EXISTING
+# A1 seam (``resolve_workspace_client(credentials_strategy=…)``) — this is
+# per-request strategy injection, NOT a new auth path. When no strategy is
+# supplied the default resolver behaves exactly as before (back-compat), so OBO
+# is strictly opt-in per request/deployment.
+
+
+def build_user_credentials_strategy() -> Any:
+    """Construct the per-user (OBO) SDK credentials strategy.
+
+    Returns a ``ModelServingUserCredentials()`` instance — the strategy that, when
+    handed to a ``WorkspaceClient`` inside a Databricks App request scope, resolves
+    UC/Genie grants on behalf of the calling end user.
+
+    The class is imported lazily and guardedly: it ships only in newer
+    ``databricks-sdk`` releases and is only ever needed inside a Databricks App,
+    so importing it at module load would needlessly couple every ``import
+    starboard`` to an SDK version. Raises a clear :class:`RuntimeError` when the
+    installed SDK predates OBO support.
+    """
+    try:
+        # Version-dependent SDK symbol: present only in newer databricks-sdk
+        # releases, hence the guarded import (and the type-ignore for SDKs whose
+        # stubs predate it).
+        from databricks.sdk import (  # type: ignore[attr-defined]
+            ModelServingUserCredentials,
+        )
+    except ImportError as exc:  # pragma: no cover - SDK-version dependent
+        raise RuntimeError(
+            "ModelServingUserCredentials is unavailable in the installed "
+            "databricks-sdk. Upgrade the SDK to enable Databricks Apps OBO "
+            "(on-behalf-of) per-user auth."
+        ) from exc
+    return ModelServingUserCredentials()
+
+
+def resolve_user_client(target: WorkspaceTarget | None = None) -> WorkspaceClient:
+    """Resolve a per-user (on-behalf-of) ``WorkspaceClient`` for a Databricks App.
+
+    Call this once per request, inside the App's request scope, so UC/Genie grants
+    resolve for the end user rather than the App's service principal. It builds
+    the per-user credentials strategy and injects it through the existing A1 seam
+    (:func:`resolve_workspace_client`) — no new auth path.
+
+    ``target`` follows the same precedence rules as :func:`resolve_workspace_client`;
+    when omitted, host/workspace routing falls through to the SDK's ambient chain
+    (typically the App's configured workspace) while the *identity* comes from the
+    OBO strategy. The default resolver (no strategy) is entirely unaffected.
+
+    Secrets are never exposed: use :func:`describe_auth` for a redacted summary.
+    """
+    return resolve_workspace_client(
+        target, credentials_strategy=build_user_credentials_strategy()
+    )
+
+
+# =============================================================================
 # Internal-data enablement gate — employee-context detector (Phase-2 C5, D-2.7)
 # =============================================================================
 # A closed-by-default detector on the auth resolver. It reports whether an
