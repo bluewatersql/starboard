@@ -1,7 +1,7 @@
 ---
-name: workload-review
+name: starboard-workload-review
 description: "Review a Databricks workspace's jobs, SQL queries, and warehouses the way a code review reviews code — a ranked, evidence-cited set of findings with severity, impact/effort scores, and remediation, over public system.* data only. Use when the user wants a workload review, an optimization/health assessment of jobs/queries/warehouses, or prioritized findings with citations."
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Read
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
 ---
 
 # Starboard: Workload Review
@@ -67,6 +67,22 @@ python -m starboard_x.review score --rows rows.json --domains jobs,sql,warehouse
 
 where `rows.json` maps each evidence `query_id` to a list of row objects
 (e.g. `{"W-W02": [{"warehouse_id": "wh1", "auto_stop_waste_pct": 80.0}]}`).
+
+## Tier 0 — assemble from `starboard-helper` (no bundled script)
+
+If neither the MCP tools nor the bundled Tier-1 script are available, gather the
+per-domain inputs with the zero-dep `starboard-helper` CLI and then score them
+with the offline helper above:
+
+```bash
+starboard-helper job list
+starboard-helper query list
+starboard-helper warehouse list
+```
+
+Shape the returned rows into the `{query_id: [rows]}` map and run
+`python -m starboard_x.review score`. This keeps the review available on the pure
+fetch tier when the server package is not installed.
 
 ## Exit Codes
 - 0: success

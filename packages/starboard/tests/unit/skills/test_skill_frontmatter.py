@@ -40,6 +40,7 @@ EXPECTED_DOMAINS = {
     "query",
     "uc",
     "warehouse",
+    "workload-review",  # Phase-3 D1b flagship review skill
 }
 
 # Fenced YAML frontmatter: a leading '---' line, a body, and a closing '---' line.
@@ -81,7 +82,7 @@ def test_duplicate_tree_removed() -> None:
     )
 
 
-def test_exactly_nine_domains() -> None:
+def test_exactly_ten_domains() -> None:
     domains = {_domain_of(d) for d in _domain_dirs()}
     assert domains == EXPECTED_DOMAINS, (
         f"expected domains {sorted(EXPECTED_DOMAINS)}, got {sorted(domains)}"
