@@ -55,7 +55,9 @@ class TestZeroStoreDefaults:
     def test_default_backends_are_store_free(self) -> None:
         cfg = _default_config()
         assert cfg.database_backend == "memory"
-        assert cfg.vector_backend == "inmemory"
+        # Phase 2 C1 (D-2.3): the analytics agent builds context from on-disk
+        # reference files by default — no vector store, no embeddings.
+        assert cfg.vector_backend == "none"
         assert cfg.cache_backend == "memory"
 
     def test_default_dev_state_store_is_inmemory(self) -> None:
@@ -105,12 +107,37 @@ class TestMissingExtraRaises:
         assert "starboard[redis]" in msg
 
 
-class TestUCNotImplemented:
-    def test_uc_backend_raises_phase2_error(self) -> None:
+class TestUCBackend:
+    """Phase 2 C2: ``uc`` now builds the UC-native state store (opt-in)."""
+
+    def test_uc_backend_builds_uc_state_store(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Reuse the resolver's client (mocked) — never a bare WorkspaceClient.
+        import starboard.infra.auth.resolver as resolver
+        from starboard.adapters.state.uc import UCStateStore
+
+        monkeypatch.setattr(
+            resolver, "resolve_workspace_client", lambda *a, **k: object()
+        )
         cfg = _default_config(environment="dev", database_backend="uc")
-        with pytest.raises(RuntimeError) as exc:
-            create_state_store(cfg)
-        assert "Phase 2" in str(exc.value)
+        store = create_state_store(cfg)
+        assert isinstance(store, UCStateStore)
+
+    def test_uc_backend_needs_no_sql_drivers(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The uc path must not import asyncpg / aiosqlite.
+        import starboard.infra.auth.resolver as resolver
+
+        for driver in ("aiosqlite", "asyncpg"):
+            monkeypatch.setitem(sys.modules, driver, None)
+        monkeypatch.setattr(
+            resolver, "resolve_workspace_client", lambda *a, **k: object()
+        )
+        cfg = _default_config(environment="dev", database_backend="uc")
+        # Must not raise (no driver import on the uc path).
+        create_state_store(cfg)
 
 
 class TestValidationNoStoreUrls:

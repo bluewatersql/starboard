@@ -105,7 +105,11 @@ memory = [
     "asyncpg>=0.29.0,<1.0.0",
 ]
 vectorsearch = [
-    "sqlite-vec>=0.1.1,<1.0.0", # SQLite vector store for RAG (opt-in)
+    # Managed Databricks Vector Search (delta-sync index over a UC Delta table),
+    # the opt-in ANN escape hatch — never the default path (Phase 2 C1, D-2.3).
+    # The default analytics path uses on-disk reference files (vector_backend=none).
+    # For local/offline SQLite ANN use the `sqlite` extra (sqlite-vec) instead.
+    "databricks-vectorsearch>=0.75,<1",
 ]
 all-stores = [
     "starboard[sqlite,postgres,redis,memory,vectorsearch]",

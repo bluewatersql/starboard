@@ -12,10 +12,15 @@ from __future__ import annotations
 import atexit
 import json
 import os
+import warnings
 from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Module-level guard so the ``databricks``→``lakebase`` deprecation warning
+# (D-2.5) is emitted only once per process, no matter how many configs are built.
+_DATABRICKS_ALIAS_WARNED = False
 
 
 class EnvConfig(BaseSettings):
@@ -125,10 +130,15 @@ class EnvConfig(BaseSettings):
     environment: Literal["dev", "test", "staging", "production"] = "dev"
 
     # Database Backend
-    # Default is store-free (in-memory). Driver-backed backends (sqlite/postgres/databricks)
-    # require their opt-in extra; `uc` (Unity Catalog native state) is reserved for Phase 2.
+    # Default is store-free (in-memory). Driver-backed backends
+    # (sqlite/postgres/lakebase) require their opt-in extra. ``uc`` (Unity
+    # Catalog native state, Statement Execution) is the durable, zero-external-DB
+    # server backend for low-write governed state (D-2.4); it is never
+    # auto-selected. The legacy value ``databricks`` is a **deprecated alias** for
+    # ``lakebase`` (D-2.5) — mapped by ``_alias_database_backend`` with a
+    # one-time warning so existing configs keep working.
     database_backend: Literal[
-        "memory", "sqlite", "postgres", "databricks", "uc"
+        "memory", "sqlite", "postgres", "lakebase", "uc"
     ] = "memory"
     database_url: str | None = None
     sqlite_state_path: str = "./dev_data/starboard_state.db"
@@ -146,17 +156,25 @@ class EnvConfig(BaseSettings):
     cache_ttl: int = 300  # 5 minutes default
 
     # Vector Store Backend
-    # Default is the driver-free in-memory store; `sqlite`/others are opt-in.
+    # Default is `none`: the analytics agent builds context from on-disk curated
+    # reference files (starboard_core/rag/knowledge/domains/*.md) with no
+    # embeddings and no vector store (Phase 2 C1, D-2.3). `inmemory`/`sqlite` and
+    # the managed `vectorsearch` path are opt-in escape hatches for ANN recall.
     vector_backend: Literal[
-        "inmemory", "sqlite", "chroma", "databricks", "postgres"
-    ] = "inmemory"
+        "none", "inmemory", "sqlite", "chroma", "databricks", "postgres", "vectorsearch"
+    ] = "none"
     embedding_dimension: int = 1024
     vector_metadata_llm_model: str = "databricks-gpt-5-mini"
     vector_metadata_llm_temperature: float = 1.0
     vector_metadata_llm_max_tokens: int = 5000
 
     # Semantic Cache Configuration
-    semantic_cache_threshold: float = 0.95  # Minimum similarity for cache hit
+    # The DEFAULT semantic cache is a TTL-only exact-key cache with no vector
+    # store and no embeddings (Phase 2 C4, D-2.9). ``semantic_cache_threshold``
+    # is only consulted on the opt-in similarity path, which is selected when a
+    # real ``vector_backend`` is set (``inmemory``/``sqlite``/``vectorsearch``,
+    # behind ``starboard[sqlite]`` / ``starboard[vectorsearch]``).
+    semantic_cache_threshold: float = 0.95  # Minimum similarity for cache hit (vector path only)
 
     # Memory Consolidation
     memory_consolidation_enabled: bool = False
@@ -176,8 +194,26 @@ class EnvConfig(BaseSettings):
     enable_caching: bool = True
     enable_observability: bool = True
     enable_pii_redaction: bool = True
+    # Reflexion (episodic agent learning) is dormant by default and opt-in
+    # behind a vector-store extra (``starboard[sqlite]`` / ``[vectorsearch]``);
+    # the container lazy-imports the vector driver only when this is True
+    # (Phase 2 C4, D-2.9).
     enable_reflexion: bool = False
+    # The semantic cache is enabled by default but runs as a TTL-only exact-key
+    # cache with no vector dependency; the similarity path is opt-in via
+    # ``vector_backend`` (see ``semantic_cache_threshold``).
     enable_semantic_cache: bool = True
+
+    # Internal-data enablement gate (Phase-2 C5, D-2.7).
+    # The allowlist is config-driven and EMPTY by default => the gate is CLOSED
+    # (public path). Never hard-code a customer or internal host here. No
+    # internal adapter ships in Phase 2, so a wrong signal cannot leak data.
+    internal_context_host_allowlist: list[str] = Field(default_factory=list)
+    """Internal workspace hosts that signal an internal context (substring match).
+    Default empty => gate closed. Accepts a comma-separated string via env."""
+    enable_internal_adapters: bool = False
+    """Reserved for Phase 3 — whether gated internal adapters may be selected.
+    Default False (public-only). No internal adapter exists in Phase 2."""
 
     # Discovery Configuration
     discovery_lookback_days: int = 30
@@ -203,6 +239,33 @@ class EnvConfig(BaseSettings):
         "2X-Small", "X-Small", "Small", "Medium", "Large", "X-Large",
         "2X-Large", "3X-Large", "4X-Large",
     })
+
+    @field_validator("database_backend", mode="before")
+    @classmethod
+    def _alias_database_backend(cls, v: Any) -> Any:
+        """Map the deprecated ``databricks`` backend value to ``lakebase`` (D-2.5).
+
+        The Lakebase/asyncpg adapter used to own the ``databricks`` literal; it is
+        renamed to ``lakebase`` to disambiguate from the new ``uc`` (Statement
+        Execution) backend. ``databricks`` keeps working as a deprecated alias so
+        no existing config hard-breaks; a one-time ``DeprecationWarning`` is
+        emitted per process.
+        """
+        if isinstance(v, str) and v.strip().lower() == "databricks":
+            global _DATABRICKS_ALIAS_WARNED
+            if not _DATABRICKS_ALIAS_WARNED:
+                _DATABRICKS_ALIAS_WARNED = True
+                warnings.warn(
+                    "database_backend='databricks' is deprecated; use "
+                    "'lakebase' (the Lakebase/Postgres adapter). The 'databricks' "
+                    "alias will be removed in a future release. Note: the new "
+                    "'uc' backend is the Unity Catalog native (Statement "
+                    "Execution) option.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+            return "lakebase"
+        return v
 
     @field_validator("databricks_warehouse_size", mode="before")
     @classmethod
@@ -243,6 +306,16 @@ class EnvConfig(BaseSettings):
         if isinstance(v, str):
             items = [d.strip() for d in v.split(",") if d.strip()]
             return items if items else None
+        return v
+
+    @field_validator("internal_context_host_allowlist", mode="before")
+    @classmethod
+    def _parse_internal_allowlist(cls, v: Any) -> list[str]:
+        """Parse comma-separated string into list; empty => closed gate."""
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [h.strip() for h in v.split(",") if h.strip()]
         return v
 
     @field_validator("domain_model_overrides", mode="before")
@@ -372,7 +445,7 @@ class EnvConfig(BaseSettings):
 
         # Validate database configuration
         if (
-            self.database_backend in ("postgres", "databricks")
+            self.database_backend in ("postgres", "lakebase")
             and not self.database_url
         ):
             errors.append(

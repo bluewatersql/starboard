@@ -16,8 +16,8 @@ import asyncio
 
 import polars as pl
 import pytest
-from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
 from starboard.discovery.executor import QueryPackExecutor
+from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
 
 
 class MockSQLExecutor:
@@ -164,7 +164,14 @@ class TestMultiPackExecution:
     @pytest.mark.asyncio
     async def test_execute_multiple_packs(self):
         executor = MockSQLExecutor()
-        qpe = QueryPackExecutor(executor, max_parallelism=4, default_lookback_days=30)
+        # Dummy queries share identical "SELECT 1" SQL; disable caching so this
+        # test exercises multi-pack fan-out rather than scan dedup.
+        qpe = QueryPackExecutor(
+            executor,
+            max_parallelism=4,
+            default_lookback_days=30,
+            enable_cache=False,
+        )
 
         packs = [
             _pack("p1", (_query("Q1"),)),
@@ -182,7 +189,14 @@ class TestConcurrency:
     @pytest.mark.asyncio
     async def test_semaphore_limits_concurrency(self):
         executor = MockSQLExecutor(delay=0.05)
-        qpe = QueryPackExecutor(executor, max_parallelism=2, default_lookback_days=30)
+        # Identical dummy SQL would coalesce under caching; disable it so all
+        # six queries actually execute and exercise the semaphore.
+        qpe = QueryPackExecutor(
+            executor,
+            max_parallelism=2,
+            default_lookback_days=30,
+            enable_cache=False,
+        )
 
         queries = tuple(_query(f"Q{i}") for i in range(6))
         pack = _pack("test", queries)

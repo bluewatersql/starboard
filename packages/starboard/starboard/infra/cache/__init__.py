@@ -4,11 +4,14 @@
 Cache infrastructure.
 
 This package provides caching implementations:
-- SemanticCache: Similarity-based LLM response caching
+- TTLSemanticCache: TTL-only exact-key LLM response caching (default, no vector deps)
+- SemanticCache: Similarity-based LLM response caching (opt-in, requires a vector store)
 """
 
 from starboard.infra.cache.semantic_cache import SemanticCache
+from starboard.infra.cache.ttl_semantic_cache import TTLSemanticCache
 
 __all__ = [
     "SemanticCache",
+    "TTLSemanticCache",
 ]

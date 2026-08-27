@@ -57,6 +57,9 @@ class EngineConfig:
         llm_model: Optional LLM model override.
         llm_temperature: LLM temperature for analysis/synthesis.
         min_dbu_threshold: Minimum DBUs for a product to be considered active.
+        enable_cache: Dedupe identical hot-table scans within/across runs.
+            Set False for ``--no-cache``.
+        cache_freshness_floor_s: Max age (seconds) a cached scan may be served.
     """
 
     lookback_days: int = 30
@@ -67,6 +70,8 @@ class EngineConfig:
     llm_model: str | None = None
     llm_temperature: float = 0.3
     min_dbu_threshold: float = 10.0
+    enable_cache: bool = True
+    cache_freshness_floor_s: int = 900
 
 
 @dataclass
@@ -120,6 +125,8 @@ class DiscoveryEngine:
             sql_executor=sql_executor,
             max_parallelism=self._config.max_parallelism,
             default_lookback_days=self._config.lookback_days,
+            enable_cache=self._config.enable_cache,
+            cache_freshness_floor_s=self._config.cache_freshness_floor_s,
         )
 
         self._heuristic_registry = create_default_heuristic_registry()

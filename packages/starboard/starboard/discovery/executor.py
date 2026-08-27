@@ -20,6 +20,10 @@ from starboard_core.domain.models.discovery.query import (
     QueryResult,
 )
 
+from starboard.discovery.query_cache import (
+    DEFAULT_FRESHNESS_FLOOR_S,
+    DiscoveryQueryCache,
+)
 from starboard.infra.observability.logging import get_logger
 
 if TYPE_CHECKING:
@@ -50,6 +54,12 @@ class QueryPackExecutor:
         max_retries: Maximum retry attempts for transient errors.
         discovery_mode: Controls which queries run (GENERAL or DEEP_DIVE).
         default_result_limit: Default row limit for queries using ``{result_limit}``.
+        enable_cache: Dedupe identical scans within/across runs. When False
+            (``--no-cache``) every query hits the SQL client directly.
+        cache: Optional pre-built :class:`DiscoveryQueryCache`. When omitted and
+            ``enable_cache`` is True, one is created with the freshness floor.
+        cache_freshness_floor_s: Max age (seconds) a cached scan may be served.
+        workspace_id: Workspace scope mixed into the cache key.
     """
 
     def __init__(
@@ -60,6 +70,11 @@ class QueryPackExecutor:
         max_retries: int = 3,
         discovery_mode: DiscoveryMode = DiscoveryMode.GENERAL,
         default_result_limit: int = 50,
+        *,
+        enable_cache: bool = True,
+        cache: DiscoveryQueryCache | None = None,
+        cache_freshness_floor_s: int = DEFAULT_FRESHNESS_FLOOR_S,
+        workspace_id: str | None = None,
     ) -> None:
         self._sql_executor = sql_executor
         self._semaphore = asyncio.Semaphore(max_parallelism)
@@ -67,6 +82,13 @@ class QueryPackExecutor:
         self._max_retries = max_retries
         self._discovery_mode = discovery_mode
         self._default_result_limit = default_result_limit
+        self._workspace_id = workspace_id
+        if enable_cache:
+            self._cache: DiscoveryQueryCache | None = cache or DiscoveryQueryCache(
+                freshness_floor_s=cache_freshness_floor_s
+            )
+        else:
+            self._cache = None
 
     async def execute_pack(self, pack: QueryPack) -> PackResult:
         """Execute eligible queries in a pack with bounded parallelism.
@@ -175,7 +197,14 @@ class QueryPackExecutor:
 
             for attempt in range(1, self._max_retries + 1):
                 try:
-                    df = await self._sql_executor.execute_sql(rendered_sql)
+                    if self._cache is not None:
+                        key = self._cache.make_key(rendered_sql, self._workspace_id)
+                        df = await self._cache.get_or_execute(
+                            key,
+                            lambda: self._sql_executor.execute_sql(rendered_sql),
+                        )
+                    else:
+                        df = await self._sql_executor.execute_sql(rendered_sql)
                     elapsed_ms = (time.monotonic() - start) * 1000
                     row_count = len(df) if df is not None else 0
 
