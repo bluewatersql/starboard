@@ -159,7 +159,12 @@ class EnvConfig(BaseSettings):
     vector_metadata_llm_max_tokens: int = 5000
 
     # Semantic Cache Configuration
-    semantic_cache_threshold: float = 0.95  # Minimum similarity for cache hit
+    # The DEFAULT semantic cache is a TTL-only exact-key cache with no vector
+    # store and no embeddings (Phase 2 C4, D-2.9). ``semantic_cache_threshold``
+    # is only consulted on the opt-in similarity path, which is selected when a
+    # real ``vector_backend`` is set (``inmemory``/``sqlite``/``vectorsearch``,
+    # behind ``starboard[sqlite]`` / ``starboard[vectorsearch]``).
+    semantic_cache_threshold: float = 0.95  # Minimum similarity for cache hit (vector path only)
 
     # Memory Consolidation
     memory_consolidation_enabled: bool = False
@@ -179,7 +184,14 @@ class EnvConfig(BaseSettings):
     enable_caching: bool = True
     enable_observability: bool = True
     enable_pii_redaction: bool = True
+    # Reflexion (episodic agent learning) is dormant by default and opt-in
+    # behind a vector-store extra (``starboard[sqlite]`` / ``[vectorsearch]``);
+    # the container lazy-imports the vector driver only when this is True
+    # (Phase 2 C4, D-2.9).
     enable_reflexion: bool = False
+    # The semantic cache is enabled by default but runs as a TTL-only exact-key
+    # cache with no vector dependency; the similarity path is opt-in via
+    # ``vector_backend`` (see ``semantic_cache_threshold``).
     enable_semantic_cache: bool = True
 
     # Discovery Configuration
