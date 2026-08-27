@@ -1,0 +1,66 @@
+# =============================================================================
+# starboard-internal — gated internal adapters (Phase-3 D-3.1 seam)
+# =============================================================================
+# INTERNAL INDEX ONLY. This package is deliberately NOT a dependency of any
+# public wheel (`starboard`, `starboard-core`, `starboard-skills`) and MUST NOT
+# be published to a public index. `pip install starboard` from a public index
+# never pulls this code (Phase-3 exit criterion 5 / UNIFIED_PLAN §7).
+#
+# It registers gated internal adapters through the public
+# `starboard.port_adapters` entry-point contract (defined in
+# starboard.ports.discovery). An import-linter contract in the root
+# pyproject.toml forbids the public packages from importing starboard_internal.*
+# — the seam only ever flows internal -> public, never the reverse.
+# =============================================================================
+
+[project]
+name = "starboard-internal"
+version = "0.1.0"
+description = "Starboard gated internal port adapters (internal distribution only)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Databricks Open Model License"}
+dependencies = [
+    # The public contract + kernel port protocols this package registers against.
+    # Depending on the public packages is fine (and expected); the forbidden
+    # direction is public -> internal, enforced by import-linter.
+    "starboard-core",
+    "starboard",
+]
+
+# The entry-point contract: each key maps to a PortAdapterProvider object
+# (see starboard.ports.discovery.PortAdapterProvider). Discovery loads these and
+# registers internal-tier providers so they supersede the public adapter only
+# when the enablement gate is open.
+[project.entry-points."starboard.port_adapters"]
+noop_sample = "starboard_internal.adapters:noop_sample_provider"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatchling.build.targets.wheel]
+packages = ["starboard_internal"]
+
+[tool.hatchling.build.targets.sdist]
+include = [
+    "starboard_internal/**/*.py",
+    "pyproject.toml",
+    "README.md",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+]
+asyncio_mode = "auto"
