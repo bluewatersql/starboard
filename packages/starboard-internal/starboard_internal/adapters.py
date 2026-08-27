@@ -1,49 +1,68 @@
 # Copyright (c) 2025 Databricks, Inc.
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
-"""No-op sample internal adapter (Phase-3 D-3.1).
+"""Entry-point providers for the gated internal port adapters (Phase-3 D6/D7/D8).
 
-Proves the ``starboard.port_adapters`` entry-point seam end-to-end without
-shipping any real internal capability. The adapter is a pure no-op: it names no
-internal namespace, backend, host, or internal shortlink, and it returns an empty
-result. It is registered as an ``internal``-tier provider, so it is selected
-**only** when the internal-data enablement gate is open (§3.5): with the gate
-closed the public ``LogRetrievalPort`` adapter remains the universal path.
+This module is the target of the ``starboard.port_adapters`` entry points declared
+in ``pyproject.toml``. It exposes one module-level :class:`PortAdapterProvider`
+per port, each ``internal``-tier so it is selected **only** when the internal-data
+enablement gate is open (UNIFIED_PLAN §3.5): with the gate closed, the public
+adapter shipped in ``starboard`` remains the universal path.
 
-The real internal adapters (D6 logs/diagnostics, D7 fleet, D8 Genie) replace
-this sample in later Phase-3 tasks.
+Each provider's zero-arg ``create()`` builds the adapter with its default backend
+(real internal runtime access is wired at deploy time; injected backends drive the
+tests). The four adapters are strict supersets of their public counterparts:
+
+* :class:`LogsSummariserAdapter` (D6) supersedes the public DBFS log parser,
+* :class:`DbrDoctorAdapter` (D6) supersedes the native diagnostic backend,
+* :class:`CentralizedFleetSqlAdapter` (D7) supersedes single-workspace fleet SQL,
+* :class:`CuratedGenieRoomAdapter` (D8) supersedes native NL->SQL generation.
 """
 
 from __future__ import annotations
 
 from starboard.ports.discovery import INTERNAL_TIER, SimplePortAdapterProvider
 from starboard.ports.registry import Port
-from starboard_core.ports.log_retrieval import LogBundle, LogQuery, LogRetrievalPort
 
-#: Stable source tag for the sample bundle — deliberately generic (no backend id).
-_NOOP_SOURCE = "starboard-internal-noop"
+from starboard_internal.centralized_fleet_adapter import CentralizedFleetSqlAdapter
+from starboard_internal.curated_genie_adapter import CuratedGenieRoomAdapter
+from starboard_internal.dbr_doctor_adapter import DbrDoctorAdapter
+from starboard_internal.logs_summariser_adapter import LogsSummariserAdapter
 
-
-class NoOpLogRetrievalAdapter(LogRetrievalPort):
-    """A gated internal ``LogRetrievalPort`` that returns an empty bundle.
-
-    Sample only: it demonstrates that an internal-tier adapter registered via
-    the entry-point contract supersedes the public adapter when the gate is
-    open. It performs no retrieval and references nothing internal.
-    """
-
-    async def fetch(self, ref: LogQuery) -> LogBundle:
-        return LogBundle(
-            text="",
-            source=_NOOP_SOURCE,
-            line_count=0,
-            paths=(),
-            metadata={"noop": "true", "entity": ref.entity},
-        )
-
-
-#: Module-level provider the entry point resolves to (see pyproject.toml).
-noop_sample_provider = SimplePortAdapterProvider(
+#: LogRetrievalPort -> logs-summariser indexed triage (D6).
+log_retrieval_provider = SimplePortAdapterProvider(
     port=Port.LOG_RETRIEVAL,
-    factory=NoOpLogRetrievalAdapter,
+    factory=LogsSummariserAdapter,
     tier=INTERNAL_TIER,
 )
+
+#: DiagnosticBackendPort -> dbr-doctor semantic layer + trace-RCA (D6).
+diagnostic_backend_provider = SimplePortAdapterProvider(
+    port=Port.DIAGNOSTIC_BACKEND,
+    factory=DbrDoctorAdapter,
+    tier=INTERNAL_TIER,
+)
+
+#: FleetSqlPort -> centralized cross-account namespace rewrite (D7 / D-3.4).
+fleet_sql_provider = SimplePortAdapterProvider(
+    port=Port.FLEET_SQL,
+    factory=CentralizedFleetSqlAdapter,
+    tier=INTERNAL_TIER,
+)
+
+#: NLQueryPort -> curated Genie rooms (D8 / D-3.5).
+nl_query_provider = SimplePortAdapterProvider(
+    port=Port.NL_QUERY,
+    factory=CuratedGenieRoomAdapter,
+    tier=INTERNAL_TIER,
+)
+
+__all__ = [
+    "log_retrieval_provider",
+    "diagnostic_backend_provider",
+    "fleet_sql_provider",
+    "nl_query_provider",
+    "CentralizedFleetSqlAdapter",
+    "CuratedGenieRoomAdapter",
+    "DbrDoctorAdapter",
+    "LogsSummariserAdapter",
+]
