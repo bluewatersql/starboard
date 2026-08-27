@@ -321,3 +321,24 @@ internal **6** pass (separate invocations); **import-linter 4 contracts KEPT**; 
 work can land on a stale base (D10 did, harmlessly, since its work was self-contained). Verify each item
 branch's merge-base before merging; prefer building items that depend on unmerged local work **directly** in
 the main tree.
+
+---
+
+## Implementation status UPDATE (2026-08-27) — PHASE 3 COMPLETE
+
+All previously-deferred and owner-gated items are now built + verified on
+`phase3/foundations` (owner gates G3–G7 answered; none blocking):
+
+| Item | Status |
+|------|--------|
+| D8-public `genie ask` | ✅ built — NL→SQL over the public `NLQueryPort` (`create_llm_client` → `LLMSQLGenerator` → `AnalyticsSqlAdapter`); config-driven model id; 5 tests |
+| D1c validator council + Action-Rate + severity gate | ✅ built — bounded multi-pass (config model ids per G5), `--validate`/`--min-severity`/`--since`, deterministic stub-tested; **jobs seed ruleset** added (closes the D1b jobs-domain gap) |
+| D6/D7/D8-internal gated adapters | ✅ built in `starboard-internal` only — logs-summariser / dbr-doctor / centralized-fleet / curated-Genie; strict-superset parity tests; public wheel stays clean (import-linter contract KEPT) |
+| B5 layered catalog / per-domain plugins | ✅ built — tiered extras + `starboard.*` entry-point tool discovery + `starboard-plugin-sample`; kernel-only install works; absent plugins degrade cleanly |
+| D9 host coverage + `.isaac/rules` (G3) | ✅ `docs/HOST_COVERAGE.md` + `plugin/rules/starboard.md` + `scripts/dev_plugin_local.sh` (`isaac plugin dev`) |
+| G4 `databricks aitools` distribution | ✅ `docs/AGENT_SKILLS_DISTRIBUTION.md` (confirmed format: `SKILL.md` name/description/parent, generated `manifest.json`, `databricks aitools install`) |
+| G7 docs placement | ✅ official docs → `docs/`; working/build docs stay in `changes/` |
+
+**Final verification (phase3/foundations):** core **720** / starboard **3201** / skills **28** /
+internal **39** / plugin-sample **3**; **import-linter 4 contracts KEPT**; ruff + mypy clean;
+**Isaac Review (`--full`) 0 findings**. No budget 403 across the entire Phase-3 build.
