@@ -86,6 +86,51 @@ all = [
     "starboard[server,cli,sdk]",
 ]
 
+# =============================================================================
+# Capability-tier install targets (Phase-3 B5 — layered catalog / thin wheels)
+# =============================================================================
+# Stable, ADDITIVE extras that name the three tiers of the 3-tier model
+# (kernel -> capability -> experience). Each is a thin wheel that can be
+# installed on its own; a consumer installs exactly the tier they need and
+# layers the next on top. These aliases do NOT change the existing single-wheel
+# `pip install starboard` (full experience tier) — they only give the tiers
+# stable names:
+#
+#   pip install "starboard-meta[kernel]"      # kernel only: pure DTOs + analyzers
+#   pip install "starboard-meta[capability]"  # + starboard_x progressive helpers
+#   pip install "starboard-meta[experience]"  # full MCP server + CLI + agents
+#
+# The kernel tier already installs standalone (`pip install starboard-core`);
+# these extras document the composition and keep the layering explicit.
+kernel = [
+    "starboard-core",
+]
+capability = [
+    # Kernel + the dep-ful `python -m starboard_x.<domain>` middle tier (all
+    # per-capability extras). Narrow this to individual extras
+    # (e.g. starboard-core[warehouse,uc]) to install only the domains you need.
+    "starboard-core[all]",
+]
+experience = [
+    # The full experience tier. `starboard` already hard-depends on the kernel,
+    # so this pulls kernel + capability surface + the MCP server / CLI / agents.
+    "starboard",
+]
+
+# =============================================================================
+# Per-domain tool plugins (Phase-3 B5 — entry-point discovery)
+# =============================================================================
+# Optional per-domain plugins extend the built-in tool surface at runtime via
+# the `starboard.mcp_tools` entry-point group (contract:
+# starboard.tools.plugins.ToolPlugin). Plugins are separate thin wheels — never
+# a dependency of a Starboard wheel — so the catalog is opt-in and absent
+# plugins degrade cleanly (empty catalog). A distributing package declares:
+#
+#   [project.entry-points."starboard.mcp_tools"]
+#   my_domain_tool = "my_pkg.plugin:my_plugin"   # -> a ToolPlugin object
+#
+# See packages/starboard-plugin-sample for a complete reference scaffold.
+
 # Developer tooling (lint/type/import-contract gates).
 dev = [
     "import-linter>=2.0",
