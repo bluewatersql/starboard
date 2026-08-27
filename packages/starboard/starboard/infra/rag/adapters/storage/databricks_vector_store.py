@@ -56,11 +56,21 @@ class DatabricksVectorSearchStore:
         config: EnvConfig,
         embedding_provider: EmbeddingProvider | None = None,
         embedding_dim: int = 1024,
+        columns: list[str] | None = None,
     ) -> None:
         self._config = config
         self.embedding_provider = embedding_provider
         self.embedding_dim = getattr(config, "embedding_dimension", embedding_dim)
         self._client: Any | None = None
+        # Vector Search requires explicit result columns; "*" is not valid.
+        # Live delta-sync index schemas vary, so deployments must configure the
+        # names rather than relying on a guessed public default.
+        configured_columns = (
+            columns
+            if columns is not None
+            else getattr(config, "vectorsearch_columns", [])
+        )
+        self._columns = tuple(configured_columns)
         # Endpoint + per-collection index names are read from config; a hosted
         # deployment provisions the managed delta-sync indexes out of band.
         self._endpoint_name = getattr(
@@ -104,7 +114,19 @@ class DatabricksVectorSearchStore:
         n_results_per_collection: int = 10,
         domains: list[str] | None = None,
     ) -> RAGContext:
-        """Query the managed indexes for the requested collections."""
+        """Query the managed indexes for the requested collections.
+
+        Raises:
+            ValueError: If result columns were not explicitly configured for
+                the deployment's live index schema.
+        """
+        if not self._columns:
+            raise ValueError(
+                "Managed Vector Search requires explicit result columns. "
+                "Set vectorsearch_columns / VECTORSEARCH_COLUMNS to names from "
+                "the live delta-sync index schema; wildcard columns are invalid."
+            )
+
         if self._client is None:
             await self.initialize()
 
@@ -122,7 +144,7 @@ class DatabricksVectorSearchStore:
                 filters = {"domain": domains} if domains else None
                 resp = index.similarity_search(
                     query_text=query,
-                    columns=["*"],
+                    columns=list(self._columns),
                     num_results=n_results_per_collection,
                     filters=filters,
                 )

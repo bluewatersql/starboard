@@ -164,6 +164,13 @@ class EnvConfig(BaseSettings):
         "none", "inmemory", "sqlite", "chroma", "databricks", "postgres", "vectorsearch"
     ] = "none"
     embedding_dimension: int = 1024
+    vectorsearch_columns: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Explicit result columns from the live managed Vector Search index. "
+            "Empty quarantines managed retrieval because wildcard columns are invalid."
+        ),
+    )
     vector_metadata_llm_model: str = "databricks-gpt-5-mini"
     vector_metadata_llm_temperature: float = 1.0
     vector_metadata_llm_max_tokens: int = 5000
@@ -694,6 +701,8 @@ class EnvConfig(BaseSettings):
         # Vector Store Backend
         os.environ["VECTOR_BACKEND"] = self.vector_backend
         os.environ["EMBEDDING_DIMENSION"] = str(self.embedding_dimension)
+        if self.vectorsearch_columns:
+            os.environ["VECTORSEARCH_COLUMNS"] = json.dumps(self.vectorsearch_columns)
 
         # Semantic Cache
         os.environ["SEMANTIC_CACHE_THRESHOLD"] = str(self.semantic_cache_threshold)
