@@ -4,7 +4,7 @@
 
 .PHONY: help setup install install-dev verify \
         dev dev-debug dev-server dev-server-debug dev-stop dev-debug-context \
-        test test-unit test-sdk test-integration test-golden test-contract test-coverage \
+        test test-unit test-sdk test-integration test-golden test-contract test-distribution test-coverage \
         test-architecture test-architecture-guidelines \
         lint type-check format check pre-commit audit-deps \
         vendor-skills vendor-skills-check \
@@ -194,6 +194,7 @@ test-unit:
 	@echo "$(BLUE)Running unit tests...$(NC)"
 	@pytest packages/starboard-core/tests/unit/ -v --tb=short
 	@pytest packages/starboard/tests/unit/ -v --tb=short
+	@pytest packages/starboard-skills/tests/unit/ -v --tb=short
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
 
 test-sdk:
@@ -216,6 +217,11 @@ test-contract:
 	@echo "$(BLUE)Running contract tests...$(NC)"
 	@pytest tests/contract/ packages/starboard/tests/contract/ -v --tb=short
 	@echo "$(GREEN)✓ Contract tests passed$(NC)"
+
+test-distribution:
+	@echo "$(BLUE)Checking databricks aitools distribution mirror...$(NC)"
+	@python scripts/skills.py --check
+	@echo "$(GREEN)✓ Distribution mirror in sync$(NC)"
 
 test-coverage:
 	@echo "$(BLUE)Running tests with coverage...$(NC)"

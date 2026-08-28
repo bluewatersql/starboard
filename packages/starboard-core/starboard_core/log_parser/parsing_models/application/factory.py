@@ -68,7 +68,7 @@ def _build_dbfs_loader(
     therefore the whole ``starboard_core.log_parser`` public surface) does not
     transitively pull ``databricks-sdk`` at module load. The SDK is required
     only when a ``dbfs:`` / ``/Volumes/`` path is actually loaded, and the
-    loader raises an actionable ``pip install 'starboard-core[databricks]'``
+    loader raises an actionable ``pip install 'starboard-kernel[databricks]'``
     error at that point if the optional extra is missing.
 
     Args:

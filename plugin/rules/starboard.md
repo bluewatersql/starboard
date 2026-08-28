@@ -1,29 +1,43 @@
-# Starboard baseline rules
+# Starboard Rules — Index
 
-Baseline guidance injected into agent sessions where Starboard is available
-(ships with the plugin; copy into a workspace's `.isaac/rules/` to activate).
-Public path only — no internal data or namespaces.
+Baseline guidance injected into agent sessions where Starboard is available.
+Copy this directory into `.isaac/rules/` (or `{project}/.isaac/rules/`) to activate.
 
-## When to use Starboard
+Public path only — no internal data or namespaces. Dollar figures are
+**list-price DBU estimates** — always label them as such.
 
-- Use the Starboard skills/helpers for **Databricks workload analysis**: workspace
-  discovery, jobs/queries/warehouse review, cost/utilization framing, failure
-  diagnosis, and NL→SQL.
-- Prefer the **helper CLI over ad-hoc SDK calls**: `python -m starboard_x.<capability>`
-  (`discovery`, `warehouse`, `uc`, `sparklog`, `diagnostic`, `review`). Each emits a
-  compact JSON envelope (`{ok, domain, command, data|error, meta}`) and standard exit
-  codes (`0 ok · 1 auth · 2 not-found · 3 api-error · 4 arg-error`).
-- For a full workspace review, use `starboard review [--domains jobs,sql,warehouse]`;
-  for NL→SQL, `starboard genie ask "<question>"`.
+## Per-domain rulesets
 
-## Ground rules
+Each domain has its own ruleset with MCP path, CLI fallback, heuristics, and
+success criteria derived from the canonical skills tree:
 
-- **Dollar figures are list-price DBU estimates**, not finance-grade — always label
-  them as estimates.
-- **Single workspace by default.** Analysis targets the resolved workspace; do not
-  assume fleet/cross-account scope.
-- **Auth by subtraction:** rely on the resolved Databricks credential chain
-  (`--profile`/`STARBOARD_WORKSPACE` or ambient); never hard-code hosts or tokens.
-- **Read-only advisory:** Starboard analyzes and recommends; it does not modify the
-  customer workspace.
+- [`cluster.md`](cluster.md) — starboard-cluster rules
+- [`discovery.md`](discovery.md) — starboard-discovery rules
+- [`jobs.md`](jobs.md) — starboard-job rules
+- [`sql.md`](sql.md) — starboard-query rules
+- [`uc.md`](uc.md) — starboard-uc rules
+- [`warehouse.md`](warehouse.md) — starboard-warehouse rules
+
+## Quick-start rules (all domains)
+
+- Use `mcp__starboard__*` tools when available; fall back to
+  `python -m starboard_x.<capability>` then `starboard-helper`.
+- Prefer the **helper CLI over ad-hoc SDK calls** — each emits a compact
+  JSON envelope (`{ok, domain, command, data|error, meta}`) and standard exit codes
+  (`0` ok · `1` auth · `2` not-found · `3` api-error · `4` arg-error).
+- **Auth by subtraction**: rely on the resolved Databricks credential chain
+  (`--profile` / `STARBOARD_WORKSPACE` or ambient); never hard-code hosts or tokens.
+- **Read-only advisory**: Starboard analyzes and recommends; it does not modify the workspace.
 - Present findings **highest-priority first** with their evidence (`query_id` + row).
+
+## Full workspace review
+
+```bash
+starboard review [--domains jobs,sql,warehouse]   # multi-domain review
+starboard genie ask "<question>"                  # NL→SQL
+```
+
+## Content-model schema
+
+See [`README.md`](README.md) for the ruleset content-model schema and
+regeneration instructions.

@@ -53,7 +53,7 @@ starboard --help
 Store and vector drivers are **opt-in extras** and are only needed if you switch
 away from the defaults, e.g. `pip install 'starboard[sqlite]'`,
 `'starboard[postgres]'`, `'starboard[vectorsearch]'`, or
-`'starboard-core[discovery]'`. If a backend needs a driver you have not installed,
+`'starboard-kernel[discovery]'`. If a backend needs a driver you have not installed,
 Starboard raises an actionable `pip install …` error telling you exactly which
 extra to add.
 

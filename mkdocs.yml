@@ -191,6 +191,7 @@ nav:
       - S3 Connector: S3_CONNECTOR_GUIDE.md
 
   - Integrations & Distribution:
+      - Install Tiers: reference/INSTALL_TIERS.md
       - Databricks AI Tools: distribution/databricks-aitools.md
       - Claude Code Integration: CLAUDE_CODE_INTEGRATION.md
       - Agent Skills Distribution: AGENT_SKILLS_DISTRIBUTION.md

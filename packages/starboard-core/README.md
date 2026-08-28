@@ -12,7 +12,7 @@ Core domain models and shared types for the Starboard AI Agent platform.
 ## Installation
 
 ```bash
-pip install starboard-core
+pip install starboard-kernel
 ```
 
 ## Usage

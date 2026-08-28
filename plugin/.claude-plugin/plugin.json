@@ -18,5 +18,6 @@
     "optimization",
     "diagnostics"
   ],
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "agents": "./agents/"
 }

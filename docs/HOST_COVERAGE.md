@@ -17,7 +17,7 @@ python -m starboard_x.<capability> [args]      # discovery | warehouse | uc | sp
 ```
 
 `starboard_x` ships in the **`starboard-core`** wheel (install per-capability extras, e.g.
-`pip install "starboard-core[diagnostics]"`). Each capability emits the compact JSON
+`pip install "starboard-kernel[diagnostics]"`). Each capability emits the compact JSON
 envelope (`{ok, domain, command, data|error, meta}`) and the standard exit codes
 (`0 ok · 1 auth · 2 not-found · 3 api-error · 4 arg-error`). Because the invocation is
 host-agnostic, host coverage is a packaging + auth concern, not a code concern.
@@ -30,7 +30,7 @@ and `review` (`cluster` and `charts` are **not** implemented as runnables).
 | Host | Discovery | Invocation | Auth |
 |------|-----------|-----------|------|
 | **Claude Code** | plugin marketplace (`marketplace.json`) | skill `run.sh` → `python -m starboard_x.…` | SDK credential chain |
-| **Isaac** (wraps Claude Code) | same plugin; register locally with `scripts/dev_plugin_local.sh` | same | Isaac-injected identity → SDK chain |
+| **Isaac** (wraps Claude Code) | same plugin; register locally with `starboard-maint install --scope project` | same | Isaac-injected identity → SDK chain |
 | **Codex** | no plugin loader → call the helper directly | `python -m starboard_x.…` or `starboard-helper …` | SDK chain / `--profile` |
 | **OpenCode** | agent config references the helper command | `python -m starboard_x.…` | SDK chain / `--profile` |
 
@@ -41,9 +41,9 @@ host-specific plugin machinery required.
 ## Local Isaac plugin dev/test (G3)
 
 ```bash
-scripts/dev_plugin_local.sh add      # vendor skills, register ./plugin, enable
-isaac --claude                       # start a session; confirm skills are injected
-scripts/dev_plugin_local.sh remove   # clean up the dev entry
+starboard-maint install --scope project   # vendor skills, register ./plugin, enable
+isaac --claude                            # start a session; confirm skills are injected
+starboard-maint remove --scope project    # clean up the dev entry
 ```
 
 ## Baseline agent rules (`.isaac/rules`)

@@ -22,7 +22,7 @@ pip install starboard-skills   # skills tree + `starboard-helper` (Claude Code/C
 
 The default install pulls **no** store/vector drivers. Opt in only if you change a
 backend: `starboard[sqlite]`, `starboard[postgres]`, `starboard[vectorsearch]`,
-`starboard-core[discovery]`, etc.
+`starboard-kernel[discovery]`, etc.
 
 ---
 

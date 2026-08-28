@@ -33,7 +33,7 @@ ${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs finops_billing jobs
 The envelope's `data.packs[].results[]` carries the **actual rows** (`columns` +
 `rows`, with `row_count` and a `truncated` flag) alongside `data.audit`. Read
 those and synthesize the inventory yourself. Requires
-`pip install "starboard-core[discovery]"`. For raw per-resource enumeration
+`pip install "starboard-kernel[discovery]"`. For raw per-resource enumeration
 instead, use the Tier-0 `starboard-helper` commands below.
 
 ## MCP data tools (optional — deterministic only)

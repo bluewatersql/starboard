@@ -11,6 +11,7 @@ dependencies = [
 
 [project.scripts]
 starboard-helper = "starboard_skills.helpers.__main__:main"
+starboard-maint = "starboard_skills.maint.__main__:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -17,7 +17,7 @@ The S3 connector enables memory-efficient streaming of Spark event logs stored i
 ### 1. Install with S3 Support
 
 ```bash
-pip install starboard-core[aws]  # Includes S3 support
+pip install starboard-kernel[aws]  # Includes S3 support
 pip install boto3  # Required for S3 access
 ```
 

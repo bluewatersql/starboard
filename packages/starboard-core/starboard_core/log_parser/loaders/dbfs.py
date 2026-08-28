@@ -52,7 +52,7 @@ def _require_databricks_sdk() -> type:
         raise RuntimeError(
             "The DBFS/Unity Catalog Volumes loader requires the optional "
             "'databricks-sdk' dependency, which is not installed. Install it "
-            "with: pip install 'starboard-core[databricks]' (or pass a "
+            "with: pip install 'starboard-kernel[databricks]' (or pass a "
             "DBFSClient implementation explicitly)."
         ) from exc
     return WorkspaceClient

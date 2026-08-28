@@ -46,7 +46,7 @@ class TestExtrasTaxonomyPhase2:
     def test_sparklog_cloud_extras_layer_on_base(self) -> None:
         extras = _extras()
         assert any("boto3" in d for d in extras["sparklog-aws"])
-        assert any("starboard-core[sparklog]" in d for d in extras["sparklog-aws"])
+        assert any("starboard-kernel[sparklog]" in d for d in extras["sparklog-aws"])
         assert any(
             "azure-storage-file-datalake" in d for d in extras["sparklog-azure"]
         )

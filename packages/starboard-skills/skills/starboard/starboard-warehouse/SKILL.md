@@ -46,7 +46,7 @@ The history is either a JSON list of query records or an object
 `{"records": [...], "warehouse_id": ..., "warehouse_name": ...}`. Read the
 returned `data.fingerprint` + `data.health` (score, status, risk factors,
 recommendations) and produce the report. Requires
-`pip install "starboard-core[warehouse]"`. To fetch live warehouse config/state
+`pip install "starboard-kernel[warehouse]"`. To fetch live warehouse config/state
 instead, use the Tier-0 `starboard-helper` commands below.
 
 ## Non-MCP Path (Tier 0 — raw fetch)

@@ -73,5 +73,5 @@ data.synthesis   -> {primary_symptom, root_causes[], confidence,
 ```
 
 The stdlib-only tier has no pattern registry (that lives behind the
-`starboard-core[diagnostics]` extra / the Tier-2 agent), so `synthesis` reflects
+`starboard-kernel[diagnostics]` extra / the Tier-2 agent), so `synthesis` reflects
 exit-code + evidence signals only; pattern-aware synthesis needs a higher tier.

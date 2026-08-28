@@ -104,7 +104,7 @@ class S3Adapter(CloudStorageClient):
         if boto3 is None:
             raise ImportError(
                 "boto3 is required for S3 access. "
-                "Install with: pip install starboard-core[aws] or pip install boto3"
+                "Install with: pip install starboard-kernel[aws] or pip install boto3"
             )
 
     @property

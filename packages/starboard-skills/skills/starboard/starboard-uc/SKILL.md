@@ -48,7 +48,7 @@ Input shape:
 `{"table_name": "cat.sch.tbl", "columns": [{"name": ..., "data_type": ..., "nullable": ...}, ...]}`.
 Read the returned `data.anomalies`, `data.classification` (table type + medallion
 layer), `data.semantic_patterns`, and `data.schema_health`, then produce the
-report. Requires `pip install "starboard-core[uc]"`. To explore live catalog
+report. Requires `pip install "starboard-kernel[uc]"`. To explore live catalog
 metadata instead, use the Tier-0 `starboard-helper` commands below.
 
 ## Non-MCP Path (Tier 0 — raw fetch)

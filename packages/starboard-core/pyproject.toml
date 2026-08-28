@@ -1,7 +1,12 @@
 [project]
-name = "starboard-core"
+# Distribution name renamed starboard-core -> starboard-kernel (Phase-1 X3 / D-1.2).
+# The IMPORT package is unchanged: `import starboard_core` (and `starboard_x`) still
+# work — only the published wheel name changed. `starboard-core` stays installable as
+# a thin one-release deprecation alias (packages/starboard-core-alias) that depends on
+# starboard-kernel, so existing `pip install starboard-core` keeps resolving.
+name = "starboard-kernel"
 version = "0.1.1"
-description = "Starboard AI Agent - Core domain models, prompts, and shared types"
+description = "Starboard AI Agent - Core domain models, prompts, and shared types (kernel tier)"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "Databricks Open Model License"}
@@ -48,13 +53,13 @@ sparklog = [
     "stream-unzip>=0.0.94",
     "httpx>=0.28.1",
 ]
-sparklog-aws = ["starboard-core[sparklog]", "boto3>=1.34.0"]
+sparklog-aws = ["starboard-kernel[sparklog]", "boto3>=1.34.0"]
 sparklog-azure = [
-    "starboard-core[sparklog]",
+    "starboard-kernel[sparklog]",
     "azure-storage-file-datalake>=12.14.0",
     "azure-identity>=1.15.0",
 ]
-sparklog-gcp = ["starboard-core[sparklog]", "google-cloud-storage>=2.14.0"]
+sparklog-gcp = ["starboard-kernel[sparklog]", "google-cloud-storage>=2.14.0"]
 # --- warehouse / uc / cluster (Phase-2 D4; analyzers are pure/SDK-free) -------
 warehouse = [
     "polars>=1.17.0,<2.0.0",
@@ -72,7 +77,7 @@ charts = [
     "polars>=1.17.0,<2.0.0",
 ]
 all = [
-    "starboard-core[diagnostics,discovery,sparklog,warehouse,uc,cluster,charts]"
+    "starboard-kernel[diagnostics,discovery,sparklog,warehouse,uc,cluster,charts]"
 ]
 
 # AWS S3 support
@@ -108,7 +113,12 @@ starboard-x = "starboard_x.__main__:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatchling.build.targets.wheel]
+# NB: the hatchling config table is `[tool.hatch...]` (not `[tool.hatchling...]`).
+# With the distribution renamed to `starboard-kernel`, hatchling's default
+# name->directory heuristic (which used to auto-pick `starboard_core`) no longer
+# matches, so the wheel MUST enumerate its import packages explicitly here. Both
+# `starboard_core` (kernel) and `starboard_x` (capability helpers) ship in this wheel.
+[tool.hatch.build.targets.wheel]
 packages = ["starboard_core", "starboard_x"]
 
 [tool.pytest.ini_options]

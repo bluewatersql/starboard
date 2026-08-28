@@ -5,7 +5,7 @@
 # This root pyproject.toml is the uv workspace coordinator for local development.
 # Individual packages are installed from their own directories:
 #   pip install packages/starboard/        # full: CLI + MCP server + all agents
-#   pip install packages/starboard-core/   # pure domain + log parsing
+#   pip install packages/starboard-core/   # kernel tier -> `starboard-kernel` wheel
 #   pip install packages/starboard-skills/ # lightweight helpers + Claude skills
 #
 # The [project] section below uses a distinct name ("starboard-meta") to avoid
@@ -106,16 +106,18 @@ all = [
 #   pip install "starboard-meta[capability]"  # + starboard_x progressive helpers
 #   pip install "starboard-meta[experience]"  # full MCP server + CLI + agents
 #
-# The kernel tier already installs standalone (`pip install starboard-core`);
-# these extras document the composition and keep the layering explicit.
+# The kernel tier already installs standalone (`pip install starboard-kernel`);
+# these extras document the composition and keep the layering explicit. Each tier
+# now maps to an independently-published wheel (Phase-1 X3): starboard-kernel,
+# starboard-capability, starboard.
 kernel = [
-    "starboard-core",
+    "starboard-kernel",
 ]
 capability = [
     # Kernel + the dep-ful `python -m starboard_x.<domain>` middle tier (all
-    # per-capability extras). Narrow this to individual extras
-    # (e.g. starboard-core[warehouse,uc]) to install only the domains you need.
-    "starboard-core[all]",
+    # per-capability extras), published as its own thin wheel. To install only the
+    # domains you need, use the kernel extras directly (e.g. starboard-kernel[warehouse,uc]).
+    "starboard-capability",
 ]
 experience = [
     # The full experience tier. `starboard` already hard-depends on the kernel,
@@ -180,7 +182,14 @@ package = false
 
 [tool.uv.workspace]
 members = [
+    # Kernel tier — the `starboard-kernel` wheel (import packages starboard_core +
+    # starboard_x). Directory name kept as starboard-core; only the DISTRIBUTION
+    # name was renamed (Phase-1 X3 / D-1.2).
     "packages/starboard-core",
+    # Capability tier — thin meta-wheel `starboard-capability` = starboard-kernel[all].
+    "packages/starboard-capability",
+    # One-release deprecation alias: the `starboard-core` distribution -> starboard-kernel.
+    "packages/starboard-core-alias",
     "packages/starboard",
     "packages/starboard-skills",
     # Internal-index-only seam skeleton (Phase-3 D-3.1). A workspace member for
@@ -194,6 +203,10 @@ members = [
 ]
 
 [tool.uv.sources]
+starboard-kernel = { workspace = true }
+starboard-capability = { workspace = true }
+# Deprecation alias distribution (packages/starboard-core-alias). Keeps existing
+# `starboard-core` references (e.g. starboard-internal) resolving for one release.
 starboard-core = { workspace = true }
 starboard = { workspace = true }
 starboard-skills = { workspace = true }
@@ -207,9 +220,9 @@ starboard-plugin-sample = { workspace = true }
 # =============================================================================
 # import-linter — kernel boundary contract (Phase-1 B1)
 # =============================================================================
-# Enforces that the pure starboard-core kernel surface (domain models,
-# analyzers, transformers, Finding) never imports the heavy runtime
-# dependencies. databricks-sdk lives behind the starboard-core[databricks]
+# Enforces that the pure starboard-kernel (import package starboard_core) surface
+# (domain models, analyzers, transformers, Finding) never imports the heavy runtime
+# dependencies. databricks-sdk lives behind the starboard-kernel[databricks]
 # extra (used only by the DBFS log loader, via a lazy import); openai/fastapi/
 # mcp belong to the Tier-2 server package. Run with: `lint-imports`
 # (or `python -m importlinter lint`) from the repo root.

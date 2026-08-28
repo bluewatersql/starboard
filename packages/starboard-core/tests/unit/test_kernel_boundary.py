@@ -119,7 +119,7 @@ except RuntimeError as exc:
     msg = str(exc)
     assert "databricks-sdk" in msg, msg
     assert "pip install" in msg, msg
-    assert "starboard-core[databricks]" in msg, msg
+    assert "starboard-kernel[databricks]" in msg, msg
     print("OK")
 else:
     raise AssertionError("expected RuntimeError when databricks-sdk is absent")

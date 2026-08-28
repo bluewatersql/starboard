@@ -1,18 +1,22 @@
 # External-customer distribution — `databricks aitools` (skills-only)
 
-> **Task B4 (PHASE_1.md §8).** How the Starboard skills reach *external Databricks
-> customers* — as a skills-only bundle, no server, no MCP — through the first-party
-> `databricks aitools` channel and/or the open-source Skills CLI.
+> **Tasks O5 + DOC-6 (PHASE_1.md §6).** How the Starboard skills reach *external
+> Databricks customers* — as a skills-only bundle, no server, no MCP — through the
+> first-party `databricks aitools` channel and/or the open-source Skills CLI.
 >
-> **Status:** the `databricks aitools` command surface is now **publicly documented**
-> (see [Verification](#verification)), which resolves the "command not documented" half
-> of decision **D-1.6**. What remains **UNCONFIRMED** is whether a *third-party* bundle
-> like Starboard is installable through `databricks aitools` at all, and by what
-> inclusion/manifest process — the docs describe that command as installing
-> **Databricks-authored** skills only. Those items are listed under
-> [Confirmation needed](#5-confirmation-needed-owner-questions). Per D-1.6 this task is
-> **packaging + docs**, not a redesign: the plugin/skills bundle is deliberately
-> aitools-agnostic, so adopting whatever the owner confirms is a packaging step.
+> **Status (2026-08-27):**
+> - **G4 RESOLVED** — the confirmed agent-skills distribution format is defined by
+>   [`databricks-solutions/ai-dev-kit`](https://github.com/databricks-solutions/ai-dev-kit).
+>   The mirror is now **materialized** at `packages/starboard-distribution/aitools/`
+>   with a generated `manifest.json`; see [Distribution mirror](#4-distribution-mirror).
+> - **`databricks aitools` command surface** — CONFIRMED (publicly documented;
+>   see [Verification](#verification)).
+> - **Third-party inclusion mechanics** — still owner-gated; see
+>   [Confirmation needed](#5-confirmation-needed-owner-questions).
+>
+> Per D-1.4 this task is **packaging + docs**: the bundle is aitools-agnostic, so
+> adopting whatever the owner confirms about third-party inclusion is a localized
+> packaging step against the existing mirror.
 
 ## 1. What gets installed (the bundle)
 
@@ -49,7 +53,7 @@ artifacts; that "skills-tree-only" invariant is what the external channel ships.
 
 Prerequisite on the customer's machine (documented in the plugin `README.md`): the
 `starboard-helper` CLI on `PATH`, and — for the richer diagnostic Tier-1 path —
-`pip install "starboard-core[diagnostics]"` (the `starboard_x` helpers ship in the
+`pip install "starboard-kernel[diagnostics]"` (the `starboard_x` helpers ship in the
 `starboard-core` wheel; the `diagnostics` extra adds `pyyaml`; no `databricks-sdk`,
 no heavy binaries). Auth uses the Databricks unified chain
 (`DATABRICKS_HOST`/`DATABRICKS_TOKEN` or `~/.databrickscfg`).
@@ -143,29 +147,93 @@ Isaac (`isaac plugin add starboard@<marketplace>`) — see `plugin/README.md`. `
 adds the **external-customer, multi-assistant** row to that table. The bundle content is
 identical; only the installer differs.
 
-## 4. Packaging glue
+## 4. Distribution mirror
 
-No new machine-consumed manifest is added in this task, because:
+**G4 resolved (2026-08-27).** The confirmed agent-skills distribution format from
+[`databricks-solutions/ai-dev-kit`](https://github.com/databricks-solutions/ai-dev-kit)
+(@main, verified 2026-08-27) is:
 
-1. The **first-party `databricks aitools` manifest/registry shape for third-party skills
-   is unconfirmed** — inventing one would violate D-1.6 ("do not invent a fake command").
-2. The **Skills CLI** consumes a plain skill *directory* (`SKILL.md` + optional
-   `scripts/`/`references/`/`assets/`), which the canonical tree already **is** — no
-   extra manifest is required for that path.
+- **Skill layout:** one directory per skill (`<skill-name>/SKILL.md` + optional
+  `scripts/`, `references/`, etc.) under a `<host>/skills/` root — the standard
+  [Agent Skills layout](https://agentskills.io/specification).
+- **Frontmatter:** `name` (required, ≤64 chars, lowercase alnum+hyphens, no XML/reserved
+  words) and `description` (required, ≤1024 chars, non-empty, no XML) — enforced by
+  ai-dev-kit's `validate_skills.py` and by our portability test.
+- **Deprecated:** the `ai-dev-kit .claude-plugin/plugin.json` is deprecated; skills now
+  ship via `databricks aitools install` from a separate `databricks-agent-skills` repo.
+- **No bundle-level manifest.json in ai-dev-kit:** the `.test/skills/<name>/manifest.yaml`
+  files are internal evaluation manifests (scorers, quality gates) — not distribution
+  artifacts. Our `manifest.json` is a generated bundle index for drift-check CI and
+  downstream tooling.
 
-So the packaging work here is: (a) keep the canonical bundle standard-conformant
-(enforced by the portability test), and (b) document the channels. If/when the owner
-confirms a concrete `aitools` manifest, adding it is a localized packaging change against
-this same bundle — not a redesign.
+### Materialized mirror
 
-!!! note "`databricks aitools` mirror is not yet materialized"
-    The `databricks aitools` layout (mirroring the canonical tree, optionally stamping
-    `parent: databricks-core` into each `SKILL.md`, and a **generated** `manifest.json`) is
-    **not built yet** — there is no `scripts/skills.py` in this repo. Today only the **Claude
-    Code / Isaac plugin channel** is materialized (`plugin/` + `marketplace.json`, vendored by
-    `scripts/vendor_plugin_skills.py`). Materializing the `aitools` mirror + manifest is
-    tracked as an open item; the canonical skills tree stays the single source of truth, so
-    the mirror is a packaging step, not a fork.
+The mirror lives at `packages/starboard-distribution/aitools/` and is generated by
+`scripts/skills.py`:
+
+```
+packages/starboard-distribution/aitools/
+├── manifest.json                    # Generated bundle index (not part of ai-dev-kit format)
+├── starboard-analyze/SKILL.md
+├── starboard-cluster/SKILL.md
+├── starboard-diagnostic/
+│   ├── SKILL.md
+│   ├── reference.md
+│   ├── examples.md
+│   └── scripts/run.sh
+├── starboard-discovery/SKILL.md + scripts/run.sh
+├── starboard-finops/SKILL.md
+├── starboard-job/SKILL.md
+├── starboard-query/SKILL.md
+├── starboard-uc/SKILL.md + scripts/run.sh
+├── starboard-warehouse/SKILL.md + scripts/run.sh
+└── starboard-workload-review/SKILL.md + scripts/run.sh
+```
+
+**Regenerate the mirror:**
+
+```bash
+python scripts/skills.py            # vendor + generate manifest.json
+python scripts/skills.py --check    # verify in sync (CI drift guard)
+```
+
+**Drift check (recommended Makefile target — wire centrally):**
+
+```makefile
+.PHONY: test-distribution
+test-distribution:
+	python scripts/skills.py --check
+```
+
+Unit tests (`make test-unit`) validate the committed mirror at
+`packages/starboard/tests/unit/distribution/test_distribution_manifest.py` (52 tests):
+manifest schema, canonical roster match, frontmatter validity per-skill, and
+byte-level file stability checks.
+
+### manifest.json schema
+
+```json
+{
+  "schema_version": "1.0",
+  "bundle_name": "starboard",
+  "bundle_version": "<semver>",
+  "description": "...",
+  "format": "agent-skills",
+  "repository": "https://github.com/databricks/starboard",
+  "generated_at": "<ISO-8601 UTC>",
+  "skills": [
+    {
+      "name": "<skill-name>",
+      "path": "<skill-name>/",
+      "description": "<frontmatter description>",
+      "allowed_tools": "<frontmatter allowed-tools, if present>"
+    }
+  ]
+}
+```
+
+If/when the owner confirms a concrete `databricks aitools` manifest/registry shape for
+third-party skills, aligning the mirror is a localized packaging step — not a redesign.
 
 ## 5. Confirmation needed (owner questions)
 
@@ -199,7 +267,7 @@ Route these to the `databricks aitools` / Agent Skills owner before an external 
 
 ## Verification
 
-Verified against live docs on 2026-08-26:
+Verified against live sources (2026-08-27):
 
 - **`databricks aitools` command group — CONFIRMED.**
   <https://docs.databricks.com/aws/en/agent-skills> ("Agent skills for AI coding
@@ -213,11 +281,25 @@ Verified against live docs on 2026-08-26:
   (name ≤ 64 & matches dir; description ≤ 1024; compatibility ≤ 500; allowed-tools
   space-separated & experimental). Standard overview + client list:
   <https://agentskills.io>.
+- **G4 RESOLVED — confirmed agent-skills distribution format.**
+  Inspected `databricks-solutions/ai-dev-kit` @main
+  (<https://github.com/databricks-solutions/ai-dev-kit>):
+  - Skill layout: `<host>/skills/<name>/SKILL.md` (Agent Skills standard).
+  - Frontmatter constraints: `name` (≤64, lowercase alnum+hyphens, no XML/reserved
+    words) and `description` (≤1024, non-empty) — enforced by `validate_skills.py`.
+  - `.claude-plugin/plugin.json` deprecated; distribution now via
+    `databricks aitools install` + `databricks-agent-skills`.
+  - `.test/skills/<name>/manifest.yaml` = internal eval manifests (not distribution).
+  - No bundle-level manifest.json in ai-dev-kit format — our `manifest.json` is a
+    generated bundle index.
+  - Mirror materialized: `packages/starboard-distribution/aitools/` generated by
+    `scripts/skills.py`.
 - **UNCONFIRMED (still owner-gated):** third-party inclusion in `databricks aitools`, the
   installer-side manifest/registry shape, install locations/precedence, CLI-version/auth
   prerequisites, and the `starboard-helper` acquisition step — see
   [Confirmation needed](#5-confirmation-needed-owner-questions).
 
-> This supersedes the "web verification returned nothing authoritative" note in D-1.6 for
-> the *command surface* (now documented). The *third-party distribution mechanics* remain
-> the open, owner-gated part of D-1.6.
+> G4 is fully resolved for the *distribution format* (skill directory layout + frontmatter
+> rules confirmed from ai-dev-kit source). The *third-party inclusion mechanics* (questions
+> 1–7 below) remain owner-gated; adopting them is a localized packaging step against the
+> existing mirror.

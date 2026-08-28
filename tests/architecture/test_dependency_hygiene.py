@@ -38,7 +38,14 @@ _WORKSPACE_PACKAGES = {
     "starboard_core",
     "starboard",
     "starboard_skills",
-    "starboard_x",  # Workspace sibling package (packages/starboard-x)
+    "starboard_x",  # Workspace sibling package (ships in the starboard-kernel wheel)
+    # X3 / D-1.2: `starboard-core` was renamed to the `starboard-kernel`
+    # distribution (import package `starboard_core` unchanged); `starboard-core`
+    # survives as a thin deprecation alias and `starboard-capability` as the
+    # kernel + starboard_x bundle. Their dist->import mappings (below) resolve to
+    # `starboard_core`, but list the synthesized names here too for robustness.
+    "starboard_kernel",
+    "starboard_capability",
 }
 
 # Known stdlib top-level modules — these need no declared dependency
@@ -121,6 +128,11 @@ _STDLIB_MODULES = {
 
 # Manual overrides: dist-name -> import-name when the mapping is non-obvious
 _DIST_TO_IMPORT: dict[str, str] = {
+    # The kernel distribution `starboard-kernel` (formerly `starboard-core`) and
+    # its `starboard-capability` bundle both ship / re-export the `starboard_core`
+    # import package; map them so the hygiene check treats them as satisfied.
+    "starboard-kernel": "starboard_core",
+    "starboard-capability": "starboard_core",
     "python-multipart": "multipart",
     "databricks-sdk": "databricks",
     "databricks-sql-connector": "databricks",
@@ -324,5 +336,56 @@ def test_cli_package_dependency_hygiene(project_root: Path) -> None:
     package_dir = project_root / "packages" / "starboard-cli"
     if not package_dir.exists():
         pytest.skip("starboard-cli merged into starboard package")
+
+
+def _project_table(pyproject_path: Path) -> dict:
+    return tomllib.loads(pyproject_path.read_text(encoding="utf-8")).get("project", {})
+
+
+def _dep_dist_name(spec: str) -> str:
+    return re.split(r"[>=<!~;\[@ ]", spec, maxsplit=1)[0].strip()
+
+
+@pytest.mark.unit
+def test_experience_tier_depends_on_renamed_kernel(project_root: Path) -> None:
+    """X3 / D-1.2: `starboard` depends on `starboard-kernel`, not `starboard-core`.
+
+    The experience wheel must pull the renamed kernel distribution directly (the
+    deprecation alias exists only for external consumers, not for the in-repo
+    dependency edge).
+    """
+    starboard = _project_table(project_root / "packages" / "starboard" / "pyproject.toml")
+    deps = {_dep_dist_name(d) for d in starboard.get("dependencies", [])}
+    assert "starboard-kernel" in deps, f"starboard must depend on starboard-kernel: {deps}"
+    assert "starboard-core" not in deps, (
+        "starboard's direct kernel dependency must be renamed to starboard-kernel; "
+        "the starboard-core alias is for external back-compat only"
+    )
+
+
+@pytest.mark.unit
+def test_starboard_core_stays_installable_as_alias(project_root: Path) -> None:
+    """D-1.2: `starboard-core` survives as a thin one-release deprecation alias."""
+    named: dict[str, dict] = {}
+    for pp in sorted((project_root / "packages").glob("*/pyproject.toml")):
+        proj = _project_table(pp)
+        if proj.get("name"):
+            named[proj["name"]] = proj
+
+    assert named.get("starboard-kernel") is not None, "kernel wheel must be starboard-kernel"
+
+    alias = named.get("starboard-core")
+    assert alias is not None, "starboard-core deprecation alias package is missing"
+    alias_deps = {_dep_dist_name(d) for d in alias.get("dependencies", [])}
+    assert "starboard-kernel" in alias_deps, (
+        f"starboard-core alias must depend on starboard-kernel: {alias_deps}"
+    )
+
+    capability = named.get("starboard-capability")
+    assert capability is not None, "starboard-capability tier wheel is missing"
+    cap_deps = {_dep_dist_name(d) for d in capability.get("dependencies", [])}
+    assert "starboard-kernel" in cap_deps, (
+        f"starboard-capability must depend on starboard-kernel: {cap_deps}"
+    )
 
 

@@ -7,7 +7,7 @@ Reuses the loading style of
 pydantic ``model_validate``, raising a single ``RuleLoadError`` on any failure.
 
 ``pyyaml`` is **not** a hard dependency of the kernel (it lives in the
-``starboard-core[diagnostics]`` extra), so it is imported lazily inside the
+``starboard-kernel[diagnostics]`` extra), so it is imported lazily inside the
 load functions with an actionable install error. Importing this module never
 pulls ``yaml``, keeping the kernel surface clean.
 """
@@ -32,7 +32,7 @@ def _require_yaml():  # type: ignore[no-untyped-def]
     except ImportError as exc:  # pragma: no cover - env-dependent
         raise RuleLoadError(
             "Loading rule YAML requires PyYAML. Install it with "
-            "`pip install starboard-core[diagnostics]` (or `pip install pyyaml`)."
+            "`pip install starboard-kernel[diagnostics]` (or `pip install pyyaml`)."
         ) from exc
     return yaml
 
