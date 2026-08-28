@@ -227,7 +227,14 @@ __all__ = [
     # Adapters — LLM
     "create_llm_client",
     # Adapters — State
-    "SQLiteStateStore",
+    #
+    # NOTE: ``SQLiteStateStore`` is intentionally NOT listed here. It resolves
+    # lazily via ``__getattr__`` (PEP 562) so a default, store-free install can
+    # ``import starboard.bootstrap`` without pulling in aiosqlite. Listing it in
+    # ``__all__`` would make ``from starboard.bootstrap import *`` call
+    # ``getattr`` for the name, forcing the eager driver import and failing on a
+    # store-free install. Explicit ``from starboard.bootstrap import
+    # SQLiteStateStore`` still works and stays the supported access path.
     # API utilities
     "InMemoryConversationStateManager",
     # Config / logging

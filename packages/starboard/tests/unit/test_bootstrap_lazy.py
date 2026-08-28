@@ -88,10 +88,28 @@ class TestBootstrapLazyStoreImport:
         assert hasattr(cls, "connect"), "expected async connect() method"
         assert hasattr(cls, "close"), "expected async close() method"
 
-    def test_sqlite_state_store_in_all(self) -> None:
-        """SQLiteStateStore is listed in bootstrap.__all__ (back-compat)."""
+    def test_sqlite_state_store_absent_from_all(self) -> None:
+        """SQLiteStateStore must NOT be in __all__ so ``import *`` stays store-safe.
+
+        It resolves lazily via __getattr__; listing it in __all__ would make
+        ``from starboard.bootstrap import *`` force the eager driver import.
+        """
         bootstrap = _fresh_bootstrap()
-        assert "SQLiteStateStore" in bootstrap.__all__
+        assert "SQLiteStateStore" not in bootstrap.__all__
+
+    def test_star_import_touches_no_store_modules(self) -> None:
+        """Resolving every __all__ name (as ``import *`` does) loads no store driver."""
+        bootstrap = _fresh_bootstrap()
+        before = _loaded_store_modules()
+
+        for name in bootstrap.__all__:
+            getattr(bootstrap, name)
+
+        newly_loaded = _loaded_store_modules() - before
+        assert not newly_loaded, (
+            f"star-import of bootstrap pulled optional store module(s): "
+            f"{sorted(newly_loaded)!r}"
+        )
 
     def test_missing_aiosqlite_import_succeeds(self) -> None:
         """(c) bootstrap imports cleanly even when aiosqlite is absent."""

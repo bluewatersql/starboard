@@ -292,3 +292,71 @@ def test_mirror_skill_files_match_canonical(skill_dir_name: str) -> None:
         f"{skill_dir_name}: mirror files differ from canonical: {sorted(differing)}\n"
         "Run: python scripts/skills.py"
     )
+
+
+# ---------------------------------------------------------------------------
+# check() tolerates vendor()-preserved non-skill root files (drift-guard fix)
+# ---------------------------------------------------------------------------
+
+class TestCheckToleratesPreservedRootFiles:
+    """`skills.check()` must agree with `skills.vendor()` on preserved files.
+
+    vendor() (re)generates manifest.json and deliberately preserves any other
+    top-level file in the mirror root; check() must therefore not report such a
+    file as drift, while still catching real drift inside a skill directory.
+    """
+
+    @staticmethod
+    def _load_skills_module():
+        import importlib.util
+
+        script = REPO_ROOT / "scripts" / "skills.py"
+        spec = importlib.util.spec_from_file_location("skills_script_under_test", script)
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    @staticmethod
+    def _setup(tmp_path: Path) -> tuple[Path, Path, Path]:
+        skill_md = "---\nname: starboard-demo\ndescription: demo\n---\n\nBody.\n"
+        canonical = tmp_path / "canonical"
+        (canonical / "starboard-demo").mkdir(parents=True)
+        (canonical / "starboard-demo" / "SKILL.md").write_text(skill_md)
+
+        mirror = tmp_path / "mirror"
+        (mirror / "starboard-demo").mkdir(parents=True)
+        (mirror / "starboard-demo" / "SKILL.md").write_text(skill_md)
+        manifest = mirror / "manifest.json"
+        manifest.write_text(
+            json.dumps(
+                {
+                    "schema_version": "1.0",
+                    "bundle_name": "starboard",
+                    "skills": [{"name": "starboard-demo", "path": "starboard-demo/"}],
+                }
+            )
+        )
+        return canonical, mirror, manifest
+
+    def test_preserved_root_file_is_not_drift(self, tmp_path, monkeypatch) -> None:
+        mod = self._load_skills_module()
+        canonical, mirror, manifest = self._setup(tmp_path)
+        (mirror / "README.md").write_text("# aitools bundle\n")  # vendor preserves this
+
+        monkeypatch.setattr(mod, "CANONICAL_SKILLS", canonical)
+        monkeypatch.setattr(mod, "MIRROR_ROOT", mirror)
+        monkeypatch.setattr(mod, "MANIFEST_PATH", manifest)
+
+        assert mod.check() == 0, "check() falsely flagged a preserved root file as drift"
+
+    def test_stale_file_inside_skill_dir_is_still_drift(self, tmp_path, monkeypatch) -> None:
+        mod = self._load_skills_module()
+        canonical, mirror, manifest = self._setup(tmp_path)
+        (mirror / "starboard-demo" / "STALE.md").write_text("stale\n")
+
+        monkeypatch.setattr(mod, "CANONICAL_SKILLS", canonical)
+        monkeypatch.setattr(mod, "MIRROR_ROOT", mirror)
+        monkeypatch.setattr(mod, "MANIFEST_PATH", manifest)
+
+        assert mod.check() == 1, "check() missed a genuinely stale skill file"

@@ -309,10 +309,16 @@ def check() -> int:
         )
         return 1
 
-    # Compare skill file trees (canonical vs mirror; exclude manifest.json)
+    # Compare skill file trees (canonical vs mirror).
     only_source, only_dest, differing = _diff_trees(CANONICAL_SKILLS, MIRROR_ROOT)
-    # Exclude manifest.json from only_dest (it's generated, not in canonical)
-    only_dest.discard("manifest.json")
+    # vendor() only manages skill *directories*: it (re)generates manifest.json
+    # and deliberately preserves any other top-level file in the mirror root
+    # (e.g. a README.md).  Scope the drift comparison to files inside skill
+    # directories so those managed/preserved root files are not misreported as
+    # drift.  Real drift — a stale or missing skill file — always lives under a
+    # skill directory and therefore carries a path separator.
+    only_source = {rel for rel in only_source if "/" in rel}
+    only_dest = {rel for rel in only_dest if "/" in rel}
 
     if only_source or only_dest or differing:
         print("DRIFT: aitools mirror is out of sync with the canonical source.")

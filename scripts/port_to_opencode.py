@@ -38,7 +38,7 @@ Agent  (agents/*.yaml → opencode/agents/<name>.md):
   kind=subagent       → mode: subagent
   kind=autonomous     → mode: subagent  (OC has no native autonomous mode; noted in body)
   model=sonnet        → anthropic/claude-sonnet-4-20250514
-  model=haiku         → anthropic/claude-haiku-3-20240307
+  model=haiku         → anthropic/claude-haiku-4-5-20251001
   model=opus          → anthropic/claude-opus-4-20250514
   tools: Bash         → permission.bash: allow
   tools: Read         → permission.read: allow
@@ -88,7 +88,7 @@ import yaml
 #: Format: anthropic/<model-id>  (see https://opencode.ai/docs/models/)
 MODEL_MAP: dict[str, str] = {
     "sonnet": "anthropic/claude-sonnet-4-20250514",
-    "haiku": "anthropic/claude-haiku-3-20240307",
+    "haiku": "anthropic/claude-haiku-4-5-20251001",
     "opus": "anthropic/claude-opus-4-20250514",
 }
 

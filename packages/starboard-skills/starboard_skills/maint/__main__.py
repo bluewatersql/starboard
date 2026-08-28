@@ -67,6 +67,77 @@ def _rules_src() -> Path:
 # Sub-command implementations
 # --------------------------------------------------------------------------- #
 
+def _install_one_host(
+    host: str,
+    scope: Scope,
+    paths: dict[str, Path],
+    state: dict[str, Any],
+    current_hash: str,
+    *,
+    force: bool = False,
+) -> tuple[bool, int]:
+    """Install a single *host*, mutating *state* in place.
+
+    Returns ``(changed, rc)`` — *changed* is True when an install actually ran
+    (False when skipped as already-up-to-date); *rc* is non-zero on a hard
+    failure (prereq or backend error).
+
+    *force* bypasses the idempotency guard and is used by ``update``: because
+    :func:`mark_installed` rewrites the single global ``skills_hash`` after each
+    host, a non-forced pass over several recorded hosts would trip the guard for
+    every host after the first and silently skip it.
+    """
+    platform_state = state.get("platforms", {}).get(host, {})
+    if (
+        not force
+        and platform_state.get("status") == "installed"
+        and state.get("skills_hash") == current_hash
+    ):
+        print(f"[{host}] already up to date — no changes needed")
+        return False, 0
+
+    try:
+        check_prereqs(host)
+    except PrereqError as exc:
+        print(f"[{host}] prereq check failed:\n{exc}", file=sys.stderr)
+        return False, 1
+
+    extra: dict[str, Any] = {}
+    try:
+        if host == "claude-code":
+            extra = claude_code.install(_CANONICAL_SKILLS, paths["claude_skills"])
+            print(f"[claude-code] installed skills to {paths['claude_skills']}")
+
+        elif host == "isaac":
+            plugin = _plugin_dir()
+            extra = isaac.install(plugin)
+            print(f"[isaac] registered plugin at {plugin}")
+
+        elif host == "codex":
+            # user: ~/AGENTS.md; project: ./AGENTS.md
+            agents_md = (Path.cwd() if scope == "project" else Path.home()) / "AGENTS.md"
+            extra = codex.install(agents_md, _CANONICAL_SKILLS)
+            print(f"[codex] updated {agents_md}")
+
+        elif host == "opencode":
+            instructions = opencode.install_instructions(scope)
+            print(instructions)
+            extra = {"status_note": "prompt-based install — see instructions above"}
+
+    except Exception as exc:  # noqa: BLE001
+        print(f"[{host}] install failed: {exc}", file=sys.stderr)
+        return False, 1
+
+    mark_installed(
+        state,
+        platform=host,
+        scope=scope,
+        skills_hash=current_hash,
+        extra=extra,
+    )
+    return True, 0
+
+
 def _cmd_install(args: argparse.Namespace) -> int:
     scope: Scope = detect_scope(args.scope)
     os_name = detect_os()
@@ -78,59 +149,10 @@ def _cmd_install(args: argparse.Namespace) -> int:
 
     installed_any = False
     for host in hosts:
-        # Idempotency check: skip if already installed at same hash.
-        platform_state = state.get("platforms", {}).get(host, {})
-        if (
-            platform_state.get("status") == "installed"
-            and state.get("skills_hash") == current_hash
-        ):
-            print("[claude-code] already up to date — no changes needed" if host == "claude-code"
-                  else f"[{host}] already up to date — no changes needed")
-            continue
-
-        try:
-            check_prereqs(host)
-        except PrereqError as exc:
-            print(f"[{host}] prereq check failed:\n{exc}", file=sys.stderr)
-            return 1
-
-        extra: dict[str, Any] = {}
-        try:
-            if host == "claude-code":
-                extra = claude_code.install(_CANONICAL_SKILLS, paths["claude_skills"])
-                print(f"[claude-code] installed skills to {paths['claude_skills']}")
-
-            elif host == "isaac":
-                plugin = _plugin_dir()
-                extra = isaac.install(plugin)
-                print(f"[isaac] registered plugin at {plugin}")
-
-            elif host == "codex":
-                # user: ~/AGENTS.md; project: ./AGENTS.md
-                if scope == "project":
-                    agents_md = Path.cwd() / "AGENTS.md"
-                else:
-                    agents_md = Path.home() / "AGENTS.md"
-                extra = codex.install(agents_md, _CANONICAL_SKILLS)
-                print(f"[codex] updated {agents_md}")
-
-            elif host == "opencode":
-                instructions = opencode.install_instructions(scope)
-                print(instructions)
-                extra = {"status_note": "prompt-based install — see instructions above"}
-
-        except Exception as exc:  # noqa: BLE001
-            print(f"[{host}] install failed: {exc}", file=sys.stderr)
-            return 1
-
-        mark_installed(
-            state,
-            platform=host,
-            scope=scope,
-            skills_hash=current_hash,
-            extra=extra,
-        )
-        installed_any = True
+        changed, rc = _install_one_host(host, scope, paths, state, current_hash)
+        if rc != 0:
+            return rc
+        installed_any = installed_any or changed
 
     if installed_any:
         save_state(state, paths["maint_json"])
@@ -139,27 +161,43 @@ def _cmd_install(args: argparse.Namespace) -> int:
 
 
 def _cmd_update(args: argparse.Namespace) -> int:
-    """Re-install all platforms recorded in maint.json."""
+    """Force a re-install of every platform recorded in maint.json.
+
+    Refreshes all recorded hosts in a single state pass (``force=True`` — see
+    :func:`_install_one_host`) and, when rulesets were installed, re-deploys
+    them too: the ``rules`` pseudo-platform is not part of the host install
+    chain, so without this branch ``update`` would deploy nothing yet still
+    record a fresh, successful rules install.
+    """
     scope: Scope = detect_scope(args.scope)
     os_name = detect_os()
     paths = install_paths(scope, os_name)
     state = load_state(paths["maint_json"])
 
-    installed_platforms = list(state.get("platforms", {}).keys())
-    if not installed_platforms:
+    recorded = list(state.get("platforms", {}).keys())
+    if not recorded:
         print("Nothing installed yet — run 'starboard-maint install' first.")
         return 0
 
-    # Force re-install by clearing skills_hash (will bypass idempotency check).
-    state["skills_hash"] = None
-    save_state(state, paths["maint_json"])
+    current_hash = compute_skills_hash(_CANONICAL_SKILLS)
 
-    # Re-invoke install for each recorded platform.
-    for platform in installed_platforms:
-        fake_args = argparse.Namespace(scope=scope, host=platform)
-        rc = _cmd_install(fake_args)
+    for host in [p for p in recorded if p in _ALL_HOSTS]:
+        _changed, rc = _install_one_host(
+            host, scope, paths, state, current_hash, force=True
+        )
         if rc != 0:
             return rc
+
+    if "rules" in recorded:
+        # Re-deploy exactly the domains previously installed.
+        prev_domains = state.get("platforms", {}).get("rules", {}).get("deployed_domains")
+        domains = list(prev_domains) if prev_domains else None
+        rc = _deploy_rules(scope, paths, state, domains)
+        if rc != 0:
+            return rc
+
+    save_state(state, paths["maint_json"])
+    print(f"State saved to {paths['maint_json']}")
     return 0
 
 
@@ -235,19 +273,19 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     return 0 if all_ok else 1
 
 
-def _cmd_rules_install(args: argparse.Namespace) -> int:
-    scope: Scope = detect_scope(args.scope)
-    os_name = detect_os()
-    paths = install_paths(scope, os_name)
+def _deploy_rules(
+    scope: Scope,
+    paths: dict[str, Path],
+    state: dict[str, Any],
+    domains: list[str] | None,
+) -> int:
+    """Deploy per-domain rulesets and record the install in *state* (no save).
 
-    domains: list[str] | None = None
-    if getattr(args, "domains", None):
-        domains = [d.strip() for d in args.domains.split(",") if d.strip()]
-
+    Shared by ``rules install`` and ``update``. Returns a non-zero rc if the
+    ruleset source is missing.
+    """
     rules_src = _rules_src()
     rules_dest = paths["isaac_rules"]
-
-    state = load_state(paths["maint_json"])
 
     try:
         extra = rules.install(rules_src, rules_dest, domains)
@@ -274,6 +312,22 @@ def _cmd_rules_install(args: argparse.Namespace) -> int:
         skills_hash=compute_skills_hash(_CANONICAL_SKILLS),
         extra=extra,
     )
+    return 0
+
+
+def _cmd_rules_install(args: argparse.Namespace) -> int:
+    scope: Scope = detect_scope(args.scope)
+    os_name = detect_os()
+    paths = install_paths(scope, os_name)
+
+    domains: list[str] | None = None
+    if getattr(args, "domains", None):
+        domains = [d.strip() for d in args.domains.split(",") if d.strip()]
+
+    state = load_state(paths["maint_json"])
+    rc = _deploy_rules(scope, paths, state, domains)
+    if rc != 0:
+        return rc
     save_state(state, paths["maint_json"])
     return 0
 

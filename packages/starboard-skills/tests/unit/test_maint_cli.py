@@ -342,6 +342,92 @@ class TestIdempotency:
 
 
 # ---------------------------------------------------------------------------
+# update refreshes every recorded platform
+# ---------------------------------------------------------------------------
+
+class TestUpdateRefreshesAllPlatforms:
+    def test_update_reinstalls_every_recorded_host(self, tmp_path):
+        """`update` must force-refresh ALL recorded hosts, not just the first.
+
+        Regression guard: mark_installed rewrites the global skills_hash after
+        the first host, so a non-forced update would trip the idempotency guard
+        for every subsequent host and silently skip it.
+        """
+        from starboard_skills.maint.__main__ import _cmd_install, _cmd_update
+        from starboard_skills.maint.detect import install_paths
+        from starboard_skills.maint.state import load
+
+        skills_src = _make_skills_tree(tmp_path / "canonical")
+        paths = install_paths("project", os_name="linux", cwd=tmp_path)
+
+        with patch("starboard_skills.maint.__main__._CANONICAL_SKILLS", skills_src), \
+             patch("starboard_skills.maint.__main__.check_prereqs"), \
+             patch("starboard_skills.maint.__main__.install_paths", return_value=paths), \
+             patch("starboard_skills.maint.__main__.claude_code") as cc, \
+             patch("starboard_skills.maint.__main__.codex") as cx:
+            cc.install.return_value = {}
+            cx.install.return_value = {}
+
+            assert _cmd_install(_make_args(host="claude-code", scope="project")) == 0
+            assert _cmd_install(_make_args(host="codex", scope="project")) == 0
+            state = load(paths["maint_json"])
+            assert set(state["platforms"]) == {"claude-code", "codex"}
+
+            cc.install.reset_mock()
+            cx.install.reset_mock()
+
+            assert _cmd_update(_make_args(scope="project")) == 0
+
+            assert cc.install.call_count == 1, "claude-code was not refreshed by update"
+            assert cx.install.call_count == 1, "codex was not refreshed by update (finding 1)"
+
+    def test_update_empty_state_is_noop(self, tmp_path, capsys):
+        from starboard_skills.maint.__main__ import _cmd_update
+        from starboard_skills.maint.detect import install_paths
+
+        skills_src = _make_skills_tree(tmp_path / "canonical")
+        paths = install_paths("project", os_name="linux", cwd=tmp_path)
+        with patch("starboard_skills.maint.__main__._CANONICAL_SKILLS", skills_src), \
+             patch("starboard_skills.maint.__main__.install_paths", return_value=paths):
+            assert _cmd_update(_make_args(scope="project")) == 0
+        assert "nothing installed" in capsys.readouterr().out.lower()
+
+    def test_update_redeploys_rules(self, tmp_path):
+        """`update` must actually re-deploy rulesets (finding 2).
+
+        Previously the 'rules' pseudo-platform hit the host install chain, which
+        has no 'rules' branch: nothing was copied yet a successful install was
+        recorded. This proves changed ruleset content lands on update.
+        """
+        from starboard_skills.maint.__main__ import _cmd_rules_install, _cmd_update
+        from starboard_skills.maint.detect import install_paths
+
+        skills_src = _make_skills_tree(tmp_path / "canonical")
+        paths = install_paths("project", os_name="linux", cwd=tmp_path)
+        rules_src = tmp_path / "rules_src"
+        rules_src.mkdir()
+        (rules_src / "starboard.md").write_text("# router\n")
+        (rules_src / "starboard-jobs.md").write_text("# jobs v1\n")
+
+        with patch("starboard_skills.maint.__main__._CANONICAL_SKILLS", skills_src), \
+             patch("starboard_skills.maint.__main__.install_paths", return_value=paths), \
+             patch("starboard_skills.maint.__main__._rules_src", return_value=rules_src):
+            assert _cmd_rules_install(
+                _make_args(scope="project", domains="baseline,jobs")
+            ) == 0
+            dest = paths["isaac_rules"]
+            assert (dest / "starboard-jobs.md").read_text() == "# jobs v1\n"
+
+            # Change the source, then update.
+            (rules_src / "starboard-jobs.md").write_text("# jobs v2\n")
+            assert _cmd_update(_make_args(scope="project")) == 0
+
+            assert (dest / "starboard-jobs.md").read_text() == "# jobs v2\n", (
+                "update did not re-deploy the changed ruleset (finding 2)"
+            )
+
+
+# ---------------------------------------------------------------------------
 # Remove reverses install
 # ---------------------------------------------------------------------------
 

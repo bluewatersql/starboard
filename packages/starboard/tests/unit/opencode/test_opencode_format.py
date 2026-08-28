@@ -358,10 +358,23 @@ class TestConverterEdgeCases:
         assert result == "anthropic/claude-sonnet-4-20250514"
 
     def test_map_model_haiku(self) -> None:
-        assert CONV._map_model("haiku") == "anthropic/claude-haiku-3-20240307"
+        assert CONV._map_model("haiku") == "anthropic/claude-haiku-4-5-20251001"
 
     def test_map_model_opus(self) -> None:
         assert CONV._map_model("opus") == "anthropic/claude-opus-4-20250514"
+
+    def test_model_map_ids_well_formed(self) -> None:
+        """Every mapped id is ``anthropic/claude-<family>-...`` (family-first).
+
+        Guards against the reversed ``claude-haiku-3-...`` form (a Claude-3-era
+        ``claude-3-haiku-...`` id written with the family and generation
+        swapped), which OpenCode cannot resolve.
+        """
+        family_first = re.compile(r"^anthropic/claude-(sonnet|haiku|opus)-\d")
+        for hint, model_id in CONV.MODEL_MAP.items():
+            assert family_first.match(model_id), (
+                f"{hint!r} maps to a malformed model id {model_id!r}"
+            )
 
 
 # ---------------------------------------------------------------------------
