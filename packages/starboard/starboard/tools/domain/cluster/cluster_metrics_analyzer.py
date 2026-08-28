@@ -25,6 +25,14 @@ from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from typing import Any
 
+from starboard_x.cluster import (
+    ClusterMetricsInput,
+    ClusterSizingThresholds,
+    SizingReason,
+    classify_compute_sizing,
+    synthesize_rightsizing_verdict,
+)
+
 from starboard.tools.domain.cluster.cluster_metrics_models import (
     ClusterMetadata,
     ClusterSummary,
@@ -414,3 +422,117 @@ class ClusterMetricsAnalyzer:
             "driver": _aggregate_role(True),
             "worker": _aggregate_role(False),
         }
+
+
+# =============================================================================
+# Right-sizing enrichment (one source of truth: starboard_x.cluster)
+# =============================================================================
+
+# Enriched right-sizing keys attached to a cluster metrics/health summary.
+# Kept in sync with the fields Task-09 surfaces on get_cluster_metrics /
+# get_cluster_health (D-2.3): target_cores_per_node, reduction_pct,
+# binding_resource, autoscale_constrained, queue_pressure.
+_RIGHTSIZING_KEYS = (
+    "target_cores_per_node",
+    "reduction_pct",
+    "binding_resource",
+    "autoscale_constrained",
+    "queue_pressure",
+)
+
+
+def _per_node(total: Any, instances: Any) -> float:
+    """Return a per-node figure from a role total and instance count."""
+    total_f = _safe_float(total)
+    count = _safe_int(instances) or 0
+    if count <= 0:
+        return 0.0
+    return total_f / count
+
+
+def derive_rightsizing_signal(
+    summary: dict[str, Any],
+    thresholds: ClusterSizingThresholds | None = None,
+) -> dict[str, Any]:
+    """Derive a right-sizing signal from an analyzed cluster metrics summary.
+
+    Backports the harvested right-sizing heuristics by **calling into**
+    :mod:`starboard_x.cluster` — the single source of truth for the thresholds
+    and classification logic (decision D-2.3, no fork). Consumes the dict shape
+    produced by :meth:`ClusterMetricsAnalyzer.analyze` (i.e. a
+    :meth:`ClusterSummary.to_dict`) and maps the worker role's utilization onto
+    a :class:`~starboard_x.cluster.ClusterMetricsInput`.
+
+    The analyzer surfaces avg/min/max (not raw percentiles); ``*_max`` is used
+    as the p95 proxy and ``*_avg`` as the average, which is sufficient for the
+    coarse pressure/over-provision bands.
+
+    Args:
+        summary: One analyzed cluster summary (``config``/``resources``/``usage``).
+        thresholds: Optional threshold overrides; defaults to the harvested
+            research/09 §1 values.
+
+    Returns:
+        A dict always carrying the five enrichment keys
+        (``target_cores_per_node``, ``reduction_pct``, ``binding_resource``,
+        ``autoscale_constrained``, ``queue_pressure``) plus ``available``,
+        ``sizing_direction``, ``sizing_reason``, ``recommended_action`` and
+        ``confidence``. When no worker utilization is present, ``available`` is
+        ``False`` and the numeric fields are ``None``/``False``.
+    """
+    usage = summary.get("usage") or {}
+    compute = usage.get("compute_utilization") or {}
+    worker = compute.get("worker") or {}
+    resources = summary.get("resources") or {}
+    worker_res = resources.get("worker") or {}
+    config = summary.get("config") or {}
+    autoscale = config.get("autoscale") or {}
+
+    instances = _safe_int(worker_res.get("instances")) or 0
+    has_signal = instances > 0 and bool(worker)
+    if not has_signal:
+        return {
+            "available": False,
+            "sizing_direction": None,
+            "sizing_reason": None,
+            "recommended_action": None,
+            "confidence": None,
+            "target_cores_per_node": None,
+            "reduction_pct": None,
+            "binding_resource": None,
+            "autoscale_constrained": False,
+            "queue_pressure": False,
+        }
+
+    t = thresholds or ClusterSizingThresholds()
+    metrics_input = ClusterMetricsInput(
+        cpu_p95_pct=_safe_float(worker.get("cpu_total_max")),
+        memory_p95_pct=_safe_float(worker.get("mem_used_max")),
+        cpu_avg_pct=_safe_float(worker.get("cpu_total_avg")),
+        cores_per_node=_per_node(worker_res.get("cores_total"), instances),
+        memory_gb_per_node=_per_node(worker_res.get("memory_total_GB"), instances),
+        min_autoscale_workers=_safe_int(autoscale.get("min_workers")),
+        max_autoscale_workers=_safe_int(autoscale.get("max_workers")),
+        observed_workers_p95=float(instances),
+    )
+
+    signal = classify_compute_sizing(metrics_input, node_role="WORKER", thresholds=t)
+    verdict = synthesize_rightsizing_verdict(signal, thresholds=t)
+
+    return {
+        "available": True,
+        "sizing_direction": verdict.sizing_direction.value,
+        "sizing_reason": signal.sizing_reason.value,
+        "recommended_action": verdict.recommended_action.value,
+        "confidence": verdict.confidence.value,
+        "target_cores_per_node": verdict.target_cores_per_node,
+        "reduction_pct": verdict.reduction_pct,
+        "binding_resource": verdict.binding_resource,
+        "autoscale_constrained": (
+            signal.sizing_reason == SizingReason.AUTOSCALE_MAX_CONSTRAINED
+        ),
+        # Queue pressure is a streaming service-level signal; it is not derivable
+        # from cluster utilization percentiles alone, so it is False at this
+        # layer (the streaming-aware path lives in the CRS-05/08 tool queries).
+        "queue_pressure": False,
+    }

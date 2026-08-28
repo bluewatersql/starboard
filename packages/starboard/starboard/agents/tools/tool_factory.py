@@ -132,7 +132,6 @@ def create_tool_registry(
     uc_tools = UCTools(api, llm_client, events=events)
     source_tools = SourceTools(api, llm_client, events=events)
     intent_tools = IntentTools(events=events)
-    cluster_tools = ClusterTools.from_provider(provider, events=events)
 
     # Create or use provided cache store
     if cache_store is None:
@@ -150,6 +149,12 @@ def create_tool_registry(
 
     # Create SQL executor and result cache
     sql_executor = AsyncSQLExecutor(api, default_cache_ttl=300)
+
+    # Cluster tools need the SQL executor for the right-sizing query pack
+    # (get_cluster_rightsizing / get_workload_rightsizing surface CRS-06/07/08).
+    cluster_tools = ClusterTools.from_provider(
+        provider, events=events, sql_executor=sql_executor
+    )
     result_cache = QueryResultCache(
         cache_store=cache_store,
         default_ttl=3600,  # 60 minutes (with reset-on-hit)
@@ -275,6 +280,8 @@ def create_tool_registry(
         "get_cluster_health": (cluster_tools, "get_cluster_health"),
         "get_cluster_events": (cluster_tools, "get_cluster_events"),
         "get_cluster_metrics": (cluster_tools, "get_cluster_metrics"),
+        "get_cluster_rightsizing": (cluster_tools, "get_cluster_rightsizing"),
+        "get_workload_rightsizing": (cluster_tools, "get_workload_rightsizing"),
         "get_spark_logs": (cluster_tools, "get_spark_logs"),
         # Basic warehouse config/metrics tools (migrated from ClusterTools to WarehouseTools)
         "get_warehouse_config": (warehouse_tools, "get_warehouse_config"),

@@ -140,6 +140,8 @@ TOOL_CATEGORIES: dict[str, list[str] | str] = {
         "get_cluster_health",  # EXCLUSIVE - Health scoring and risk analysis
         "get_cluster_metrics",  # EXCLUSIVE - CPU, memory, I/O metrics
         "get_cluster_events",  # EXCLUSIVE - Review scaling events
+        "get_cluster_rightsizing",  # EXCLUSIVE - CRS-06 verdict + list-price DBU cost
+        "get_workload_rightsizing",  # EXCLUSIVE - CRS-07/08 job+pipeline verdict
         # Spark logs (SHARED - multiple agents need this)
         "get_spark_logs",  # SHARED - Analyze resource utilization
         # Core tools
@@ -225,6 +227,8 @@ ONLINE_TOOLS: set[str] = {
     "get_cluster_health",
     "get_cluster_metrics",
     "get_cluster_events",
+    "get_cluster_rightsizing",
+    "get_workload_rightsizing",
     "get_spark_logs",
     # Query tools - require SQL/warehouse API
     "resolve_query",
@@ -311,6 +315,8 @@ TOOL_OVERLAP_MATRIX = {
     "get_spark_logs": ["job", "cluster", "diagnostic"],
     "get_cluster_metrics": ["cluster", "diagnostic"],  # Cluster expert only
     "get_cluster_events": ["cluster", "diagnostic"],  # Cluster expert only
+    "get_cluster_rightsizing": ["cluster", "diagnostic"],  # Cluster expert only
+    "get_workload_rightsizing": ["cluster", "diagnostic"],  # Cluster expert only
     # Analytics/FinOps tools (Agentic RAG)
     "build_analytics_context": ["analytics", "diagnostic"],
     # SQL Generation tools (Analytics - agentic workflow)

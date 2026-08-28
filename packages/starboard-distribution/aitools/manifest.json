@@ -5,7 +5,7 @@
   "description": "AI-powered Databricks workload analysis: queries, jobs, Unity Catalog, clusters, FinOps, warehouses, and diagnostics. Skills-only bundle — no MCP server required.",
   "format": "agent-skills",
   "repository": "https://github.com/databricks/starboard",
-  "generated_at": "2026-08-28T16:49:50Z",
+  "generated_at": "2026-08-28T21:25:56Z",
   "skills": [
     {
       "name": "starboard-analyze",

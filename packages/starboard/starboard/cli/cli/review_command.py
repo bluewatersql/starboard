@@ -6,8 +6,9 @@ Reviews a workspace's jobs / queries / warehouses the way Isaac ``/review``
 reviews code, on **public ``system.*`` data only**: it runs the relevant query
 packs, scores the rows against the seed :class:`RuleRegistry`, and prints a
 ranked, evidence-cited set of findings. The default scope is jobs/sql/warehouse;
-Phase-2 D-a adds opt-in ``--domains`` surfaces — ``uc``, ``dlt`` (alias
-``pipelines``), ``ml``, and ``vector-search`` — over the same rule engine.
+Phase-2 adds opt-in ``--domains`` surfaces — ``uc``, ``dlt`` (alias
+``pipelines``), ``ml``, ``vector-search`` (D-a), and ``portfolio-readiness`` (X4,
+a public-safe workload-maturity review) — over the same rule engine.
 
 Invocation::
 
@@ -55,7 +56,8 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Comma-separated review domains (default: jobs,sql,warehouse). "
-            "Opt-in surfaces: uc, dlt (alias: pipelines), ml, vector-search."
+            "Opt-in surfaces: uc, dlt (alias: pipelines), ml, vector-search, "
+            "portfolio-readiness."
         ),
     )
     parser.add_argument(

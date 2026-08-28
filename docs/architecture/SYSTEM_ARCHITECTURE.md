@@ -271,7 +271,7 @@ graph TD
 | **Service** | Orchestrate adapters, compose operations, error handling | Yes | Mock adapters |
 | **Adapter** | Agent-facing interface, parameter validation, result formatting | Yes | Integration tests |
 
-### Tool Categories (57 Tools)
+### Tool Categories (59 Tools)
 
 | Category | Count | Key Tools |
 |----------|-------|-----------|

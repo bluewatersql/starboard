@@ -242,7 +242,7 @@ stateDiagram-v2
 
 ### 2. Tool System (`tools/`)
 
-57 tools organized in three-layer architecture:
+59 tools organized in three-layer architecture:
 
 ```
 Domain (Pure Logic)

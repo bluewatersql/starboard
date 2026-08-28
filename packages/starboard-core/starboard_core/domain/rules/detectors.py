@@ -64,6 +64,23 @@ ML_CLEANUP_ENDPOINT_TYPE = "Test/Demo (cleanup candidate)"
 ML_CLEANUP_MIN_DBU_THRESHOLD = 1.0
 # P-VS01: endpoint total DBU at/above which it is a right-sizing review target.
 VECTOR_SEARCH_HIGH_COST_DBU_THRESHOLD = 100.0
+# --- Phase-2 X4: Portfolio Readiness (workload-maturity) domain ----------- #
+# Window DBU (list-price estimate) at/above which a single workload's consumption
+# is treated as "production-scale" — the maturity model's boundary between a
+# pilot/exploratory workload and a production one. Rationale + tuning guidance
+# live in docs/reference/portfolio_readiness.md.
+PORTFOLIO_PRODUCTION_DBU_THRESHOLD = 100.0
+# C-B01: minimum unattributed DBU (list-price estimate) before untracked
+# consumption is worth flagging — a noise floor so trivial spend is ignored.
+PORTFOLIO_UNTRACKED_MIN_DBU_THRESHOLD = 50.0
+# C-J04: run failure rate (%) at/above which a production-scale workload has not
+# reached the reliable, optimized maturity stage. Deliberately stricter than the
+# jobs-domain acute-failure threshold: the optimized stage demands sustained
+# reliability, not merely the absence of an outage.
+PORTFOLIO_MATURITY_MAX_ERROR_RATE_PCT = 10.0
+# C-B01: the user_type label the consumption query assigns when a usage record
+# has no attributable run-as identity.
+PORTFOLIO_UNATTRIBUTED_USER_TYPE = "Unattributed"
 
 
 @dataclass(frozen=True)
@@ -127,6 +144,18 @@ def _entity(row: dict[str, Any], *keys: str, fallback: str) -> str:
         if value is not None and str(value) != "":
             return str(value)
     return fallback
+
+
+# Identity values that mean "no attributable owner" (see the finops attribution
+# reference: null run_as falls back to a system/unattributed sentinel).
+_UNATTRIBUTED_OWNERS = frozenset({"", "null", "none", "unattributed", "system"})
+
+
+def _is_missing_owner(value: Any) -> bool:
+    """True when an owner/run-as value is absent or an unattributed sentinel."""
+    if value is None:
+        return True
+    return str(value).strip().lower() in _UNATTRIBUTED_OWNERS
 
 
 # --- Per-rule detectors --------------------------------------------------- #
@@ -582,6 +611,112 @@ def detect_vector_search_high_cost_endpoint(
     return matches
 
 
+# --- Phase-2 X4: Portfolio Readiness (workload-maturity) detectors -------- #
+def detect_portfolio_untracked_production_consumption(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag unattributed, production-scale consumption (an untracked workload).
+
+    Evidence: ``C-B01`` (DBU by workspace x product x identity). Triggers when
+    ``user_type == PORTFOLIO_UNATTRIBUTED_USER_TYPE`` (no attributable run-as
+    identity) and ``dbus_consumed >= PORTFOLIO_UNTRACKED_MIN_DBU_THRESHOLD``.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        if row.get("user_type") != PORTFOLIO_UNATTRIBUTED_USER_TYPE:
+            continue
+        dbus = _as_float(row.get("dbus_consumed"))
+        if dbus is None or dbus < PORTFOLIO_UNTRACKED_MIN_DBU_THRESHOLD:
+            continue
+        workspace = _entity(row, "workspace_id", fallback=f"row-{idx}")
+        product = _entity(row, "billing_origin_product", fallback="unknown-product")
+        key = f"{workspace}:{product}"
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"{product} consumption in workspace {workspace} billed "
+                    f"{dbus:g} DBU (list-price estimate) with no attributable "
+                    "identity — untracked production-scale consumption with no "
+                    "owner or cost attribution."
+                ),
+                location=Location(entity=key, entity_type="workspace"),
+                entity_key=key,
+            )
+        )
+    return matches
+
+
+def detect_portfolio_unattended_production_job(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag production-scale jobs with no attributable owner (run-as identity).
+
+    Evidence: ``C-J01`` (job DBU leaderboard). Triggers when ``total_dbus >=
+    PORTFOLIO_PRODUCTION_DBU_THRESHOLD`` and the job's ``run_as`` identity is
+    missing or unattributed.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        dbus = _as_float(row.get("total_dbus"))
+        if dbus is None or dbus < PORTFOLIO_PRODUCTION_DBU_THRESHOLD:
+            continue
+        if not _is_missing_owner(row.get("run_as")):
+            continue
+        jid = _entity(row, "name", "job_id", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Job {jid} consumed {dbus:g} DBU (list-price estimate) at "
+                    "production scale but has no attributable run-as owner — "
+                    "mature in consumption, immature in governance."
+                ),
+                location=Location(entity=jid, entity_type="job"),
+                entity_key=jid,
+            )
+        )
+    return matches
+
+
+def detect_portfolio_unreliable_production_workload(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag production-scale jobs whose failure rate blocks the optimized stage.
+
+    Evidence: ``C-J04`` (compound reliability scorecard). Triggers when
+    ``total_dbus >= PORTFOLIO_PRODUCTION_DBU_THRESHOLD`` and ``failure_rate_pct
+    >= PORTFOLIO_MATURITY_MAX_ERROR_RATE_PCT`` — production-scale spend that is
+    not yet reliable enough to be considered optimized.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        dbus = _as_float(row.get("total_dbus"))
+        if dbus is None or dbus < PORTFOLIO_PRODUCTION_DBU_THRESHOLD:
+            continue
+        rate = _as_float(row.get("failure_rate_pct"))
+        if rate is None or rate < PORTFOLIO_MATURITY_MAX_ERROR_RATE_PCT:
+            continue
+        jid = _entity(row, "job_name", "job_id", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Job {jid} consumed {dbus:g} DBU (list-price estimate) at "
+                    f"production scale yet failed {rate:g}% of its runs — "
+                    "production-scale spend that has not reached a reliable, "
+                    "optimized maturity stage."
+                ),
+                location=Location(entity=jid, entity_type="job"),
+                entity_key=jid,
+            )
+        )
+    return matches
+
+
 # Registry of detectors keyed by ``rule.id``. Rules absent here produce no
 # findings (graceful no-op) rather than naive one-finding-per-row noise.
 DETECTORS: dict[str, Detector] = {
@@ -600,6 +735,10 @@ DETECTORS: dict[str, Detector] = {
     "ml_noisy_experiment": detect_ml_noisy_experiment,
     "vector_search_idle_endpoint": detect_vector_search_idle_endpoint,
     "vector_search_high_cost_endpoint": detect_vector_search_high_cost_endpoint,
+    # Phase-2 X4: Portfolio Readiness (workload-maturity) review domain.
+    "portfolio_untracked_production_consumption": detect_portfolio_untracked_production_consumption,
+    "portfolio_unattended_production_job": detect_portfolio_unattended_production_job,
+    "portfolio_unreliable_production_workload": detect_portfolio_unreliable_production_workload,
 }
 
 
@@ -620,6 +759,10 @@ __all__ = [
     "ML_CLEANUP_ENDPOINT_TYPE",
     "ML_CLEANUP_MIN_DBU_THRESHOLD",
     "VECTOR_SEARCH_HIGH_COST_DBU_THRESHOLD",
+    "PORTFOLIO_PRODUCTION_DBU_THRESHOLD",
+    "PORTFOLIO_UNTRACKED_MIN_DBU_THRESHOLD",
+    "PORTFOLIO_MATURITY_MAX_ERROR_RATE_PCT",
+    "PORTFOLIO_UNATTRIBUTED_USER_TYPE",
     "DETECTORS",
     "Detector",
     "RowMatch",
@@ -637,4 +780,7 @@ __all__ = [
     "detect_ml_noisy_experiment",
     "detect_vector_search_idle_endpoint",
     "detect_vector_search_high_cost_endpoint",
+    "detect_portfolio_untracked_production_consumption",
+    "detect_portfolio_unattended_production_job",
+    "detect_portfolio_unreliable_production_workload",
 ]

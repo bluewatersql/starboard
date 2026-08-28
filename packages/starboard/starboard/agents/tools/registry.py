@@ -14,10 +14,12 @@ from starboard.agents.tools.schemas.compute import (
     GET_CLUSTER_EVENTS,
     GET_CLUSTER_HEALTH,
     GET_CLUSTER_METRICS,
+    GET_CLUSTER_RIGHTSIZING,
     GET_QUERY_RUNTIME_METRICS,
     GET_SPARK_LOGS,
     GET_WAREHOUSE_CONFIG,
     GET_WAREHOUSE_METRICS,
+    GET_WORKLOAD_RIGHTSIZING,
     LIST_CLUSTERS,
 )
 from starboard.agents.tools.schemas.diagnostic import EXPLORE_ARTIFACT
@@ -121,6 +123,8 @@ ALL_TOOL_METADATA: dict[str, dict[str, Any]] = {
     "get_spark_logs": GET_SPARK_LOGS,
     "get_cluster_events": GET_CLUSTER_EVENTS,
     "get_cluster_metrics": GET_CLUSTER_METRICS,
+    "get_cluster_rightsizing": GET_CLUSTER_RIGHTSIZING,
+    "get_workload_rightsizing": GET_WORKLOAD_RIGHTSIZING,
     "get_warehouse_metrics": GET_WAREHOUSE_METRICS,
     "get_query_runtime_metrics": GET_QUERY_RUNTIME_METRICS,
     # Analytics SQL Generation (Agentic RAG Workflow)

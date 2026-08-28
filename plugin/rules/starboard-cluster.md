@@ -59,7 +59,7 @@ starboard-helper cluster spark-context --cluster-id <CLUSTER_ID>
 A complete analysis for this domain must include:
 
 1. Cluster fleet overview
-2. Rightsizing recommendations
+2. Right-sizing recommendations with list-price DBU $/month impact
 3. Event-based failure diagnosis
 4. Spark configuration tuning suggestions
 5. Priority: critical / high / medium / low

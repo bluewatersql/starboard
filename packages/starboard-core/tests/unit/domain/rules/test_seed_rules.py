@@ -59,7 +59,13 @@ _V1_EVIDENCE_QUERY_IDS = {
 _V2_EVIDENCE_QUERY_IDS = {
     "P-DLT03", "P-DLT01", "P-DLT05", "C-ML01", "P-MLF04", "P-VS03", "P-VS01",
 }
-_EXPECTED_EVIDENCE_QUERY_IDS = _V1_EVIDENCE_QUERY_IDS | _V2_EVIDENCE_QUERY_IDS
+# Phase-2 X4 added the opt-in portfolio-readiness workload-maturity domain, whose
+# seed rules cite these real billing/jobs query-pack query_ids (C-J04 is shared
+# with the v1 jobs domain).
+_X4_EVIDENCE_QUERY_IDS = {"C-B01", "C-J01", "C-J04"}
+_EXPECTED_EVIDENCE_QUERY_IDS = (
+    _V1_EVIDENCE_QUERY_IDS | _V2_EVIDENCE_QUERY_IDS | _X4_EVIDENCE_QUERY_IDS
+)
 
 # Internal namespaces / link forms that must never appear in shipped seed data.
 _FORBIDDEN_SUBSTRINGS = [
@@ -194,10 +200,12 @@ class TestRuleRegistryLoading:
 
     def test_domains_cover_seed_domains(self) -> None:
         registry = RuleRegistry.from_seed()
-        # v1 domains plus the Phase-2 D-a opt-in DLT / ML / vector-search domains.
+        # v1 domains, the Phase-2 D-a opt-in DLT / ML / vector-search domains, and
+        # the Phase-2 X4 portfolio-readiness workload-maturity domain.
         assert set(registry.domains) == {
             "query", "warehouse", "uc", "jobs",
             "dlt", "ml", "vector_search",
+            "portfolio_readiness",
         }
 
     def test_jobs_rules_present_and_bind_to_real_query_ids(self) -> None:
@@ -282,23 +290,27 @@ class TestScorerOrdering:
     def test_ranked_rules_expected_total_order(self) -> None:
         # Scores (severity_weight × default_impact / effort_points), tie-break
         # score desc → severity desc → id asc. Phase-2 D-a merged the DLT / ML /
-        # vector-search rules into this global order; the v1 rules keep their
-        # relative order (asserted separately below).
-        #   warehouse_auto_stop_disabled              high(3)*4/XS(1)   = 12.0
-        #   dlt_high_pipeline_failure_rate            high(3)*4/S(2)    =  6.0
-        #   job_high_failure_rate                     high(3)*4/S(2)    =  6.0
-        #   non_sargable_partition_filter             high(3)*4/S(2)    =  6.0
-        #   ml_test_demo_endpoint_cleanup             medium(2)*3/XS(1) =  6.0
-        #   select_star_projection                    medium(2)*3/XS(1) =  6.0
-        #   job_wasted_dbu_on_failures_retries        high(3)*3/S(2)    =  4.5
-        #   vector_search_idle_endpoint               medium(2)*4/S(2)  =  4.0
-        #   table_missing_maintenance                 medium(2)*3/S(2)  =  3.0
-        #   warehouse_persistently_underutilized      medium(2)*3/S(2)  =  3.0
-        #   dlt_classic_compute_serverless_candidate  medium(2)*3/M(3)  =  2.0
-        #   job_high_runtime_variance                 medium(2)*3/M(3)  =  2.0
-        #   dlt_stale_pipeline                        low(1)*2/XS(1)    =  2.0
-        #   ml_noisy_experiment                       low(1)*2/S(2)     =  1.0
-        #   vector_search_high_cost_endpoint          low(1)*2/S(2)     =  1.0
+        # vector-search rules and Phase-2 X4 merged the portfolio-readiness rules
+        # into this global order; the v1 rules keep their relative order (asserted
+        # separately below).
+        #   warehouse_auto_stop_disabled                  high(3)*4/XS(1)   = 12.0
+        #   dlt_high_pipeline_failure_rate                high(3)*4/S(2)    =  6.0
+        #   job_high_failure_rate                         high(3)*4/S(2)    =  6.0
+        #   non_sargable_partition_filter                 high(3)*4/S(2)    =  6.0
+        #   portfolio_untracked_production_consumption    high(3)*4/S(2)    =  6.0
+        #   ml_test_demo_endpoint_cleanup                 medium(2)*3/XS(1) =  6.0
+        #   select_star_projection                        medium(2)*3/XS(1) =  6.0
+        #   job_wasted_dbu_on_failures_retries            high(3)*3/S(2)    =  4.5
+        #   vector_search_idle_endpoint                   medium(2)*4/S(2)  =  4.0
+        #   portfolio_unattended_production_job           medium(2)*3/S(2)  =  3.0
+        #   table_missing_maintenance                     medium(2)*3/S(2)  =  3.0
+        #   warehouse_persistently_underutilized          medium(2)*3/S(2)  =  3.0
+        #   dlt_classic_compute_serverless_candidate      medium(2)*3/M(3)  =  2.0
+        #   job_high_runtime_variance                     medium(2)*3/M(3)  =  2.0
+        #   portfolio_unreliable_production_workload      medium(2)*3/M(3)  =  2.0
+        #   dlt_stale_pipeline                            low(1)*2/XS(1)    =  2.0
+        #   ml_noisy_experiment                           low(1)*2/S(2)     =  1.0
+        #   vector_search_high_cost_endpoint              low(1)*2/S(2)     =  1.0
         registry = RuleRegistry.from_seed()
         ordered = [r.id for r in registry.ranked_rules()]
         assert ordered == [
@@ -306,14 +318,17 @@ class TestScorerOrdering:
             "dlt_high_pipeline_failure_rate",
             "job_high_failure_rate",
             "non_sargable_partition_filter",
+            "portfolio_untracked_production_consumption",
             "ml_test_demo_endpoint_cleanup",
             "select_star_projection",
             "job_wasted_dbu_on_failures_retries",
             "vector_search_idle_endpoint",
+            "portfolio_unattended_production_job",
             "table_missing_maintenance",
             "warehouse_persistently_underutilized",
             "dlt_classic_compute_serverless_candidate",
             "job_high_runtime_variance",
+            "portfolio_unreliable_production_workload",
             "dlt_stale_pipeline",
             "ml_noisy_experiment",
             "vector_search_high_cost_endpoint",

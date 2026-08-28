@@ -28,8 +28,10 @@ required evidence queries are derived from whatever rules that rule-domain
 carries. New surfaces are therefore added by shipping a seed ruleset + its
 ``DOMAIN_TO_RULE_DOMAIN`` entry — no per-domain code here. Phase-2 D-a adds the
 opt-in **DLT / ML / vector-search** domains (see :data:`OPT_IN_DOMAINS`) over the
-already-present ``dlt_pipelines`` / ``ml`` / ``mlflow`` / ``vector_search`` packs;
-the default scope (:data:`DEFAULT_DOMAINS`) stays jobs/sql/warehouse.
+already-present ``dlt_pipelines`` / ``ml`` / ``mlflow`` / ``vector_search`` packs,
+and Phase-2 X4 adds the opt-in **portfolio-readiness** workload-maturity surface
+over the ``billing`` / ``jobs`` packs; the default scope
+(:data:`DEFAULT_DOMAINS`) stays jobs/sql/warehouse.
 """
 
 from __future__ import annotations
@@ -93,7 +95,13 @@ _REVIEW_PACK_ID = "workload_review"
 # ``python -m starboard_x.review`` help; each token resolves through the kernel
 # ``DOMAIN_TO_RULE_DOMAIN`` map. Kept here (server tier) as the single source of
 # truth for the CLI so the flag help never drifts from what actually routes.
-OPT_IN_DOMAINS: tuple[str, ...] = ("uc", "dlt", "ml", "vector-search")
+OPT_IN_DOMAINS: tuple[str, ...] = (
+    "uc",
+    "dlt",
+    "ml",
+    "vector-search",
+    "portfolio-readiness",
+)
 
 
 def available_domains() -> tuple[str, ...]:

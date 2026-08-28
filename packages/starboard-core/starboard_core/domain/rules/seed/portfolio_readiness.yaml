@@ -1,0 +1,107 @@
+# Seed workload-review rules — Portfolio Readiness domain (Phase-2 X4, data only).
+# A public-safe workload-maturity review: it generalises a use-case lifecycle
+# (validate -> pilot -> production -> optimized) into a *runtime-observable*
+# model derived only from public signals — consumption (system.billing.usage),
+# error-rate (system.lakeflow.*), and owner attribution (identity_metadata.run_as).
+# No CRM / system-of-record fields, no internal namespaces, no forecast figures. All
+# money references are list-price DBU estimates only. The full stage model and
+# every threshold's rationale live in docs/reference/portfolio_readiness.md.
+#
+# Each evidence_query points at a real, already-present query-pack query_id:
+#   C-B01 (billing.py)  — DBU by workspace x product x identity (run_as/user_type)
+#   C-J01 (jobs.py)     — job DBU leaderboard (run_as owner + total_dbus)
+#   C-J04 (jobs.py)     — compound reliability scorecard (failure_rate_pct + total_dbus)
+version: "1.0.0"
+domain: portfolio_readiness
+rules:
+  - id: portfolio_untracked_production_consumption
+    name: Attribute untracked production-scale consumption
+    category: portfolio_readiness
+    short_description: >-
+      Production-scale consumption billing under no attributable identity is an
+      untracked workload — invisible to ownership, chargeback, and governance.
+    rationale: >-
+      A mature production workload has a clear owner and cost attribution. When a
+      product is burning meaningful DBU with no attributable run-as identity, that
+      consumption cannot be governed, budgeted, or advanced through the maturity
+      stages — it is the runtime-observable analog of a real production workload
+      that was never formally tracked. Attributing it is the first progression
+      step out of the untracked state.
+    severity: high
+    default_effort: S
+    default_impact: 4
+    bad: A product burning hundreds of DBU/month with an "Unattributed" identity.
+    good: >-
+      Assign a run-as identity and owner/cost-center tags so the consumption is
+      tracked and can be governed like a production workload.
+    suggested_fix: >-
+      Identify what is generating the unattributed consumption, set a service
+      identity or owner on it, and apply owner / cost-center tags so it appears in
+      chargeback and can progress toward a tracked, optimized production workload.
+    detect: >-
+      The consumption-by-identity query reports an unattributed user_type (no
+      run-as identity) with billed DBU at or above the untracked review threshold.
+    evidence_query: C-B01
+    source: null
+    enabled: true
+
+  - id: portfolio_unattended_production_job
+    name: Assign an owner to production-scale jobs
+    category: portfolio_readiness
+    short_description: >-
+      A job consuming production-scale DBU with no attributable owner is running
+      unattended — mature in consumption but immature in governance.
+    rationale: >-
+      A workload can reach production-scale consumption while still lacking the
+      ownership that defines a mature, governed workload. A high-DBU job with no
+      run-as identity has no accountable owner to right-size it, respond to its
+      failures, or advance it — so it is stuck below the optimized stage regardless
+      of how much it consumes.
+    severity: medium
+    default_effort: S
+    default_impact: 3
+    bad: A top-consumption job with no run-as identity and no owner.
+    good: >-
+      Give the job an explicit run-as identity and owner so it has an accountable
+      owner and can be tracked toward the optimized stage.
+    suggested_fix: >-
+      Set an explicit run-as identity and owner/cost-center tags on the job so its
+      production-scale consumption is attributable, then review it for
+      right-sizing and reliability as a tracked production workload.
+    detect: >-
+      The job DBU leaderboard reports the job at or above the production-scale DBU
+      threshold with a missing or unattributed run-as identity.
+    evidence_query: C-J01
+    source: null
+    enabled: true
+
+  - id: portfolio_unreliable_production_workload
+    name: Stabilize unreliable production-scale workloads
+    category: portfolio_readiness
+    short_description: >-
+      A production-scale job whose runs fail too often has not reached a reliable,
+      optimized maturity stage and should be stabilized before it is treated as
+      production-ready.
+    rationale: >-
+      Sustained production consumption is necessary but not sufficient for the
+      optimized stage — the workload must also be reliable. A job at
+      production-scale DBU with a run failure rate above the maturity ceiling is
+      spending like production while behaving like a pilot; stabilizing it is the
+      progression step from production-scale-but-fragile to optimized.
+    severity: medium
+    default_effort: M
+    default_impact: 3
+    bad: A high-DBU job that fails a fifth of its runs, month after month.
+    good: >-
+      Drive the run failure rate below the maturity ceiling so the workload is
+      dependable at its production scale.
+    suggested_fix: >-
+      Root-cause the dominant failure mode, fix it, and confirm the run failure
+      rate holds below the maturity reliability ceiling before treating the
+      workload as an optimized production workload.
+    detect: >-
+      The reliability scorecard reports the job at or above the production-scale
+      DBU threshold with a failure_rate_pct at or above the maturity ceiling.
+    evidence_query: C-J04
+    source: null
+    enabled: true

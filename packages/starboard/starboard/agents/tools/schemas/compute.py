@@ -162,6 +162,84 @@ GET_QUERY_RUNTIME_METRICS = {
     },
 }
 
+GET_CLUSTER_RIGHTSIZING = {
+    "name": "get_cluster_rightsizing",
+    "description": (
+        "Right-size a cluster: sizing verdict + list-price DBU cost exposure (CRS-06).\n"
+        "Returns: Per-cluster sizing_direction (UNDER/OVER/BALANCED), recommended_action,\n"
+        "target_cores_per_node, reduction_pct, dbus_per_day, and a labelled list-price\n"
+        "DBU $/month estimate + potential monthly savings.\n"
+        "All $ figures are LIST-PRICE DBU ESTIMATES (actual billed cost differs under contracted rates).\n"
+        "Cost: ~600 tokens | Prerequisites: none (cluster_id optional to scope to one cluster)\n"
+        "⚡ Parallel-safe: Can call with other get_* tools in ONE turn\n"
+        "→ Signals: over-provisioned downsize candidates ranked by list-price DBU exposure"
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "cluster_id": {
+                "type": "string",
+                "description": "Optional cluster ID to scope the verdict to one cluster",
+            },
+            "lookback_days": {
+                "type": "integer",
+                "description": "Utilization/billing window in days (clamped to 90)",
+                "default": 30,
+            },
+            "list_price_per_dbu": {
+                "type": "number",
+                "description": (
+                    "Optional list-price $/DBU used for the estimate "
+                    "(defaults to a public list-price rate; output is always "
+                    "labelled a list-price DBU estimate)"
+                ),
+            },
+        },
+        "required": [],
+    },
+}
+
+GET_WORKLOAD_RIGHTSIZING = {
+    "name": "get_workload_rightsizing",
+    "description": (
+        "Right-size workloads (jobs + pipelines): unified verdict + reliability (CRS-07/08).\n"
+        "Returns: Per-workload sizing_direction ranked by priority (UNDERPROVISIONED first),\n"
+        "per-job reliability (run count, success rate, runtime p95), and a labelled\n"
+        "list-price DBU cost exposure for the underlying compute.\n"
+        "All $ figures are LIST-PRICE DBU ESTIMATES (actual billed cost differs under contracted rates).\n"
+        "Cost: ~800 tokens | Prerequisites: none (workload_type/workload_id optional to scope)\n"
+        "→ Feeds the autonomous cluster right-sizing monitor (report-only DRAFT/WARN)"
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "workload_type": {
+                "type": "string",
+                "description": "Optional filter: JOB or PIPELINE",
+                "enum": ["JOB", "PIPELINE"],
+            },
+            "workload_id": {
+                "type": "string",
+                "description": "Optional workload ID (job_id or pipeline_id) to scope to one workload",
+            },
+            "lookback_days": {
+                "type": "integer",
+                "description": "Utilization/reliability window in days (clamped to 90)",
+                "default": 30,
+            },
+            "list_price_per_dbu": {
+                "type": "number",
+                "description": (
+                    "Optional list-price $/DBU for the cost estimate "
+                    "(defaults to a public list-price rate; output labelled a "
+                    "list-price DBU estimate)"
+                ),
+            },
+        },
+        "required": [],
+    },
+}
+
 GET_CLUSTER_HEALTH = {
     "name": "get_cluster_health",
     "description": (

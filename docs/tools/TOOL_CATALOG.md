@@ -2,7 +2,7 @@
 
 > Last verified: 2026-03-24
 
-**Total Tools**: 57
+**Total Tools**: 59
 **Domains**: 9 (router, query, job, uc, cluster, analytics, diagnostic, warehouse, discovery)
 
 ---
@@ -15,7 +15,7 @@
 4. [Query Tools](#query-tools) (8 tools)
 5. [Job Tools](#job-tools) (14 tools)
 6. [UC Tools](#uc-tools-unity-catalog) (18 tools)
-7. [Cluster Tools](#cluster-tools) (8 tools)
+7. [Cluster Tools](#cluster-tools) (10 tools)
 8. [Analytics Tools](#analytics-tools) (6 tools)
 9. [Warehouse Tools](#warehouse-tools) (11 tools)
 10. [Discovery Tools](#discovery-tools) (6 tools)
@@ -29,7 +29,7 @@
 
 ## Overview
 
-The Starboard AI Agent provides 57 specialized tools organized by domain. Tools follow a three-layer architecture and are assigned to agents using the **Pragmatic Hybrid (80/20)** strategy defined in `tool_categories.py`.
+The Starboard AI Agent provides 59 specialized tools organized by domain. Tools follow a three-layer architecture and are assigned to agents using the **Pragmatic Hybrid (80/20)** strategy defined in `tool_categories.py`.
 
 ### Common Interface Pattern
 
@@ -166,19 +166,25 @@ Core tools (`request_user_input`, `complete`) are also available.
 ## Cluster Tools
 
 **Domain**: `cluster`
-**Purpose**: Databricks cluster configuration, health scoring, and metrics
-**Tool Count**: 8 (including core tools)
+**Purpose**: Databricks cluster configuration, health scoring, metrics, and right-sizing
+**Tool Count**: 10 (including core tools)
 
 | Tool | Sharing | Description |
 |------|---------|-------------|
 | `list_clusters` | Exclusive | List all clusters with recent activity |
 | `get_cluster_config` | Shared (job) | Get cluster configuration settings |
-| `get_cluster_health` | Exclusive | Health scoring and risk analysis |
-| `get_cluster_metrics` | Exclusive | CPU, memory, I/O utilization metrics |
+| `get_cluster_health` | Exclusive | Health scoring and risk analysis (right-sizing enriched) |
+| `get_cluster_metrics` | Exclusive | CPU, memory, I/O utilization metrics (right-sizing enriched) |
 | `get_cluster_events` | Exclusive | Review scaling and lifecycle events |
+| `get_cluster_rightsizing` | Exclusive | CRS-06 per-cluster sizing verdict + list-price DBU cost estimate |
+| `get_workload_rightsizing` | Exclusive | CRS-07/08 job + pipeline sizing verdict + list-price DBU exposure |
 | `get_spark_logs` | Shared (job) | Analyze Spark resource utilization |
 
 Core tools (`request_user_input`, `complete`) are also available.
+
+`get_cluster_rightsizing` / `get_workload_rightsizing` project the DBU-only
+`cluster_right_sizing` query pack into a **list-price DBU estimate** at the tool
+layer; every `$` figure is labelled and is not a contracted-rate figure.
 
 ---
 
@@ -282,7 +288,8 @@ Tools are classified by their dependency on the Databricks API. When `offline_mo
 Job:        resolve_job, get_job_config, analyze_job_history, get_run_output,
             get_task_logs, get_source_code
 Cluster:    list_clusters, get_cluster_config, get_cluster_health,
-            get_cluster_metrics, get_cluster_events, get_spark_logs
+            get_cluster_metrics, get_cluster_events, get_spark_logs,
+            get_cluster_rightsizing, get_workload_rightsizing
 Query:      resolve_query, analyze_query_plan, get_query_runtime_metrics
 UC:         list_uc_assets, get_table_metadata, get_table_lineage,
             get_table_grants, analyze_table_schema, get_table_history,

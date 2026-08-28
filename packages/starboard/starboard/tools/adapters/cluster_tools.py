@@ -8,9 +8,16 @@ Uses domain logic and transforms directly - no intermediate service layer.
 
 from __future__ import annotations
 
+import dataclasses
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+from starboard_core.domain.models.discovery.query import SystemQuery
+
+from starboard.discovery.executor import QueryPackExecutor, SQLExecutor
+from starboard.discovery.query_packs.cluster_right_sizing import (
+    CLUSTER_RIGHT_SIZING_PACK,
+)
 from starboard.exceptions import AdapterError, ToolError
 from starboard.infra.observability.logging import get_logger
 from starboard.services.context.transforms import (
@@ -23,6 +30,9 @@ from starboard.services.context.transforms import (
 )
 from starboard.tools.adapters.base import BaseToolAdapter, OutputFormat
 from starboard.tools.domain.cluster import ComputeResolver
+from starboard.tools.domain.cluster.cluster_metrics_analyzer import (
+    derive_rightsizing_signal,
+)
 from starboard.tools.domain.cluster.fingerprint_builder import (
     build_cluster_fingerprint,
 )
@@ -34,9 +44,21 @@ from starboard.tools.exceptions import (
 from starboard.tools.utils import extract_job_clusters
 
 if TYPE_CHECKING:
-    pass
+    from starboard.infra.observability.events import EventEmitter
+    from starboard.services.context.provider import SharedContextProvider
 
 logger = get_logger(__name__)
+
+# Default public list-price $/DBU used to project the DBU-only right-sizing pack
+# into a labelled list-price estimate at the tool layer (the CRS pack itself is
+# DBU-only). This mirrors the list-price convention used elsewhere in the tool
+# tier (e.g. storage cost attribution); every $ output is explicitly labelled a
+# **list-price DBU estimate** and is not a contracted-rate figure.
+DEFAULT_LIST_PRICE_PER_DBU = 0.55
+
+_LIST_PRICE_DISCLAIMER = (
+    "list-price DBU estimate; actual billed cost differs under contracted rates"
+)
 
 
 class ClusterTools(BaseToolAdapter):
@@ -52,6 +74,45 @@ class ClusterTools(BaseToolAdapter):
         >>> tools = ClusterTools.from_provider(provider, events=events)
         >>> config = await tools.get_cluster_config("cluster-123")
     """
+
+    def __init__(
+        self,
+        *,
+        provider: SharedContextProvider | None = None,
+        events: EventEmitter | None = None,
+        sql_executor: SQLExecutor | None = None,
+    ) -> None:
+        """Initialize cluster tools.
+
+        Args:
+            provider: SharedContextProvider for config/metrics access.
+            events: Optional event emitter for observability.
+            sql_executor: Optional async SQL executor used by the right-sizing
+                tools (``get_cluster_rightsizing`` / ``get_workload_rightsizing``)
+                to run the ``cluster_right_sizing`` query pack. When absent, the
+                right-sizing tools degrade gracefully with a clear message.
+        """
+        super().__init__(provider=provider, events=events)
+        self._sql_executor = sql_executor
+
+    @classmethod
+    def from_provider(  # type: ignore[override]
+        cls,
+        provider: SharedContextProvider,
+        events: EventEmitter | None = None,
+        sql_executor: SQLExecutor | None = None,
+    ) -> ClusterTools:
+        """Create ClusterTools from a SharedContextProvider.
+
+        Args:
+            provider: SharedContextProvider for data access.
+            events: Optional event emitter for observability.
+            sql_executor: Optional async SQL executor for the right-sizing tools.
+
+        Returns:
+            Configured ClusterTools instance.
+        """
+        return cls(provider=provider, events=events, sql_executor=sql_executor)
 
     # -------------------------------------------------------------------------
     # Cluster Discovery
@@ -315,10 +376,15 @@ class ClusterTools(BaseToolAdapter):
                 ),
             }
 
+        metrics = metrics_list[0]
+        # Enrich with the right-sizing signal (D-2.3): reuses the pure
+        # starboard_x.cluster logic via the analyzer (one source of truth).
+        metrics["rightsizing"] = derive_rightsizing_signal(metrics)
+
         return {
             "found": True,
             "cluster_id": cluster_id,
-            "metrics": metrics_list[0],
+            "metrics": metrics,
         }
 
     async def get_cluster_health(self, cluster_id: str) -> dict[str, Any]:
@@ -374,12 +440,18 @@ class ClusterTools(BaseToolAdapter):
         # Analyze health
         health_report = analyze_cluster_health(fingerprint)
 
+        # Right-sizing enrichment (D-2.3): reuse the pure starboard_x.cluster
+        # logic via the analyzer. Degrades to available=False when metrics are
+        # unavailable (e.g. terminated / short-lived job cluster).
+        rightsizing = derive_rightsizing_signal(metrics or {})
+
         # Convert to dict for LLM consumption
         return {
             "found": True,
             "cluster_id": cluster_id,
             "cluster_name": health_report.cluster_name,
             "health": {
+                "rightsizing": rightsizing,
                 "health_score": health_report.scores.overall,
                 "health_status": health_report.health_status,
                 "metric_scores": {
@@ -404,6 +476,284 @@ class ClusterTools(BaseToolAdapter):
                 "summary": health_report.summary,
                 "generated_at": health_report.generated_at.isoformat(),
             },
+        }
+
+    # -------------------------------------------------------------------------
+    # Right-Sizing Operations (CRS-06 / CRS-07 / CRS-08)
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _crs_query(query_id: str) -> SystemQuery | None:
+        """Return the ``cluster_right_sizing`` SystemQuery with ``query_id``."""
+        for query in CLUSTER_RIGHT_SIZING_PACK.queries:
+            if query.query_id == query_id:
+                return query
+        return None
+
+    async def _run_crs_query(
+        self,
+        query_id: str,
+        lookback_days: int,
+        result_limit: int,
+    ) -> list[dict[str, Any]] | None:
+        """Execute a single ``cluster_right_sizing`` query and return its rows.
+
+        Returns ``None`` when no SQL executor is configured, the query is
+        unknown, or the query failed (e.g. an optional ``system.lakeflow.*``
+        table is absent in the workspace) — the caller degrades gracefully.
+        """
+        if self._sql_executor is None:
+            return None
+        query = self._crs_query(query_id)
+        if query is None:
+            return None
+
+        # Build a single-query pack so only the requested query runs (the full
+        # pack has 8 queries, several of which need optional lakeflow tables).
+        single_pack = dataclasses.replace(
+            CLUSTER_RIGHT_SIZING_PACK,
+            pack_id=f"cluster_right_sizing_{query_id}",
+            queries=(query,),
+        )
+        executor = QueryPackExecutor(
+            sql_executor=self._sql_executor,
+            default_lookback_days=lookback_days,
+            default_result_limit=result_limit,
+            enable_cache=False,
+        )
+        pack_result = await executor.execute_pack(single_pack)
+        for result in pack_result.results:
+            if result.query_id == query_id:
+                if result.succeeded and result.data is not None:
+                    return list(result.data.iter_rows(named=True))
+                return None
+        return None
+
+    @staticmethod
+    def _list_price_block(
+        dbus_per_day: float | None,
+        reduction_pct: float | None,
+        list_price_per_dbu: float,
+    ) -> dict[str, Any]:
+        """Project DBU-only figures into a labelled list-price DBU estimate."""
+        dbus = float(dbus_per_day or 0.0)
+        monthly_dbus = round(dbus * 30.0, 2)
+        monthly_cost = round(monthly_dbus * list_price_per_dbu, 2)
+        reduction = float(reduction_pct or 0.0)
+        monthly_savings = round(monthly_cost * reduction / 100.0, 2)
+        return {
+            "cost_basis": "list-price DBU estimate",
+            "list_price_per_dbu_usd": list_price_per_dbu,
+            "dbus_per_day": round(dbus, 2),
+            "estimated_monthly_dbus": monthly_dbus,
+            "estimated_monthly_cost_usd": monthly_cost,
+            "estimated_monthly_savings_usd": monthly_savings,
+            "disclaimer": _LIST_PRICE_DISCLAIMER,
+        }
+
+    async def get_cluster_rightsizing(
+        self,
+        cluster_id: str | None = None,
+        lookback_days: int = 30,
+        list_price_per_dbu: float | None = None,
+    ) -> dict[str, Any]:
+        """Right-size clusters using the CRS-06 cluster_rightsizing_summary query.
+
+        Returns a per-cluster sizing verdict (direction + recommended action +
+        target cores + reduction %) joined to a **list-price DBU cost estimate**
+        projected at the tool layer (the CRS pack is DBU-only).
+
+        Args:
+            cluster_id: Optional cluster ID to scope the verdict to one cluster.
+            lookback_days: Utilization/billing window (clamped to 90 by the pack).
+            list_price_per_dbu: Optional list-price $/DBU (defaults to a public
+                list-price rate). Every $ figure is labelled a list-price DBU estimate.
+
+        Returns:
+            On success: {"found": True, "clusters": [...], "summary": {...}}.
+            On no executor/data: {"found": False, "reason": "..."}.
+        """
+        self._log_obs_context(
+            "get_cluster_rightsizing",
+            {"cluster_id": cluster_id, "lookback_days": lookback_days},
+        )
+        rate = (
+            list_price_per_dbu
+            if list_price_per_dbu is not None
+            else DEFAULT_LIST_PRICE_PER_DBU
+        )
+
+        rows = await self._run_crs_query("CRS-06", lookback_days, result_limit=200)
+        if rows is None:
+            return {
+                "found": False,
+                "reason": (
+                    "Cluster right-sizing data unavailable. Requires a SQL "
+                    "executor and access to system.compute.* / system.billing.usage."
+                ),
+            }
+
+        if cluster_id is not None:
+            rows = [r for r in rows if r.get("cluster_id") == cluster_id]
+
+        clusters: list[dict[str, Any]] = []
+        direction_counts: dict[str, int] = {}
+        total_monthly_savings = 0.0
+        for row in rows:
+            direction = row.get("sizing_direction") or "REVIEW"
+            direction_counts[direction] = direction_counts.get(direction, 0) + 1
+            list_price = self._list_price_block(
+                row.get("dbus_per_day"), row.get("reduction_pct"), rate
+            )
+            total_monthly_savings += list_price["estimated_monthly_savings_usd"]
+            clusters.append(
+                {
+                    "workspace_id": row.get("workspace_id"),
+                    "cluster_id": row.get("cluster_id"),
+                    "sizing_reason": row.get("sizing_reason"),
+                    "sizing_direction": direction,
+                    "recommended_action": row.get("recommended_action"),
+                    "target_cores_per_node": row.get("target_cores_per_node"),
+                    "reduction_pct": row.get("reduction_pct"),
+                    "list_price_estimate": list_price,
+                }
+            )
+
+        return {
+            "found": True,
+            "lookback_days": lookback_days,
+            "query_id": "CRS-06",
+            "clusters": clusters,
+            "summary": {
+                "cluster_count": len(clusters),
+                "by_direction": direction_counts,
+                "estimated_total_monthly_savings_usd": round(total_monthly_savings, 2),
+                "cost_basis": "list-price DBU estimate",
+                "disclaimer": _LIST_PRICE_DISCLAIMER,
+            },
+        }
+
+    async def get_workload_rightsizing(
+        self,
+        workload_type: str | None = None,
+        workload_id: str | None = None,
+        lookback_days: int = 30,
+        list_price_per_dbu: float | None = None,
+    ) -> dict[str, Any]:
+        """Right-size workloads via the CRS-07/08 job/workload summaries.
+
+        Surfaces the unified per-workload sizing verdict (CRS-08, ranked by
+        priority) and per-job reliability (CRS-07), plus a fleet-level
+        **list-price DBU cost exposure** derived from CRS-06 for the underlying
+        compute (the workload queries are DBU-less; cost is projected here).
+
+        Downstream: the autonomous cluster right-sizing monitor (Wave-C 09) calls
+        this and classifies PERSISTENT overprovision → DRAFT downsize,
+        underprovision+autoscale-constrained → WARN (report-only).
+
+        Args:
+            workload_type: Optional filter, ``JOB`` or ``PIPELINE``.
+            workload_id: Optional workload ID (job_id / pipeline_id) to scope to one.
+            lookback_days: Utilization/reliability window (clamped to 90 by the pack).
+            list_price_per_dbu: Optional list-price $/DBU (defaults to a public rate).
+
+        Returns:
+            On success: {"found": True, "workloads": [...], "jobs": [...],
+            "summary": {...}, "list_price_estimate": {...}}.
+            On no executor/data: {"found": False, "reason": "..."}.
+        """
+        self._log_obs_context(
+            "get_workload_rightsizing",
+            {
+                "workload_type": workload_type,
+                "workload_id": workload_id,
+                "lookback_days": lookback_days,
+            },
+        )
+        rate = (
+            list_price_per_dbu
+            if list_price_per_dbu is not None
+            else DEFAULT_LIST_PRICE_PER_DBU
+        )
+
+        workload_rows = await self._run_crs_query(
+            "CRS-08", lookback_days, result_limit=200
+        )
+        if workload_rows is None:
+            return {
+                "found": False,
+                "reason": (
+                    "Workload right-sizing data unavailable. Requires a SQL "
+                    "executor and access to system.compute.node_timeline / "
+                    "system.lakeflow.* (job/pipeline timelines)."
+                ),
+            }
+
+        # Optional per-job reliability detail (CRS-07); may be absent when the
+        # lakeflow job tables are missing — degrade to an empty list.
+        job_rows = await self._run_crs_query("CRS-07", lookback_days, result_limit=200)
+        job_rows = job_rows or []
+
+        wtype = workload_type.upper() if workload_type else None
+        workloads: list[dict[str, Any]] = []
+        direction_counts: dict[str, int] = {}
+        for row in workload_rows:
+            if wtype is not None and (row.get("workload_type") or "").upper() != wtype:
+                continue
+            if workload_id is not None and row.get("workload_id") != workload_id:
+                continue
+            direction = row.get("sizing_direction") or "REVIEW"
+            direction_counts[direction] = direction_counts.get(direction, 0) + 1
+            workloads.append(
+                {
+                    "workspace_id": row.get("workspace_id"),
+                    "workload_type": row.get("workload_type"),
+                    "workload_id": row.get("workload_id"),
+                    "sizing_direction": direction,
+                    "priority_score": row.get("priority_score"),
+                }
+            )
+
+        jobs: list[dict[str, Any]] = []
+        for row in job_rows:
+            if wtype is not None and wtype != "JOB":
+                continue
+            if workload_id is not None and str(row.get("job_id")) != workload_id:
+                continue
+            jobs.append(
+                {
+                    "workspace_id": row.get("workspace_id"),
+                    "job_id": row.get("job_id"),
+                    "cluster_sizing_reason": row.get("cluster_sizing_reason"),
+                    "job_sizing_direction": row.get("job_sizing_direction"),
+                    "total_runs": row.get("total_runs"),
+                    "success_rate_pct": row.get("success_rate_pct"),
+                    "runtime_p95_minutes": row.get("runtime_p95_minutes"),
+                }
+            )
+
+        # Fleet-level list-price DBU cost exposure for the underlying compute
+        # (CRS-06 dbus_per_day summed). Best-effort: absent CRS-06 → zeroed.
+        cluster_rows = await self._run_crs_query(
+            "CRS-06", lookback_days, result_limit=200
+        )
+        total_dbus_per_day = sum(
+            float(r.get("dbus_per_day") or 0.0) for r in (cluster_rows or [])
+        )
+        list_price = self._list_price_block(total_dbus_per_day, None, rate)
+
+        return {
+            "found": True,
+            "lookback_days": lookback_days,
+            "query_ids": ["CRS-08", "CRS-07"],
+            "workloads": workloads,
+            "jobs": jobs,
+            "summary": {
+                "workload_count": len(workloads),
+                "job_count": len(jobs),
+                "by_direction": direction_counts,
+            },
+            "list_price_estimate": list_price,
         }
 
     # -------------------------------------------------------------------------

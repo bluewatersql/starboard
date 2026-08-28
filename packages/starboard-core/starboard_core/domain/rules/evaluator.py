@@ -51,9 +51,10 @@ from starboard_core.domain.rules.schema import Rule
 # Maps a caller-facing review domain to the seed-ruleset domain it evaluates.
 # The v1 flagship scope (PHASE_3 D-3.7) is jobs + queries + warehouses; ``uc``
 # is included for callers that opt in. Phase-2 D-a adds the opt-in DLT / ML /
-# vector-search surfaces (additive — the v1 mappings and DEFAULT_DOMAINS are
-# unchanged). CLI-friendly aliases (``pipelines``, ``vector-search``) resolve to
-# the same rule-domain as their canonical token.
+# vector-search surfaces, and Phase-2 X4 adds the opt-in ``portfolio_readiness``
+# workload-maturity surface (all additive — the v1 mappings and DEFAULT_DOMAINS
+# are unchanged). CLI-friendly aliases (``pipelines``, ``vector-search``,
+# ``portfolio-readiness``) resolve to the same rule-domain as their canonical token.
 DOMAIN_TO_RULE_DOMAIN: dict[str, str] = {
     "jobs": "jobs",
     "sql": "query",
@@ -65,6 +66,9 @@ DOMAIN_TO_RULE_DOMAIN: dict[str, str] = {
     "ml": "ml",
     "vector_search": "vector_search",
     "vector-search": "vector_search",
+    # Phase-2 X4 opt-in domain (public-safe workload-maturity review).
+    "portfolio_readiness": "portfolio_readiness",
+    "portfolio-readiness": "portfolio_readiness",
 }
 
 # The default review scope when the caller does not restrict domains (D-3.7).
