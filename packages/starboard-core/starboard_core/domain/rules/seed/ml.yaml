@@ -1,0 +1,61 @@
+# Seed workload-review rules — ML / model-serving domain (Phase-2 D-a, data only).
+# Opt-in review surface over the already-present ml + mlflow query packs; no
+# internal namespaces or references. DBU based — never a finance-grade dollar
+# figure. Each evidence_query points at a real query-pack query_id
+# (ml_test_demo_endpoint_cleanup → ml.py C-ML01; ml_noisy_experiment →
+# mlflow.py P-MLF04).
+version: "1.0.0"
+domain: ml
+rules:
+  - id: ml_test_demo_endpoint_cleanup
+    name: Clean up billed test/demo serving endpoints
+    category: ml
+    short_description: >-
+      A model-serving endpoint named like a test or demo that is still billing
+      DBU is a cleanup candidate.
+    rationale: >-
+      Test and demo endpoints are frequently left running after the experiment
+      that created them; while provisioned they keep consuming serving DBU for no
+      production value, so tearing them down is low-risk, direct savings.
+    severity: medium
+    default_effort: XS
+    default_impact: 3
+    bad: A "*-demo" serving endpoint still provisioned and billing weeks later.
+    good: Delete the endpoint once the demo is over, or rename it if it is real.
+    suggested_fix: >-
+      Confirm the endpoint is genuinely a test/demo, then delete it (or scale it
+      to zero); if it is actually production, rename it out of the test/demo
+      naming pattern.
+    detect: >-
+      The model-serving classification query labels the endpoint a Test/Demo
+      cleanup candidate while it still shows billed DBU at or above the threshold.
+    evidence_query: C-ML01
+    source: null
+    enabled: true
+
+  - id: ml_noisy_experiment
+    name: Investigate noisy MLflow experiments
+    category: ml
+    short_description: >-
+      An experiment with many runs but a low success ratio wastes compute and
+      obscures useful results.
+    rationale: >-
+      A high-volume experiment where most runs fail signals a broken training
+      loop or misconfigured sweep; the failing runs still consume compute and
+      bury the runs that matter, so fixing the loop is both a cost and a
+      productivity win.
+    severity: low
+    default_effort: S
+    default_impact: 2
+    bad: An experiment with 200 runs and under 90% success left running.
+    good: Fix the failing runs so the experiment's success ratio recovers.
+    suggested_fix: >-
+      Inspect the failing runs' errors, fix the training loop or sweep
+      configuration driving them, and archive the experiment if it is no longer
+      active.
+    detect: >-
+      The experiment reliability query flags the experiment as noisy (a large
+      run count with a sub-threshold success ratio).
+    evidence_query: P-MLF04
+    source: null
+    enabled: true

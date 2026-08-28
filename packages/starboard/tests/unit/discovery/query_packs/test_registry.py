@@ -282,7 +282,8 @@ class TestProductMapping:
 class TestDefaultRegistry:
     def test_creates_all_packs(self):
         registry = create_default_registry()
-        assert registry.pack_count == 27
+        # 27 baseline + cluster_right_sizing (Phase-2 Task-09) = 28.
+        assert registry.pack_count == 28
 
     def test_audit_pack_present(self):
         registry = create_default_registry()

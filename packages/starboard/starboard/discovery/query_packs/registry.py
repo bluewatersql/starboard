@@ -16,13 +16,13 @@ logger = get_logger(__name__)
 
 PRODUCT_TO_DOMAIN_PACKS: dict[str, list[str]] = {
     # Core workloads
-    "JOBS": ["jobs", "workflow"],
+    "JOBS": ["jobs", "workflow", "cluster_right_sizing"],
     "SQL": ["query_perf", "serverless_sql", "aibi", "warehouse", "compute_reliability"],
-    "ALL_PURPOSE": ["compute", "compute_reliability"],
-    "INTERACTIVE": ["compute", "compute_reliability"],
-    "BASE_ENVIRONMENTS": ["compute", "compute_reliability"],
+    "ALL_PURPOSE": ["compute", "compute_reliability", "cluster_right_sizing"],
+    "INTERACTIVE": ["compute", "compute_reliability", "cluster_right_sizing"],
+    "BASE_ENVIRONMENTS": ["compute", "compute_reliability", "cluster_right_sizing"],
     # DLT / Pipelines
-    "DLT": ["dlt_pipelines"],
+    "DLT": ["dlt_pipelines", "cluster_right_sizing"],
     "LAKEFLOW_CONNECT": ["lakeflow_connect"],
     # AI / ML
     "MODEL_SERVING": ["ml", "ai_gateway"],
@@ -212,6 +212,9 @@ def create_default_registry() -> QueryPackRegistry:
     from starboard.discovery.query_packs.apps import APPS_PACK
     from starboard.discovery.query_packs.audit import AUDIT_PACK
     from starboard.discovery.query_packs.billing import BILLING_PACK
+    from starboard.discovery.query_packs.cluster_right_sizing import (
+        CLUSTER_RIGHT_SIZING_PACK,
+    )
     from starboard.discovery.query_packs.column_lineage import COLUMN_LINEAGE_PACK
     from starboard.discovery.query_packs.compute import COMPUTE_PACK
     from starboard.discovery.query_packs.compute_reliability import (
@@ -286,5 +289,7 @@ def create_default_registry() -> QueryPackRegistry:
             # Phase-2 D5 net-new packs
             COMPUTE_RELIABILITY_PACK,
             COLUMN_LINEAGE_PACK,
+            # Phase-2 Task-09 right-sizing pack
+            CLUSTER_RIGHT_SIZING_PACK,
         )
     )

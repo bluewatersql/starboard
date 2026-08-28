@@ -5,7 +5,7 @@
   "description": "AI-powered Databricks workload analysis: queries, jobs, Unity Catalog, clusters, FinOps, warehouses, and diagnostics. Skills-only bundle — no MCP server required.",
   "format": "agent-skills",
   "repository": "https://github.com/databricks/starboard",
-  "generated_at": "2026-08-28T02:02:23Z",
+  "generated_at": "2026-08-28T16:49:50Z",
   "skills": [
     {
       "name": "starboard-analyze",
@@ -64,7 +64,7 @@
     {
       "name": "starboard-workload-review",
       "path": "starboard-workload-review/",
-      "description": "Review a Databricks workspace's jobs, SQL queries, and warehouses the way a code review reviews code — a ranked, evidence-cited set of findings with severity, impact/effort scores, and remediation, over public system.* data only. Use when the user wants a workload review, an optimization/health assessment of jobs/queries/warehouses, or prioritized findings with citations.",
+      "description": "Review a Databricks workspace's jobs, SQL queries, and warehouses — plus opt-in DLT pipelines, ML/model-serving, and Vector Search surfaces — the way a code review reviews code: a ranked, evidence-cited set of findings with severity, impact/effort scores, and remediation, over public system.* data only. Use when the user wants a workload review, an optimization/health assessment of jobs/queries/warehouses/pipelines/ML/vector-search, or prioritized findings with citations.",
       "allowed_tools": "Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read"
     }
   ]

@@ -1,0 +1,85 @@
+# Seed workload-review rules — DLT / pipelines domain (Phase-2 D-a, data only).
+# Opt-in review surface over the already-present dlt_pipelines query pack; no
+# internal namespaces or references. DBU / rate based — never a finance-grade
+# dollar figure. Each evidence_query points at a real dlt_pipelines query-pack
+# query_id (see starboard/discovery/query_packs/dlt_pipelines.py).
+version: "1.0.0"
+domain: dlt
+rules:
+  - id: dlt_high_pipeline_failure_rate
+    name: Fix pipelines with a high update failure rate
+    category: dlt
+    short_description: >-
+      A pipeline whose updates fail a large share of the time wastes compute and
+      stalls the tables it maintains.
+    rationale: >-
+      Repeated failed updates re-run pipeline compute for no delivered data and
+      often leave downstream tables stale; a high failure rate signals a fragile
+      pipeline that needs a reliability fix rather than more update attempts.
+    severity: high
+    default_effort: S
+    default_impact: 4
+    bad: A continuous pipeline that fails more than half of its updates.
+    good: Root-cause the failing updates so the pipeline completes reliably.
+    suggested_fix: >-
+      Investigate the dominant failure mode (schema drift, bad input,
+      expectations, resource limits), fix the root cause, and only then re-enable
+      unattended runs.
+    detect: >-
+      The pipeline health scorecard reports a failure_rate_pct at or above the
+      review threshold over enough updates to be meaningful.
+    evidence_query: P-DLT03
+    source: null
+    enabled: true
+
+  - id: dlt_stale_pipeline
+    name: Retire or resume stale pipelines
+    category: dlt
+    short_description: >-
+      A pipeline with no updates for a long time is a cleanup or governance
+      candidate.
+    rationale: >-
+      Pipelines that have not updated in months are often abandoned; they clutter
+      the workspace, confuse ownership, and may still hold reserved resources —
+      confirming intent avoids paying to keep dead pipelines around.
+    severity: low
+    default_effort: XS
+    default_impact: 2
+    bad: A pipeline last updated four months ago and still defined.
+    good: Delete the pipeline, or document why it is intentionally paused.
+    suggested_fix: >-
+      Confirm the pipeline is still needed; if not, delete it, otherwise record
+      the owner and the reason it is dormant.
+    detect: >-
+      The stale-pipeline query reports days_since_last_update at or above the
+      review threshold.
+    evidence_query: P-DLT01
+    source: null
+    enabled: true
+
+  - id: dlt_classic_compute_serverless_candidate
+    name: Evaluate serverless for classic-compute pipelines
+    category: dlt
+    short_description: >-
+      A pipeline running on classic compute with meaningful spend is a candidate
+      to evaluate for serverless.
+    rationale: >-
+      Classic-compute pipelines pay for cluster spin-up and idle time between
+      updates; for pipelines with real, ongoing DBU consumption, serverless can
+      reduce that overhead and simplify sizing — worth evaluating (not a blanket
+      migration).
+    severity: medium
+    default_effort: M
+    default_impact: 3
+    bad: A high-DBU classic pipeline never evaluated against serverless.
+    good: Evaluate serverless for the pipeline and adopt it where it wins.
+    suggested_fix: >-
+      Evaluate the pipeline on serverless in a non-production run, compare the
+      DBU / latency profile against classic, and migrate where serverless is the
+      better fit.
+    detect: >-
+      The serverless-migration-candidate query lists the pipeline as classic
+      (non-serverless) with billed DBU at or above the review threshold.
+    evidence_query: P-DLT05
+    source: null
+    enabled: true

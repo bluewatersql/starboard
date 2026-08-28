@@ -1,6 +1,6 @@
 ---
 name: starboard-workload-review
-description: "Review a Databricks workspace's jobs, SQL queries, and warehouses the way a code review reviews code — a ranked, evidence-cited set of findings with severity, impact/effort scores, and remediation, over public system.* data only. Use when the user wants a workload review, an optimization/health assessment of jobs/queries/warehouses, or prioritized findings with citations."
+description: "Review a Databricks workspace's jobs, SQL queries, and warehouses — plus opt-in DLT pipelines, ML/model-serving, and Vector Search surfaces — the way a code review reviews code: a ranked, evidence-cited set of findings with severity, impact/effort scores, and remediation, over public system.* data only. Use when the user wants a workload review, an optimization/health assessment of jobs/queries/warehouses/pipelines/ML/vector-search, or prioritized findings with citations."
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
 ---
 
@@ -12,6 +12,26 @@ from harvested review methodology running on **public `system.*` data only**.
 Each finding carries a severity, an impact/effort priority score, a paraphrased
 remediation, and an **evidence citation** (the query-pack `query_id` + the row
 that triggered it).
+
+## Review domains
+
+The default scope is **jobs + sql + warehouse**. Additional **opt-in** domains
+extend the same rule engine over query packs that are already present — pass them
+via `--domains`:
+
+| Domain token | Covers | Example findings |
+|---|---|---|
+| `jobs` (default) | Job runs & reliability | high failure rate, wasted-DBU retries, runtime variance |
+| `sql` (default) | Query performance | `SELECT *` wide projection, non-sargable partition filters |
+| `warehouse` (default) | SQL warehouses | auto-stop disabled, persistently under-utilized |
+| `uc` | Unity Catalog tables | missing table maintenance |
+| `dlt` (alias `pipelines`) | DLT / Lakeflow pipelines | high update failure rate, stale pipelines, classic→serverless candidates |
+| `ml` | ML & model serving | billed test/demo endpoints to clean up, noisy MLflow experiments |
+| `vector-search` | Vector Search | idle (billed, unqueried) endpoints, top-DBU right-sizing targets |
+
+The opt-in domains are **additive** — v1 defaults and their findings are
+unchanged, and each new finding still cites its evidence `query_id` + row. All `$`
+framing is a **list-price DBU estimate**, never a finance-grade figure.
 
 ## Dual-Mode Behavior
 
@@ -41,6 +61,9 @@ ${CLAUDE_SKILL_DIR}/scripts/run.sh
 # Restrict domains and/or select a workspace profile
 ${CLAUDE_SKILL_DIR}/scripts/run.sh --domains warehouse,sql
 ${CLAUDE_SKILL_DIR}/scripts/run.sh --workspace my-profile --lookback-days 60
+
+# Opt-in surfaces (additive to the jobs/sql/warehouse defaults)
+${CLAUDE_SKILL_DIR}/scripts/run.sh --domains dlt,ml,vector-search
 ```
 
 Read the JSON and synthesize the review:

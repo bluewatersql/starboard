@@ -33,6 +33,7 @@ from starboard_core.rag.resource_domains import (
 
 from starboard.exceptions import AdapterError
 from starboard.infra.observability.logging import get_logger
+from starboard.infra.rag.domain_keywords import resolve_domains_from_nl_query
 from starboard.tools.adapters.base import BaseToolAdapter
 
 if TYPE_CHECKING:
@@ -216,16 +217,30 @@ class AnalyticsContextTools(BaseToolAdapter):
             return rag_context.model_dump()
 
     def _resolve_domains_from_query(self, query: str) -> list[str]:
-        """Derive RAG resource domains from system tables named in the query.
+        """Derive RAG resource domains from the query text.
 
-        Deterministic fallback used when the caller does not supply
-        ``rag_resource_domains``: extracts ``system.<schema>.<table>`` references
-        and maps each to its resource domain(s). Order-preserving, de-duplicated.
+        Resolution order (highest priority first):
+
+        1. ``system.<schema>.<table>`` references — explicit table names are mapped
+           deterministically via ``map_system_table_to_rag_resource_domains``.
+        2. NL keyword matching — if no system tables were found, the curated
+           keyword-to-domain map in ``domain_keywords`` is consulted so that
+           natural-language queries like "why is my warehouse slow" or "why did my
+           job fail" resolve to the appropriate domain(s) without any embedding call.
+
+        Returns an order-preserving, de-duplicated list bounded to a small set
+        (keyword path caps at ``max_domains=3``).
         """
         seen: dict[str, None] = {}
         for table in _SYSTEM_TABLE_RE.findall(query):
             for domain in map_system_table_to_rag_resource_domains(table):
                 seen.setdefault(domain.value, None)
+
+        if not seen:
+            # No system tables found — fall back to NL keyword matching.
+            for kw_domain in resolve_domains_from_nl_query(query):
+                seen.setdefault(kw_domain, None)
+
         return list(seen)
 
     def _build_context_from_reference_files(

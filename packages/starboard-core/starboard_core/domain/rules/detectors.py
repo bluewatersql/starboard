@@ -49,6 +49,21 @@ JOB_WASTED_DBU_PCT_THRESHOLD = 25.0
 JOB_RUNTIME_VARIANCE_RATIO_THRESHOLD = 3.0
 # C-J03: minimum successful runs before runtime variance is worth flagging.
 JOB_RUNTIME_MIN_RUNS_THRESHOLD = 5
+# --- Phase-2 D-a: DLT / ML / vector-search review domains ----------------- #
+# P-DLT03: pipeline update failure rate (%) at/above which a pipeline is flagged.
+DLT_PIPELINE_FAILURE_RATE_PCT_THRESHOLD = 20.0
+# P-DLT03: minimum updates before a failure rate is worth flagging.
+DLT_PIPELINE_MIN_UPDATES_THRESHOLD = 5
+# P-DLT01: days since last update at/above which a pipeline is flagged stale.
+DLT_STALE_PIPELINE_DAYS_THRESHOLD = 60
+# P-DLT05: classic-pipeline billed DBU at/above which serverless is worth evaluating.
+DLT_SERVERLESS_CANDIDATE_DBU_THRESHOLD = 50.0
+# C-ML01: the endpoint_type label the classification query uses for cleanup.
+ML_CLEANUP_ENDPOINT_TYPE = "Test/Demo (cleanup candidate)"
+# C-ML01: minimum billed DBU before a test/demo endpoint is worth flagging.
+ML_CLEANUP_MIN_DBU_THRESHOLD = 1.0
+# P-VS01: endpoint total DBU at/above which it is a right-sizing review target.
+VECTOR_SEARCH_HIGH_COST_DBU_THRESHOLD = 100.0
 
 
 @dataclass(frozen=True)
@@ -88,6 +103,21 @@ def _as_float(value: Any) -> float | None:
         except ValueError:
             return None
     return None
+
+
+def _is_truthy(value: Any) -> bool:
+    """True for ``True`` / positive numbers / the string ``"true"`` (never raises).
+
+    Used for boolean-flag columns (e.g. ``is_noisy``) that may arrive as a
+    Python ``bool`` from a DataFrame or as a rendered string.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() == "true"
+    return False
 
 
 def _entity(row: dict[str, Any], *keys: str, fallback: str) -> str:
@@ -325,6 +355,233 @@ def detect_job_high_runtime_variance(
     return matches
 
 
+# --- Phase-2 D-a: DLT / pipelines detectors ------------------------------- #
+def detect_dlt_high_pipeline_failure_rate(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag pipelines whose update failure rate exceeds the review threshold.
+
+    Evidence: ``P-DLT03`` (pipeline health scorecard). Triggers when
+    ``failure_rate_pct >= DLT_PIPELINE_FAILURE_RATE_PCT_THRESHOLD`` over at least
+    ``DLT_PIPELINE_MIN_UPDATES_THRESHOLD`` updates (enough to be meaningful).
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        rate = _as_float(row.get("failure_rate_pct"))
+        if rate is None or rate < DLT_PIPELINE_FAILURE_RATE_PCT_THRESHOLD:
+            continue
+        updates = _as_float(row.get("total_updates"))
+        if updates is not None and updates < DLT_PIPELINE_MIN_UPDATES_THRESHOLD:
+            continue
+        pid = _entity(row, "pipeline_name", "pipeline_id", fallback=f"row-{idx}")
+        updates_txt = f" across {updates:g} updates" if updates is not None else ""
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Pipeline {pid} failed {rate:g}% of its updates{updates_txt} "
+                    "— a high failure rate that re-runs compute and leaves target "
+                    "tables stale."
+                ),
+                location=Location(entity=pid, entity_type="pipeline"),
+                entity_key=pid,
+            )
+        )
+    return matches
+
+
+def detect_dlt_stale_pipeline(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag pipelines with no updates for longer than the staleness threshold.
+
+    Evidence: ``P-DLT01`` (stale pipelines). Triggers when
+    ``days_since_last_update >= DLT_STALE_PIPELINE_DAYS_THRESHOLD``.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        days = _as_float(row.get("days_since_last_update"))
+        if days is None or days < DLT_STALE_PIPELINE_DAYS_THRESHOLD:
+            continue
+        pid = _entity(row, "pipeline_name", "pipeline_id", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Pipeline {pid} has not updated in {days:g} days — a cleanup "
+                    "or governance candidate."
+                ),
+                location=Location(entity=pid, entity_type="pipeline"),
+                entity_key=pid,
+            )
+        )
+    return matches
+
+
+def detect_dlt_classic_compute_serverless_candidate(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag classic-compute pipelines with real spend to evaluate for serverless.
+
+    Evidence: ``P-DLT05`` (serverless migration candidates). Triggers when the
+    pipeline is classic (``is_serverless_config`` falsy) and its billed ``dbus``
+    is at/above ``DLT_SERVERLESS_CANDIDATE_DBU_THRESHOLD``.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        if _is_truthy(row.get("is_serverless_config")):
+            continue  # already serverless — not a candidate
+        dbus = _as_float(row.get("dbus"))
+        if dbus is None or dbus < DLT_SERVERLESS_CANDIDATE_DBU_THRESHOLD:
+            continue
+        pid = _entity(row, "pipeline_name", "pipeline_id", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Pipeline {pid} runs on classic compute with {dbus:g} DBU of "
+                    "billed usage — worth evaluating against serverless "
+                    "(list-price DBU estimate)."
+                ),
+                location=Location(entity=pid, entity_type="pipeline"),
+                entity_key=pid,
+            )
+        )
+    return matches
+
+
+# --- Phase-2 D-a: ML / model-serving detectors ---------------------------- #
+def detect_ml_test_demo_endpoint_cleanup(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag billed test/demo serving endpoints as cleanup candidates.
+
+    Evidence: ``C-ML01`` (model-serving classification). Triggers when
+    ``endpoint_type == ML_CLEANUP_ENDPOINT_TYPE`` and ``total_dbus`` is at/above
+    ``ML_CLEANUP_MIN_DBU_THRESHOLD``.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        if row.get("endpoint_type") != ML_CLEANUP_ENDPOINT_TYPE:
+            continue
+        dbus = _as_float(row.get("total_dbus"))
+        if dbus is None or dbus < ML_CLEANUP_MIN_DBU_THRESHOLD:
+            continue
+        name = _entity(row, "endpoint_name", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Endpoint {name} is classified as a test/demo cleanup "
+                    f"candidate yet still billed {dbus:g} DBU "
+                    "(list-price DBU estimate)."
+                ),
+                location=Location(entity=name, entity_type="serving_endpoint"),
+                entity_key=name,
+            )
+        )
+    return matches
+
+
+def detect_ml_noisy_experiment(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag MLflow experiments the reliability query marks noisy.
+
+    Evidence: ``P-MLF04`` (experiment reliability + noise). Triggers when
+    ``is_noisy`` is truthy (a high run count with a sub-threshold success ratio).
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        if not _is_truthy(row.get("is_noisy")):
+            continue
+        name = _entity(row, "experiment_name", "experiment_id", fallback=f"row-{idx}")
+        runs = _as_float(row.get("run_count"))
+        ratio = _as_float(row.get("success_ratio"))
+        detail = ""
+        if runs is not None and ratio is not None:
+            detail = f" ({runs:g} runs at a {ratio:.0%} success ratio)"
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Experiment {name} is noisy{detail} — many runs with a low "
+                    "success ratio that waste compute and bury useful results."
+                ),
+                location=Location(entity=name, entity_type="experiment"),
+                entity_key=name,
+            )
+        )
+    return matches
+
+
+# --- Phase-2 D-a: Vector Search detectors --------------------------------- #
+def detect_vector_search_idle_endpoint(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag Vector Search endpoints that bill but serve no queries.
+
+    Evidence: ``P-VS03`` (idle endpoints). The query already returns only billed
+    endpoints with no query activity; this fires when the endpoint shows any
+    billed storage or serving quantity.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        storage = _as_float(row.get("storage_quantity")) or 0.0
+        serving = _as_float(row.get("serving_quantity")) or 0.0
+        if storage <= 0.0 and serving <= 0.0:
+            continue
+        name = _entity(row, "endpoint_name", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Endpoint {name} billed capacity (storage {storage:g}, "
+                    f"serving {serving:g}) with no query activity in the window "
+                    "— idle capacity to remove."
+                ),
+                location=Location(entity=name, entity_type="vector_search_endpoint"),
+                entity_key=name,
+            )
+        )
+    return matches
+
+
+def detect_vector_search_high_cost_endpoint(
+    rows: Sequence[dict[str, Any]],
+) -> list[RowMatch]:
+    """Flag the highest-DBU Vector Search endpoints as right-sizing review targets.
+
+    Evidence: ``P-VS01`` (endpoint billing history). Triggers when
+    ``total_dbus >= VECTOR_SEARCH_HIGH_COST_DBU_THRESHOLD``.
+    """
+    matches: list[RowMatch] = []
+    for idx, row in enumerate(rows):
+        dbus = _as_float(row.get("total_dbus"))
+        if dbus is None or dbus < VECTOR_SEARCH_HIGH_COST_DBU_THRESHOLD:
+            continue
+        name = _entity(row, "endpoint_name", fallback=f"row-{idx}")
+        matches.append(
+            RowMatch(
+                row_index=idx,
+                row=dict(row),
+                current_state=(
+                    f"Endpoint {name} consumed {dbus:g} DBU in the window "
+                    "(list-price DBU estimate) — a top right-sizing review target."
+                ),
+                location=Location(entity=name, entity_type="vector_search_endpoint"),
+                entity_key=name,
+            )
+        )
+    return matches
+
+
 # Registry of detectors keyed by ``rule.id``. Rules absent here produce no
 # findings (graceful no-op) rather than naive one-finding-per-row noise.
 DETECTORS: dict[str, Detector] = {
@@ -335,6 +592,14 @@ DETECTORS: dict[str, Detector] = {
     "job_high_failure_rate": detect_job_high_failure_rate,
     "job_wasted_dbu_on_failures_retries": detect_job_wasted_dbu_on_failures_retries,
     "job_high_runtime_variance": detect_job_high_runtime_variance,
+    # Phase-2 D-a: DLT / ML / vector-search review domains.
+    "dlt_high_pipeline_failure_rate": detect_dlt_high_pipeline_failure_rate,
+    "dlt_stale_pipeline": detect_dlt_stale_pipeline,
+    "dlt_classic_compute_serverless_candidate": detect_dlt_classic_compute_serverless_candidate,
+    "ml_test_demo_endpoint_cleanup": detect_ml_test_demo_endpoint_cleanup,
+    "ml_noisy_experiment": detect_ml_noisy_experiment,
+    "vector_search_idle_endpoint": detect_vector_search_idle_endpoint,
+    "vector_search_high_cost_endpoint": detect_vector_search_high_cost_endpoint,
 }
 
 
@@ -348,6 +613,13 @@ __all__ = [
     "JOB_WASTED_DBU_PCT_THRESHOLD",
     "JOB_RUNTIME_VARIANCE_RATIO_THRESHOLD",
     "JOB_RUNTIME_MIN_RUNS_THRESHOLD",
+    "DLT_PIPELINE_FAILURE_RATE_PCT_THRESHOLD",
+    "DLT_PIPELINE_MIN_UPDATES_THRESHOLD",
+    "DLT_STALE_PIPELINE_DAYS_THRESHOLD",
+    "DLT_SERVERLESS_CANDIDATE_DBU_THRESHOLD",
+    "ML_CLEANUP_ENDPOINT_TYPE",
+    "ML_CLEANUP_MIN_DBU_THRESHOLD",
+    "VECTOR_SEARCH_HIGH_COST_DBU_THRESHOLD",
     "DETECTORS",
     "Detector",
     "RowMatch",
@@ -358,4 +630,11 @@ __all__ = [
     "detect_job_high_failure_rate",
     "detect_job_wasted_dbu_on_failures_retries",
     "detect_job_high_runtime_variance",
+    "detect_dlt_high_pipeline_failure_rate",
+    "detect_dlt_stale_pipeline",
+    "detect_dlt_classic_compute_serverless_candidate",
+    "detect_ml_test_demo_endpoint_cleanup",
+    "detect_ml_noisy_experiment",
+    "detect_vector_search_idle_endpoint",
+    "detect_vector_search_high_cost_endpoint",
 ]

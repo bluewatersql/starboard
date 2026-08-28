@@ -50,9 +50,16 @@ _CORE_DIR = Path(__file__).parents[4]
 #   PO-01  predictive_optimization "PO operations by type" (OPTIMIZE/VACUUM history)
 #   C-J03  jobs "Runtime Variance + DBU per Minute"
 #   C-J04  jobs "Compound Reliability Scorecard"
-_EXPECTED_EVIDENCE_QUERY_IDS = {
+# v1 (jobs/sql/warehouse/uc) evidence ids.
+_V1_EVIDENCE_QUERY_IDS = {
     "C-Q02", "W-W01", "W-W02", "PO-01", "C-J03", "C-J04",
 }
+# Phase-2 D-a added the opt-in DLT / ML / vector-search review domains, whose
+# seed rules cite these real query-pack query_ids for evidence.
+_V2_EVIDENCE_QUERY_IDS = {
+    "P-DLT03", "P-DLT01", "P-DLT05", "C-ML01", "P-MLF04", "P-VS03", "P-VS01",
+}
+_EXPECTED_EVIDENCE_QUERY_IDS = _V1_EVIDENCE_QUERY_IDS | _V2_EVIDENCE_QUERY_IDS
 
 # Internal namespaces / link forms that must never appear in shipped seed data.
 _FORBIDDEN_SUBSTRINGS = [
@@ -187,7 +194,11 @@ class TestRuleRegistryLoading:
 
     def test_domains_cover_seed_domains(self) -> None:
         registry = RuleRegistry.from_seed()
-        assert set(registry.domains) == {"query", "warehouse", "uc", "jobs"}
+        # v1 domains plus the Phase-2 D-a opt-in DLT / ML / vector-search domains.
+        assert set(registry.domains) == {
+            "query", "warehouse", "uc", "jobs",
+            "dlt", "ml", "vector_search",
+        }
 
     def test_jobs_rules_present_and_bind_to_real_query_ids(self) -> None:
         registry = RuleRegistry.from_seed()
@@ -269,19 +280,61 @@ class TestScorerOrdering:
     """The registry wires the D3 scorer into a stable, deterministic order."""
 
     def test_ranked_rules_expected_total_order(self) -> None:
-        # Scores (severity_weight × default_impact / effort_points):
-        #   warehouse_auto_stop_disabled          high(3)*4/XS(1)   = 12.0
-        #   job_high_failure_rate                 high(3)*4/S(2)    =  6.0
-        #   non_sargable_partition_filter         high(3)*4/S(2)    =  6.0
-        #   select_star_projection                medium(2)*3/XS(1) =  6.0
-        #   job_wasted_dbu_on_failures_retries    high(3)*3/S(2)    =  4.5
-        #   table_missing_maintenance             medium(2)*3/S(2)  =  3.0
-        #   warehouse_persistently_underutilized  medium(2)*3/S(2)  =  3.0
-        #   job_high_runtime_variance             medium(2)*3/M(3)  =  2.0
-        # Tie-break: score desc, then severity desc, then id asc.
+        # Scores (severity_weight × default_impact / effort_points), tie-break
+        # score desc → severity desc → id asc. Phase-2 D-a merged the DLT / ML /
+        # vector-search rules into this global order; the v1 rules keep their
+        # relative order (asserted separately below).
+        #   warehouse_auto_stop_disabled              high(3)*4/XS(1)   = 12.0
+        #   dlt_high_pipeline_failure_rate            high(3)*4/S(2)    =  6.0
+        #   job_high_failure_rate                     high(3)*4/S(2)    =  6.0
+        #   non_sargable_partition_filter             high(3)*4/S(2)    =  6.0
+        #   ml_test_demo_endpoint_cleanup             medium(2)*3/XS(1) =  6.0
+        #   select_star_projection                    medium(2)*3/XS(1) =  6.0
+        #   job_wasted_dbu_on_failures_retries        high(3)*3/S(2)    =  4.5
+        #   vector_search_idle_endpoint               medium(2)*4/S(2)  =  4.0
+        #   table_missing_maintenance                 medium(2)*3/S(2)  =  3.0
+        #   warehouse_persistently_underutilized      medium(2)*3/S(2)  =  3.0
+        #   dlt_classic_compute_serverless_candidate  medium(2)*3/M(3)  =  2.0
+        #   job_high_runtime_variance                 medium(2)*3/M(3)  =  2.0
+        #   dlt_stale_pipeline                        low(1)*2/XS(1)    =  2.0
+        #   ml_noisy_experiment                       low(1)*2/S(2)     =  1.0
+        #   vector_search_high_cost_endpoint          low(1)*2/S(2)     =  1.0
         registry = RuleRegistry.from_seed()
         ordered = [r.id for r in registry.ranked_rules()]
         assert ordered == [
+            "warehouse_auto_stop_disabled",
+            "dlt_high_pipeline_failure_rate",
+            "job_high_failure_rate",
+            "non_sargable_partition_filter",
+            "ml_test_demo_endpoint_cleanup",
+            "select_star_projection",
+            "job_wasted_dbu_on_failures_retries",
+            "vector_search_idle_endpoint",
+            "table_missing_maintenance",
+            "warehouse_persistently_underutilized",
+            "dlt_classic_compute_serverless_candidate",
+            "job_high_runtime_variance",
+            "dlt_stale_pipeline",
+            "ml_noisy_experiment",
+            "vector_search_high_cost_endpoint",
+        ]
+
+    def test_v1_rules_keep_relative_order(self) -> None:
+        # The v1 flagship rules retain their exact relative order within the
+        # merged ranking (the v2 additions never reorder them).
+        registry = RuleRegistry.from_seed()
+        v1_ids = {
+            "warehouse_auto_stop_disabled",
+            "job_high_failure_rate",
+            "non_sargable_partition_filter",
+            "select_star_projection",
+            "job_wasted_dbu_on_failures_retries",
+            "table_missing_maintenance",
+            "warehouse_persistently_underutilized",
+            "job_high_runtime_variance",
+        }
+        ordered_v1 = [r.id for r in registry.ranked_rules() if r.id in v1_ids]
+        assert ordered_v1 == [
             "warehouse_auto_stop_disabled",
             "job_high_failure_rate",
             "non_sargable_partition_filter",
@@ -386,10 +439,13 @@ class TestEvidenceQueryValidation:
     def test_validate_raises_on_dangling_reference(self) -> None:
         registry = RuleRegistry.from_seed()
         with pytest.raises(DanglingEvidenceQueryError) as exc_info:
-            # Known set omits W-W02, PO-01, and both jobs evidence queries.
+            # Known set holds only C-Q02 + W-W01; every other evidence id
+            # (v1 warehouse/uc/jobs + the v2 DLT/ML/vector-search ids) is dangling.
             registry.validate_evidence_queries({"C-Q02", "W-W01"})
         unresolved = exc_info.value.unresolved
-        assert set(unresolved.values()) == {"W-W02", "PO-01", "C-J03", "C-J04"}
+        assert set(unresolved.values()) == (
+            _EXPECTED_EVIDENCE_QUERY_IDS - {"C-Q02", "W-W01"}
+        )
 
     def test_validate_skips_rules_without_evidence_query(self) -> None:
         ruleset = load_ruleset_from_string(

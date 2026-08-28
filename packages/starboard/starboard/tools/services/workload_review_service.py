@@ -20,6 +20,16 @@ The SDK-touching pack execution lives here (Tier-2 ``starboard``); the scoring
 and rule logic stay pure in the kernel. Uses **public ``system.*`` data only**;
 findings are DBU / utilization based and never emit a finance-grade dollar
 figure (D-3.8).
+
+Domain routing is fully **data-driven**: a review domain resolves to its
+seed-ruleset domain through the kernel
+:data:`~starboard_core.domain.rules.evaluator.DOMAIN_TO_RULE_DOMAIN` map, and the
+required evidence queries are derived from whatever rules that rule-domain
+carries. New surfaces are therefore added by shipping a seed ruleset + its
+``DOMAIN_TO_RULE_DOMAIN`` entry — no per-domain code here. Phase-2 D-a adds the
+opt-in **DLT / ML / vector-search** domains (see :data:`OPT_IN_DOMAINS`) over the
+already-present ``dlt_pipelines`` / ``ml`` / ``mlflow`` / ``vector_search`` packs;
+the default scope (:data:`DEFAULT_DOMAINS`) stays jobs/sql/warehouse.
 """
 
 from __future__ import annotations
@@ -77,6 +87,22 @@ class ValidatedReview(BaseModel):
 
 # Synthetic pack id/domain used to run only the evidence queries a review needs.
 _REVIEW_PACK_ID = "workload_review"
+
+# Opt-in review surfaces beyond the DEFAULT_DOMAINS v1 scope (Phase-2 D-a), in
+# their canonical CLI-facing token form. Advertised by ``starboard review`` /
+# ``python -m starboard_x.review`` help; each token resolves through the kernel
+# ``DOMAIN_TO_RULE_DOMAIN`` map. Kept here (server tier) as the single source of
+# truth for the CLI so the flag help never drifts from what actually routes.
+OPT_IN_DOMAINS: tuple[str, ...] = ("uc", "dlt", "ml", "vector-search")
+
+
+def available_domains() -> tuple[str, ...]:
+    """Return the review domains a caller may request (defaults + opt-in).
+
+    The default v1 scope first (jobs/sql/warehouse), then the opt-in surfaces in
+    advertised order. Derived so the CLI advertises exactly what routes.
+    """
+    return (*DEFAULT_DOMAINS, *OPT_IN_DOMAINS)
 
 
 class WorkloadReviewService:
@@ -261,4 +287,9 @@ class WorkloadReviewService:
         )
 
 
-__all__ = ["ValidatedReview", "WorkloadReviewService"]
+__all__ = [
+    "OPT_IN_DOMAINS",
+    "ValidatedReview",
+    "WorkloadReviewService",
+    "available_domains",
+]

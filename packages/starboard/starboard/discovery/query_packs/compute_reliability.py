@@ -153,6 +153,7 @@ LIMIT {result_limit}
 """
 
 
+# Complementary right-sizing depth lives in cluster_right_sizing.py (CRS-01…08): role-feature percentiles, list-price cost, workload attribution, job/pipeline summaries.
 COMPUTE_RELIABILITY_PACK = QueryPack(
     pack_id="compute_reliability",
     domain="compute_reliability",

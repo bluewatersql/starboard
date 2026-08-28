@@ -272,12 +272,14 @@ forbidden_modules = [
 # the heavy server package. (discovery / sparklog legitimately reach the SDK
 # behind their extras and are excluded.)
 [[tool.importlinter.contracts]]
-name = "starboard_x pure analyzers (warehouse/uc/review) are SDK-free"
+name = "starboard_x pure analyzers (warehouse/uc/review/cluster/charts) are SDK-free"
 type = "forbidden"
 source_modules = [
     "starboard_x.warehouse",
     "starboard_x.uc",
     "starboard_x.review",
+    "starboard_x.cluster",
+    "starboard_x.charts",
 ]
 forbidden_modules = [
     "databricks",
