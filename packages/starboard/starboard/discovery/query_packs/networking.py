@@ -58,6 +58,12 @@ NETWORKING_PACK = QueryPack(
             ),
             sql_template=NET_01_SQL,
             required_tables=("system.access.outbound_network",),
+            required_columns=(
+                "event_time",
+                "destination_type",
+                "workspace_id",
+                "access_type",
+            ),
             domain="governance",
             required=False,  # Preview table — degrade gracefully if absent
             category=QueryCategory.GOVERNANCE,

@@ -59,6 +59,14 @@ DATA_CLASSIFICATION_PACK = QueryPack(
             ),
             sql_template=DC_01_SQL,
             required_tables=("system.data_classification.results",),
+            required_columns=(
+                "catalog_name",
+                "schema_name",
+                "table_name",
+                "column_name",
+                "class_tag",
+                "latest_detected_time",
+            ),
             domain="governance",
             required=False,  # Preview table — degrade gracefully if absent
             category=QueryCategory.GOVERNANCE,

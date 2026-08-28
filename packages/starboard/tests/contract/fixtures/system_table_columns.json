@@ -1,0 +1,30 @@
+{
+  "_comment": "Recorded column manifest for Preview system.* tables used by the four Preview query packs. This is the CI baseline — it must be kept in sync with actual table schemas. To refresh from a live workspace, run a LIMIT 0 probe against each table and capture the column names, e.g.: SELECT * FROM <table> LIMIT 0. See docs/discovery/preview_pack_schema_guard.md for the full refresh procedure.",
+  "system.storage.predictive_optimization_operations_history": [
+    "catalog_name",
+    "operation_type",
+    "schema_name",
+    "start_time",
+    "table_name"
+  ],
+  "system.data_quality_monitoring.table_results": [
+    "event_time",
+    "status",
+    "table_id"
+  ],
+  "system.data_classification.results": [
+    "catalog_name",
+    "class_tag",
+    "column_name",
+    "first_detected_time",
+    "latest_detected_time",
+    "schema_name",
+    "table_name"
+  ],
+  "system.access.outbound_network": [
+    "access_type",
+    "destination_type",
+    "event_time",
+    "workspace_id"
+  ]
+}

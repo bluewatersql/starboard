@@ -45,8 +45,6 @@ from rich.progress import (
     TextColumn,
     TimeElapsedColumn,
 )
-from starboard_core.foundations.models import VectorRecord
-from starboard_core.rag.models import TableMetadata
 from starboard.adapters.llm import create_llm_client
 from starboard.adapters.llm.base import BaseLLMClient
 from starboard.infra.core.config import EnvConfig
@@ -65,6 +63,8 @@ from starboard.infra.rag.services.checkpoint_service import (
     read_checkpoint,
     write_checkpoint,
 )
+from starboard_core.foundations.models import VectorRecord
+from starboard_core.rag.models import TableMetadata
 
 logger = structlog.get_logger(__name__)
 console = Console()

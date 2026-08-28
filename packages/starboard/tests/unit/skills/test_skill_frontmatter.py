@@ -28,6 +28,9 @@ def _repo_root() -> Path:
 REPO_ROOT = _repo_root()
 CANONICAL_SKILLS_ROOT = REPO_ROOT / "packages" / "starboard-skills" / "skills" / "starboard"
 DUPLICATE_SKILLS_ROOT = REPO_ROOT / "packages" / "starboard" / "skills"
+# DOC-4: the stale, unreferenced root-level skills tree (held the old roster incl.
+# `starboard-workspace`, lacked `starboard-workload-review`) must not exist.
+STALE_ROOT_SKILLS_ROOT = REPO_ROOT / "skills"
 
 # The 9 domains locked for Phase 0 (D-0.1).
 EXPECTED_DOMAINS = {
@@ -79,6 +82,12 @@ def test_canonical_tree_exists() -> None:
 def test_duplicate_tree_removed() -> None:
     assert not DUPLICATE_SKILLS_ROOT.exists(), (
         f"duplicate skill tree must be deleted (D-0.1): {DUPLICATE_SKILLS_ROOT}"
+    )
+
+
+def test_stale_root_skills_tree_removed() -> None:
+    assert not STALE_ROOT_SKILLS_ROOT.exists(), (
+        f"stale root skills/ tree must be deleted (DOC-4): {STALE_ROOT_SKILLS_ROOT}"
     )
 
 

@@ -589,7 +589,7 @@ The MCP server acts as a bridge between MCP clients (Claude Code, Cursor, Claude
                               v                v
                      +--------+--------+   +---+------------+
                      |  Tool Registry  |   | Agent Factory  |
-                     |  (45+ tools)    |   | (7 MCP agents) |
+                     |  (57 tools)     |   | (7 MCP agents) |
                      +--------+--------+   +---+------------+
                               |                |
                               v                v

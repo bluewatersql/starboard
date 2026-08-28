@@ -2,7 +2,7 @@
 
 > Last verified: 2026-03-24
 
-**Total Tools**: 45+
+**Total Tools**: 57
 **Domains**: 9 (router, query, job, uc, cluster, analytics, diagnostic, warehouse, discovery)
 
 ---
@@ -29,7 +29,7 @@
 
 ## Overview
 
-The Starboard AI Agent provides 45+ specialized tools organized by domain. Tools follow a three-layer architecture and are assigned to agents using the **Pragmatic Hybrid (80/20)** strategy defined in `tool_categories.py`.
+The Starboard AI Agent provides 57 specialized tools organized by domain. Tools follow a three-layer architecture and are assigned to agents using the **Pragmatic Hybrid (80/20)** strategy defined in `tool_categories.py`.
 
 ### Common Interface Pattern
 

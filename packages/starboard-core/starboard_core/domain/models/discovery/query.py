@@ -86,6 +86,12 @@ class SystemQuery:
             or overridden lookback never silently returns empty results. ``None``
             means no clamp.
         output_columns: Expected column names in the result (for validation).
+        required_columns: Source columns this query reads from its
+            ``required_tables``.  Used by the CI schema-validation guard
+            (``tests/contract/test_preview_pack_schema.py``) to assert that
+            every column referenced in the SQL exists in the recorded
+            ``system_table_columns.json`` manifest.  An empty tuple means "no
+            declared column requirements" (legacy packs).
         discovery_mode: Filter queries by run depth.
         category: Classify analytical purpose.
         metadata: LLM context metadata.
@@ -101,6 +107,7 @@ class SystemQuery:
     lookback_override: int | None = None
     max_lookback_days: int | None = None
     output_columns: tuple[str, ...] | None = None
+    required_columns: tuple[str, ...] = ()
     discovery_mode: DiscoveryMode = DiscoveryMode.GENERAL
     category: QueryCategory = QueryCategory.PROFILE
     metadata: QueryMetadata | None = None

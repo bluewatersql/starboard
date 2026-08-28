@@ -59,6 +59,11 @@ DATA_QUALITY_PACK = QueryPack(
             ),
             sql_template=DQ_01_SQL,
             required_tables=("system.data_quality_monitoring.table_results",),
+            required_columns=(
+                "table_id",
+                "status",
+                "event_time",
+            ),
             domain="monitoring",
             required=False,  # Preview table — degrade gracefully if absent
             category=QueryCategory.GOVERNANCE,

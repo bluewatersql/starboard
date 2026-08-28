@@ -67,6 +67,22 @@ starboard genie ask "how many jobs failed in the last 7 days?" --warehouse-id ab
 starboard genie ask "top 10 tables by size" --json
 ```
 
+With `--json`, the command emits the standard envelope on stdout (logs go to stderr):
+
+```json
+{
+  "ok": true,
+  "domain": "genie",
+  "command": "ask",
+  "data": { "question": "...", "sql": "SELECT ...", "explanation": "...", "success": true, "metadata": {} },
+  "meta": { }
+}
+```
+
+Exit codes follow the shared contract: `0` ok · `1` auth · `3` api-error · `4` arg-error. **Prerequisites:**
+a resolvable workspace (a `--profile`/`--workspace` or a one-time `databricks auth login`) and a SQL
+warehouse (`--warehouse-id` or a configured default); `$` figures returned are list-price DBU estimates.
+
 ---
 
 ## Assess a whole workspace

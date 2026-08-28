@@ -56,6 +56,13 @@ PREDICTIVE_OPTIMIZATION_PACK = QueryPack(
             required_tables=(
                 "system.storage.predictive_optimization_operations_history",
             ),
+            required_columns=(
+                "operation_type",
+                "catalog_name",
+                "schema_name",
+                "table_name",
+                "start_time",
+            ),
             domain="governance",
             required=False,  # Preview table — degrade gracefully if absent
             category=QueryCategory.GOVERNANCE,

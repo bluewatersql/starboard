@@ -181,7 +181,7 @@ dev-debug-context:
 	@echo "$(BLUE)  Running test-golden...$(NC)"
 	@pytest -m golden --tb=line 2>&1 | grep -E "^(FAILED|ERROR|packages/.*FAILED)" > .debug/test/tests/golden.txt || true
 	@echo "$(BLUE)  Running test-contract...$(NC)"
-	@pytest tests/contract/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|tests/.*FAILED)" > .debug/test/tests/contract.txt || true
+	@pytest tests/contract/ packages/starboard/tests/contract/ --tb=line 2>&1 | grep -E "^(FAILED|ERROR|.*FAILED)" > .debug/test/tests/contract.txt || true
 	@find .debug/test -type f -empty -delete
 	@echo "$(GREEN)✓ Debug context saved to .debug/test/ (empty files removed)$(NC)"
 # ================================
@@ -214,7 +214,7 @@ test-golden:
 
 test-contract:
 	@echo "$(BLUE)Running contract tests...$(NC)"
-	@pytest tests/contract/ -v --tb=short
+	@pytest tests/contract/ packages/starboard/tests/contract/ -v --tb=short
 	@echo "$(GREEN)✓ Contract tests passed$(NC)"
 
 test-coverage:

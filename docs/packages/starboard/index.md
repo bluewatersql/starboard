@@ -123,7 +123,7 @@ starboard/
 - **Source Files**: 400+
 - **Test Files**: 100+
 - **Lines of Code**: ~50,000
-- **Tools**: 45+ across 9 categories
+- **Tools**: 57 across 9 categories
 
 ## Quick Links
 

@@ -53,6 +53,9 @@ Usage::
 
 from __future__ import annotations
 
+import importlib
+from typing import TYPE_CHECKING
+
 # ---------------------------------------------------------------------------
 # Adapters — Databricks
 # ---------------------------------------------------------------------------
@@ -72,9 +75,21 @@ from starboard.adapters.state.inmemory.conversation_state_manager import (
 )
 
 # ---------------------------------------------------------------------------
-# Adapters — State / SQLite
+# Adapters — State / SQLite  (lazy — requires the ``sqlite`` extra)
+#
+# ``SQLiteStateStore`` is NOT imported eagerly.  It is resolved on first
+# attribute access via module-level ``__getattr__`` (PEP 562) so that
+# ``import starboard.bootstrap`` does NOT pull aiosqlite into sys.modules on
+# a default (store-free) install.  Explicit access still works:
+# ``bootstrap.SQLiteStateStore`` → real class.
+#
+# The TYPE_CHECKING block below gives static analysers the concrete type
+# without executing the import at runtime.
 # ---------------------------------------------------------------------------
-from starboard.adapters.state.sqlite.state_store import SQLiteStateStore
+if TYPE_CHECKING:
+    from starboard.adapters.state.sqlite.state_store import (
+        SQLiteStateStore as SQLiteStateStore,
+    )
 
 # ---------------------------------------------------------------------------
 # Agents / conversation
@@ -134,6 +149,41 @@ from starboard.main import create_app
 # Shared context
 # ---------------------------------------------------------------------------
 from starboard.services.context.provider import SharedContextProvider
+
+# ---------------------------------------------------------------------------
+# Lazy-import registry — symbols that require optional extras.
+#
+# Placed after all eager imports so module-level import ordering (E402) is
+# respected.  Python calls ``__getattr__`` only for names NOT already bound
+# in the module's namespace, so symbols above are unaffected.
+# ---------------------------------------------------------------------------
+_LAZY_IMPORTS: dict[str, tuple[str, str]] = {
+    "SQLiteStateStore": (
+        "starboard.adapters.state.sqlite.state_store",
+        "SQLiteStateStore",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    """Lazily resolve optional store-adapter symbols (PEP 562).
+
+    Keeps ``import starboard.bootstrap`` free of optional store-driver deps
+    (aiosqlite, asyncpg, …) on a default install.  Each symbol is pulled from
+    its implementation module only on first explicit access.
+    """
+    entry = _LAZY_IMPORTS.get(name)
+    if entry is not None:
+        module_path, attr = entry
+        try:
+            module = importlib.import_module(module_path)
+            return getattr(module, attr)
+        except ImportError as exc:
+            raise ModuleNotFoundError(
+                f"{name!r} requires the 'sqlite' extra. "
+                f"Install it with: pip install 'starboard[sqlite]'"
+            ) from exc
+    raise AttributeError(f"module 'starboard.bootstrap' has no attribute {name!r}")
 
 
 def create_application(**kwargs):

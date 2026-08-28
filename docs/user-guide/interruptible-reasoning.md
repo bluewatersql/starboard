@@ -45,10 +45,10 @@ Agent: [works again from scratch]     Agent: [continues with full context]
 Agent: "Here are index findings"      Agent: "Here are index findings"
 ```
 
-> **CLI is turn-based.** In the CLI you provide input between turns, not while a single
-> turn is mid-execution. Fine-grained, mid-flight injection (interrupting the agent
-> during a running turn) is available programmatically via the in-package SDK and the
-> optional server — see [Programmatic use](#programmatic-mid-flight-injection).
+> **Interruption is turn-based.** You provide input *between* turns, not while a single turn is
+> mid-execution — this holds for **both** the CLI (`--chat`/`--session`) and the programmatic SDK
+> (`ConversationSession.ask()`). There is no fine-grained in-turn injection API in either path; you steer
+> the agent between turns — see [Programmatic use](#programmatic-turn-based-control).
 
 ---
 
@@ -99,11 +99,12 @@ starboard --goal "Analyze job 12345" --session my-project
 starboard --goal "Focus on the cluster configuration you mentioned" --session my-project
 ```
 
-### Programmatic mid-flight injection
+### Programmatic turn-based control
 
-For true mid-turn interruption (sending input while a single turn is still executing),
-use the in-package SDK — `from starboard.sdk import StarboardClient` — or the optional
-server. This is how the `examples/` notebooks and MCP integrations drive the agent:
+Drive the same turn-based interruption from Python with the in-package SDK —
+`from starboard.sdk import StarboardClient` (shipped inside the `starboard` package; there is no separate
+`starboard-sdk` distribution) — or the optional server. Each `ask()` is one turn: read the response, then
+steer the next turn. This is how the `examples/` notebooks and MCP integrations drive the agent:
 
 ```python
 session = await client.create_session()
@@ -111,9 +112,14 @@ session = await client.create_session()
 # Start the analysis
 r1 = await session.ask("Analyze job 12345")
 
-# Redirect based on initial findings
+# Redirect based on the initial findings (next turn)
 r2 = await session.ask("Focus on the cluster configuration you mentioned")
 ```
+
+> **Interruption is turn-based, not in-turn.** You steer *between* turns (after the agent surfaces a
+> response), not by injecting input while a single turn is still executing — the SDK exposes no
+> mid-turn inject/solicitation API, and neither does the CLI. Both the CLI (`--chat`/`--session`) and
+> the `ConversationSession.ask()` loop share this same turn-based model.
 
 ---
 
