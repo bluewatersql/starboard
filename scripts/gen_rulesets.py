@@ -395,7 +395,8 @@ A complete analysis for this domain must include:
 def render_router(domains: list[str]) -> str:
     """Render the updated starboard.md index that routes to per-domain files."""
     domain_list = "\n".join(
-        f"- [`{d}.md`]({d}.md) — {DOMAIN_MAP[d].skill_dir} rules" for d in domains
+        f"- [`starboard-{d}.md`](starboard-{d}.md) — {DOMAIN_MAP[d].skill_dir} rules"
+        for d in domains
     )
     return f"""\
 # Starboard Rules — Index
@@ -463,7 +464,7 @@ def generate_all(check: bool = False) -> bool:
 
         content = extract_skill_content(skill_md)
         rendered = render_ruleset(domain, spec, content)
-        out_path = RULES_DIR / f"{domain}.md"
+        out_path = RULES_DIR / f"starboard-{domain}.md"
 
         if check:
             existing = out_path.read_text(encoding="utf-8") if out_path.exists() else ""

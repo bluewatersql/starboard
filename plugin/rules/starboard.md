@@ -11,12 +11,12 @@ Public path only — no internal data or namespaces. Dollar figures are
 Each domain has its own ruleset with MCP path, CLI fallback, heuristics, and
 success criteria derived from the canonical skills tree:
 
-- [`cluster.md`](cluster.md) — starboard-cluster rules
-- [`discovery.md`](discovery.md) — starboard-discovery rules
-- [`jobs.md`](jobs.md) — starboard-job rules
-- [`sql.md`](sql.md) — starboard-query rules
-- [`uc.md`](uc.md) — starboard-uc rules
-- [`warehouse.md`](warehouse.md) — starboard-warehouse rules
+- [`starboard-cluster.md`](starboard-cluster.md) — starboard-cluster rules
+- [`starboard-discovery.md`](starboard-discovery.md) — starboard-discovery rules
+- [`starboard-jobs.md`](starboard-jobs.md) — starboard-job rules
+- [`starboard-sql.md`](starboard-sql.md) — starboard-query rules
+- [`starboard-uc.md`](starboard-uc.md) — starboard-uc rules
+- [`starboard-warehouse.md`](starboard-warehouse.md) — starboard-warehouse rules
 
 ## Quick-start rules (all domains)
 

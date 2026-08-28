@@ -105,7 +105,7 @@ def _parse_ruleset(path: Path) -> tuple[dict, str]:
 
 
 def _ruleset_path(domain: str) -> Path:
-    return RULES_DIR / f"{domain}.md"
+    return RULES_DIR / f"starboard-{domain}.md"
 
 
 # ---------------------------------------------------------------------------
@@ -294,10 +294,8 @@ def test_generator_produces_all_domains() -> None:
             assert _ruleset_path(domain).exists(), (
                 f"Domain file {domain}.md missing from {RULES_DIR}"
             )
-        # Verify no unexpected non-README/non-starboard .md files are present
-        extra = [
-            p.name for p in RULES_DIR.glob("*.md")
-            if p.stem not in EXPECTED_DOMAINS
-            and p.name not in ("starboard.md", "README.md")
-        ]
+        # Verify no unexpected .md files: per-domain rulesets are namespaced
+        # ``starboard-<domain>.md``; the router (``starboard.md``) and README are allowed.
+        allowed = {f"starboard-{d}.md" for d in EXPECTED_DOMAINS} | {"starboard.md", "README.md"}
+        extra = [p.name for p in RULES_DIR.glob("*.md") if p.name not in allowed]
         assert not extra, f"Unexpected files in plugin/rules/: {extra}"

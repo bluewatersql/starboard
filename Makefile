@@ -221,7 +221,9 @@ test-contract:
 test-distribution:
 	@echo "$(BLUE)Checking databricks aitools distribution mirror...$(NC)"
 	@python scripts/skills.py --check
-	@echo "$(GREEN)✓ Distribution mirror in sync$(NC)"
+	@echo "$(BLUE)Checking OpenCode port bundle...$(NC)"
+	@python scripts/port_to_opencode.py --check
+	@echo "$(GREEN)✓ Distribution mirror + OpenCode bundle in sync$(NC)"
 
 test-coverage:
 	@echo "$(BLUE)Running tests with coverage...$(NC)"
