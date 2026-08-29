@@ -134,3 +134,30 @@ class TestDbrDoctorAdapter:
         assert candidates and candidates[0].kind == "stack_trace"
         diag = await backend.diagnose(candidates[0])
         assert diag["hmr_stack_hash"] == "h9"
+
+    @respx.mock
+    def test_classify_scalar_body_fails_cleanly(self) -> None:
+        from starboard_internal._config import DbrDoctorConfig
+
+        respx.post("https://doctor.internal/classify").mock(
+            return_value=httpx.Response(200, json=5)
+        )
+        backend = _HttpDoctorBackend(
+            DbrDoctorConfig(url="https://doctor.internal", token="tok")
+        )
+        # A scalar body must raise TypeError, not iterate characters / AttributeError.
+        with pytest.raises(TypeError, match="non-list candidates"):
+            backend.classify("boom")
+
+    @respx.mock
+    def test_classify_list_of_non_mappings_fails_cleanly(self) -> None:
+        from starboard_internal._config import DbrDoctorConfig
+
+        respx.post("https://doctor.internal/classify").mock(
+            return_value=httpx.Response(200, json=[1, 2, 3])
+        )
+        backend = _HttpDoctorBackend(
+            DbrDoctorConfig(url="https://doctor.internal", token="tok")
+        )
+        with pytest.raises(TypeError, match="non-mapping candidate"):
+            backend.classify("boom")

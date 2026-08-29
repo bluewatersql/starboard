@@ -87,6 +87,27 @@ class TestFleetSqlConfig:
         assert cfg.warehouse_id == "wh-1"
         # Host/token fall through to the SDK default credential chain.
         assert cfg.host is None and cfg.token is None
+        # Poll bounds default to sane, positive values (no spin, hard cap).
+        assert cfg.poll_interval > 0 and cfg.max_poll_seconds > 0
+
+    def test_poll_bounds_overridable_and_reject_nonpositive(self) -> None:
+        cfg = FleetSqlConfig.from_env(
+            {
+                "STARBOARD_INTERNAL_FLEET_WAREHOUSE_ID": "wh-1",
+                "STARBOARD_INTERNAL_FLEET_POLL_INTERVAL": "2.5",
+                "STARBOARD_INTERNAL_FLEET_MAX_POLL_SECONDS": "120",
+            }
+        )
+        assert cfg is not None
+        assert cfg.poll_interval == 2.5 and cfg.max_poll_seconds == 120.0
+        # A non-positive override is rejected in favour of the safe default.
+        bad = FleetSqlConfig.from_env(
+            {
+                "STARBOARD_INTERNAL_FLEET_WAREHOUSE_ID": "wh-1",
+                "STARBOARD_INTERNAL_FLEET_MAX_POLL_SECONDS": "0",
+            }
+        )
+        assert bad is not None and bad.max_poll_seconds > 0
 
     def test_optional_overrides(self) -> None:
         cfg = FleetSqlConfig.from_env(

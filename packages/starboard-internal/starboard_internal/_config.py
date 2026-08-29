@@ -29,6 +29,12 @@ from typing import ClassVar
 #: Default HTTP timeout (seconds) for the bespoke internal services.
 _DEFAULT_TIMEOUT = 30.0
 
+#: Fleet SQL statement-execution poll bounds (seconds). The poll loop sleeps
+#: ``POLL_INTERVAL`` between status checks and gives up after ``MAX_POLL`` so a
+#: hung/long-running statement cannot spin the CPU or storm the SQL API.
+_FLEET_POLL_INTERVAL = 1.5
+_FLEET_MAX_POLL = 300.0
+
 
 class MissingInternalConfigError(RuntimeError):
     """A gated internal adapter was invoked without its deployment env wired.
@@ -50,14 +56,22 @@ def missing_config_message(
     )
 
 
-def _timeout(env: Mapping[str, str], name: str) -> float:
+def _timeout_named(
+    env: Mapping[str, str], name: str, default: float = _DEFAULT_TIMEOUT
+) -> float:
+    """Read a positive float env var, falling back to ``default`` when unset/bad."""
     raw = env.get(name)
     if not raw:
-        return _DEFAULT_TIMEOUT
+        return default
     try:
-        return float(raw)
+        value = float(raw)
     except ValueError:
-        return _DEFAULT_TIMEOUT
+        return default
+    return value if value > 0 else default
+
+
+def _timeout(env: Mapping[str, str], name: str) -> float:
+    return _timeout_named(env, name, _DEFAULT_TIMEOUT)
 
 
 @dataclass(frozen=True)
@@ -134,6 +148,10 @@ class FleetSqlConfig:
     token: str | None = None
     catalog: str | None = None
     wait_timeout: str = "50s"
+    #: Seconds to sleep between statement-status polls (avoids a busy spin).
+    poll_interval: float = _FLEET_POLL_INTERVAL
+    #: Hard cap on total polling before a hung statement is abandoned with error.
+    max_poll_seconds: float = _FLEET_MAX_POLL
 
     REQUIRED: ClassVar[tuple[str, ...]] = ("STARBOARD_INTERNAL_FLEET_WAREHOUSE_ID",)
 
@@ -148,6 +166,12 @@ class FleetSqlConfig:
             host=env.get("STARBOARD_INTERNAL_FLEET_HOST") or None,
             token=env.get("STARBOARD_INTERNAL_FLEET_TOKEN") or None,
             catalog=env.get("STARBOARD_INTERNAL_FLEET_CATALOG") or None,
+            poll_interval=_timeout_named(
+                env, "STARBOARD_INTERNAL_FLEET_POLL_INTERVAL", _FLEET_POLL_INTERVAL
+            ),
+            max_poll_seconds=_timeout_named(
+                env, "STARBOARD_INTERNAL_FLEET_MAX_POLL_SECONDS", _FLEET_MAX_POLL
+            ),
         )
 
 

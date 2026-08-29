@@ -164,3 +164,157 @@ class TestCentralizedFleetSqlAdapter:
         out = await executor("SELECT a, b FROM system.billing.usage", {})
         assert out["columns"] == ["a", "b"]
         assert out["rows"] == [["1", "2"], ["3", "4"]]
+
+
+class _State:
+    def __init__(self, value: str | None) -> None:
+        self.value = value
+
+
+class _Status:
+    def __init__(self, value: str | None, error: Any = None) -> None:
+        self.state = _State(value)
+        self.error = error
+
+
+class _Chunk:
+    def __init__(self, data_array: list, next_chunk_index: int | None) -> None:
+        self.data_array = data_array
+        self.next_chunk_index = next_chunk_index
+
+
+class _Col:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class _Schema:
+    def __init__(self, names: list[str]) -> None:
+        self.columns = [_Col(n) for n in names]
+
+
+class _Manifest:
+    def __init__(self, names: list[str]) -> None:
+        self.schema = _Schema(names)
+
+
+class _Resp:
+    def __init__(
+        self,
+        state: str | None,
+        *,
+        columns: list[str] | None = None,
+        result: Any = None,
+        error: Any = None,
+        statement_id: str = "s1",
+    ) -> None:
+        self.status = _Status(state, error)
+        self.manifest = _Manifest(columns or [])
+        self.result = result
+        self.statement_id = statement_id
+
+
+@pytest.mark.unit
+class TestSdkExecutorRobustness:
+    async def test_hung_statement_hits_cap_and_raises(self) -> None:
+        # Never leaves RUNNING; the deadline cap must abandon it (not spin).
+        class _StmtExec:
+            def execute_statement(self, **kwargs: Any) -> _Resp:
+                return _Resp("RUNNING")
+
+            def get_statement(self, statement_id: str) -> _Resp:
+                return _Resp("RUNNING")
+
+        class _FakeClient:
+            statement_execution = _StmtExec()
+
+        # max_poll_seconds=0 => the first deadline check trips immediately (no sleep).
+        executor = _SdkStatementExecutor(
+            FleetSqlConfig(warehouse_id="wh-1", poll_interval=0.0, max_poll_seconds=0.0)
+        )
+        executor._client = lambda: _FakeClient()  # type: ignore[method-assign]
+        with pytest.raises(TimeoutError, match="did not finish"):
+            await executor("SELECT 1", {})
+
+    async def test_none_state_is_treated_as_error(self) -> None:
+        # A missing/unknown terminal state must NOT masquerade as empty success.
+        class _StmtExec:
+            def execute_statement(self, **kwargs: Any) -> _Resp:
+                return _Resp(None)
+
+        class _FakeClient:
+            statement_execution = _StmtExec()
+
+        executor = _SdkStatementExecutor(FleetSqlConfig(warehouse_id="wh-1"))
+        executor._client = lambda: _FakeClient()  # type: ignore[method-assign]
+        with pytest.raises(RuntimeError, match="did not succeed"):
+            await executor("SELECT 1", {})
+
+    async def test_failed_state_raises_with_error_message(self) -> None:
+        class _Err:
+            message = "table not found"
+
+        class _StmtExec:
+            def execute_statement(self, **kwargs: Any) -> _Resp:
+                return _Resp("FAILED", error=_Err())
+
+        class _FakeClient:
+            statement_execution = _StmtExec()
+
+        executor = _SdkStatementExecutor(FleetSqlConfig(warehouse_id="wh-1"))
+        executor._client = lambda: _FakeClient()  # type: ignore[method-assign]
+        with pytest.raises(RuntimeError, match="table not found"):
+            await executor("SELECT 1", {})
+
+    async def test_multi_chunk_result_returns_all_rows(self) -> None:
+        # Three chunks paged via next_chunk_index -> get_statement_result_chunk_n.
+        chunks = {
+            1: _Chunk([["r2"]], 2),
+            2: _Chunk([["r3"]], None),
+        }
+
+        class _StmtExec:
+            def execute_statement(self, **kwargs: Any) -> _Resp:
+                return _Resp(
+                    "SUCCEEDED",
+                    columns=["c"],
+                    result=_Chunk([["r1"]], 1),
+                )
+
+            def get_statement_result_chunk_n(
+                self, statement_id: str, chunk_index: int
+            ) -> _Chunk:
+                return chunks[chunk_index]
+
+        class _FakeClient:
+            statement_execution = _StmtExec()
+
+        executor = _SdkStatementExecutor(FleetSqlConfig(warehouse_id="wh-1"))
+        executor._client = lambda: _FakeClient()  # type: ignore[method-assign]
+        out = await executor("SELECT c FROM system.billing.usage", {})
+        assert out["columns"] == ["c"]
+        assert out["rows"] == [["r1"], ["r2"], ["r3"]]
+
+    async def test_multi_chunk_row_count_is_accurate_through_adapter(self) -> None:
+        chunks = {1: _Chunk([["r2"], ["r3"]], None)}
+
+        class _StmtExec:
+            def execute_statement(self, **kwargs: Any) -> _Resp:
+                return _Resp("SUCCEEDED", columns=["c"], result=_Chunk([["r1"]], 1))
+
+            def get_statement_result_chunk_n(
+                self, statement_id: str, chunk_index: int
+            ) -> _Chunk:
+                return chunks[chunk_index]
+
+        class _FakeClient:
+            statement_execution = _StmtExec()
+
+        executor = _SdkStatementExecutor(FleetSqlConfig(warehouse_id="wh-1"))
+        executor._client = lambda: _FakeClient()  # type: ignore[method-assign]
+        adapter = CentralizedFleetSqlAdapter(executor)
+        result = await adapter.execute(
+            FleetQuery(sql="SELECT c FROM system.billing.usage")
+        )
+        assert result.row_count == 3
+        assert result.rows == (("r1",), ("r2",), ("r3",))

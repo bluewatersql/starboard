@@ -23,7 +23,7 @@ Precedence (highest first)::
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from databricks.sdk import WorkspaceClient
@@ -207,21 +207,43 @@ def build_user_credentials_strategy() -> Any:
     return ModelServingUserCredentials()
 
 
-def resolve_user_client(target: WorkspaceTarget | None = None) -> WorkspaceClient:
+def resolve_user_client(
+    target: WorkspaceTarget | None = None,
+    *,
+    user_access_token: str | None = None,
+) -> WorkspaceClient:
     """Resolve a per-user (on-behalf-of) ``WorkspaceClient`` for a Databricks App.
 
     Call this once per request, inside the App's request scope, so UC/Genie grants
-    resolve for the end user rather than the App's service principal. It builds
-    the per-user credentials strategy and injects it through the existing A1 seam
-    (:func:`resolve_workspace_client`) — no new auth path.
+    resolve for the end user rather than the App's service principal.
 
-    ``target`` follows the same precedence rules as :func:`resolve_workspace_client`;
-    when omitted, host/workspace routing falls through to the SDK's ambient chain
-    (typically the App's configured workspace) while the *identity* comes from the
-    OBO strategy. The default resolver (no strategy) is entirely unaffected.
+    Preferred path — **forwarded token.** In a Databricks App the platform injects
+    the end user's OAuth access token as the ``X-Forwarded-Access-Token`` request
+    header. When that token is passed as *user_access_token*, this authenticates
+    the per-request client with it directly (Bearer), keeping the App's ambient
+    host — the canonical Apps OBO flow. Profile/client-credential fields are
+    cleared so token auth wins in :func:`build_config`'s precedence-by-subtraction.
 
-    Secrets are never exposed: use :func:`describe_auth` for a redacted summary.
+    Fallback — **model-serving strategy.** With no forwarded token, it injects
+    ``ModelServingUserCredentials()`` through the A1 seam
+    (:func:`resolve_workspace_client`); that reads the invoker token from the
+    model-serving runtime, so it only resolves a user inside that runtime.
+
+    ``target`` follows the same precedence rules as :func:`resolve_workspace_client`.
+    The default resolver (no token, no strategy) is entirely unaffected. Secrets
+    are never exposed: use :func:`describe_auth` for a redacted summary.
     """
+    if user_access_token:
+        base = target or WorkspaceTarget.resolve()
+        user_target = replace(
+            base,
+            token=user_access_token,
+            profile=None,
+            client_id=None,
+            client_secret=None,
+            auth_type=None,
+        )
+        return resolve_workspace_client(user_target)
     return resolve_workspace_client(
         target, credentials_strategy=build_user_credentials_strategy()
     )

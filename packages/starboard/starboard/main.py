@@ -15,6 +15,7 @@ The primary consumption paths are:
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -144,7 +145,8 @@ async def get_obo_client(request: Request) -> Any:
         A per-request ``WorkspaceClient`` (OBO strategy) when in App context,
         or ``None`` on the non-App path.
     """
-    if _APPS_FORWARDED_HEADER not in request.headers:
+    user_token = request.headers.get(_APPS_FORWARDED_HEADER)
+    if not user_token:
         return None
 
     # Lazy import: keeps module load clean of SDK for the non-App path.
@@ -153,9 +155,13 @@ async def get_obo_client(request: Request) -> Any:
         resolve_user_client,
     )
 
-    client = resolve_user_client()
+    # Authenticate as the end user with their forwarded OAuth token (the canonical
+    # Databricks Apps OBO flow), not merely detect the header's presence.
+    client = resolve_user_client(user_access_token=user_token)
     try:
-        auth_info = describe_auth(client)
+        # describe_auth() makes a blocking SCIM /Me call — offload it so a single
+        # identity-log lookup never serializes concurrent requests on the loop.
+        auth_info = await asyncio.to_thread(describe_auth, client)
         logger.info("obo_request_identity", **auth_info)
     except Exception:  # noqa: BLE001
         logger.debug("obo_identity_log_unavailable")

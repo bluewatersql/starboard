@@ -131,6 +131,27 @@ class TestOboClientResolvedInAppContext:
         assert resp.status_code == 200
         assert resp.json() == {"has_client": True, "user": "alice@example.com"}
 
+    def test_forwarded_token_is_passed_to_resolver(self) -> None:
+        """The end user's forwarded OAuth token must be handed to
+        resolve_user_client (canonical Apps OBO) — not merely detected. Guards the
+        Isaac-Review finding that the header was checked but the token unused."""
+        from fastapi.testclient import TestClient
+
+        fake = _fake_client("alice@example.com")
+        app, _ = _make_probe_app()
+
+        with (
+            patch("starboard.infra.auth.resolver.resolve_user_client", return_value=fake) as mock_ruc,
+            patch(
+                "starboard.infra.auth.resolver.describe_auth",
+                return_value={"host": "h", "auth_type": "obo", "profile": None, "user": "alice@example.com"},
+            ),
+            TestClient(app) as client,
+        ):
+            client.get("/probe", headers={"X-Forwarded-Access-Token": "user-tok-XYZ"})
+
+        mock_ruc.assert_called_once_with(user_access_token="user-tok-XYZ")
+
     def test_dependency_override_replaces_resolver(self) -> None:
         """app.dependency_overrides can swap get_obo_client for a fake — the
         standard FastAPI pattern for injecting test doubles."""
@@ -170,7 +191,8 @@ class TestPerRequestIsolation:
         call_count = 0
         client_ids: list[int] = []
 
-        def _fresh_client() -> Any:
+        def _fresh_client(**_kwargs: Any) -> Any:
+            # accepts user_access_token=... (the forwarded-token call signature)
             nonlocal call_count
             call_count += 1
             return _fake_client(f"user{call_count}@example.com")

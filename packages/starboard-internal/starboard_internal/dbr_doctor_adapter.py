@@ -104,16 +104,31 @@ class _HttpDoctorBackend:
             resp.raise_for_status()
             data = resp.json()
         candidates_raw = data.get("candidates", []) if isinstance(data, Mapping) else data
-        return [
-            Candidate(
-                kind=str(item.get("kind", "unknown")),
-                raw=str(item.get("raw", pasted)),
-                ref=str(item.get("ref", "")),
-                confidence=float(item.get("confidence", 0.0)),
-                signals=tuple(item.get("signals", ())),
+        # Defensive: only iterate a real list of mapping items. A scalar or a
+        # list of non-mappings would otherwise iterate characters / raise
+        # AttributeError on ``item.get`` — fail with a clear, typed error instead.
+        if not isinstance(candidates_raw, list):
+            raise TypeError(
+                "dbr-doctor /classify returned a non-list candidates payload: "
+                f"{type(candidates_raw).__name__}"
             )
-            for item in candidates_raw
-        ]
+        candidates: list[Candidate] = []
+        for item in candidates_raw:
+            if not isinstance(item, Mapping):
+                raise TypeError(
+                    "dbr-doctor /classify returned a non-mapping candidate item: "
+                    f"{type(item).__name__}"
+                )
+            candidates.append(
+                Candidate(
+                    kind=str(item.get("kind", "unknown")),
+                    raw=str(item.get("raw", pasted)),
+                    ref=str(item.get("ref", "")),
+                    confidence=float(item.get("confidence", 0.0)),
+                    signals=tuple(item.get("signals", ())),
+                )
+            )
+        return candidates
 
     async def diagnose(self, candidate: Candidate) -> Mapping[str, Any]:
         import httpx

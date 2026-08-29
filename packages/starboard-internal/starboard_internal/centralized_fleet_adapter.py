@@ -25,6 +25,7 @@ an *unwired* executor that raises a clean, actionable
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any, Protocol
 
 from starboard_core.ports.fleet_sql import FleetQuery, FleetResult, FleetSqlPort
@@ -41,6 +42,8 @@ _BACKEND_SOURCE = "centralized_system_tables"
 
 #: SQL statement states that mean "keep polling".
 _NON_TERMINAL_STATES = frozenset({"PENDING", "RUNNING"})
+#: The only terminal state that yields a result set; all others are failures.
+_SUCCESS_STATE = "SUCCEEDED"
 
 
 class _SqlExecutor(Protocol):
@@ -109,31 +112,62 @@ class _SdkStatementExecutor:
             wait_timeout=self._config.wait_timeout,
         )
         resp = self._await_terminal(client, resp)
-        return self._to_dict(resp)
+        return self._to_dict(client, resp)
 
     @staticmethod
-    def _await_terminal(client: Any, resp: Any) -> Any:
+    def _state_of(resp: Any) -> str | None:
         status = getattr(resp, "status", None)
-        state = getattr(getattr(status, "state", None), "value", None)
+        return getattr(getattr(status, "state", None), "value", None)
+
+    def _await_terminal(self, client: Any, resp: Any) -> Any:
+        """Poll to a terminal state with a sleep between polls and a hard cap.
+
+        Bounded so a hung/long-running statement cannot busy-spin or storm the
+        SQL API: sleeps ``poll_interval`` between checks and raises once
+        ``max_poll_seconds`` elapses. A missing/unknown terminal state or any
+        non-``SUCCEEDED`` state is an error (never a silent empty result).
+        """
+        deadline = time.monotonic() + self._config.max_poll_seconds
+        state = self._state_of(resp)
         while state in _NON_TERMINAL_STATES:
+            if time.monotonic() >= deadline:
+                statement_id = getattr(resp, "statement_id", "")
+                raise TimeoutError(
+                    "centralized-tables statement did not finish within "
+                    f"{self._config.max_poll_seconds:g}s "
+                    f"(statement_id={statement_id!r}, last state={state})"
+                )
+            time.sleep(self._config.poll_interval)
             resp = client.statement_execution.get_statement(resp.statement_id)
+            state = self._state_of(resp)
+        if state != _SUCCESS_STATE:
             status = getattr(resp, "status", None)
-            state = getattr(getattr(status, "state", None), "value", None)
-        if state and state != "SUCCEEDED":
             error = getattr(status, "error", None)
-            message = getattr(error, "message", state)
-            raise RuntimeError(f"centralized-tables statement {state}: {message}")
+            message = getattr(error, "message", None) or state or "unknown state"
+            raise RuntimeError(
+                f"centralized-tables statement did not succeed: {message}"
+            )
         return resp
 
     @staticmethod
-    def _to_dict(resp: Any) -> dict[str, Any]:
+    def _to_dict(client: Any, resp: Any) -> dict[str, Any]:
         manifest = getattr(resp, "manifest", None)
         schema = getattr(manifest, "schema", None)
-        columns = [
-            col.name for col in (getattr(schema, "columns", None) or [])
-        ]
-        result = getattr(resp, "result", None)
-        rows = getattr(result, "data_array", None) or []
+        columns = [col.name for col in (getattr(schema, "columns", None) or [])]
+
+        # Page through every result chunk (not just the first) so large result
+        # sets are returned whole with an accurate row_count.
+        rows: list[Any] = []
+        statement_id = getattr(resp, "statement_id", None)
+        chunk = getattr(resp, "result", None)
+        while chunk is not None:
+            rows.extend(getattr(chunk, "data_array", None) or [])
+            next_index = getattr(chunk, "next_chunk_index", None)
+            if next_index is None or statement_id is None:
+                break
+            chunk = client.statement_execution.get_statement_result_chunk_n(
+                statement_id, next_index
+            )
         return {"columns": columns, "rows": rows}
 
 
