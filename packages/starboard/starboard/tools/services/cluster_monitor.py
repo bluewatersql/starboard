@@ -33,6 +33,7 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 from starboard_x.cluster import (
+    LIST_PRICE_DISCLAIMER,
     Confidence,
     RecommendedAction,
     SizingDirection,
@@ -46,10 +47,6 @@ from starboard.tools.services.cluster_observation_store import (
 )
 
 logger = get_logger(__name__)
-
-_LIST_PRICE_DISCLAIMER = (
-    "list-price DBU estimate; actual billed cost differs under contracted rates"
-)
 
 # Autoscale-constrained under-provision signals that justify a WARN.
 _AUTOSCALE_CONSTRAINED_SIGNALS: frozenset[str] = frozenset(
@@ -129,7 +126,7 @@ class MonitorReport(BaseModel):
     reason: str | None = None
     report_only: bool = True
     cost_basis: str = "list-price DBU estimate"
-    disclaimer: str = _LIST_PRICE_DISCLAIMER
+    disclaimer: str = LIST_PRICE_DISCLAIMER
 
 
 # Rank: DRAFT before WARN before WATCH (then by savings, handled at sort time).

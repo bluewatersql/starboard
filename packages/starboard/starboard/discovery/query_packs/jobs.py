@@ -49,7 +49,10 @@ SELECT
   t1.last_seen_date
 FROM dbu_per_job t1
 LEFT JOIN most_recent_jobs t2 USING (workspace_id, job_id)
-ORDER BY avg_dbus_per_run DESC
+-- DBU leaderboard: rank by total spend so the highest-consumption jobs survive
+-- the LIMIT (consumers — incl. the portfolio-readiness review — filter on
+-- total_dbus, not per-run average). avg_dbus_per_run remains an output column.
+ORDER BY total_dbus DESC
 LIMIT {result_limit}
 """
 

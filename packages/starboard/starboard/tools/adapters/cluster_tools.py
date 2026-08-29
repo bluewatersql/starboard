@@ -8,11 +8,13 @@ Uses domain logic and transforms directly - no intermediate service layer.
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from starboard_core.domain.models.discovery.query import SystemQuery
+from starboard_x.cluster import LIST_PRICE_DISCLAIMER
 
 from starboard.discovery.executor import QueryPackExecutor, SQLExecutor
 from starboard.discovery.query_packs.cluster_right_sizing import (
@@ -56,9 +58,8 @@ logger = get_logger(__name__)
 # **list-price DBU estimate** and is not a contracted-rate figure.
 DEFAULT_LIST_PRICE_PER_DBU = 0.55
 
-_LIST_PRICE_DISCLAIMER = (
-    "list-price DBU estimate; actual billed cost differs under contracted rates"
-)
+# LIST_PRICE_DISCLAIMER is imported from starboard_x.cluster (single source of
+# truth, shared with the autonomous monitor).
 
 
 class ClusterTools(BaseToolAdapter):
@@ -548,7 +549,7 @@ class ClusterTools(BaseToolAdapter):
             "estimated_monthly_dbus": monthly_dbus,
             "estimated_monthly_cost_usd": monthly_cost,
             "estimated_monthly_savings_usd": monthly_savings,
-            "disclaimer": _LIST_PRICE_DISCLAIMER,
+            "disclaimer": LIST_PRICE_DISCLAIMER,
         }
 
     async def get_cluster_rightsizing(
@@ -583,7 +584,15 @@ class ClusterTools(BaseToolAdapter):
             else DEFAULT_LIST_PRICE_PER_DBU
         )
 
-        rows = await self._run_crs_query("CRS-06", lookback_days, result_limit=200)
+        # When scoped to a single cluster, request an effectively-unbounded
+        # result set so the target is not dropped by the default LIMIT *before*
+        # the in-memory cluster_id filter runs (CRS-06 is ranked by dbus_per_day,
+        # so a low-spend target would otherwise fall outside the top 200).
+        # Per-cluster rows are bounded by the workspace's cluster count.
+        result_limit = 5000 if cluster_id is not None else 200
+        rows = await self._run_crs_query(
+            "CRS-06", lookback_days, result_limit=result_limit
+        )
         if rows is None:
             return {
                 "found": False,
@@ -629,7 +638,7 @@ class ClusterTools(BaseToolAdapter):
                 "by_direction": direction_counts,
                 "estimated_total_monthly_savings_usd": round(total_monthly_savings, 2),
                 "cost_basis": "list-price DBU estimate",
-                "disclaimer": _LIST_PRICE_DISCLAIMER,
+                "disclaimer": LIST_PRICE_DISCLAIMER,
             },
         }
 
@@ -676,8 +685,13 @@ class ClusterTools(BaseToolAdapter):
             else DEFAULT_LIST_PRICE_PER_DBU
         )
 
-        workload_rows = await self._run_crs_query(
-            "CRS-08", lookback_days, result_limit=200
+        # CRS-08 (workload verdict), CRS-07 (per-job reliability) and CRS-06
+        # (fleet cost exposure) are independent queries — run them concurrently
+        # rather than serially (~3x fewer round-trips of latency).
+        workload_rows, job_rows, cluster_rows = await asyncio.gather(
+            self._run_crs_query("CRS-08", lookback_days, result_limit=200),
+            self._run_crs_query("CRS-07", lookback_days, result_limit=200),
+            self._run_crs_query("CRS-06", lookback_days, result_limit=200),
         )
         if workload_rows is None:
             return {
@@ -689,9 +703,8 @@ class ClusterTools(BaseToolAdapter):
                 ),
             }
 
-        # Optional per-job reliability detail (CRS-07); may be absent when the
-        # lakeflow job tables are missing — degrade to an empty list.
-        job_rows = await self._run_crs_query("CRS-07", lookback_days, result_limit=200)
+        # Per-job reliability detail (CRS-07) may be absent when the lakeflow job
+        # tables are missing — degrade to an empty list.
         job_rows = job_rows or []
 
         wtype = workload_type.upper() if workload_type else None
@@ -733,10 +746,8 @@ class ClusterTools(BaseToolAdapter):
             )
 
         # Fleet-level list-price DBU cost exposure for the underlying compute
-        # (CRS-06 dbus_per_day summed). Best-effort: absent CRS-06 → zeroed.
-        cluster_rows = await self._run_crs_query(
-            "CRS-06", lookback_days, result_limit=200
-        )
+        # (CRS-06 dbus_per_day summed, fetched concurrently above). Best-effort:
+        # absent CRS-06 → zeroed.
         total_dbus_per_day = sum(
             float(r.get("dbus_per_day") or 0.0) for r in (cluster_rows or [])
         )

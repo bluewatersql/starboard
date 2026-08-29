@@ -343,6 +343,26 @@ class TestGovernanceGuard:
                 f"{query.query_id} references pricing.effective_list, violating the DBU-only pack policy."
             )
 
+    def test_crs06_order_by_uses_output_alias_not_cte_qualified(self):
+        """CRS-06 must ORDER BY the unqualified ``sizing_direction`` output alias.
+
+        Regression guard: it previously ordered by ``cs.sizing_direction``, but
+        ``sizing_direction`` is an outer-SELECT alias, not a column of the
+        ``cluster_summary`` (``cs``) CTE — so the qualified reference cannot
+        resolve and raises AnalysisException at runtime, taking down the whole
+        right-sizing path. String-render tests don't catch this; this does.
+        """
+        crs06 = next(
+            q for q in CLUSTER_RIGHT_SIZING_PACK.queries if q.query_id == "CRS-06"
+        )
+        sql = crs06.sql_template
+        assert "cs.sizing_direction" not in sql, (
+            "CRS-06 ORDER BY qualifies the outer alias with the CTE (cs.) — "
+            "will raise AnalysisException. Use the bare output alias."
+        )
+        assert "AS sizing_direction," in sql, "expected sizing_direction output alias"
+        assert "ORDER BY" in sql.upper()
+
 
 # ---------------------------------------------------------------------------
 # Complementarity with compute_reliability (CR-01…03)

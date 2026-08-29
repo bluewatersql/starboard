@@ -33,7 +33,15 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+#: Standard disclaimer attached to every list-price DBU cost figure on the public
+#: path. Single source of truth — the cluster tools and the autonomous monitor
+#: both import this so the wording can never drift out of sync.
+LIST_PRICE_DISCLAIMER = (
+    "list-price DBU estimate; actual billed cost differs under contracted rates"
+)
+
 __all__ = [
+    "LIST_PRICE_DISCLAIMER",
     "SizingDirection",
     "SizingReason",
     "RecommendedAction",
@@ -498,10 +506,17 @@ def _cost_exposure(
     if cpu_reduction is None and mem_reduction is None:
         return None, None, None, None
 
-    cpu_r = cpu_reduction if cpu_reduction is not None else 0.0
-    mem_r = mem_reduction if mem_reduction is not None else 0.0
-    binding = "CPU" if cpu_r <= mem_r else "MEMORY"
-    reduction_pct = min(cpu_r, mem_r)
+    # Only resources with a known metric can bind the achievable reduction. A
+    # missing metric is *not* a 0% reduction (that would spuriously zero out a
+    # genuine downsize on the other resource and mislabel the binding resource);
+    # it simply does not constrain, so the present metric governs.
+    if cpu_reduction is None:
+        return target_cores, target_gb, "MEMORY", mem_reduction
+    if mem_reduction is None:
+        return target_cores, target_gb, "CPU", cpu_reduction
+
+    binding = "CPU" if cpu_reduction <= mem_reduction else "MEMORY"
+    reduction_pct = min(cpu_reduction, mem_reduction)
     return target_cores, target_gb, binding, reduction_pct
 
 

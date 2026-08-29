@@ -522,7 +522,7 @@ SELECT
 FROM cluster_summary cs
 LEFT JOIN dbu_features df
        ON cs.workspace_id = df.workspace_id AND cs.cluster_id = df.cluster_id
-ORDER BY df.dbus_per_day DESC NULLS LAST, cs.sizing_direction
+ORDER BY df.dbus_per_day DESC NULLS LAST, sizing_direction
 LIMIT {result_limit}
 """
 

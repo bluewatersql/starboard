@@ -172,6 +172,26 @@ class TestCostExposure:
         assert sig.reduction_pct is None
         assert sig.binding_resource is None
 
+    def test_missing_memory_metric_does_not_suppress_cpu_downsize(self) -> None:
+        """A missing resource metric must not zero out a real downsize on the other.
+
+        Regression: treating an absent memory metric (gb_per_node=0 → no
+        reduction) as a 0% reduction previously forced reduction_pct=0 and
+        mislabelled binding_resource='MEMORY', silently dropping a genuine CPU
+        downsize. The present metric must govern instead.
+        """
+        sig = classify_compute_sizing(
+            _worker(
+                cpu_p95_pct=40.0,
+                memory_p95_pct=45.0,
+                cpu_avg_pct=25.0,
+                memory_gb_per_node=0.0,  # memory metric absent
+            ),
+            node_role="WORKER",
+        )
+        assert sig.reduction_pct == 25.0, "CPU downsize must survive a missing memory metric"
+        assert sig.binding_resource == "CPU"
+
 
 @pytest.mark.unit
 class TestConfigDrivenThresholds:

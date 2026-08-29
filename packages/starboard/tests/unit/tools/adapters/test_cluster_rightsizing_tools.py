@@ -19,10 +19,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import polars as pl
 import pytest
-from starboard.tools.adapters.cluster_tools import (
-    _LIST_PRICE_DISCLAIMER,
-    ClusterTools,
-)
+from starboard.tools.adapters.cluster_tools import ClusterTools
+from starboard_x.cluster import LIST_PRICE_DISCLAIMER
 
 _MODULE = "starboard.tools.adapters.cluster_tools"
 
@@ -202,7 +200,7 @@ async def test_get_cluster_rightsizing_returns_verdict_and_list_price() -> None:
     # List-price DBU cost exposure present + labelled.
     lp = first["list_price_estimate"]
     assert lp["cost_basis"] == "list-price DBU estimate"
-    assert lp["disclaimer"] == _LIST_PRICE_DISCLAIMER
+    assert lp["disclaimer"] == LIST_PRICE_DISCLAIMER
     # 100 DBU/day * 30 * 0.55 = 1650 ; 50% reduction => 825 savings.
     assert lp["estimated_monthly_cost_usd"] == pytest.approx(1650.0)
     assert lp["estimated_monthly_savings_usd"] == pytest.approx(825.0)
