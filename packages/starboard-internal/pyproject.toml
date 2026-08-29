@@ -65,5 +65,6 @@ addopts = [
 ]
 markers = [
     "unit: Unit tests (fast, isolated)",
+    "integration: Internal-env integration tests (skipped unless STARBOARD_INTERNAL_* wired)",
 ]
 asyncio_mode = "auto"

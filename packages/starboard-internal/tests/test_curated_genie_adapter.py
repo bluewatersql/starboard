@@ -15,11 +15,24 @@ from typing import Any
 
 import pytest
 from starboard_core.ports.nl_query import NLAnswer, WorkspaceCtx
-from starboard_internal._genie_rooms import GenieRoom, select_room
+from starboard_internal._config import GenieConfig
+from starboard_internal._genie_rooms import CURATED_ROOMS, GenieRoom, select_room
 from starboard_internal.curated_genie_adapter import (
     CuratedGenieRoomAdapter,
-    _DefaultGenieBackend,
+    _SdkGenieBackend,
+    _UnwiredGenieBackend,
 )
+
+_ENV_VARS = (
+    "STARBOARD_INTERNAL_GENIE_SPACES",
+    "STARBOARD_INTERNAL_GENIE_HOST",
+    "STARBOARD_INTERNAL_GENIE_TOKEN",
+)
+
+
+def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in _ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
 
 
 class _StubGenieBackend:
@@ -80,10 +93,62 @@ class TestCuratedGenieRoomAdapter:
         assert answer.explanation == "42 rows"
         assert answer.metadata["room"] == "global_genie"
 
-    async def test_default_backend_raises_until_wired(self) -> None:
+    async def test_default_backend_raises_until_wired(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _clear_env(monkeypatch)
         adapter = CuratedGenieRoomAdapter()
-        with pytest.raises(RuntimeError, match="Genie"):
+        with pytest.raises(RuntimeError, match="Genie") as exc:
             await adapter.ask("q", WorkspaceCtx())
+        assert "STARBOARD_INTERNAL_GENIE_SPACES" in str(exc.value)
 
-    def test_default_backend_type_is_placeholder(self) -> None:
-        assert isinstance(CuratedGenieRoomAdapter()._backend, _DefaultGenieBackend)
+    def test_default_backend_is_unwired_when_env_absent(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _clear_env(monkeypatch)
+        assert isinstance(CuratedGenieRoomAdapter()._backend, _UnwiredGenieBackend)
+
+    def test_real_backend_selected_when_env_present(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(
+            "STARBOARD_INTERNAL_GENIE_SPACES", '{"global_genie": "01efspace"}'
+        )
+        assert isinstance(CuratedGenieRoomAdapter()._backend, _SdkGenieBackend)
+
+    async def test_sdk_backend_unmapped_room_raises_actionably(self) -> None:
+        backend = _SdkGenieBackend(GenieConfig(spaces={"hls_genie": "01ef"}))
+        with pytest.raises(RuntimeError, match="STARBOARD_INTERNAL_GENIE_SPACES"):
+            await backend.ask(room=CURATED_ROOMS["global_genie"], question="q")
+
+    async def test_sdk_backend_maps_genie_message(self) -> None:
+        class _Query:
+            query = "SELECT 1"
+            description = "curated answer"
+
+        class _Attachment:
+            query = _Query()
+            text = None
+
+        class _Message:
+            attachments = [_Attachment()]
+            error = None
+            conversation_id = "conv-1"
+
+        class _Genie:
+            def start_conversation_and_wait(self, space_id: str, content: str):
+                self.space_id = space_id
+                return _Message()
+
+        class _FakeClient:
+            genie = _Genie()
+
+        backend = _SdkGenieBackend(GenieConfig(spaces={"global_genie": "01efspace"}))
+        backend._client = lambda: _FakeClient()  # type: ignore[method-assign]
+        result = await backend.ask(
+            room=CURATED_ROOMS["global_genie"], question="What is ARR?"
+        )
+        assert result["sql"] == "SELECT 1"
+        assert result["explanation"] == "curated answer"
+        assert result["conversation_id"] == "conv-1"
+        assert result["success"] is True

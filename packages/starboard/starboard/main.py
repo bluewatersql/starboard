@@ -13,11 +13,14 @@ The primary consumption paths are:
   - starboard       (CLI, direct in-process agent execution)
 """
 
+from __future__ import annotations
+
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from starboard.infra.core.config import get_config
@@ -96,6 +99,67 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     logger.info("server_shutdown_complete")
+
+
+# ---------------------------------------------------------------------------
+# Databricks Apps — OBO (on-behalf-of) per-request client dependency (O4)
+# ---------------------------------------------------------------------------
+# When Starboard runs as a Databricks App the platform forwards the end-user's
+# OAuth token in the X-Forwarded-Access-Token header.  ``get_obo_client``
+# detects that header and resolves a per-request ``WorkspaceClient`` via the
+# existing ``resolve_user_client()`` seam in ``infra/auth/resolver.py``.
+# Identity is logged via ``describe_auth()`` — never the token.
+#
+# Without the header (CLI / MCP stdio / any non-App path) the dependency returns
+# ``None`` and the default resolver path is wholly unchanged — OBO is strictly
+# additive and opt-in per request/deployment.
+
+_APPS_FORWARDED_HEADER = "x-forwarded-access-token"
+"""Lower-cased name of the Databricks Apps forwarded-user OAuth header.
+
+Starlette's ``Headers`` object is case-insensitive so the lower-case form is
+used for membership testing across all header capitalizations.
+"""
+
+
+async def get_obo_client(request: Request) -> Any:
+    """FastAPI dependency — per-request OBO ``WorkspaceClient`` for Databricks Apps.
+
+    When the Databricks Apps runtime forwards the end-user's token (the
+    ``X-Forwarded-Access-Token`` header is present), this dependency resolves a
+    per-request ``WorkspaceClient`` via :func:`resolve_user_client` so every SDK
+    call in that request executes on behalf of the authenticated user — enabling
+    per-user Unity Catalog and Genie access.
+
+    User identity is logged via :func:`describe_auth` (which redacts all secrets).
+    If the identity log call fails (e.g. a transient network error on
+    ``/api/2.0/preview/scim/v2/Me``), the error is swallowed and the client is
+    still returned — a logging failure must not disrupt the request.
+
+    Outside Databricks Apps (no forwarded-user header) the dependency returns
+    ``None`` so callers can fall back to the ambient resolver.  The non-App path
+    is byte-for-byte unchanged.
+
+    Returns:
+        A per-request ``WorkspaceClient`` (OBO strategy) when in App context,
+        or ``None`` on the non-App path.
+    """
+    if _APPS_FORWARDED_HEADER not in request.headers:
+        return None
+
+    # Lazy import: keeps module load clean of SDK for the non-App path.
+    from starboard.infra.auth.resolver import (  # noqa: PLC0415
+        describe_auth,
+        resolve_user_client,
+    )
+
+    client = resolve_user_client()
+    try:
+        auth_info = describe_auth(client)
+        logger.info("obo_request_identity", **auth_info)
+    except Exception:  # noqa: BLE001
+        logger.debug("obo_identity_log_unavailable")
+    return client
 
 
 def _get_log_level(level_name: str) -> int:

@@ -110,6 +110,78 @@ databricks bundle destroy -t dev --auto-approve
 
 ---
 
+## Databricks Apps OBO Auth (on-behalf-of per-user identity)
+
+When Starboard runs as a Databricks App it resolves Unity Catalog and Genie
+grants on behalf of the *calling end user*, not under the App's own service
+principal.  This is the OBO (on-behalf-of) flow wired in Phase 3 (O4).
+
+### How it works
+
+```
+Browser / Claude Code
+       │  HTTPS request (user session)
+       ▼
+Databricks Apps platform
+       │  forwards end-user OAuth token via
+       │  X-Forwarded-Access-Token header
+       ▼
+Starboard FastAPI app  (starboard/main.py)
+  └─ get_obo_client(request)   [FastAPI dependency]
+       │  detects X-Forwarded-Access-Token header
+       │  calls resolve_user_client()
+       │    └─ build_user_credentials_strategy()   → ModelServingUserCredentials()
+       │    └─ resolve_workspace_client(credentials_strategy=...)
+       │  logs identity via describe_auth()  ← redacted; never logs the token
+       ▼
+  per-request WorkspaceClient  (end-user identity)
+       │  all SDK calls (UC, Genie, SQL) in this request
+       │  resolve grants for the end user
+       ▼
+  Unity Catalog / Genie / SQL Warehouse
+```
+
+The non-App path (CLI, MCP stdio, direct invocation) is **unchanged** — when the
+`X-Forwarded-Access-Token` header is absent, `get_obo_client` returns `None` and
+callers fall back to the ambient credential chain.
+
+### Prerequisites
+
+| Requirement | Detail |
+|---|---|
+| Databricks SDK ≥ OBO support | `ModelServingUserCredentials` must be importable from `databricks.sdk`; upgrade if you see "OBO unavailable" in logs. |
+| App service principal | Needs "Can Use" on the SQL Warehouse and "Can Use" on the Unity Catalog. Per-user table-level grants resolve at request time. |
+| OAuth scopes declared | `app.yaml` in the repo root declares `genie`, `sql`, `catalog.browse`, `catalog.query`, and `iam.current_user`.  The platform uses these to construct the forwarded token. |
+| `STARBOARD_DATABRICKS_WAREHOUSE_ID` | Set in Databricks Secrets (scope `starboard-secrets`) and referenced in `app.yaml` / `databricks.yml`. |
+
+### Security invariants
+
+- **Token never logged.** Identity is derived via `describe_auth()` which exposes
+  only `host`, `auth_type`, `profile`, and `user_name`.  The forwarded token is
+  never written to logs.
+- **Per-request isolation.** A fresh `WorkspaceClient` is constructed on each
+  request — no shared mutable client state across concurrent requests.
+- **Additive gate.** Removing `app.yaml` or running outside a Databricks App
+  reverts to the ambient credential chain; no functionality is lost.
+
+### Live validation (gate: App-env)
+
+Deploy to a real multi-tenant Databricks App, then verify:
+
+```bash
+# Confirm OBO identity is logged (identity, not token)
+databricks apps logs starboard-agent --follow | grep obo_request_identity
+
+# Hit the health endpoint as two different users and confirm per-user UC access
+curl -H "Authorization: Bearer <user1-token>" https://<app-url>/health/ready
+curl -H "Authorization: Bearer <user2-token>" https://<app-url>/health/ready
+```
+
+Record the results in `changes/2026_26_27_agents/plans/OWNER_RUNBOOK.md` under
+gate **App-env** once the live run completes.
+
+---
+
 ## Docker Compose Deployment
 
 ### Quick Start

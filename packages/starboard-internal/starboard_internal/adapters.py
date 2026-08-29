@@ -8,9 +8,14 @@ per port, each ``internal``-tier so it is selected **only** when the internal-da
 enablement gate is open (UNIFIED_PLAN §3.5): with the gate closed, the public
 adapter shipped in ``starboard`` remains the universal path.
 
-Each provider's zero-arg ``create()`` builds the adapter with its default backend
-(real internal runtime access is wired at deploy time; injected backends drive the
-tests). The four adapters are strict supersets of their public counterparts:
+Each provider's zero-arg ``create()`` builds the adapter with its default backend:
+the **real** backend constructed from the internal deployment env
+(``STARBOARD_INTERNAL_*`` — see :mod:`starboard_internal._config`) when present,
+else an *unwired* backend whose methods raise a clean, actionable
+:class:`~starboard_internal._config.MissingInternalConfigError` (never a silent
+stub). ``create()`` itself never does I/O or raises, so the seam registers
+cleanly with the gate closed. Tests inject their own backends. The four adapters
+are strict supersets of their public counterparts:
 
 * :class:`LogsSummariserAdapter` (D6) supersedes the public DBFS log parser,
 * :class:`DbrDoctorAdapter` (D6) supersedes the native diagnostic backend,

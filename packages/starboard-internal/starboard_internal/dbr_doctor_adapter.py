@@ -11,9 +11,11 @@ returns candidates and ``analyze`` still returns every public
 confidence / evidence), with the semantic/RCA enrichment added in ``metadata``
 (UNIFIED_PLAN §3.5 additive invariant).
 
-Internal runtime access is not available in this repo; the adapter is driven by
-an injected :class:`DoctorBackend`. The zero-arg factory builds a default backend
-that raises unless real dbr-doctor access is wired.
+The zero-arg factory builds the **real** dbr-doctor HTTP backend when the internal
+deployment env is present (:class:`DbrDoctorConfig`); when it is absent it builds
+an *unwired* backend whose methods raise a clean, actionable
+:class:`MissingInternalConfigError` (never a silent stub). Tests inject their own
+:class:`DoctorBackend`.
 """
 
 from __future__ import annotations
@@ -25,6 +27,12 @@ from starboard_core.ports.diagnostic_backend import (
     Candidate,
     DiagnosticBackendPort,
     DiagnosticResult,
+)
+
+from starboard_internal._config import (
+    DbrDoctorConfig,
+    MissingInternalConfigError,
+    missing_config_message,
 )
 
 #: Stable backend tag (internal-index-only identifier).
@@ -46,32 +54,105 @@ class DoctorBackend(Protocol):
         ...
 
 
-class _DefaultDoctorBackend:
-    """Placeholder backend: real dbr-doctor access is external to this repo."""
+class _UnwiredDoctorBackend:
+    """Backend used when the internal deployment env is absent.
+
+    Not a silent stub: both methods raise with the exact env vars to set.
+    """
+
+    def _raise(self) -> None:
+        raise MissingInternalConfigError(
+            missing_config_message(
+                "DbrDoctorAdapter",
+                _BACKEND_SOURCE,
+                DbrDoctorConfig.REQUIRED,
+                "DoctorBackend",
+            )
+        )
 
     def classify(self, pasted: str) -> list[Candidate]:  # noqa: ARG002
-        raise RuntimeError(
-            "DbrDoctorAdapter requires internal dbr-doctor runtime access; "
-            "inject a DoctorBackend to use this adapter."
-        )
+        self._raise()
+        return []
 
     async def diagnose(self, candidate: Candidate) -> Mapping[str, Any]:  # noqa: ARG002
-        raise RuntimeError(
-            "DbrDoctorAdapter requires internal dbr-doctor runtime access; "
-            "inject a DoctorBackend to use this adapter."
-        )
+        self._raise()
+        return {}
+
+
+class _HttpDoctorBackend:
+    """Real dbr-doctor backend: semantic classify + trace-RCA diagnose over HTTP.
+
+    ``classify`` is synchronous (native detector parity) and ``diagnose`` is
+    asynchronous, mirroring the port. HTTP clients are created per call.
+    """
+
+    def __init__(self, config: DbrDoctorConfig) -> None:
+        self._config = config
+
+    def _headers(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self._config.token}"}
+
+    def classify(self, pasted: str) -> list[Candidate]:
+        import httpx
+
+        with httpx.Client(timeout=self._config.timeout) as client:
+            resp = client.post(
+                f"{self._config.url}/classify",
+                json={"pasted": pasted},
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        candidates_raw = data.get("candidates", []) if isinstance(data, Mapping) else data
+        return [
+            Candidate(
+                kind=str(item.get("kind", "unknown")),
+                raw=str(item.get("raw", pasted)),
+                ref=str(item.get("ref", "")),
+                confidence=float(item.get("confidence", 0.0)),
+                signals=tuple(item.get("signals", ())),
+            )
+            for item in candidates_raw
+        ]
+
+    async def diagnose(self, candidate: Candidate) -> Mapping[str, Any]:
+        import httpx
+
+        payload = {
+            "kind": candidate.kind,
+            "raw": candidate.raw,
+            "ref": candidate.ref,
+        }
+        async with httpx.AsyncClient(timeout=self._config.timeout) as client:
+            resp = await client.post(
+                f"{self._config.url}/diagnose",
+                json=payload,
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        return data if isinstance(data, Mapping) else {"summary": str(data)}
+
+
+def _default_backend() -> DoctorBackend:
+    """Build the real backend from the internal env, else an unwired backend."""
+    config = DbrDoctorConfig.from_env()
+    if config is None:
+        return _UnwiredDoctorBackend()
+    return _HttpDoctorBackend(config)
 
 
 class DbrDoctorAdapter(DiagnosticBackendPort):
     """Classify + analyze pasted diagnostics via a :class:`DoctorBackend`.
 
     Args:
-        backend: The dbr-doctor backend. When omitted, a default backend is used
-            that raises on use (real internal access is wired at deploy time).
+        backend: The dbr-doctor backend. When omitted, the real dbr-doctor backend
+            is built from the internal deployment env when present, else an
+            unwired backend that raises an actionable error on use.
     """
 
     def __init__(self, backend: DoctorBackend | None = None) -> None:
-        self._backend: DoctorBackend = backend or _DefaultDoctorBackend()
+        self._backend: DoctorBackend = backend or _default_backend()
 
     def classify(self, pasted: str) -> list[Candidate]:
         if not pasted or not pasted.strip():

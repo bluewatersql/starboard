@@ -12,12 +12,26 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+import httpx
 import pytest
+import respx
 from starboard_core.ports.log_retrieval import LogBundle, LogQuery
 from starboard_internal.logs_summariser_adapter import (
     LogsSummariserAdapter,
-    _DefaultTriageBackend,
+    _HttpTriageBackend,
+    _UnwiredTriageBackend,
 )
+
+_ENV_VARS = (
+    "STARBOARD_INTERNAL_LOGS_SUMMARISER_URL",
+    "STARBOARD_INTERNAL_LOGS_SUMMARISER_TOKEN",
+    "STARBOARD_INTERNAL_LOGS_SUMMARISER_KUBE_CONTEXT",
+)
+
+
+def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in _ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
 
 
 class _StubTriageBackend:
@@ -73,10 +87,47 @@ class TestLogsSummariserAdapter:
         assert bundle.line_count == 1
         assert bundle.paths == ("/p1", "/p2")
 
-    async def test_default_backend_raises_until_wired(self) -> None:
+    async def test_default_backend_raises_until_wired(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _clear_env(monkeypatch)
         adapter = LogsSummariserAdapter()
-        with pytest.raises(RuntimeError, match="logs-summariser"):
+        with pytest.raises(RuntimeError, match="logs-summariser") as exc:
             await adapter.fetch(LogQuery(entity="cluster", entity_id="abc"))
+        # Actionable: names the exact env var to set (not a silent stub).
+        assert "STARBOARD_INTERNAL_LOGS_SUMMARISER_URL" in str(exc.value)
 
-    def test_default_backend_type_is_placeholder(self) -> None:
-        assert isinstance(LogsSummariserAdapter()._backend, _DefaultTriageBackend)
+    def test_default_backend_is_unwired_when_env_absent(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _clear_env(monkeypatch)
+        assert isinstance(LogsSummariserAdapter()._backend, _UnwiredTriageBackend)
+
+    def test_real_backend_selected_when_env_present(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(
+            "STARBOARD_INTERNAL_LOGS_SUMMARISER_URL", "https://logs.internal/"
+        )
+        monkeypatch.setenv("STARBOARD_INTERNAL_LOGS_SUMMARISER_TOKEN", "tok")
+        backend = LogsSummariserAdapter()._backend
+        assert isinstance(backend, _HttpTriageBackend)
+        # url is normalized (trailing slash stripped); no I/O happened.
+        assert backend._config.url == "https://logs.internal"
+
+    @respx.mock
+    async def test_http_backend_calls_service_and_returns_triage(self) -> None:
+        route = respx.post("https://logs.internal/triage").mock(
+            return_value=httpx.Response(
+                200,
+                json={"text": "l1\nl2", "summary": "OOM", "severity": "ERROR"},
+            )
+        )
+        from starboard_internal._config import LogsSummariserConfig
+
+        backend = _HttpTriageBackend(
+            LogsSummariserConfig(url="https://logs.internal", token="tok")
+        )
+        result = await backend.triage(LogQuery(entity="cluster", entity_id="c"))
+        assert route.called
+        assert result["summary"] == "OOM"

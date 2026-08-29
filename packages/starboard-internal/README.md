@@ -21,9 +21,15 @@ public field and adds enrichment additively (UNIFIED_PLAN §3.5):
 | `FleetSqlPort` | `SingleWorkspaceFleetAdapter` (`system.*`) | `CentralizedFleetSqlAdapter` (D7) | `system.*` → centralized cross-account namespace rewrite |
 | `NLQueryPort` | `AnalyticsSqlAdapter` (native NL→SQL) | `CuratedGenieRoomAdapter` (D8) | curated Genie rooms |
 
-Real internal-tool/runtime access is external to this repo: each adapter is
-driven by an injected backend (tests use stubs/fakes); the zero-arg entry-point
-factory builds a default backend that raises unless a live client is wired.
+Each adapter is driven by a backend: tests inject stubs/fakes, and the zero-arg
+entry-point factory builds the **real** backend from the internal deployment env
+(`STARBOARD_INTERNAL_*`) when present — logs-summariser/dbr-doctor over HTTP,
+centralized fleet + curated Genie via the Databricks SDK. When that env is
+absent the factory builds an *unwired* backend whose methods raise a clean,
+actionable error naming the exact env vars to set (never a silent stub).
+`create()` itself never does I/O and never raises, so the seam registers cleanly
+with the gate closed. See [`docs/INTERNAL_DEPLOYMENT.md`](docs/INTERNAL_DEPLOYMENT.md)
+for the required endpoints/credentials and the guarded Internal-env integration run.
 
 The D7 rewrite (`_namespace_rewrite.py`) keeps the **public query packs
 byte-for-byte unchanged** — `system.<schema>.<table>` becomes

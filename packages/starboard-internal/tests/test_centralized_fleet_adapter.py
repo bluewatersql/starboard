@@ -14,13 +14,15 @@ from typing import Any
 
 import pytest
 from starboard_core.ports.fleet_sql import FleetQuery, FleetResult
+from starboard_internal._config import FleetSqlConfig
 from starboard_internal._namespace_rewrite import (
     CENTRALIZED_SCHEMA,
     rewrite_system_namespace,
 )
 from starboard_internal.centralized_fleet_adapter import (
     CentralizedFleetSqlAdapter,
-    _DefaultExecutor,
+    _SdkStatementExecutor,
+    _UnwiredExecutor,
 )
 
 
@@ -99,10 +101,66 @@ class TestCentralizedFleetSqlAdapter:
         assert executor.executed_sql == "SELECT c FROM main.foo.bar"
         assert result.metadata["rewritten"] == "false"
 
-    async def test_default_executor_raises_until_wired(self) -> None:
+    async def test_default_executor_raises_until_wired(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("STARBOARD_INTERNAL_FLEET_WAREHOUSE_ID", raising=False)
         adapter = CentralizedFleetSqlAdapter()
-        with pytest.raises(RuntimeError, match="centralized-tables"):
+        with pytest.raises(RuntimeError, match="centralized-tables") as exc:
             await adapter.execute(FleetQuery(sql="SELECT 1"))
+        assert "STARBOARD_INTERNAL_FLEET_WAREHOUSE_ID" in str(exc.value)
 
-    def test_default_executor_type_is_placeholder(self) -> None:
-        assert isinstance(CentralizedFleetSqlAdapter()._executor, _DefaultExecutor)
+    def test_default_executor_is_unwired_when_env_absent(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("STARBOARD_INTERNAL_FLEET_WAREHOUSE_ID", raising=False)
+        assert isinstance(CentralizedFleetSqlAdapter()._executor, _UnwiredExecutor)
+
+    def test_real_executor_selected_when_env_present(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("STARBOARD_INTERNAL_FLEET_WAREHOUSE_ID", "wh-1")
+        assert isinstance(
+            CentralizedFleetSqlAdapter()._executor, _SdkStatementExecutor
+        )
+
+    async def test_sdk_executor_maps_statement_response(self) -> None:
+        # Fake SDK response objects (no network): manifest.schema.columns + rows.
+        class _Col:
+            def __init__(self, name: str) -> None:
+                self.name = name
+
+        class _State:
+            value = "SUCCEEDED"
+
+        class _Status:
+            state = _State()
+
+        class _Schema:
+            columns = [_Col("a"), _Col("b")]
+
+        class _Manifest:
+            schema = _Schema()
+
+        class _Result:
+            data_array = [["1", "2"], ["3", "4"]]
+
+        class _Resp:
+            status = _Status()
+            manifest = _Manifest()
+            result = _Result()
+            statement_id = "s1"
+
+        class _StmtExec:
+            def execute_statement(self, **kwargs: Any) -> _Resp:
+                self.kwargs = kwargs
+                return _Resp()
+
+        class _FakeClient:
+            statement_execution = _StmtExec()
+
+        executor = _SdkStatementExecutor(FleetSqlConfig(warehouse_id="wh-1"))
+        executor._client = lambda: _FakeClient()  # type: ignore[method-assign]
+        out = await executor("SELECT a, b FROM system.billing.usage", {})
+        assert out["columns"] == ["a", "b"]
+        assert out["rows"] == [["1", "2"], ["3", "4"]]

@@ -191,6 +191,20 @@ nav:
       - Makefile Guide: MAKEFILE_GUIDE.md
       - S3 Connector: S3_CONNECTOR_GUIDE.md
 
+  - Reference Catalog:
+      - Capability Catalog: reference/CATALOG.md
+      - How to Choose: guides/AGENT_EXPERIENCE.md
+      - Skills: reference/skills/INDEX.md
+      - MCP Tools: reference/mcp-tools/INDEX.md
+      - Agents: reference/agents/INDEX.md
+      - CLI Commands: reference/cli-commands/INDEX.md
+      - Progressive Helpers: reference/progressive-helpers/INDEX.md
+      - Plugins: reference/plugins/INDEX.md
+      - Examples:
+          - Hero Workflows: examples/HERO_WORKFLOWS.md
+          - Personas (internal): examples/PERSONAS.md
+          - Validated Examples: examples/VALIDATED_EXAMPLES.md
+
   - Integrations & Distribution:
       - Install Tiers: reference/INSTALL_TIERS.md
       - Databricks AI Tools: distribution/databricks-aitools.md
