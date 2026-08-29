@@ -184,6 +184,7 @@ nav:
   - Operations:
       - Deployment: DEPLOYMENT.md
       - Runbook: RUNBOOK.md
+      - Wave 4 QA Runbook: runbooks/wave4_qa_runbook.md
       - Runbook Templates:
           - Incident: runbooks/incident_template.md
           - Rollback: runbooks/rollback_template.md
