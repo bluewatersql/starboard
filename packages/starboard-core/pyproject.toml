@@ -12,7 +12,6 @@ requires-python = ">=3.12"
 license = {text = "Databricks Open Model License"}
 dependencies = [
     "pydantic>=2.12.3",
-    "typing-extensions>=4.14.1",
     "orjson>=3.11.4",
     "stream-unzip>=0.0.94",
     "numpy>=2.0.0,<3.0.0",

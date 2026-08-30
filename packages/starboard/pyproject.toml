@@ -145,6 +145,11 @@ load = [
 ]
 
 dev = [
+    # The complete local developer gate. `make setup` → `make install-dev` installs
+    # starboard[test,dev]; composing test+lint here makes that one extra sufficient
+    # to run the full `make check` (ruff + mypy + pytest), so ruff/mypy are never
+    # silently absent from a freshly-provisioned venv.
+    "starboard[test,lint]",
     "uvicorn[standard]>=0.24.0",
     "playwright>=1.40.0",  # Browser automation for debug logging
     # Keep the store drivers available for local dev + `make setup` (install-dev uses

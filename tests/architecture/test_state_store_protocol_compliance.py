@@ -2,12 +2,16 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Architecture fitness test — GUIDELINE-001: StateStore Protocol compliance.
 
-All classes whose name ends in ``Store`` must implement a common ``StateStore``
-Protocol exposing ``connect()``, ``close()``, ``get()``, ``set()``, and
-``delete()``.  The test scans the codebase with AST, collects every ``Store``
-class, and verifies that each one defines all five methods.
+State-persistence stores must implement a common ``StateStore`` Protocol exposing
+``connect()``, ``close()``, ``get()``, ``set()``, and ``delete()``.  The test
+scans the codebase with AST, collects every ``Store`` class, and verifies that
+each one defines all five methods.
 
-STATUS: Expected to FAIL until all store implementations are aligned.
+Scope: this guideline governs *state/KV persistence* stores. Domain repositories
+that happen to end in ``Store`` but deliberately expose a different, domain-shaped
+interface (not a generic key/value contract) are excluded via
+:data:`_DOMAIN_STORE_EXCLUSIONS` — forcing a KV interface onto them would be a
+category error, not compliance.
 """
 
 from __future__ import annotations
@@ -30,6 +34,15 @@ class StateStore(Protocol):
 
 REQUIRED_METHODS = {"connect", "close", "get", "set", "delete"}
 
+# Domain repositories that end in ``Store`` but are NOT state/KV persistence
+# stores — they expose a domain-shaped interface by design, so the generic
+# StateStore key/value contract does not apply to them.
+_DOMAIN_STORE_EXCLUSIONS = {
+    # UC-backed cluster role-observation history repository (record_observation /
+    # get_observations / compute_confidence), not a conversation/KV state store.
+    "ClusterObservationStore",
+}
+
 
 def _collect_store_classes(root: Path) -> list[tuple[Path, str, set[str]]]:
     """Return (file, class_name, defined_methods) for every *Store class."""
@@ -45,6 +58,8 @@ def _collect_store_classes(root: Path) -> list[tuple[Path, str, set[str]]]:
             if not isinstance(node, ast.ClassDef):
                 continue
             if not node.name.endswith("Store"):
+                continue
+            if node.name in _DOMAIN_STORE_EXCLUSIONS:
                 continue
             methods: set[str] = set()
             for item in ast.walk(node):

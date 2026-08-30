@@ -13,7 +13,13 @@ jobs:
       - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-      - run: uv sync --all-extras
+      # `--all-packages` installs every workspace member (so import-linter root
+      # packages like starboard_skills are importable); `--all-extras` pulls every
+      # extra (ruff/mypy via lint, pytest via test, import-linter). Bare
+      # `uv sync --all-extras` covers only the workspace-ROOT extras and would leave
+      # ruff/mypy/pytest and starboard_skills missing — see Makefile `install-dev`.
+      - run: uv sync --all-packages --all-extras
       - run: make lint
       - run: make type-check
       - run: make test-unit
+      - run: make test-architecture

@@ -112,13 +112,19 @@ install:
 
 install-dev:
 	@echo "$(BLUE)Installing with dev dependencies...$(NC)"
+	@# Full workspace dev env in one shot: `--all-packages` installs EVERY workspace
+	@# member (so import-linter root packages like starboard_skills are importable),
+	@# and `--all-extras` pulls every extra (ruff/mypy via lint, pytest via test,
+	@# import-linter, mkdocs, store drivers). This is exactly what `make check` needs.
 	@if [ "$(PACKAGE_MANAGER)" = "uv" ]; then \
-		uv sync && \
-		uv pip install -e "packages/starboard-core[test]" \
-		              -e "packages/starboard[test,dev]"; \
+		uv sync --all-packages --all-extras; \
 	else \
-		pip install -e "packages/starboard-core[test]" \
-		            -e "packages/starboard[test,dev]"; \
+		pip install -e ".[dev,docs]" \
+		            -e "packages/starboard-core[test]" \
+		            -e "packages/starboard[test,dev]" \
+		            -e "packages/starboard-skills" \
+		            -e "packages/starboard-internal" \
+		            -e "packages/starboard-plugin-sample"; \
 	fi
 	@echo "$(GREEN)✓ Done$(NC)"
 
