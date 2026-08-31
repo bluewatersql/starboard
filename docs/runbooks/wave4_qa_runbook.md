@@ -217,7 +217,7 @@ and gates findings on a live review.
 
 ```bash
 # Comma-separated list; ids come from the model-serving catalog / AI gateway (dynamic).
-export STARBOARD_REVIEW_COUNCIL_MODELS="databricks-claude-opus-4-8m,databricks-claude-sonnet-4-6,databricks-claude-haiku-4-5"
+export STARBOARD_REVIEW_COUNCIL_MODELS="databricks-claude-opus-4-8,databricks-claude-sonnet-4-6,databricks-claude-haiku-4-5"
 # Optional tuning:
 export STARBOARD_REVIEW_COUNCIL_MAX_PASSES=3    # bounded; ceiling enforced in code
 export STARBOARD_REVIEW_COUNCIL_SEED=42       # for reproducible ordering
@@ -225,7 +225,7 @@ export STARBOARD_REVIEW_COUNCIL_SEED=42       # for reproducible ordering
 # `starboard review` takes no positional target — it reviews the whole workspace's
 # public system.* data. Scope with --domains (default: jobs,sql,warehouse; opt-in:
 # uc, dlt/pipelines, ml, vector-search, portfolio-readiness) and --lookback-days.
-starboard review --profile <name> --validate --min-severity medium --domains jobs,sql,warehouse
+starboard review --profile e2-demo-field-eng --validate --min-severity medium --domains jobs,sql,warehouse
 ```
 
 - **Expected:** the review runs, the council convenes over the configured ids, each finding
