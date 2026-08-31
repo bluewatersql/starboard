@@ -35,13 +35,6 @@ export PATH="$PWD/.venv/bin:$PATH"     # ruff / mypy / pytest / mkdocs live here
 make setup                             # first-time only: uv venv + editable installs
 ```
 
-Confirm you are on the release commit:
-
-```bash
-git rev-parse --abbrev-ref HEAD        # expect: main (post-merge) or wave4/phase0
-git log --oneline -1                   # expect the Wave 4 tip
-```
-
 Databricks profile (Parts B–C only): **never auto-select**. Pass `--profile <name>`
 explicitly, or set `STARBOARD_WORKSPACE` / `DATABRICKS_CONFIG_PROFILE`, and let the
 operator choose the target workspace.
@@ -227,9 +220,12 @@ and gates findings on a live review.
 export STARBOARD_REVIEW_COUNCIL_MODELS="databricks-claude-opus-4-8m,databricks-claude-sonnet-4-6,databricks-claude-haiku-4-5"
 # Optional tuning:
 export STARBOARD_REVIEW_COUNCIL_MAX_PASSES=3    # bounded; ceiling enforced in code
-# export STARBOARD_REVIEW_COUNCIL_SEED=42       # for reproducible ordering
+export STARBOARD_REVIEW_COUNCIL_SEED=42       # for reproducible ordering
 
-starboard review --profile <name> --validate --min-severity medium <target>
+# `starboard review` takes no positional target — it reviews the whole workspace's
+# public system.* data. Scope with --domains (default: jobs,sql,warehouse; opt-in:
+# uc, dlt/pipelines, ml, vector-search, portfolio-readiness) and --lookback-days.
+starboard review --profile <name> --validate --min-severity medium --domains jobs,sql,warehouse
 ```
 
 - **Expected:** the review runs, the council convenes over the configured ids, each finding
