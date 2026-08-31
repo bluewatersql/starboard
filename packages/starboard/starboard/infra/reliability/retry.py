@@ -24,6 +24,40 @@ logger = get_logger(__name__)
 
 F = TypeVar("F", bound=Callable[..., Any])
 
+# HTTP statuses that will never succeed on retry: bad request, auth, not-found,
+# method-not-allowed, unprocessable-entity. Retrying these just burns time and
+# backoff (e.g. a mistyped model-serving endpoint returns 404 forever). Rate
+# limits (429), request timeouts (408), conflicts (409) and 5xx are transient
+# and remain retryable.
+_PERMANENT_STATUS_CODES = frozenset({400, 401, 403, 404, 405, 422})
+
+
+def _status_code_of(error: BaseException) -> int | None:
+    """Best-effort extraction of an HTTP status code from an exception.
+
+    Reads ``error.status_code`` (openai ``APIStatusError``) and falls back to a
+    nested ``error.response.status_code`` (httpx-style). Returns ``None`` when no
+    HTTP status is present (non-HTTP errors stay retryable by default).
+    """
+    status = getattr(error, "status_code", None)
+    if not isinstance(status, int):
+        status = getattr(getattr(error, "response", None), "status_code", None)
+    return status if isinstance(status, int) else None
+
+
+def is_permanent_error(error: BaseException) -> bool:
+    """Return ``True`` for errors that cannot succeed on retry.
+
+    A permanent error is an HTTP client error in :data:`_PERMANENT_STATUS_CODES`
+    (a nonexistent endpoint, denied auth, malformed request). Rate limits, request
+    timeouts, conflicts, 5xx, and any exception without an HTTP status are treated
+    as transient so existing retry behavior is preserved for them.
+    """
+    status = _status_code_of(error)
+    if status is None:
+        return False
+    return status in _PERMANENT_STATUS_CODES
+
 
 def _check_not_in_async_context(func_name: str) -> None:
     """Raise RuntimeError if called from within a running asyncio event loop.
@@ -118,6 +152,15 @@ def retry_with_backoff(
                     try:
                         return await func(*args, **kwargs)
                     except Exception as e:  # noqa: BLE001 - retry catches any exception by design
+                        if is_permanent_error(e):
+                            logger.error(
+                                "retry_aborted_permanent",
+                                func=func.__name__,
+                                attempt=attempt,
+                                status_code=_status_code_of(e),
+                                error=str(e),
+                            )
+                            raise
                         if attempt == max_attempts:
                             logger.error(
                                 "retry_exhausted",
@@ -161,6 +204,15 @@ def retry_with_backoff(
                     try:
                         return func(*args, **kwargs)
                     except Exception as e:  # noqa: BLE001 - retry catches any exception by design
+                        if is_permanent_error(e):
+                            logger.error(
+                                "retry_aborted_permanent",
+                                func=func.__name__,
+                                attempt=attempt,
+                                status_code=_status_code_of(e),
+                                error=str(e),
+                            )
+                            raise
                         if attempt == max_attempts:
                             logger.error(
                                 "retry_exhausted",

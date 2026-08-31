@@ -187,3 +187,43 @@ class TestRunValidated:
             validated.council.total_model_calls
             <= validated.council.max_possible_calls
         )
+
+
+@pytest.mark.unit
+class TestWorkloadReviewProgress:
+    """The service reports phase progress so a long scan is not silent."""
+
+    def test_run_emits_scan_progress(self) -> None:
+        service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
+        events: list[str] = []
+        _run(service.run(["warehouse"], progress=events.append))
+
+        assert any("scanning" in e for e in events)
+        assert any("scan complete" in e for e in events)
+
+    def test_run_validated_emits_gate_and_council_progress(self) -> None:
+        service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
+
+        class _KeepAll:
+            @property
+            def model_id(self) -> str:
+                return "fake"
+
+            async def critique(self, request: CritiqueRequest, *, seed: int):
+                return (Verdict.KEEP, 1.0)
+
+        council = ValidatorCouncil(
+            [_KeepAll()], config=CouncilConfig(model_ids=("fake",), max_passes=1)
+        )
+        events: list[str] = []
+        _run(
+            service.run_validated(
+                ["warehouse"],
+                gate=SeverityGate(min_severity=Severity.LOW),
+                validator=council,
+                progress=events.append,
+            )
+        )
+
+        assert any("severity gate" in e for e in events)
+        assert any("validating" in e for e in events)

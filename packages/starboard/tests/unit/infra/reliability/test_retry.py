@@ -289,3 +289,103 @@ class TestCalculateDelay:
         )
         # Rate-limit doubles: 1.0 * 2 = 2.0
         assert delay == 2.0
+
+
+# ---------------------------------------------------------------------------
+# Permanent-error fail-fast (no retry storm on a nonexistent endpoint / auth)
+# ---------------------------------------------------------------------------
+
+
+class _FakeStatusError(Exception):
+    """Stands in for an ``openai.APIStatusError`` carrying an HTTP status code."""
+
+    def __init__(self, message: str, status_code: int) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class TestIsPermanentError:
+    """Tests for the permanent-vs-transient error classifier."""
+
+    @pytest.mark.parametrize("status", [400, 401, 403, 404, 405, 422])
+    def test_client_errors_are_permanent(self, status: int) -> None:
+        """4xx client errors that cannot succeed on retry are permanent."""
+        from starboard.infra.reliability.retry import is_permanent_error
+
+        assert is_permanent_error(_FakeStatusError("nope", status)) is True
+
+    @pytest.mark.parametrize("status", [408, 409, 429, 500, 502, 503, 504])
+    def test_transient_statuses_are_not_permanent(self, status: int) -> None:
+        """Rate-limit, timeout, conflict and 5xx are transient -> retryable."""
+        from starboard.infra.reliability.retry import is_permanent_error
+
+        assert is_permanent_error(_FakeStatusError("retry me", status)) is False
+
+    def test_error_without_status_is_not_permanent(self) -> None:
+        """A plain exception with no HTTP status stays retryable (unchanged)."""
+        from starboard.infra.reliability.retry import is_permanent_error
+
+        assert is_permanent_error(ValueError("boom")) is False
+        assert is_permanent_error(ConnectionError("dropped")) is False
+
+    def test_status_on_response_attr_is_read(self) -> None:
+        """Status is also read from a nested ``response.status_code``."""
+        from starboard.infra.reliability.retry import is_permanent_error
+
+        class _Resp:
+            status_code = 404
+
+        class _Err(Exception):
+            response = _Resp()
+
+        assert is_permanent_error(_Err()) is True
+
+
+class TestRetryFailFastOnPermanentError:
+    """The decorator must NOT retry a permanent error - one attempt, then raise."""
+
+    @pytest.mark.asyncio
+    async def test_async_permanent_error_not_retried(self) -> None:
+        """A 404 aborts immediately: exactly one call, no backoff sleeps."""
+        call_count = 0
+
+        @retry_with_backoff(max_attempts=3, initial_delay=0.001, jitter=False)
+        async def dead_endpoint() -> str:
+            nonlocal call_count
+            call_count += 1
+            raise _FakeStatusError("RESOURCE_DOES_NOT_EXIST", 404)
+
+        with pytest.raises(_FakeStatusError):
+            await dead_endpoint()
+        assert call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_async_transient_error_still_retried(self) -> None:
+        """A 503 is still retried up to max_attempts (regression guard)."""
+        call_count = 0
+
+        @retry_with_backoff(max_attempts=3, initial_delay=0.001, jitter=False)
+        async def flaky() -> str:
+            nonlocal call_count
+            call_count += 1
+            raise _FakeStatusError("temporarily down", 503)
+
+        with pytest.raises(_FakeStatusError):
+            await flaky()
+        assert call_count == 3
+
+    @patch("starboard.infra.reliability.retry.time.sleep")
+    def test_sync_permanent_error_not_retried(self, mock_sleep: MagicMock) -> None:
+        """Sync path also aborts a permanent error on the first attempt."""
+        call_count = 0
+
+        @retry_with_backoff(max_attempts=3, initial_delay=0.001, jitter=False)
+        def dead_endpoint() -> str:
+            nonlocal call_count
+            call_count += 1
+            raise _FakeStatusError("unauthorized", 401)
+
+        with pytest.raises(_FakeStatusError):
+            dead_endpoint()
+        assert call_count == 1
+        assert mock_sleep.call_count == 0

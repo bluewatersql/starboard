@@ -220,3 +220,87 @@ class TestCouncilConfig:
     def test_requires_at_least_one_model(self) -> None:
         with pytest.raises(ValueError):
             CouncilConfig(model_ids=())
+
+
+# ---------------------------------------------------------------------------
+# Fail-fast: a permanently-dead endpoint disables its council model for the run
+# ---------------------------------------------------------------------------
+
+
+class _FakeStatusError(Exception):
+    """Stands in for an ``openai.APIStatusError`` with an HTTP status code."""
+
+    def __init__(self, message: str, status_code: int) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class _FakeLLM:
+    """Minimal ``BaseLLMClient`` stand-in whose ``json_response`` is scripted."""
+
+    def __init__(self, *, error: Exception | None = None) -> None:
+        self._error = error
+        self.json_calls = 0
+
+    async def json_response(self, messages, **kwargs):  # noqa: ANN001, ANN003
+        self.json_calls += 1
+        if self._error is not None:
+            raise self._error
+        return {"verdict": "keep", "confidence": 0.9}
+
+
+class TestCouncilAdapterFailFast:
+    """CouncilModelClientAdapter disables a model on a permanent error."""
+
+    def test_permanent_error_disables_model_and_short_circuits(self) -> None:
+        from starboard.tools.services.validator_council import (
+            CouncilModelClientAdapter,
+        )
+
+        llm = _FakeLLM(error=_FakeStatusError("RESOURCE_DOES_NOT_EXIST", 404))
+        adapter = CouncilModelClientAdapter(llm, model_id="databricks-does-not-exist")
+        req = CritiqueRequest.from_finding(_rf("F1"))
+
+        # First critique hits the endpoint, fails permanently, degrades to KEEP.
+        v1 = asyncio.run(adapter.critique(req, seed=1))
+        assert v1 == (Verdict.KEEP, 0.0)
+        assert adapter.is_disabled is True
+        assert llm.json_calls == 1
+
+        # Every subsequent critique short-circuits: no further API calls.
+        v2 = asyncio.run(adapter.critique(req, seed=2))
+        assert v2 == (Verdict.KEEP, 0.0)
+        assert llm.json_calls == 1  # unchanged - no second network call
+
+    def test_transient_error_does_not_disable(self) -> None:
+        from starboard.tools.services.validator_council import (
+            CouncilModelClientAdapter,
+        )
+
+        llm = _FakeLLM(error=_FakeStatusError("temporarily down", 503))
+        adapter = CouncilModelClientAdapter(llm, model_id="databricks-flaky")
+        req = CritiqueRequest.from_finding(_rf("F1"))
+
+        asyncio.run(adapter.critique(req, seed=1))
+        assert adapter.is_disabled is False
+        asyncio.run(adapter.critique(req, seed=2))
+        assert llm.json_calls == 2  # transient errors keep trying each finding
+
+    def test_council_reports_disabled_models(self) -> None:
+        from starboard.tools.services.validator_council import (
+            CouncilModelClientAdapter,
+        )
+
+        dead = CouncilModelClientAdapter(
+            _FakeLLM(error=_FakeStatusError("nope", 404)),
+            model_id="databricks-dead",
+        )
+        alive = CouncilModelClientAdapter(
+            _FakeLLM(),
+            model_id="databricks-alive",
+        )
+        council = ValidatorCouncil(
+            [dead, alive], config=CouncilConfig(model_ids=("a", "b"), max_passes=1)
+        )
+        result = asyncio.run(council.review([_rf("F1"), _rf("F2")]))
+        assert result.disabled_model_ids == ("databricks-dead",)

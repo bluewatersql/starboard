@@ -31,7 +31,7 @@ live model in unit tests.
 from __future__ import annotations
 
 import os
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
@@ -39,6 +39,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from starboard_core.domain.models.review import ReviewFinding
 
 from starboard.infra.observability.logging import get_logger
+from starboard.infra.reliability.retry import is_permanent_error
 
 if TYPE_CHECKING:
     from starboard.adapters.llm.base import BaseLLMClient
@@ -225,6 +226,7 @@ class CouncilResult(BaseModel):
     max_passes: int = 0
     ensemble_size: int = 0
     candidate_count: int = 0
+    disabled_model_ids: tuple[str, ...] = ()
 
     @property
     def max_possible_calls(self) -> int:
@@ -310,24 +312,43 @@ class ValidatorCouncil:
         )
 
     async def review(
-        self, findings: Sequence[ReviewFinding]
+        self,
+        findings: Sequence[ReviewFinding],
+        *,
+        progress: Callable[[str], None] | None = None,
     ) -> CouncilResult:
         """Critique every candidate finding and partition kept vs. suppressed.
 
         Deterministic and bounded: input order is preserved and the total model
         calls never exceed :pyattr:`CouncilResult.max_possible_calls`.
+
+        ``progress``, when given, is called with a short human-readable status
+        string as each finding is validated (so a long council pass is not silent).
         """
         kept: list[ReviewFinding] = []
         suppressed: list[ReviewFinding] = []
         verdicts: list[FindingVerdict] = []
         total_calls = 0
 
-        for finding in findings:
+        total = len(findings)
+        if progress is not None and total:
+            progress(
+                f"validating {total} findings "
+                f"({self._config.ensemble_size} models, ≤{self._config.max_passes} passes)"
+            )
+        for index, finding in enumerate(findings, 1):
             verdict, calls = await self._decide_finding(finding)
             total_calls += calls
             verdicts.append(verdict)
             (kept if verdict.kept else suppressed).append(finding)
+            if progress is not None:
+                progress(f"validating findings… {index}/{total}")
 
+        disabled_model_ids = tuple(
+            client.model_id
+            for client in self._clients
+            if getattr(client, "is_disabled", False)
+        )
         result = CouncilResult(
             kept=tuple(kept),
             suppressed=tuple(suppressed),
@@ -336,6 +357,7 @@ class ValidatorCouncil:
             max_passes=self._config.max_passes,
             ensemble_size=self._config.ensemble_size,
             candidate_count=len(findings),
+            disabled_model_ids=disabled_model_ids,
         )
         logger.info(
             "validator_council_complete",
@@ -346,6 +368,7 @@ class ValidatorCouncil:
             max_possible_calls=result.max_possible_calls,
             ensemble_size=result.ensemble_size,
             max_passes=result.max_passes,
+            disabled_model_ids=list(disabled_model_ids),
         )
         return result
 
@@ -362,14 +385,25 @@ class CouncilModelClientAdapter:
     def __init__(self, llm_client: BaseLLMClient, *, model_id: str) -> None:
         self._llm = llm_client
         self._model_id = model_id
+        self._disabled = False
 
     @property
     def model_id(self) -> str:
         return self._model_id
 
+    @property
+    def is_disabled(self) -> bool:
+        """True once a permanent error retired this model for the run."""
+        return self._disabled
+
     async def critique(
         self, request: CritiqueRequest, *, seed: int  # noqa: ARG002 - protocol arg; determinism is via temperature=0
     ) -> tuple[Verdict, float]:
+        # A model retired by an earlier permanent failure short-circuits: no more
+        # network calls for the rest of the run. Degrades to KEEP so a dead model
+        # never silently hides a finding.
+        if self._disabled:
+            return (Verdict.KEEP, 0.0)
         messages = [
             {
                 "role": "system",
@@ -398,11 +432,22 @@ class CouncilModelClientAdapter:
                 temperature=0.0,
             )
         except Exception as exc:  # noqa: BLE001 - degrade safely, never hide a finding
-            logger.warning(
-                "council_model_call_failed",
-                model_id=self._model_id,
-                error=str(exc),
-            )
+            if is_permanent_error(exc):
+                # A nonexistent endpoint / denied auth will never recover — retire
+                # this model for the whole run instead of re-failing per finding.
+                self._disabled = True
+                logger.warning(
+                    "council_model_disabled",
+                    model_id=self._model_id,
+                    reason="permanent_error",
+                    error=str(exc),
+                )
+            else:
+                logger.warning(
+                    "council_model_call_failed",
+                    model_id=self._model_id,
+                    error=str(exc),
+                )
             return (Verdict.KEEP, 0.0)
         return _parse_verdict(raw)
 

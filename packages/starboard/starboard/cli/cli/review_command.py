@@ -25,7 +25,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
 import os
+import sys
+from collections.abc import Callable
 from datetime import UTC
 
 from rich.console import Console
@@ -195,7 +198,10 @@ def _build_validator(args: argparse.Namespace, config, err: Console):
 
 
 async def _run_review(
-    args: argparse.Namespace, workspace_label: str | None, err: Console
+    args: argparse.Namespace,
+    workspace_label: str | None,
+    err: Console,
+    progress: Callable[[str], None] | None = None,
 ):
     from starboard import WorkloadReviewService
     from starboard.bootstrap import AsyncDatabricksClient, AsyncSQLExecutor
@@ -215,10 +221,13 @@ async def _run_review(
     )
     async with client:
         if gate is None and validator is None:
-            review = await service.run(_parse_domains(args.domains))
+            review = await service.run(_parse_domains(args.domains), progress=progress)
             return review, None, None
         validated = await service.run_validated(
-            _parse_domains(args.domains), gate=gate, validator=validator
+            _parse_domains(args.domains),
+            gate=gate,
+            validator=validator,
+            progress=progress,
         )
         return validated.review, validated.gate, validated.council
 
@@ -304,8 +313,38 @@ def _write_snapshot(review, path: str) -> None:
         json.dump(snapshot.model_dump(mode="json"), fh, indent=2, default=str)
 
 
+def _route_logs_to_stderr() -> None:
+    """Send all logs to stderr so stdout carries only the review's own output.
+
+    ``starboard review`` is dispatched (``cli.cli.main.main``) *before* the agent
+    CLI's ``setup_cli_logging`` runs, so it inherits the ambient import-time
+    structlog config whose default ``PrintLoggerFactory`` writes to **stdout**.
+    Left unrouted, any WARNING/ERROR emitted mid-run (e.g. a dead council model)
+    lands on stdout and corrupts the ``--json`` envelope. Pinning the factory and
+    the stdlib stream to ``sys.stderr`` here keeps stdout reserved for the ranked
+    table or the JSON envelope.
+    """
+    import structlog
+
+    logging.basicConfig(
+        level=logging.WARNING, stream=sys.stderr, format="%(message)s", force=True
+    )
+    structlog.configure(
+        processors=[
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.add_log_level,
+            structlog.dev.ConsoleRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
+        cache_logger_on_first_use=False,
+    )
+
+
 def run_review(argv: list[str]) -> int:
     """Entry point for ``starboard review`` (returns a process exit code)."""
+    _route_logs_to_stderr()
     out = Console()
     err = Console(stderr=True)
 
@@ -320,10 +359,27 @@ def run_review(argv: list[str]) -> int:
 
     workspace_label = args.workspace or args.profile
 
+    # Immediate, unconditional startup line so the command never looks dead while
+    # it scans (a full multi-domain scan + council pass can run for minutes). The
+    # live spinner below updates per phase; both go to stderr so --json stdout
+    # stays a clean envelope.
+    scope = ", ".join(_parse_domains(args.domains))
+    target = f" ({workspace_label})" if workspace_label else ""
+    err.print(
+        f"[dim]Workload Review{target} — domains: {scope}"
+        + ("; validating findings" if args.validate else "")
+        + "…[/dim]"
+    )
+
     try:
-        review, gate_outcome, council = asyncio.run(
-            _run_review(args, workspace_label, err)
-        )
+        with err.status("Starting review…", spinner="dots") as status:
+
+            def _progress(message: str) -> None:
+                status.update(message)
+
+            review, gate_outcome, council = asyncio.run(
+                _run_review(args, workspace_label, err, progress=_progress)
+            )
     except KeyboardInterrupt:
         err.print("\n[yellow]Interrupted by user[/yellow]")
         return EXIT_API
@@ -376,6 +432,9 @@ def run_review(argv: list[str]) -> int:
                 "council_max_possible_calls": (
                     council.max_possible_calls if council else 0
                 ),
+                "council_disabled_models": (
+                    list(council.disabled_model_ids) if council else []
+                ),
             }
         if delta is not None:
             data["action_rate"] = delta.model_dump(mode="json")
@@ -391,6 +450,13 @@ def _render_validation(gate_outcome, council, console: Console) -> None:
     """Print a short validation summary when the D1c pipeline ran."""
     if gate_outcome is None and council is None:
         return
+    if council is not None and council.disabled_model_ids:
+        console.print(
+            "[yellow]! council models unreachable and skipped for this run: "
+            f"{', '.join(council.disabled_model_ids)}[/yellow] "
+            "[dim](check the endpoint names in "
+            "STARBOARD_REVIEW_COUNCIL_MODELS)[/dim]"
+        )
     parts: list[str] = []
     if gate_outcome is not None:
         parts.append(f"severity gate suppressed {gate_outcome.suppressed_count}")

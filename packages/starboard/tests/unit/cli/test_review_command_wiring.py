@@ -198,3 +198,74 @@ class TestMaxPassesCeilingFromEnv:
         # For 1 finding the ceiling is 6.
         assert result._config.max_passes == 3
         assert result._config.ensemble_size == 2
+
+
+@pytest.mark.unit
+class TestRenderDisabledModels:
+    """The CLI surfaces council models retired by a permanent error."""
+
+    def test_render_validation_names_disabled_models(self) -> None:
+        import io
+
+        from starboard.cli.cli.review_command import _render_validation
+        from starboard.tools.services.validator_council import CouncilResult
+
+        council = CouncilResult(
+            total_model_calls=150,
+            max_passes=3,
+            ensemble_size=3,
+            candidate_count=50,
+            disabled_model_ids=("databricks-claude-opus-4-8m",),
+        )
+        buf = io.StringIO()
+        _render_validation(None, council, Console(file=buf, width=200))
+        out = buf.getvalue()
+        assert "unreachable" in out
+        assert "databricks-claude-opus-4-8m" in out
+
+    def test_render_validation_silent_when_no_disabled_models(self) -> None:
+        import io
+
+        from starboard.cli.cli.review_command import _render_validation
+        from starboard.tools.services.validator_council import CouncilResult
+
+        council = CouncilResult(
+            total_model_calls=9,
+            max_passes=1,
+            ensemble_size=3,
+            candidate_count=3,
+        )
+        buf = io.StringIO()
+        _render_validation(None, council, Console(file=buf, width=200))
+        assert "unreachable" not in buf.getvalue()
+
+
+@pytest.mark.unit
+class TestReviewLogRouting:
+    """`review` is dispatched before the agent CLI's logging setup, so it must
+    route its own logs to stderr — stdout is reserved for the table / --json."""
+
+    @pytest.fixture
+    def _restore_structlog(self):
+        """Snapshot and restore global structlog config so this test — which
+        deliberately reconfigures logging — never leaks that config (or the
+        capsys-captured stderr it binds) into later tests in the session."""
+        import structlog
+
+        saved = structlog.get_config().copy()
+        try:
+            yield
+        finally:
+            structlog.configure(**saved)
+
+    def test_logs_go_to_stderr_not_stdout(self, capsys, _restore_structlog) -> None:
+        import structlog
+        from starboard.cli.cli.review_command import _route_logs_to_stderr
+
+        _route_logs_to_stderr()
+        structlog.get_logger("test.review.routing").warning(
+            "leak_probe_event", detail="x"
+        )
+        captured = capsys.readouterr()
+        assert "leak_probe_event" in captured.err
+        assert "leak_probe_event" not in captured.out

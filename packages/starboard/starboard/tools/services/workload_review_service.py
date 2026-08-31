@@ -36,7 +36,7 @@ over the ``billing`` / ``jobs`` packs; the default scope
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from pydantic import BaseModel, ConfigDict
 from starboard_core.domain.models.discovery.query import (
@@ -184,11 +184,19 @@ class WorkloadReviewService:
             queries=tuple(collected[qid] for qid in sorted(collected)),
         )
 
-    async def run(self, domains: Sequence[str] | None = None) -> WorkloadReview:
+    async def run(
+        self,
+        domains: Sequence[str] | None = None,
+        *,
+        progress: Callable[[str], None] | None = None,
+    ) -> WorkloadReview:
         """Execute the review and return a ranked, evidence-cited result.
 
         Degrades gracefully: an evidence query that errors marks its domain
         degraded (partial findings) rather than failing the whole review.
+
+        ``progress``, when given, is called with a short human-readable status
+        string at each phase boundary so a long scan is not silent.
         """
         resolved = self._resolve_domains(domains)
         needed = self._needed_evidence_query_ids(resolved)
@@ -197,6 +205,11 @@ class WorkloadReviewService:
         failed_query_ids: set[str] = set()
 
         if needed:
+            if progress is not None:
+                progress(
+                    f"scanning {len(needed)} evidence queries "
+                    f"across {len(resolved)} domains ({', '.join(resolved)})"
+                )
             evidence_pack = self._build_evidence_pack(needed)
             executor = QueryPackExecutor(
                 self._sql_executor,
@@ -227,6 +240,9 @@ class WorkloadReviewService:
             workspace=self._workspace,
         )
 
+        if progress is not None:
+            progress(f"scan complete: {review.finding_count} candidate findings")
+
         logger.info(
             "workload_review_complete",
             domains=resolved,
@@ -243,6 +259,7 @@ class WorkloadReviewService:
         *,
         gate: SeverityGate | None = None,
         validator: ValidatorCouncil | None = None,
+        progress: Callable[[str], None] | None = None,
     ) -> ValidatedReview:
         """Run a review, then optionally gate + council-validate its findings.
 
@@ -261,17 +278,22 @@ class WorkloadReviewService:
             A :class:`ValidatedReview` whose ``review.findings`` are the
             survivors, with the gate/council decisions attached.
         """
-        review = await self.run(domains)
+        review = await self.run(domains, progress=progress)
 
         candidates = list(review.findings)
         gate_outcome: GateOutcome | None = None
         if gate is not None:
             gate_outcome = apply_severity_gate(candidates, gate)
             candidates = list(gate_outcome.kept)
+            if progress is not None:
+                progress(
+                    f"severity gate: {len(candidates)} of "
+                    f"{review.finding_count} findings kept"
+                )
 
         council_result: CouncilResult | None = None
         if validator is not None:
-            council_result = await validator.review(candidates)
+            council_result = await validator.review(candidates, progress=progress)
             candidates = list(council_result.kept)
 
         final_review = review.model_copy(update={"findings": tuple(candidates)})
