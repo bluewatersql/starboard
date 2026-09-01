@@ -275,7 +275,11 @@ LIMIT {result_limit}
 # pattern that powers deeper stream SLA analysis, deferred to a future wave).
 CRS_05_SQL = """\
 WITH latest_pipeline AS (
-  SELECT pipeline_id, name, delete_time
+  SELECT
+    pipeline_id,
+    name,
+    delete_time,
+    settings.continuous                                        AS is_continuous
   FROM system.lakeflow.pipelines
   QUALIFY ROW_NUMBER() OVER (
     PARTITION BY pipeline_id ORDER BY create_time DESC
@@ -293,10 +297,10 @@ run_stats AS (
   SELECT
     pipeline_id,
     COUNT(*)                                                   AS update_count,
-    COUNT_IF(state = 'COMPLETED')                             AS succeeded_updates,
-    COUNT_IF(state = 'FAILED')                                AS failed_updates,
+    COUNT_IF(result_state = 'COMPLETED')                      AS succeeded_updates,
+    COUNT_IF(result_state = 'FAILED')                         AS failed_updates,
     ROUND(
-      COUNT_IF(state = 'COMPLETED') * 100.0
+      COUNT_IF(result_state = 'COMPLETED') * 100.0
         / NULLIF(COUNT(*), 0),
       1
     )                                                          AS success_rate_pct
@@ -309,8 +313,8 @@ SELECT
   p.name                                                       AS pipeline_name,
   t.trigger_type                                               AS latest_trigger_type,
   CASE
-    WHEN t.trigger_type = 'CONTINUOUS'              THEN 'CONTINUOUS'
-    WHEN t.trigger_type IN ('MANUAL', 'CRON')       THEN 'TRIGGERED'
+    WHEN p.is_continuous IS TRUE                    THEN 'CONTINUOUS'
+    WHEN p.is_continuous IS FALSE                   THEN 'TRIGGERED'
     ELSE                                                 'UNKNOWN'
   END                                                          AS streaming_class,
   r.update_count,
@@ -688,17 +692,23 @@ cluster_dir AS (
 ),
 job_workloads AS (
   SELECT
-    t.workspace_id,
+    e.workspace_id,
     'JOB'                                                      AS workload_type,
-    t.job_id                                                   AS workload_id,
-    MAX(cd.sizing_direction)                                   AS sizing_direction,
+    e.job_id                                                   AS workload_id,
+    MAX_BY(cd.sizing_direction, cd.priority_score)             AS sizing_direction,
     MAX(cd.priority_score)                                     AS priority_score
-  FROM system.lakeflow.job_task_run_timeline t
-  LATERAL VIEW EXPLODE(t.compute_ids) cv AS cluster_id
+  FROM (
+    -- Explode the per-task cluster array in a subquery: a LATERAL VIEW cannot be
+    -- directly followed by a JOIN in the same FROM clause (PARSE_SYNTAX_ERROR).
+    SELECT workspace_id, job_id, cluster_id
+    FROM system.lakeflow.job_task_run_timeline
+    LATERAL VIEW EXPLODE(compute_ids) ct AS cluster_id
+    WHERE period_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP())
+      AND compute_ids IS NOT NULL
+  ) e
   JOIN cluster_dir cd
-    ON t.workspace_id = cd.workspace_id AND cv.cluster_id = cd.cluster_id
-  WHERE t.period_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP())
-  GROUP BY t.workspace_id, t.job_id
+    ON e.workspace_id = cd.workspace_id AND e.cluster_id = cd.cluster_id
+  GROUP BY e.workspace_id, e.job_id
 ),
 pipeline_workloads AS (
   SELECT

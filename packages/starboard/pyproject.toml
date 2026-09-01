@@ -31,7 +31,11 @@ dependencies = [
     "tiktoken>=0.12.0",
     # Data processing
     "polars>=1.17.0,<2.0.0",
-    "pyarrow>=18.0.0,<20.0.0", # Required for Arrow format with Databricks + Polars integration
+    # Arrow IPC decode (`pa.ipc.open_stream`) for Databricks + Polars. Keep the
+    # ceiling at/above the DBR-shipped pyarrow (DBR 17.x ships 21) so a notebook
+    # `%pip install` never *downgrades* the runtime's Arrow — a downgrade breaks
+    # PySpark's Arrow conversions. Only the stable `pa.ipc` API is used.
+    "pyarrow>=18.0.0,<22.0.0",
     "numpy>=1.24.0,<3.0.0",
     "sqlglot>=27.29.0,<28.0.0",
     # Data visualization (FinOps charts)

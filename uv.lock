@@ -3947,7 +3947,7 @@ requires-dist = [
     { name = "polars", specifier = ">=1.17.0,<2.0.0" },
     { name = "prometheus-client", marker = "extra == 'observability'", specifier = ">=0.19.0" },
     { name = "protobuf", specifier = ">=5.29.5,<6.0.0" },
-    { name = "pyarrow", specifier = ">=18.0.0,<20.0.0" },
+    { name = "pyarrow", specifier = ">=18.0.0,<22.0.0" },
     { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
     { name = "pydantic-settings", specifier = ">=2.0.0,<3.0.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.4.2" },
