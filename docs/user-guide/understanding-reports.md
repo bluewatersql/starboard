@@ -233,8 +233,7 @@ over **public `system.*` data only**. Instead of a free-form narrative, it retur
 
 **Key things to know:**
 
-- Use `--validate` to gate findings through the validator council, and `--min-severity`
-  / `--min-score` to suppress low-signal items.
+- Use `--min-severity` / `--min-score` to suppress low-signal items.
 - The review is **read-only** — it never writes back to your workspace.
 - Use `--snapshot-out` then `--since` on a later run to see the **resolved-rate delta**
   (how many findings you've fixed).

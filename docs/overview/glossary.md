@@ -53,9 +53,6 @@ status: current
 **Finding**
 : A specific issue or observation identified during analysis, backed by evidence from tool outputs. In Workload Review, each finding carries a severity, an impact/effort priority score, a suggested fix, and an evidence citation (the query-pack `query_id` + the row that triggered it).
 
-**Genie ask**
-: The `starboard genie ask "<question>"` command, which turns a natural-language question into SQL over the public workspace data (the `NLQueryPort`) and explains it.
-
 **Intent Router**
 : The framework agent that classifies user requests and dispatches them to the appropriate domain specialist using a hybrid pattern-matching and LLM classification approach.
 
@@ -78,7 +75,7 @@ status: current
 : A curated, versioned set of SQL queries over public `system.*` tables. Discovery and Workload Review run query packs to gather evidence; findings cite the pack `query_id` and the row that triggered them.
 
 **Reference Files (RAG)**
-: The default analytics-context source — curated on-disk domain reference files (`starboard_core/rag/knowledge/domains/*.md`) plus query packs. This is the default RAG path (`vector_backend="none"`); no embeddings or vector database are used unless a vector backend is explicitly enabled.
+: The analytics-context source — curated on-disk domain reference files (`starboard_core/rag/knowledge/domains/*.md`) plus query packs. No embeddings or vector database are used.
 
 **Reasoning Loop**
 : The iterative cycle where an agent calls the LLM, evaluates the response, executes a tool, and decides whether to continue or complete.
@@ -170,10 +167,10 @@ status: current
 : The data access pattern used for state management, providing abstract interfaces with pluggable implementations (SQLite, Postgres, Lakebase, InMemory, Redis).
 
 **Semantic Cache**
-: Starboard's response cache. By default it runs **TTL-only** (exact-key) with no vector dependency. A similarity-based semantic cache is opt-in and is selected only when a real `vector_backend` is configured.
+: Starboard's response cache. It runs **TTL-only** (exact-key) with no vector dependency. Redis is an opt-in cache backend (`starboard[redis]`).
 
 **Workload Review**
-: The `starboard review` flagship — a ranked, evidence-cited review of a workspace's jobs, SQL, and warehouses over public `system.*` data only. Findings are scored against a rule registry, optionally gated by a validator council (`--validate`), and are read-only (the Action-Rate loop re-scans; it never writes back).
+: The `starboard review` flagship — a ranked, evidence-cited review of a workspace's jobs, SQL, and warehouses over public `system.*` data only. Findings are scored against a rule registry and filtered by the **severity gate** (`--min-severity` / `--min-score`). The review is read-only: it never writes back to your workspace.
 
 **Service Layer**
 : The middle layer in the three-layer tool architecture, responsible for orchestrating adapters, composing operations, and handling errors.

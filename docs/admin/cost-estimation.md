@@ -165,16 +165,16 @@ LLM_MODEL=gpt-4o-mini
 | GPT-4o-mini for all agents | Moderate (less detailed analysis) | 80--90% |
 | Mix: mini for router, 4o for agents | None | 5--10% |
 
-### 2. Semantic Caching (Saves 10--30%)
+### 2. TTL Caching (Saves 10--30%)
 
-Enable semantic caching to reuse results for similar queries:
+Starboard caches tool results by default with a 5-minute TTL. When identical tool calls
+are made within the TTL window, the cached result is returned without an LLM call. Enable
+Redis for a shared cache across replicas:
 
 ```bash
-ENABLE_SEMANTIC_CACHE=true
-SEMANTIC_CACHE_THRESHOLD=0.95   # Similarity threshold (0.0--1.0)
+CACHE_BACKEND=redis
+REDIS_URL=redis://localhost:6379
 ```
-
-When a user asks a question similar to a recent one, the cached result is returned without an LLM call. The default TTL is 5 minutes for tool results.
 
 ### 3. Token Budget Limits (Prevents Spikes)
 

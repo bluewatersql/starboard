@@ -23,13 +23,13 @@ probes and an optional MCP HTTP mount — it is **not** a chat/REST API.
 2. **In-process event stream**: typed reasoning/tool/output events surfaced to the
    CLI/SDK (not an HTTP SSE endpoint).
 3. **Tool Execution**: three-layer tools + the `starboard.mcp_tools` plugin seam.
-4. **Workload Review**: the `WorkloadReviewService` + validator council over public
+4. **Workload Review**: the `WorkloadReviewService` + severity gate over public
    `system.*` data.
 5. **Ports + internal-data gate**: public port adapters + the `starboard.port_adapters`
    contract (internal adapters registered only by `starboard-internal`, closed by default).
 6. **Public API facade**: `starboard/__init__.py` re-exports a curated API (PEP 562) that
    the CLI composes instead of reaching into internals.
-7. **State + external integration**: pluggable state backends, Databricks API, LLM adapters.
+7. **State + external integration**: in-memory state (default) + Redis cache (opt-in), Databricks API, LLM adapters.
 
 ### Design Philosophy
 
@@ -104,7 +104,7 @@ starboard/
 │   │   ├── domain/             # Business logic (no I/O): query/job/uc/cluster/
 │   │   │                       #   warehouse/analytics/discovery/diagnostic/...
 │   │   ├── services/           # Orchestration + WorkloadReviewService,
-│   │   │                       #   validator_council, direct_chart_builder
+│   │   │                       #   direct_chart_builder
 │   │   ├── adapters/           # LLM-facing tool adapters
 │   │   └── plugins.py          # ToolPlugin contract (starboard.mcp_tools seam)
 │   │
@@ -117,7 +117,7 @@ starboard/
 │   │   ├── llm/                # LLM clients (multi-provider)
 │   │   ├── apis/databricks/    # Databricks API client
 │   │   ├── ports/              # Public port adapters (analytics_sql, ...)
-│   │   └── state/              # State backends: sqlite/postgres/inmemory/redis/lakebase
+│   │   └── state/              # State backends: inmemory/redis
 │   │
 │   ├── infra/                  # Config, DI, caching, observability, auth, reliability
 │   ├── prompts/                # Domain + router prompts
@@ -347,14 +347,13 @@ agent's typed event stream is delivered **in-process** to the CLI/SDK.
 Primary entrypoints:
 
 - **`starboard`** (`cli/main.py:main`) — flag-based CLI + subcommands `review`,
-  `genie ask`, `auth {login,status}`.
+  `auth {login,status}`.
 - **`starboard-mcp`** (`mcp/cli.py:main`) — stdio MCP server.
 - **`starboard-server`** (`main.py:run`) — the minimal FastAPI process.
 
 The public API facade (`starboard/__init__.py`) is what the CLI composes:
 `get_logger`, `describe_auth`, `resolve_workspace_client`, `create_llm_client`,
-`AnalyticsSqlAdapter`, `LLMSQLGenerator`, `CouncilConfig`, `build_council`,
-`WorkloadReviewService`.
+`AnalyticsSqlAdapter`, `LLMSQLGenerator`, `WorkloadReviewService`.
 
 ---
 
@@ -363,9 +362,8 @@ The public API facade (`starboard/__init__.py`) is what the CLI composes:
 `WorkloadReviewService` (`tools/services/workload_review_service.py`) orchestrates the
 Phase-3 flagship: it resolves rules from the kernel `RuleRegistry`, runs only the
 evidence query-pack queries those rules need (`discovery/executor.py`), and hands rows
-to the pure kernel evaluator that returns a ranked `WorkloadReview`. Optional gates: a
-pure severity gate and the model-calling `ValidatorCouncil`
-(`tools/services/validator_council.py`, `CouncilConfig`/`build_council`). See
+to the pure kernel evaluator that returns a ranked `WorkloadReview`. Optional gate: a
+pure severity threshold (`--min-severity` / `--min-score`). See
 [System Architecture → Workload Review](../../architecture/SYSTEM_ARCHITECTURE.md#workload-review).
 
 ---
@@ -430,31 +428,17 @@ class CachedDatabricksAPI:
 
 #### State Adapters (`adapters/state/`)
 
-Multiple storage backends:
-
-**SQLite** (`sqlite/`):
-- Embedded database
-- sqlite-vec for vector similarity
-- Fast, local development
-
-**PostgreSQL** (`postgres/`):
-- Production backend
-- pgvector extension
-- Migrations with SQL files
-
-**Redis** (`redis/`):
-- Session cache
-- Rate limiting
-- TTL-based expiry
-
-**Databricks Lakebase** (`databricks/`):
-- Postgres-compatible
-- OAuth token refresh
-- Delta Lake storage
+State storage:
 
 **In-Memory** (`inmemory/`):
-- Testing only
-- No persistence
+- The only state backend
+- Dictionary-based, no persistence
+- No external driver required
+
+**Redis** (`redis/`):
+- Optional cache backend (`CACHE_BACKEND=redis`)
+- TTL-based expiry
+- Shared across replicas
 
 ---
 
@@ -527,8 +511,7 @@ Cross-cutting concerns.
 class AppConfig:
     """Application configuration."""
     environment: str
-    database_backend: str
-    database_url: str
+    database_backend: str  # always "memory"
     databricks_host: str
     openai_api_key: str
     # 30+ fields
@@ -728,11 +711,8 @@ class ConversationRepository:
 Pluggable implementations:
 
 ```python
-# Different state backends
-state_store: StateStore = (
-    SQLiteStateStore() if dev_mode
-    else PostgresStateStore()
-)
+# State is always in-memory; the factory always returns InMemoryStateStore
+state_store: StateStore = InMemoryStateStore()
 ```
 
 ### 5. Chain of Responsibility
@@ -761,9 +741,8 @@ await handoff_coordinator.request_handoff(
 
 **Optional**:
 - `DATABRICKS_WAREHOUSE_ID`: SQL Warehouse ID (auto-resolves from workspace default if not set)
-- `DATABASE_BACKEND`: memory|sqlite|postgres|lakebase|uc (default: **memory**)
-- `DATABASE_URL`: Connection string (postgres/lakebase)
-- `REDIS_URL`: Redis connection
+- `DATABASE_BACKEND`: `memory` (only option)
+- `REDIS_URL`: Redis connection (for `CACHE_BACKEND=redis`)
 - `LOG_LEVEL`: DEBUG|INFO|WARNING|ERROR (default: INFO)
 - `PORT`: Server port (default: 8000)
 

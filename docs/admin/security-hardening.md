@@ -70,11 +70,7 @@ All external-facing endpoints must use TLS 1.2 or later.
 
 1. **Load balancer / reverse proxy**: Terminate TLS at the load balancer (e.g., nginx, Caddy, ALB).
 2. **Backend**: The FastAPI backend listens on HTTP internally. Do not expose port 8000 directly to the internet.
-3. **Database connections**: Use `sslmode=require` for PostgreSQL connections:
-   ```
-   DATABASE_URL=postgres://user:pass@host:5432/db?sslmode=require
-   ```
-4. **Redis**: Use TLS-enabled Redis (e.g., `rediss://` scheme) in production:
+3. **Redis**: Use TLS-enabled Redis (e.g., `rediss://` scheme) in production:
    ```
    REDIS_URL=rediss://user:pass@host:6380
    ```
@@ -148,8 +144,7 @@ Secrets are stored in environment variables. Never commit them to source control
 |--------|---------------------|-------------------|
 | Databricks token | `DATABRICKS_TOKEN` | Every 90 days |
 | LLM API key | `LLM_API_KEY` | Every 90 days |
-| Database password | `DATABASE_URL` (embedded) | Every 90 days |
-| Redis password | `REDIS_URL` (embedded) | Every 90 days |
+| Redis password | `REDIS_URL` (embedded) | Every 90 days (Redis cache only) |
 
 ### Secret Storage Options
 
@@ -200,18 +195,15 @@ The agent system processes user prompts that may contain sensitive data. Mitigat
 
 ## Rate Limiting and Abuse Prevention
 
-### Built-in Rate Limiting
+### Rate Limiting
 
-Starboard includes a rate limiter configured via environment variables:
+Application-level rate limiting is not wired up in the current release. Use upstream network-layer rate limiting (load balancer, API gateway) for production deployments.
 
 ```bash
-RATE_LIMIT_ENABLED=true
-RATE_LIMIT_STORAGE=redis://localhost:6379   # Use Redis for multi-instance
-RATE_LIMIT_DEFAULT=100/minute               # Default limit
 MAX_REQUEST_SIZE=10485760                   # 10 MB max request body
 ```
 
-### Recommended Limits
+### Recommended Upstream Limits
 
 | Endpoint | Recommended Limit | Rationale |
 |----------|-------------------|-----------|
@@ -351,10 +343,9 @@ Complete this checklist before deploying to production:
 - [ ] PII detection enabled for regulated environments
 - [ ] LLM provider data policies reviewed and documented
 
-### Rate Limiting
+### Request Limits
 
-- [ ] `RATE_LIMIT_ENABLED=true`
-- [ ] Per-endpoint rate limits configured
+- [ ] Upstream rate limiting configured (load balancer / API gateway)
 - [ ] Token budget (`LLM_MAX_TOKENS`) set appropriately
 - [ ] Max request size limited (`MAX_REQUEST_SIZE`)
 

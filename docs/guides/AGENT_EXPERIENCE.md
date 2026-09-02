@@ -56,7 +56,7 @@ opt-in thin wheels discovered through an entry-point group.
 1. **Inside a chat host (Claude Code / Cursor / Claude Desktop)?** Use the
    **skill** for the domain — it picks the best available path for you.
 2. **At a terminal or in a pipeline?** Use a **CLI command**
-   (`starboard review`, `starboard genie ask`, `starboard --goal …`).
+   (`starboard review`, `starboard --discover`, `starboard --goal …`).
 3. **Want a whole-domain report with server-side reasoning?** Invoke the
    domain **agent** (`mcp__starboard__<domain>_agent`).
 4. **Orchestrating steps yourself?** Call individual **MCP tools** by name.

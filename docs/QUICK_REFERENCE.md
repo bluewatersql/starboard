@@ -20,9 +20,8 @@ pip install starboard-core     # kernel + `python -m starboard_x.<cap>` middle t
 pip install starboard-skills   # skills tree + `starboard-helper` (Claude Code/Cursor)
 ```
 
-The default install pulls **no** store/vector drivers. Opt in only if you change a
-backend: `starboard[sqlite]`, `starboard[postgres]`, `starboard[vectorsearch]`,
-`starboard-kernel[discovery]`, etc.
+The default install pulls **no** store drivers. The Redis cache backend is opt-in:
+`starboard[redis]`.
 
 ---
 
@@ -38,19 +37,16 @@ export LLM_API_KEY="<your-api-key>"
 
 ---
 
-## The three flagship surfaces
+## The two deterministic surfaces
 
 ```bash
 # 1. Workload Review — ranked, evidence-cited findings over public system.* data
 starboard review                          # domains: jobs,sql,warehouse (default)
 starboard review --domains warehouse,sql --lookback-days 60
-starboard review --validate               # gate findings through the validator council
+starboard review --min-severity high      # suppress low-signal findings
 starboard review --json                   # JSON envelope
 
-# 2. genie ask — natural language → SQL over public workspace data
-starboard genie ask "why did spend spike last week?"
-
-# 3. Workspace discovery — 30/60/90-day health assessment
+# 2. Workspace discovery — 30/60/90-day health assessment
 starboard --discover
 starboard --discover --lookback-days 90 --discovery-domains jobs warehouse
 starboard --discover --data-only          # skip LLM analysis, raw data only
@@ -120,10 +116,9 @@ Full reference: [Configuration Guide](CONFIGURATION.md).
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| State backend | `memory` | Durable option is UC-native (`uc`); `sqlite`/`postgres`/`lakebase` are extras |
-| Vector backend | `none` | Analytics context = curated reference files + query packs, not embeddings |
-| Semantic cache | TTL-only | Similarity cache is opt-in behind a real `vector_backend` |
-| Reflexion | off | Opt-in behind `starboard[sqlite]` / `[vectorsearch]` |
+| State backend | `memory` | Only option; no external database. CLI session persistence via JSON-file `SessionManager` |
+| Analytics context | curated reference files + query packs | No embeddings, no vector database |
+| Cache | TTL-only in-memory | Redis opt-in via `starboard[redis]` |
 | `$` figures | list-price DBU estimates | Public path only; labelled everywhere |
 
 ---

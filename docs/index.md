@@ -6,7 +6,7 @@ Welcome to the Starboard AI Agent documentation — an AI-powered analysis and o
 
 Starboard runs from the **command line** (and from AI coding assistants via skills). It uses **domain-specialized AI agents** that reason step-by-step, dynamically select tools, and stream live progress in the terminal. Ask questions in natural language and get actionable recommendations for SQL queries, jobs, pipelines, costs, and infrastructure.
 
-Beyond free-form goals, Starboard ships three high-signal, deterministic surfaces over public `system.*` data: **Workload Review** (`starboard review`), **`genie ask`** (natural language → SQL), and **workspace discovery** (`starboard --discover`).
+Beyond free-form goals, Starboard ships two high-signal, deterministic surfaces over public `system.*` data: **Workload Review** (`starboard review`) and **workspace discovery** (`starboard --discover`).
 
 ```mermaid
 %%{init: {'theme':'default', 'themeVariables': {'fontSize':'16px'}}}%%
@@ -68,7 +68,7 @@ graph TB
 | **Get running in 5 minutes** | [Quickstart](QUICKSTART.md) |
 | **Use the CLI** | [CLI Reference](user-guide/cli.md) |
 | **Run a Workload Review** | [Understanding Reports](user-guide/understanding-reports.md) |
-| **Ask a question in SQL (`genie ask`)** | [CLI Reference](user-guide/cli.md) |
+| **Ask a question (agent `--goal`)** | [CLI Reference](user-guide/cli.md) |
 | **Discover a workspace (`--discover`)** | [Workspace Discovery Workflow](user-guide/workflows/workspace-discovery.md) |
 | **Optimize a slow query** | [Query Optimization Workflow](user-guide/workflows/query-optimization.md) |
 | **Debug a failing job** | [Job Debugging Workflow](user-guide/workflows/job-debugging.md) |

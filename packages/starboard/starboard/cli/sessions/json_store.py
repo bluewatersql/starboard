@@ -12,8 +12,8 @@ This module provides the storage primitives used by :class:`SessionManager`:
   ``<base_dir>/<conversation_id>.json``. Passing ``base_dir=None`` keeps
   everything in memory (used for the ``":memory:"`` CLI mode and tests).
 
-No ``aiosqlite`` / ``SQLiteStateStore`` dependency — this keeps the thin CLI
-off the SQLite hot path (Phase 2 C3, decision D-2.8).
+No database-driver dependency — this keeps the thin CLI off any SQL hot path
+(Phase 2 C3, decision D-2.8).
 """
 
 from __future__ import annotations

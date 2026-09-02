@@ -5,9 +5,8 @@ Starboard AI Agent uses **8 domain-specialized agents**, each with dedicated too
 !!! note "Agents power free-form goals"
     The multi-agent loop below runs for `starboard --goal "…"` and `starboard --chat`.
     For quick, deterministic answers over public `system.*` data, Starboard also ships
-    three direct surfaces that do not require the full agent loop:
-    **`starboard review`** (Workload Review), **`starboard genie ask`** (NL → SQL), and
-    **`starboard --discover`** (workspace discovery).
+    two direct surfaces that do not require the full agent loop:
+    **`starboard review`** (Workload Review) and **`starboard --discover`** (workspace discovery).
 
 ---
 

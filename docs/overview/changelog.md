@@ -20,8 +20,8 @@ user-facing capabilities of the current shipped design (Phases 0–3).
 ### Entry points
 - **`starboard` CLI** — flag-based natural-language goals (`--goal`), interactive
   `--chat`, named `--session`s, and workspace discovery (`--discover`).
-- **Subcommands** — `starboard review` (Workload Review), `starboard genie ask`
-  (NL → SQL), `starboard auth {login,status}` (SDK-delegated auth).
+- **Subcommands** — `starboard review` (Workload Review),
+  `starboard auth {login,status}` (SDK-delegated auth).
 - **Middle tier** — `python -m starboard_x.<capability>` for
   `diagnostic`, `discovery`, `review`, `sparklog`, `uc`, and `warehouse`.
 - **Skills** — 10 canonical skills for Claude Code / Cursor (`starboard-skills`).
@@ -29,20 +29,17 @@ user-facing capabilities of the current shipped design (Phases 0–3).
 
 ### Flagship analyses (public `system.*` data)
 - **Workload Review** — ranked, evidence-cited findings over jobs, SQL, and
-  warehouses; rule-registry scoring, an optional validator council (`--validate`),
-  a severity gate, and a read-only Action-Rate re-scan (`--since`/`--snapshot-out`).
-- **`genie ask`** — natural-language questions answered with generated SQL.
+  warehouses; rule-registry scoring, a severity gate (`--min-severity` /
+  `--min-score`), and a read-only Action-Rate re-scan (`--since`/`--snapshot-out`).
 - **Workspace discovery** — 30/60/90-day workspace health assessment with graded
   domain report cards.
 
 ### Defaults
-- **Store-free by default** — `database_backend="memory"`; the durable option is
-  UC-native (`uc`). `sqlite`/`postgres`/`lakebase` are opt-in extras.
-- **Reference-file RAG** — `vector_backend="none"`; analytics context comes from
-  curated reference files + query packs. Managed Databricks Vector Search is opt-in
-  behind `starboard[vectorsearch]`.
-- **TTL semantic cache** — no vector dependency by default; reflexion is off by
-  default (opt-in behind a vector-store extra).
+- **Memory-only state** — `database_backend="memory"` is the only value; no
+  external database. Durable CLI session persistence via JSON-file `SessionManager`.
+- **Reference-file analytics context** — analytics context comes from curated
+  reference files + query packs; no embeddings, no vector database.
+- **TTL cache** — exact-key TTL cache by default; Redis opt-in via `starboard[redis]`.
 - **Auth by subtraction** — one resolver delegates to the Databricks SDK credential
   chain; `--profile`/ambient credentials work, and a PAT is optional.
 
@@ -61,8 +58,7 @@ user-facing capabilities of the current shipped design (Phases 0–3).
 
 8 domain agents (Query, Job, UC, Cluster, Analytics, Warehouse, Discovery,
 Diagnostic) plus the Intent Router. `--goal` and `--chat` run the multi-agent
-conversation; `review`, `genie ask`, and `--discover` are deterministic public-data
-paths.
+conversation; `review` and `--discover` are deterministic public-data paths.
 
 ---
 

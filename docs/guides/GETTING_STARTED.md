@@ -62,11 +62,9 @@ starboard --help
 | `pip install starboard-core` | Pure kernel + the `starboard_x` middle-tier helpers (`python -m starboard_x.<cap>`). Lightweight. |
 | `pip install starboard-skills` | Canonical skills tree + `starboard-helper` (for Claude Code / Cursor). |
 
-Store and vector drivers are **opt-in extras**, only needed if you switch away from the
-defaults, e.g. `pip install 'starboard[sqlite]'`, `'starboard[postgres]'`,
-`'starboard[vectorsearch]'`, or `'starboard-kernel[discovery]'`. If a backend needs a
-driver you have not installed, Starboard raises an actionable `pip install …` error
-telling you exactly which extra to add.
+The Redis cache backend is an **opt-in extra**: `pip install 'starboard[redis]'`.
+If a backend needs a driver you have not installed, Starboard raises an actionable
+`pip install …` error telling you exactly which extra to add.
 
 ---
 
@@ -121,12 +119,6 @@ starboard review --json                   # machine-readable envelope
 
 Every finding cites the query pack and row that triggered it. Cost-based findings are
 **list-price DBU estimates**, labelled as such.
-
-### Ask a question in natural language (NL → SQL)
-
-```bash
-starboard genie ask "which warehouses cost the most last month?"
-```
 
 ### Discover your whole workspace
 

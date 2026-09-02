@@ -28,7 +28,7 @@ Starboard AI Agent is an AI-powered analysis and optimization platform for Datab
 
 ### How does it work?
 
-When you run `starboard --goal "…"` or `--chat`, an **Intent Router** classifies your request and dispatches it to the appropriate domain agent. That agent reasons about your question, selects tools dynamically to gather real data from Databricks APIs, analyzes the results, and streams progress to your terminal as it works. Starboard also ships three deterministic, public-data surfaces — `starboard review` (Workload Review), `starboard genie ask` (NL → SQL), and `starboard --discover` (workspace discovery) — that answer common questions without the full agent loop.
+When you run `starboard --goal "…"` or `--chat`, an **Intent Router** classifies your request and dispatches it to the appropriate domain agent. That agent reasons about your question, selects tools dynamically to gather real data from Databricks APIs, analyzes the results, and streams progress to your terminal as it works. Starboard also ships two deterministic, public-data surfaces — `starboard review` (Workload Review) and `starboard --discover` (workspace discovery) — that answer common questions without the full agent loop. Natural-language SQL questions are served by the agent loop via `--goal` or `--chat`.
 
 ### Who is it for?
 
@@ -197,9 +197,7 @@ Response times depend on the number of tool calls, LLM model speed, and network 
 
 ### A backend needs a driver I don't have installed
 
-The default install is store-free. If you switch to a durable state backend or a vector
-backend, Starboard raises an actionable error naming the extra to install, e.g.
-`pip install 'starboard[sqlite]'`, `'starboard[postgres]'`, or `'starboard[vectorsearch]'`.
+The default install is store-free (memory-only state, no vector database). If you switch to the Redis cache backend, Starboard raises an actionable error naming the extra to install: `pip install 'starboard[redis]'`.
 
 ### How do I enable debug logging?
 

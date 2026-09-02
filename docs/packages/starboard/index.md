@@ -19,12 +19,12 @@ The primary backend package providing the multi-agent system, MCP server, CLI, a
 
 - **Multi-Agent System**: 8 domain agents + Intent Router with continuous reasoning
 - **MCP Server**: stdio + streamable-HTTP transports (`starboard-mcp` entry point)
-- **CLI**: flag-based runner + subcommands `review`, `genie ask`, `auth` (`starboard`)
-- **Workload Review**: `WorkloadReviewService` + validator council over public `system.*`
+- **CLI**: flag-based runner + subcommands `review`, `auth` (`starboard`)
+- **Workload Review**: `WorkloadReviewService` + severity gate over public `system.*`
 - **Public API facade**: `starboard/__init__.py` lazily re-exports the curated API the CLI composes
 - **Tool System**: three-layer tools (Domain, Service, Adapter) + `starboard.mcp_tools` plugin seam
 - **Ports + internal-data gate**: public port adapters + `starboard.port_adapters` contract
-- **State Management**: default `memory`; opt-in `sqlite`/`postgres`/`lakebase`/`uc`
+- **State Management**: in-memory only; Redis cache opt-in via `[redis]`
 - **LLM Adapters**: Multi-provider support (OpenAI, Azure, Databricks Model Serving)
 
 ## Install
@@ -33,14 +33,14 @@ The primary backend package providing the multi-agent system, MCP server, CLI, a
 pip install starboard
 ```
 
-The default install pulls **no** store/vector drivers; add them via extras
-(`starboard[sqlite]`, `[postgres]`, `[redis]`, `[vectorsearch]`, …).
+The default install pulls **no** store drivers. The Redis cache backend is available
+via `starboard[redis]`.
 
 ## Entry Points
 
 | Command | Description |
 |---------|-------------|
-| `starboard` | CLI — flag-based goal runner + `review` / `genie ask` / `auth` |
+| `starboard` | CLI — flag-based goal runner + `review` / `auth` |
 | `starboard-mcp` | MCP server — stdio transport for Claude Code / Cursor / Codex |
 | `starboard-server` | Minimal FastAPI process — health probes + optional `/mcp` mount |
 
@@ -49,7 +49,7 @@ The default install pulls **no** store/vector drivers; add them via extras
 ```python
 from starboard import (
     get_logger, describe_auth, resolve_workspace_client, create_llm_client,
-    AnalyticsSqlAdapter, LLMSQLGenerator, CouncilConfig, build_council,
+    AnalyticsSqlAdapter, LLMSQLGenerator,
     WorkloadReviewService,
 )
 ```
@@ -82,7 +82,7 @@ starboard/
     __init__.py          # Public API facade (PEP 562 lazy re-exports)
     main.py              # Minimal FastAPI app (health + optional /mcp)
     mcp/                 # MCP server (stdio + streamable-http)
-    cli/                 # CLI entry point + subcommands (review, genie, auth)
+    cli/                 # CLI entry point + subcommands (review, auth)
     agents/              # Multi-agent system
         conversation/    # Conversation manager (orchestrator)
         domain/          # Base domain agent
@@ -91,7 +91,7 @@ starboard/
         tool_categories.py  # Domain-to-tool mappings
     tools/               # Tool implementations (3-layer)
         domain/          # Pure business logic (no I/O)
-        services/        # Orchestration + WorkloadReviewService, validator_council
+        services/        # Orchestration + WorkloadReviewService
         adapters/        # I/O adapters (Databricks API)
         plugins.py       # ToolPlugin contract (starboard.mcp_tools seam)
     ports/               # Port registry + entry-point discovery (the gate)
@@ -108,7 +108,7 @@ starboard/
 - **Agents**: LLM-driven continuous reasoning loops
 - **LLM**: Multi-provider (OpenAI, Azure, Databricks Model Serving)
 - **Events**: typed in-process event stream (not an HTTP SSE endpoint)
-- **State**: memory (default) / SQLite / PostgreSQL / Lakebase / UC-native (opt-in)
+- **State**: in-memory only; Redis cache opt-in via `starboard[redis]`
 - **Observability**: Structured logging, distributed tracing
 
 ## Design Principles

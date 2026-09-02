@@ -4,8 +4,7 @@
 
 Phase 2 C3 (decision D-2.8): the thin CLI no longer needs a database driver.
 Sessions persist as JSON files — a session index plus one transcript file per
-conversation — with atomic writes. No ``aiosqlite`` / ``SQLiteStateStore`` on
-the CLI hot path.
+conversation — with atomic writes. No database driver on the CLI hot path.
 """
 
 from __future__ import annotations

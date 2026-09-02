@@ -8,7 +8,7 @@ and the engineering standards under [`.cursor/`](.cursor/).
 
 AI-powered Databricks workload analysis and optimization. It ships three surfaces over the same kernel:
 
-- **CLI** (`starboard`) — a natural-language goal agent plus focused subcommands (`review`, `genie ask`, `auth`).
+- **CLI** (`starboard`) — a natural-language goal agent plus focused subcommands (`review`, `auth`).
 - **MCP server** (`starboard-mcp`) — optional tools server for Claude Code / Cursor / Claude Desktop.
 - **Skills** — a Claude Code plugin (skills-only) mirrored from the canonical skills tree; reaches Isaac
   (which wraps Claude Code), and Codex/OpenCode via `python -m starboard_x.<capability>`.
@@ -40,11 +40,12 @@ is a workspace member for local dev/verification only; it is **not** a dependenc
   `starboard-internal` (`log_retrieval`, `diagnostic_backend`, `fleet_sql`, `nl_query`). The gate is
   **closed by default** (`internal_context_host_allowlist` is empty) and **additive**: closing it — or
   removing `starboard-internal` entirely — must leave a fully-functional public path.
-- **State.** `database_backend` defaults to `"memory"`; the durable option is UC-native (`"uc"`).
-  `sqlite`/`postgres`/`lakebase` are opt-in extras (`databricks` is a deprecated alias of `lakebase`).
-- **RAG.** `vector_backend` defaults to `"none"` — on-disk curated reference files + query packs, not an
-  embedding/vector DB. Managed Databricks Vector Search is opt-in behind `starboard[vectorsearch]`.
-- **Memory/cache.** Semantic cache is TTL-only by default; reflexion is off by default.
+- **State.** Memory-only: `database_backend` is `"memory"` — conversation/long-term memory state is
+  ephemeral and in-process. Durable CLI session persistence is handled by the JSON-file SessionManager.
+  (The non-memory state backends — sqlite/postgres/lakebase/UC-native — were removed.)
+- **RAG.** Reference-file only — on-disk curated reference files + query packs, not an embedding/vector
+  DB. There is no vector backend; the vector/embedding/ANN stack (incl. managed Vector Search) was removed.
+- **Cache.** In-memory by default; Redis is opt-in behind `starboard[redis]`.
 - **Auth by subtraction.** One resolver (`starboard.infra.auth.resolver`) delegates to the SDK credential
   chain (`--profile`/ambient; PAT optional). Apps OBO via the `credentials_strategy` seam.
 - **Public API facade.** `starboard/__init__.py` lazily re-exports the small public API the CLI composes
@@ -67,7 +68,7 @@ make test-integration / test-golden / test-contract
 make docs           # generate diagrams (scripts/generate_diagrams.py) + mkdocs build --strict
 ```
 
-CLI smoke: `starboard --help`, `starboard review --help`, `starboard genie ask --help`,
+CLI smoke: `starboard --help`, `starboard review --help`,
 `python -m starboard_x.review --help`.
 
 ## Import-linter contracts (all KEPT — do not break)
@@ -92,7 +93,7 @@ Config in `[tool.importlinter]` (root `pyproject.toml`). Run: `lint-imports` (or
 
 - Config: `packages/starboard/starboard/infra/core/config.py`; env template: `examples/env.example`.
 - CLI entry: `starboard.cli.main:main`; MCP: `starboard.mcp.cli:main`.
-- Workload Review: `starboard.tools.services.workload_review_service`, `validator_council.py`.
+- Workload Review: `starboard.tools.services.workload_review_service` (+ `SeverityGate`).
 - Skills (canonical): `packages/starboard-skills/skills/starboard/`; plugin bundle: `plugin/`.
 - Build/workflow: `Makefile`; packaging + contracts: root `pyproject.toml`.
 

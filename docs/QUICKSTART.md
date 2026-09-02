@@ -50,12 +50,9 @@ starboard --help
 | `pip install starboard-core` | Pure kernel + the `starboard_x` middle-tier helpers (`python -m starboard_x.<cap>`). Lightweight, SDK-free scoring. |
 | `pip install starboard-skills` | Canonical skills tree + the `starboard-helper` script (for Claude Code / Cursor). |
 
-Store and vector drivers are **opt-in extras** and are only needed if you switch
-away from the defaults, e.g. `pip install 'starboard[sqlite]'`,
-`'starboard[postgres]'`, `'starboard[vectorsearch]'`, or
-`'starboard-kernel[discovery]'`. If a backend needs a driver you have not installed,
-Starboard raises an actionable `pip install …` error telling you exactly which
-extra to add.
+The Redis cache backend is an **opt-in extra**: `pip install 'starboard[redis]'`.
+If a backend needs a driver you have not installed, Starboard raises an actionable
+`pip install …` error telling you exactly which extra to add.
 
 ---
 
@@ -112,14 +109,6 @@ starboard review --json                   # machine-readable envelope
 
 Every finding cites the query pack and row that triggered it. Cost-based findings
 are **list-price DBU estimates**, labelled as such.
-
-### Ask a question in natural language (NL → SQL)
-
-```bash
-starboard genie ask "which warehouses cost the most last month?"
-```
-
-This generates SQL against your workspace's public data and explains it.
 
 ### Discover your whole workspace
 
@@ -190,8 +179,8 @@ Tools          ──▶ call Databricks APIs / public system tables
 Report         ──▶ findings, evidence, and recommendations
 ```
 
-`starboard review`, `genie ask`, and `--discover` are deterministic, public-data
-paths that do not require the full agent loop. `--goal` and `--chat` run the
+`starboard review` and `--discover` are deterministic, public-data paths that do
+not require the full agent loop. `--goal` and `--chat` run the
 multi-agent conversation. There are **8 domain agents** plus the Intent Router.
 
 | Agent | Domain |

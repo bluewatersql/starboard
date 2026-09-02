@@ -196,10 +196,8 @@ class StateStore(Protocol):
 
 **Purpose**: Define what the domain needs without dictating how it's implemented.
 
-**Implementations** (in other packages):
-- `SQLiteStateStore` (starboard)
-- `PostgresStateStore` (starboard)
-- `InMemoryStateStore` (starboard)
+**Implementation** (in the `starboard` package):
+- `InMemoryStateStore` (starboard) — the only supported backend
 
 #### MemoryStore Protocol (`memory_store.py`)
 
@@ -490,11 +488,11 @@ await repo.add_episode(conversation.id, episode)
 from starboard_core.ports.state_store import StateStore
 from starboard_core.models.conversation import Conversation
 
-class PostgresStateStore:
+class InMemoryStateStore:
     """Concrete implementation of StateStore protocol."""
     
-    def __init__(self, connection_string: str):
-        self.pool = create_pool(connection_string)
+    def __init__(self):
+        self._store: dict = {}
     
     async def save_conversation(self, conversation: Conversation) -> str:
         async with self.pool.acquire() as conn:

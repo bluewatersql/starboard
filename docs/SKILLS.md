@@ -648,11 +648,10 @@ score, a suggested fix, and an evidence citation (query-pack `query_id` + the ro
 triggered it). The review is **read-only** — it never writes back to the workspace.
 
 **CLI:** `starboard review [--domains jobs,sql,warehouse] [--lookback-days N]
-[--validate] [--min-severity …] [--json]`
+[--min-severity …] [--min-score …] [--json]`
 
-**Interpretation guidance:** findings are ordered by priority score; `--validate` gates
-them through a bounded validator council; `--min-severity` / `--min-score` suppress
-low-signal items. Cost-based findings are **list-price DBU estimates**, labelled as
+**Interpretation guidance:** findings are ordered by priority score; `--min-severity` /
+`--min-score` suppress low-signal items. Cost-based findings are **list-price DBU estimates**, labelled as
 such. Use `--snapshot-out` / `--since` to track the resolved-rate delta between runs.
 
 > **Workspace management** (switching between Databricks workspaces) is handled by the

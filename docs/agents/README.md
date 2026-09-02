@@ -87,8 +87,7 @@ Tool counts are from `packages/starboard/starboard/agents/tool_categories.py` an
 `starboard review` (also the `workload-review` skill and `python -m starboard_x.review`)
 is a **deterministic rules flow**, not a conversational agent. It runs the
 `RuleRegistry` + `Finding` priority scorer over public `system.*` data (default domains
-`jobs`, `sql`, `warehouse`), with an optional validator council and an Action-Rate
-re-scan. See [System Architecture → Workload Review](../architecture/SYSTEM_ARCHITECTURE.md#workload-review)
+`jobs`, `sql`, `warehouse`), with a severity gate and an Action-Rate re-scan. See [System Architecture → Workload Review](../architecture/SYSTEM_ARCHITECTURE.md#workload-review)
 and the [`Finding` contract](../contracts/AGENT_OUTPUT_CONSUMERS.md#workload-review-finding-contract).
 
 ---
@@ -181,7 +180,7 @@ See: [Tool Architecture](../TOOL_ARCHITECTURE.md)
 | **Job** | 5.0/5 | High | Serverless branching, multi-task strategies |
 | **UC** | 4.8/5 | Medium | 3 primary patterns with parallel execution |
 | **Cluster** | 4.6/5 | Low | Simple fleet/health/deep patterns |
-| **Analytics** | 4.8/5 | Low-Medium | Agentic RAG with reflexion loop |
+| **Analytics** | 4.8/5 | Low-Medium | Agentic RAG with self-correcting retry loop |
 | **Warehouse** | 5.0/5 | Medium | Multiple pattern types (portfolio/health/topology) |
 | **Discovery** | 5.0/5 | Medium | 4-phase pipeline with domain analysis |
 | **Diagnostic** | 5.0/5 | High | Multi-step artifact analysis, confidence calibration |

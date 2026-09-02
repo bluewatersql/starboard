@@ -44,9 +44,8 @@ livenessProbe:
 {
   "status": "ready",
   "environment": "production",
-  "database_backend": "postgres",
-  "state_store_type": "PostgresStateStore",
-  "memory_store_type": "PostgresMemoryStore"
+  "database_backend": "memory",
+  "state_store_type": "InMemoryStateStore"
 }
 ```
 
@@ -65,7 +64,6 @@ The readiness endpoint verifies that the `Container` has been initialized, which
 - State store connection is established
 - Memory store connection is established
 - Cache store is available
-- Foundation components (vector store, reflexion, semantic cache) have been initialized (or gracefully degraded)
 
 **Kubernetes probe example:**
 
@@ -481,25 +479,24 @@ breaker = CircuitBreaker(
 
 ---
 
-## Semantic Cache Metrics
+## Cache Metrics
 
-The `SemanticCache` in `infra/cache/semantic_cache.py` tracks its own hit/miss metrics:
+The TTL cache tracks hit/miss metrics. With a Redis backend (`CACHE_BACKEND=redis`), cache hits are shared across replicas. With the default in-memory backend, metrics are per-process.
 
 ```python
-cache_metrics = semantic_cache.get_metrics()
+cache_metrics = cache_store.get_metrics()
 # Returns:
 # {
 #     "hits": 150,
 #     "misses": 50,
 #     "total_requests": 200,
 #     "hit_rate": 0.75,
-#     "similarity_threshold": 0.95,
 #     "default_ttl": 300
 # }
 ```
 
 !!! tip "Monitor cache hit rate"
-    A healthy semantic cache should have a hit rate above 30% for repeated query patterns. If the hit rate is consistently below 10%, consider lowering `SEMANTIC_CACHE_THRESHOLD` from the default of 0.95 to 0.90.
+    A healthy cache should have a hit rate above 30% for repeated query patterns. If the hit rate is consistently low, verify that identical tool calls are reusing the same cache key.
 
 ---
 
@@ -538,31 +535,7 @@ active = broadcaster.get_all_conversation_ids()
 
 ## Rate Limiting
 
-Rate limiting is implemented using `slowapi` with configurable storage backends.
-
-### Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `RATE_LIMIT_ENABLED` | `true` | Enable/disable rate limiting |
-| `RATE_LIMIT_STORAGE` | `memory://` | Storage backend (`memory://` or `redis://...`) |
-| `RATE_LIMIT_DEFAULT` | `100/minute` | Default limit for all routes |
-
-### Key Identification
-
-Rate limits are applied per-user when authenticated, falling back to per-IP:
-
-1. If `request.state.user_id` is set (by auth middleware): key is `user:<user_id>`
-2. Otherwise: key is the client IP address
-
-### Monitoring Rate Limits
-
-When a client exceeds the limit, the server returns:
-
-```
-HTTP 429 Too Many Requests
-{"detail": "Rate limit exceeded"}
-```
+Application-level rate limiting is not wired up in the current release. Upstream network-layer rate limiting (load balancer, API gateway) is recommended for production deployments.
 
 ---
 
@@ -574,8 +547,7 @@ HTTP 429 Too Many Requests
 |---|---|---|
 | `/health/ready` status | Health endpoint | Any 503 response |
 | Container initialization time | `state_container_initialized` log | > 30 seconds |
-| Database connection pool usage | asyncpg pool stats | > 80% of max pool |
-| Redis connection status | `RedisCacheStore.connect()` | Connection failures |
+| Redis connection status | `RedisCacheStore.connect()` | Connection failures (Redis cache only) |
 | Circuit breaker state | `circuit_breaker_opening` log | Any OPEN state |
 
 ### Agent Performance Metrics
@@ -660,8 +632,7 @@ HTTP 429 Too Many Requests
 | `agents/observability/metrics.py` | `MultiAgentMetrics`, `AgentMetrics`, cost tracking |
 | `agents/observability/sse_broadcaster.py` | `SSEBroadcaster` for real-time streaming |
 | `infra/reliability/circuit_breaker.py` | `CircuitBreaker` pattern implementation |
-| `infra/cache/semantic_cache.py` | `SemanticCache` with hit/miss metrics |
-| `infra/middleware/rate_limit.py` | Rate limiting utilities |
+| `infra/cache/semantic_cache.py` | TTL cache with hit/miss metrics |
 | `.cursor/05_observability_and_cost.md` | Engineering standards for observability |
 
 All paths are relative to `packages/starboard/starboard/`.

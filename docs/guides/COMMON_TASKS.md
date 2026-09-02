@@ -19,8 +19,7 @@ and [authenticated](./GETTING_STARTED.md#authenticate).
 ## Table of Contents
 
 1. [Run a workload review](#run-a-workload-review)
-2. [Ask a question in natural language](#ask-a-question-in-natural-language)
-3. [Assess a whole workspace](#assess-a-whole-workspace)
+2. [Assess a whole workspace](#assess-a-whole-workspace)
 4. [Optimize a slow query](#optimize-a-slow-query)
 5. [Debug a failing job](#debug-a-failing-job)
 6. [Investigate cost](#investigate-cost)
@@ -40,7 +39,7 @@ public `system.*` data:
 starboard review                                 # default domains: jobs,sql,warehouse
 starboard review --domains warehouse,sql         # narrow the scope
 starboard review --lookback-days 60              # widen the evidence window
-starboard review --validate --min-severity high  # gate + suppress low-signal findings
+starboard review --min-severity high             # suppress low-signal findings
 starboard review --json                          # machine-readable envelope
 ```
 
@@ -54,34 +53,6 @@ starboard review --since today.json                        # report the resolved
 
 See [Understanding Reports](../user-guide/understanding-reports.md) for how to read the
 output.
-
----
-
-## Ask a question in natural language
-
-Turn a plain-English question into SQL over your workspace's public data:
-
-```bash
-starboard genie ask "which warehouses cost the most last month?"
-starboard genie ask "how many jobs failed in the last 7 days?" --warehouse-id abc123
-starboard genie ask "top 10 tables by size" --json
-```
-
-With `--json`, the command emits the standard envelope on stdout (logs go to stderr):
-
-```json
-{
-  "ok": true,
-  "domain": "genie",
-  "command": "ask",
-  "data": { "question": "...", "sql": "SELECT ...", "explanation": "...", "success": true, "metadata": {} },
-  "meta": { }
-}
-```
-
-Exit codes follow the shared contract: `0` ok · `1` auth · `3` api-error · `4` arg-error. **Prerequisites:**
-a resolvable workspace (a `--profile`/`--workspace` or a one-time `databricks auth login`) and a SQL
-warehouse (`--warehouse-id` or a configured default); `$` figures returned are list-price DBU estimates.
 
 ---
 
@@ -134,7 +105,7 @@ starboard --mode diagnostic \
 Cost answers are **list-price DBU estimates** from public usage tables:
 
 ```bash
-starboard genie ask "what drove the cost increase last month?"
+starboard --goal "What drove the cost increase last month?"
 starboard --goal "Break down DBU spend by warehouse over the last 30 days"
 starboard review --domains warehouse            # includes cost-based warehouse findings
 ```

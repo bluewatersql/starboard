@@ -109,7 +109,6 @@ from starboard import (
     describe_auth, resolve_workspace_client,   # auth resolver (SDK credential chain)
     create_llm_client,
     AnalyticsSqlAdapter, LLMSQLGenerator,       # NL->SQL
-    CouncilConfig, build_council,               # validator council
     WorkloadReviewService,                      # workload review orchestrator
 )
 ```

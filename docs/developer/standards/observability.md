@@ -115,7 +115,7 @@ The `/health/ready` endpoint should verify:
 
 | Rule | Level |
 |------|-------|
-| Use semantic cache keys (hash of prompt + model + temperature) | SHOULD |
+| Use deterministic cache keys (hash of prompt + model + temperature) | SHOULD |
 | Tune TTLs per use case (tool results ~5min, metadata ~1hr, static data longer) | SHOULD |
 | Track cache hit rates and effectiveness | SHOULD |
 

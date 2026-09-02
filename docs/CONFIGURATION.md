@@ -48,22 +48,17 @@ Configuration file support (config.yaml) has been removed in favor of environmen
 
 ## Installation and Extras
 
-`pip install starboard` installs the **store-free** experience wheel: **no** state/vector drivers are pulled in. The default runtime is `database_backend="memory"` and `vector_backend="none"`. Driver-backed backends lazy-import their driver and raise an actionable `pip install 'starboard[<extra>]'` error if the matching extra is missing.
+`pip install starboard` installs the **store-free** experience wheel: **no** state drivers are pulled in. The default runtime is `database_backend="memory"`. The Redis cache backend is an opt-in extra (`starboard[redis]`) and will raise an actionable `pip install 'starboard[<extra>]'` error if the matching extra is missing.
 
 ### `starboard` (server package) extras
 
 | Extra | Pulls in | Enables |
 |---|---|---|
 | `observability` | `opentelemetry-instrumentation-fastapi`, `prometheus-client` | OTEL/Prometheus export |
-| `sqlite` | `aiosqlite`, `sqlite-vec` | `DATABASE_BACKEND=sqlite`; SQLite ANN vector path; reflexion |
-| `postgres` | `asyncpg` | `DATABASE_BACKEND=postgres` **and** `lakebase` |
-| `redis` | `redis` | `CACHE_BACKEND=redis` / Redis rate-limit storage |
-| `memory` | `pgvector`, `asyncpg` | pgvector similarity recall in the Postgres memory store |
-| `vectorsearch` | `databricks-vectorsearch` | managed `VECTOR_BACKEND=vectorsearch` (opt-in ANN) |
-| `all-stores` | `starboard[sqlite,postgres,redis,memory,vectorsearch]` | every store/vector driver |
+| `redis` | `redis` | `CACHE_BACKEND=redis` / Redis cache storage |
 | `test`, `lint`, `load`, `dev`, `all` | dev/CI tooling | development, testing, load testing |
 
-There is **no** `lakebase` extra — the Lakebase adapter reuses `asyncpg` from the `postgres` extra. There is **no** `charts` extra on the server package.
+There is **no** `charts` extra on the server package.
 
 ### `starboard-core` extras (kernel + `starboard_x` helpers)
 
@@ -131,8 +126,6 @@ LLM_PLANNING_MODEL=                          # Override for planning phase
 LLM_PLANNING_TEMPERATURE=                    # Override temperature for planning
 LLM_JUDGE_MODEL=                             # Override for judgment/evaluation
 LLM_JUDGE_TEMPERATURE=                       # Override temperature for judgment
-LLM_REVIEW_MODEL=                            # Override for review phase
-LLM_REVIEW_TEMPERATURE=                      # Override temperature for review
 LLM_SYNTH_MODEL=                             # Override for synthesis phase
 LLM_SYNTH_TEMPERATURE=                       # Override temperature for synthesis
 ```
@@ -156,53 +149,25 @@ TOOL_PARALLELISM=4                           # Max parallel tool executions
 ```bash
 # Query Execution
 MAX_ANALYSIS_RESULT_ROWS=50                  # Max rows returned from analytics queries
-
-# Foundation Components
-SQLITE_VECTOR_PATH=./dev_data/starboard_vectors.db     # Vector store path (sqlite vector path)
-SQLITE_REFLEXION_PATH=./dev_data/starboard_reflexion.db  # Reflexion store path
-EMBEDDING_DIMENSION=1024                      # Vector embedding dimension (used only on vector paths)
-SEMANTIC_CACHE_THRESHOLD=0.95                 # Similarity threshold — consulted ONLY on the opt-in vector path
-
-# Feature Flags
-ENABLE_REFLEXION=false                        # Reflexion is OFF by default; opt-in behind starboard[sqlite]/[vectorsearch]
-ENABLE_SEMANTIC_CACHE=true                    # Semantic cache runs TTL-only (exact-key) unless a vector_backend is set
 ```
 
-!!! note "Default RAG/memory is store-free"
-    With `VECTOR_BACKEND=none` (the default) the analytics context comes from on-disk curated reference files + query packs — no embeddings. The semantic cache is TTL-only and `SEMANTIC_CACHE_THRESHOLD` is ignored unless you set a real `vector_backend`. Reflexion is dormant unless `ENABLE_REFLEXION=true` **and** a vector-store extra is installed.
+Analytics context comes from on-disk curated reference files + query packs — no embeddings, no vector database.
 
-### Database Configuration
+### State Configuration
 
 ```bash
-# Backend Selection
-DATABASE_BACKEND=memory                       # Options: memory (default), sqlite, postgres, lakebase, uc
-                                              # ("databricks" = deprecated alias for "lakebase")
-                                              # sqlite -> starboard[sqlite]; postgres/lakebase -> starboard[postgres]
-DATABASE_URL=                                 # Connection string; required for postgres and lakebase
-
-# SQLite Paths (used when DATABASE_BACKEND=sqlite)
-SQLITE_STATE_PATH=./dev_data/starboard_state.db
-SQLITE_MEMORY_PATH=./dev_data/starboard_memory.db
-SQLITE_VECTOR_PATH=./dev_data/starboard_vectors.db
-SQLITE_REFLEXION_PATH=./dev_data/starboard_reflexion.db
-
-# PostgreSQL Connection Pools
-POSTGRES_MIN_POOL_SIZE=5
-POSTGRES_MAX_POOL_SIZE=20
-POSTGRES_COMMAND_TIMEOUT=60                   # Seconds
+# State is memory-only; no database configuration is required.
+# Durable CLI session persistence is provided by the JSON-file SessionManager (starboard.cli.sessions).
+# Default session file: ~/.starboard/sessions.db  (override with --session-db)
 ```
 
 ### Cache Configuration
 
 ```bash
 # Cache Backend
-CACHE_BACKEND=memory                          # Options: memory (default), redis, postgres
+CACHE_BACKEND=memory                          # Options: memory (default), redis
 CACHE_TTL=300                                 # Default cache TTL (seconds)
 REDIS_URL=redis://localhost:6379              # Redis connection string; selects Redis when set (needs starboard[redis])
-
-# Vector Store Backend
-VECTOR_BACKEND=none                           # Options: none (default), inmemory, sqlite, chroma, databricks, postgres, vectorsearch
-VECTORSEARCH_COLUMNS=                         # JSON list; required for vectorsearch (wildcard "*" is invalid)
 ```
 
 ### Server Configuration
@@ -216,10 +181,6 @@ LOG_LEVEL=INFO                                # Logging level: DEBUG, INFO, WARN
 LOG_JSON=false                                # JSON-formatted logs
 ENVIRONMENT=dev                               # Environment: dev, test, staging, production
 
-# Rate Limiting
-RATE_LIMIT_ENABLED=true
-RATE_LIMIT_STORAGE=memory://                  # Storage backend for rate limits
-RATE_LIMIT_DEFAULT=100/minute                 # Default rate limit
 MAX_REQUEST_SIZE=10485760                     # Max request size in bytes (10MB)
 ```
 
@@ -370,10 +331,8 @@ config.validate_config()  # Raises ValueError if invalid
 - ⏭️ Databricks credentials optional (for testing)
 - ⏭️ LLM credentials optional (if `MOCK_LLM=true`)
 
-**Database Validation**:
-- If `DATABASE_BACKEND=postgres` or `lakebase`: `DATABASE_URL` required
+**Cache Validation**:
 - If `CACHE_BACKEND=redis`: `REDIS_URL` required
-- `DATABASE_BACKEND=sqlite` is rejected for `staging`/`production`
 - Discovery: `DISCOVERY_LOOKBACK_DAYS` must be 30/60/90; `DISCOVERY_MAX_PARALLELISM` must be 1–16
 
 ---
@@ -407,9 +366,6 @@ DEBUG=false
 LOG_LEVEL=INFO
 LOG_JSON=true
 ENABLE_OBSERVABILITY=true
-RATE_LIMIT_ENABLED=true
-DATABASE_BACKEND=postgres
-DATABASE_URL=${POSTGRES_CONNECTION_STRING}
 CACHE_BACKEND=redis
 REDIS_URL=${REDIS_CONNECTION_STRING}
 ```
@@ -421,7 +377,6 @@ REDIS_URL=${REDIS_CONNECTION_STRING}
 OFFLINE_MODE=true
 MOCK_LLM=true
 SAFE_MODE=true
-DATABASE_BACKEND=sqlite
 CACHE_BACKEND=memory
 ENVIRONMENT=test
 LOG_LEVEL=WARNING

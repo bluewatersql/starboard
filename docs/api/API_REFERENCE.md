@@ -104,7 +104,7 @@ blocks for a hosting layer (e.g. a Databricks App with per-user OBO auth). The d
 ## MCP transports
 
 Starboard's richest programmatic surface is MCP, not HTTP. The tools exposed over MCP
-are the agent tools plus the Phase-3 surfaces (Workload Review, `genie ask`).
+are the agent tools plus the Phase-3 surfaces (Workload Review, workspace discovery).
 
 - **stdio** (default for hosts): `starboard-mcp` (`starboard.mcp.cli:main`).
 - **Streamable HTTP**: mounted at `/mcp` by `starboard-server` when MCP config is present.

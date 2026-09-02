@@ -164,7 +164,7 @@ curl -s http://localhost:8000/health/ready | jq .
 |-------|---------------|
 | Large conversation history | Check `tokens_used` per request |
 | Too many reasoning steps | Check `reasoning_steps` count |
-| Semantic cache disabled | Check `ENABLE_SEMANTIC_CACHE` |
+| Cache miss storm (repeated identical queries) | Check cache hit rate metrics |
 | Infinite reasoning loops | Check for repeated tool calls in logs |
 
 ### Diagnosis Steps
@@ -183,9 +183,8 @@ curl -s http://localhost:8000/health/ready | jq .
 
 ### Resolution
 
-1. **Enable semantic caching** -- Set `ENABLE_SEMANTIC_CACHE=true` so similar queries
-   reuse cached results instead of re-running the LLM. (Context history is already
-   summarized automatically; there is no compression toggle to enable.)
+1. **Check the TTL cache** -- tool results are cached with a 5-minute TTL by default.
+   With Redis (`CACHE_BACKEND=redis`), the cache is shared across replicas.
 2. **Set token budgets per session** -- Configure `LLM_MAX_TOKENS` appropriately:
    - Simple queries: 50,000 tokens
    - Complex queries: 100,000 tokens
@@ -489,76 +488,30 @@ uvicorn starboard.main:create_app --factory --host 0.0.0.0 --port 8000
 
 ---
 
-## Database Operations
+## State and Cache Operations
 
-### State Backend Health
+### State Health
 
-Starboard supports three database backends: `sqlite` (default for development),
-`postgres` (recommended for production), and `databricks` (Lakebase).
+Starboard uses **in-memory state only** — there is no external database. State lives in
+the running process and is lost on restart. Conversation history and results should be
+saved with `--output-path` or `--json`.
 
-**Check current backend:**
+CLI session persistence (named `--session <name>`) is stored in a local JSON file
+(`~/.starboard/sessions.db`).
 
-```bash
-echo $DATABASE_BACKEND
-# Expected: sqlite, postgres, or databricks
-```
-
-**SQLite health check:**
+**Check process health via the health endpoint:**
 
 ```bash
-# Verify SQLite files exist and are not corrupted
-sqlite3 "$SQLITE_STATE_PATH" "PRAGMA integrity_check;"
-# Expected: ok
+curl -s http://localhost:8000/health/ready | jq .
+# Expected: {"status":"ready","database_backend":"memory",...}
 ```
-
-**Postgres health check:**
-
-```bash
-# Verify connection
-psql "$DATABASE_URL" -c "SELECT 1;"
-
-# Check connection pool usage
-psql "$DATABASE_URL" -c "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database();"
-```
-
-### Connection Pool Monitoring (Postgres)
-
-Key configuration values:
-
-| Setting | Env Var | Default |
-|---------|---------|---------|
-| Min pool size | `POSTGRES_MIN_POOL_SIZE` | 5 |
-| Max pool size | `POSTGRES_MAX_POOL_SIZE` | 20 |
-| Command timeout | `POSTGRES_COMMAND_TIMEOUT` | 60s |
-
-**Symptoms of pool exhaustion:**
-
-- Increasing latency on all requests
-- `connection_pool_exhausted` events in logs
-- `/health/ready` returns 503
-
-**Resolution:**
-
-1. **Increase pool size** (if the database can handle more connections):
-   ```bash
-   export POSTGRES_MAX_POOL_SIZE=40
-   ```
-2. **Check for connection leaks** -- look for long-running queries:
-   ```sql
-   SELECT pid, now() - pg_stat_activity.query_start AS duration, query
-   FROM pg_stat_activity
-   WHERE state != 'idle'
-   ORDER BY duration DESC;
-   ```
-3. **Restart the service** to reset the connection pool as a last resort.
 
 ### Cache Backend
 
 | Backend | Env Var | Use Case |
 |---------|---------|----------|
-| `memory` | `CACHE_BACKEND=memory` | Development (non-persistent) |
-| `redis` | `CACHE_BACKEND=redis` | Production (shared, persistent) |
-| `postgres` | `CACHE_BACKEND=postgres` | Production (co-located with state) |
+| `memory` | `CACHE_BACKEND=memory` | Default (per-process, non-persistent) |
+| `redis` | `CACHE_BACKEND=redis` | Shared cache across replicas (opt-in) |
 
 **Redis health check:**
 

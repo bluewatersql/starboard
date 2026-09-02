@@ -24,12 +24,12 @@ from starboard_core.foundations.models import (
 class VectorStore(Protocol):
     """Protocol for vector similarity search backends.
 
-    Implementations:
-    - SQLiteVectorStore: Uses sqlite-vec extension
-    - PostgresVectorStore: Uses pgvector extension
+    Interface definition only. The native-first simplification removed the
+    shipped implementations (the vector/embedding/ANN stack); analytics context
+    is built from on-disk reference files. This Protocol is retained as the
+    kernel-tier contract for any future/out-of-tree vector backend.
 
     Usage:
-        >>> store = SQLiteVectorStore("vectors.db")
         >>> await store.initialize()
         >>> results = await store.search(query_embedding, top_k=5)
     """
@@ -133,8 +133,10 @@ class ReflexionStore(Protocol):
     2. Extracting learnings from failures
     3. Retrieving relevant past learnings
 
+    Interface definition only — the shipped reflexion store was removed in the
+    native-first simplification; retained as the kernel-tier contract.
+
     Usage:
-        >>> store = SQLiteReflexionStore("learnings.db")
         >>> await store.initialize()
         >>> await store.save_learning(learning)
         >>> relevant = await store.search_learnings("how to optimize queries", top_k=5)
@@ -261,8 +263,10 @@ class SemanticCache(Protocol):
 
     This dramatically reduces LLM costs for similar queries.
 
+    Interface definition only — the shipped semantic cache was removed in the
+    native-first simplification; retained as the kernel-tier contract.
+
     Usage:
-        >>> cache = SemanticCache(vector_store, embedding_client, ttl=300)
         >>> # Try to get from cache
         >>> cached = await cache.get("Show top 10 expensive jobs")
         >>> if cached is None:

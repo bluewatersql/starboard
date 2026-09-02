@@ -8,8 +8,8 @@ status: current
 # CLI Reference
 
 The `starboard` command is the primary way to run analyses. It has a **flag-based**
-top-level interface (natural-language goals, discovery, chat) plus three
-subcommands: `review`, `genie ask`, and `auth`.
+top-level interface (natural-language goals, discovery, chat) plus two
+subcommands: `review` and `auth`.
 
 ---
 
@@ -23,8 +23,8 @@ starboard --help
 ```
 
 The default install is store-free (in-memory state, reference-file analytics
-context). Opt in to a durable backend only if you need one, e.g.
-`pip install 'starboard[sqlite]'` or `'starboard[postgres]'`.
+context). The optional Redis cache backend is available via
+`pip install 'starboard[redis]'`.
 
 ---
 
@@ -133,7 +133,7 @@ over **public `system.*` data only**.
 
 ```bash
 starboard review [--domains jobs,sql,warehouse] [--workspace NAME | --profile NAME]
-                 [--lookback-days N] [--validate] [--min-severity …] [--min-score …]
+                 [--lookback-days N] [--min-severity …] [--min-score …]
                  [--since snapshot.json] [--snapshot-out snapshot.json] [--json]
 ```
 
@@ -145,54 +145,14 @@ starboard review [--domains jobs,sql,warehouse] [--workspace NAME | --profile NA
 | `--lookback-days` | `30` | Evidence lookback window. |
 | `--max-parallelism` | `4` | Concurrent evidence queries. |
 | `--no-cache` | — | Disable the discovery scan cache. |
-| `--validate` | — | Gate findings through the bounded validator council (models from config). |
 | `--min-severity {low,medium,high,critical}` | — | Suppress findings below this severity. |
 | `--min-score FLOAT` | — | Suppress findings below this priority score. |
 | `--since PATH` | — | Prior snapshot JSON; report the resolved-rate delta (read-only). |
 | `--snapshot-out PATH` | — | Write a snapshot for a later `--since` (local file, never the workspace). |
 | `--json` | — | Emit the JSON envelope instead of a table. |
 
-#### Validator council configuration
-
-`--validate` gates findings through a bounded multi-pass model council before surfacing them.
-Configure which models the council uses via environment variables — model IDs resolve
-dynamically via the Databricks model-serving catalog or AI gateway and are **never
-hard-coded**:
-
-| Env var | Default | Purpose |
-|---------|---------|---------|
-| `STARBOARD_REVIEW_COUNCIL_MODELS` | `databricks-claude-sonnet-4-5` | Comma-separated list of model IDs to vote across (ensemble). Any AI-gateway or model-serving catalog ID works. |
-| `STARBOARD_REVIEW_COUNCIL_MAX_PASSES` | `2` | Maximum self-critique passes per finding (1–5). Bounds model spend. |
-| `STARBOARD_REVIEW_COUNCIL_SEED` | `0` | Integer seed for reproducible results across runs. |
-
-```bash
-# Two-model ensemble using workspace-provisioned models (IDs from your AI gateway):
-export STARBOARD_REVIEW_COUNCIL_MODELS="databricks-claude-opus-4-8m,databricks-claude-sonnet-4-6"
-export STARBOARD_REVIEW_COUNCIL_MAX_PASSES=3
-starboard review --validate --min-severity high
-```
-
-Spend is **bounded**: worst-case model calls = `max_passes × models × findings`.
-When a model call fails, the affected finding is kept (fail-safe — an infra hiccup
-never silently suppresses a real finding).
-
 Cost-based findings are **list-price DBU estimates**, labelled as such. The review
 is read-only: it never writes back to your workspace.
-
-### `starboard genie ask` — natural language → SQL
-
-```bash
-starboard genie ask "which warehouses cost the most last month?" \
-    [--workspace NAME | --profile NAME] [--warehouse-id ID] [--json]
-```
-
-| Flag | Description |
-|------|-------------|
-| `question` | The natural-language question (positional, required). |
-| `--workspace` / `--profile` | Target workspace profile (aliases). |
-| `--host` / `--token` | Inline Databricks credentials. |
-| `--warehouse-id` | SQL warehouse id for query context. |
-| `--json` | Emit the JSON envelope instead of formatted text. |
 
 ### `starboard auth` — login / status
 
@@ -255,15 +215,9 @@ starboard --mode diagnostic --goal "Job 12345 fails intermittently — find the 
 
 ```bash
 starboard review --domains jobs,sql,warehouse --lookback-days 60
-starboard review --validate --min-severity high --json
+starboard review --min-severity high --json
 starboard --discover --lookback-days 90 --discovery-domains jobs warehouse
 starboard --discover --data-only
-```
-
-### Ask a question
-
-```bash
-starboard genie ask "what drove the cost increase last month?"
 ```
 
 ### Multi-turn sessions
@@ -313,7 +267,7 @@ starboard --log-level DEBUG --log-file starboard.log --goal "…"
 ## Exit codes
 
 The top-level agent path returns `0` on success and a nonzero code on error. The
-subcommands (`review`, `genie ask`) and the `python -m starboard_x.<cap>` middle
+`review` subcommand and the `python -m starboard_x.<cap>` middle
 tier use the shared contract:
 
 | Code | Meaning |

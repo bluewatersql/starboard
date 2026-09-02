@@ -37,7 +37,7 @@ The Analytics Agent's behavior is defined by a comprehensive system prompt that 
 
 1. **Global Laws**: 12 immutable rules governing workflow, completion, and data integrity
 2. **Cost Unit Rules**: Strict DBU vs. dollar separation (never mix units)
-3. **Agentic RAG Workflow**: 5-step mandatory workflow with reflexion loop
+3. **Agentic RAG Workflow**: 5-step mandatory workflow with self-correcting retry loop
 4. **Reasoning Output**: Guidelines for transparent, conversational reasoning between tool calls
 5. **Handoff Context**: Integration with multi-agent routing system
 6. **Result Interpretation**: Pattern identification, trend analysis, visualization
@@ -365,7 +365,7 @@ build_sql_query(context_handle="ctx_def456")  # New context
 | **Tool Coverage** | 4/5 | 4 domain tools + RAG context builder; delegates resource-specific optimization to specialists |
 | **Error Handling** | 5/5 | Comprehensive error handling (validation failure, execution failure, mandatory completion) |
 | **Mode Support** | 4/5 | ONLINE mode only (requires Databricks SQL for all operations) |
-| **Documentation** | 5/5 | Extensive prompt with 12 global laws, schema documentation, reflexion patterns |
+| **Documentation** | 5/5 | Extensive prompt with 12 global laws, schema documentation, retry patterns |
 
 **Overall Completeness**: 4.6/5
 
@@ -373,13 +373,13 @@ build_sql_query(context_handle="ctx_def456")  # New context
 
 | Dimension | Assessment |
 |-----------|------------|
-| **Workflow Complexity** | High - 5-step mandatory workflow with reflexion loop (up to 3 retries) |
-| **Decision Logic** | High - RAG domain selection, confidence-based reflexion, cost unit detection |
+| **Workflow Complexity** | High - 5-step mandatory workflow with retry loop (up to 3 retries) |
+| **Decision Logic** | High - RAG domain selection, confidence-based retry, cost unit detection |
 | **Tool Orchestration** | High - Sequential dependencies, context handle passing, visualization pipeline |
 | **Output Structure** | High - AnalyticsReport with findings, cost_summary, visualization, next_steps |
 | **Handoff Logic** | Medium - Entity-based routing (job/warehouse/cluster/query) |
 
-**Complexity Rating**: **High** - Most complex RAG-based agent due to multi-step agentic workflow and reflexion loop.
+**Complexity Rating**: **High** - Most complex RAG-based agent due to multi-step agentic workflow and self-correcting retry loop.
 
 ### Strengths
 
@@ -402,12 +402,11 @@ build_sql_query(context_handle="ctx_def456")  # New context
 
 ### Optimization Opportunities
 
-1. **Semantic Caching**: Cache RAG context for common query patterns (billing, warehouse costs)
+1. **RAG Context Caching**: Cache reference-file context for common query patterns (billing, warehouse costs)
 2. **Query Templates**: Pre-built SQL templates for frequent FinOps questions
 3. **Multi-Query Support**: Allow chained queries for complex multi-dimensional analysis
 4. **Offline Cost Estimates**: Cached billing summaries for offline mode
 5. **Proactive Insights**: Automated anomaly detection on billing data
-6. **Learning Integration**: Store reflexion outcomes as learnings for future queries
 
 ---
 

@@ -259,7 +259,7 @@ class StateStore(Protocol):
 ```
 
 **Purpose**: Define persistence interface without implementation  
-**Implementations**: SQLiteStateStore, PostgresStateStore, InMemoryStateStore
+**Implementation**: `InMemoryStateStore` (the only supported backend)
 
 **Design Pattern**: Protocol (structural subtyping, no inheritance required)
 
@@ -466,7 +466,7 @@ from starboard_core.domain.models.recommendations import QueryRecommendation
 ❌ Don't import implementation details:
 ```python
 # BAD - these are in other packages
-from starboard.adapters.state.sqlite import SQLiteStateStore
+from starboard.adapters.state.inmemory import InMemoryStateStore  # wrong: use Protocol
 ```
 
 ✅ Use protocols instead:

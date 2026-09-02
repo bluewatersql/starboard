@@ -313,42 +313,34 @@ Examples:
 
 ### Storage Backends
 
-State is configured by `database_backend` (`starboard.infra.core.config`). The default
-is **`memory`**; durable options are opt-in.
+State is configured by `database_backend` (`starboard.infra.core.config`). The only
+supported value is **`memory`** — all conversation state is in-process.
 
 | Backend | `database_backend` | Notes |
 |---------|--------------------|-------|
-| **InMemory** | `memory` (**default**) | Dictionary-based, no persistence |
-| **SQLite** | `sqlite` | Embedded; extra `starboard[sqlite]` (aiosqlite + sqlite-vec) |
-| **PostgreSQL** | `postgres` | Async; extra `starboard[postgres]`; needs `DATABASE_URL` |
-| **Databricks Lakebase** | `lakebase` | Postgres-compatible serverless; needs `DATABASE_URL`. `databricks` is a deprecated alias |
-| **UC-native** | `uc` | Governed low-write durable server backend; never auto-selected |
+| **InMemory** | `memory` (**only option**) | Dictionary-based, no persistence |
 
-Caching is a separate axis (`cache_backend`: `memory` (default), `redis`, `postgres`;
-`cache_ttl = 300`).
+Durable CLI session persistence is provided by the JSON-file `SessionManager`
+(`starboard.cli.sessions`), not by the state store.
 
-> **Default install pulls no store/vector drivers.** Store/vector drivers lazy-import and
-> raise an actionable `pip install 'starboard[<extra>]'` error if missing.
+Caching is a separate axis (`cache_backend`: `memory` (default) or `redis`;
+`cache_ttl = 300`). Redis is opt-in via `starboard[redis]`.
+
+> **Default install pulls no store drivers.**
 
 ### Data Models
 
 | Model | Purpose |
 |-------|---------|
-| **Conversation** | Persistent interaction session with message history |
+| **Conversation** | In-process interaction session with message history |
 | **Message** | Single user or assistant message with metadata (tool calls, tokens, cost) |
-| **Episode** | Working memory segment summary within a conversation |
-| **Fact** | Long-term memory with confidence score and optional vector embedding |
 | **UserProfile** | User preferences and history |
 
-### RAG / memory defaults
+### Analytics context
 
-- **`vector_backend="none"` by default** — analytics context comes from curated on-disk
-  **reference files** (`starboard_core/rag/knowledge/domains/*.md`) + query packs, not an
-  embedding/vector DB. Managed Databricks Vector Search is opt-in behind
-  `starboard[vectorsearch]` (requires explicit `vectorsearch_columns`).
-- The **semantic cache is TTL-only (exact-key)** by default; the similarity path is
-  selected only when a real `vector_backend` is configured. Reflexion/episodic-vector
-  memory is dormant (`enable_reflexion = False`, opt-in behind `[sqlite]`/`[vectorsearch]`).
+Analytics context comes from curated on-disk **reference files**
+(`starboard_core/rag/knowledge/domains/*.md`) + query packs. There is no vector
+database, no embeddings pipeline, and no semantic similarity cache.
 
 ---
 
@@ -407,8 +399,8 @@ produces a ranked, evidence-cited review over **public `system.*` data**. The fl
 3. Each **`Finding`** carries `severity` / `impact` / `effort` / `confidence` and a
    computed **priority score** `(severity_weight × impact) / effort_points`, bucketed
    into *Fix Immediately / This Sprint / Backlog / Nice-to-Have*.
-4. A pure **severity gate** drops sub-threshold noise; an optional **validator council**
-   (`starboard.tools.services.validator_council`: `CouncilConfig` / `build_council`) does
+4. A pure **severity gate** drops sub-threshold noise; a deterministic scoring pass
+   (`starboard.tools.services.workload_review_service`) does
    bounded multi-pass self-critique with configurable model ids.
 5. An **Action-Rate re-scan** (`starboard_core.domain.rules.action_rate`) compares
    snapshots to measure which findings were acted on — read-only, never a write-back.
@@ -474,9 +466,8 @@ hosting layer.
 **Response times** (p95): simple queries 2-5s, complex multi-step 10-30s, job analysis
 with logs 30-60s (indicative).
 
-**Scaling**: the CLI/MCP paths are single-process; durable state (UC-native / Lakebase)
-and caching (`redis`/`postgres`) are the shared-state options when hosting multiple
-instances.
+**Scaling**: the CLI/MCP paths are single-process; Redis caching (`CACHE_BACKEND=redis`)
+is the shared-state option when hosting multiple server instances.
 
 ---
 

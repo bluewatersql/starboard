@@ -150,13 +150,12 @@ workspace; the `starboard-internal` suite runs offline (guarded).
 
 ```bash
 starboard --help
-starboard review --help          # confirm --validate and --min-severity flags present
-starboard genie ask --help
+starboard review --help          # confirm --min-severity flags present
 starboard auth --help
 ```
 
-- **Pass:** each prints help and exits 0; `starboard review --help` shows the opt-in
-  `--validate` (validator council) and `--min-severity` flags.
+- **Pass:** each prints help and exits 0; `starboard review --help` shows the
+  `--min-severity` and `--min-score` severity gate flags.
 
 ### B2 — Progressive helpers (`python -m starboard_x.<cap>`)
 
@@ -206,38 +205,11 @@ These require real environments and cannot pass in CI. Each landed **build-compl
 fake-tested**; the gate confirms the live behaviour. Record every result in the
 owner runbook (`changes/2026_26_27_agents/plans/OWNER_RUNBOOK.md`) and here.
 
-### C1 `[GATE]` Validator council — live model run (G5)
+### C1 `[REMOVED]` Validator council (G5)
 
-**What it validates:** the multi-model validator council resolves real model ids, votes,
-and gates findings on a live review.
-
-**Owner:** AI-platform. **Prereq:** model-serving/AI-gateway access to the council models.
-
-**Steps.**
-
-```bash
-# Comma-separated list; ids come from the model-serving catalog / AI gateway (dynamic).
-export STARBOARD_REVIEW_COUNCIL_MODELS="databricks-claude-opus-4-8,databricks-claude-sonnet-4-6,databricks-claude-haiku-4-5"
-# Optional tuning:
-export STARBOARD_REVIEW_COUNCIL_MAX_PASSES=3    # bounded; ceiling enforced in code
-export STARBOARD_REVIEW_COUNCIL_SEED=42       # for reproducible ordering
-
-# `starboard review` takes no positional target — it reviews the whole workspace's
-# public system.* data. Scope with --domains (default: jobs,sql,warehouse; opt-in:
-# uc, dlt/pipelines, ml, vector-search, portfolio-readiness) and --lookback-days.
-starboard review --profile e2-demo-field-eng --validate --min-severity medium --domains jobs,sql,warehouse
-```
-
-- **Expected:** the review runs, the council convenes over the configured ids, each finding
-  carries a verdict trail (`keep_ratio`, `passes_used`, per-model verdicts), and the
-  severity gate filters below `--min-severity`.
-- **Pass:** findings surface **with** council verdicts; no model-resolution error; if a
-  model id is unavailable the run degrades gracefully (surfaces findings without council)
-  rather than crashing.
-- **Precedence to verify:** `STARBOARD_REVIEW_COUNCIL_MODELS` → `..._MODEL` →
-  `config.llm_model` → built-in default.
-- **Record:** chosen model ids, `max_passes`, and observed keep-ratios in the owner runbook
-  §G5 and the workload-review docs.
+The validator council (`--validate`) was removed in the native-first simplification. The
+Workload Review severity gate (`--min-severity` / `--min-score`) is the only filtering
+mechanism. This gate check is superseded by verifying `--min-severity` filtering in B1.
 
 ### C2 `[GATE]` Databricks Apps OBO — multi-tenant (App-env / O4)
 
@@ -320,7 +292,6 @@ Run the focused regression set:
 
 ```bash
 pytest packages/starboard/tests/unit/infra/auth/test_app_obo_dependency.py \
-       packages/starboard/tests/unit/tools/services/test_validator_council.py \
        packages/starboard/tests/unit/tools/adapters/test_cluster_rightsizing_tools.py -q
 ```
 
@@ -372,7 +343,7 @@ Deployed surfaces:
 | A6 | Import contracts | `lint-imports` | ☐ | | 4 KEPT |
 | B1–B4 | Surface smoke | CLI / `python -m` / MCP / registry(=59) | ☐ | | |
 | B5 | Internal pkg offline | `pytest` in `starboard-internal` | ☐ | | skips expected |
-| C1 | `[GATE]` Council live | `starboard review --validate` | ☐ | AI-platform | record model ids |
+| C1 | `[REMOVED]` Council | N/A — validator council deleted | — | — | severity gate only |
 | C2 | `[GATE]` Apps OBO | App identity logs | ☐ | App/platform | user, not SP |
 | C3 | `[GATE]` Internal parity | `pytest -m integration` (internal) | ☐ | Internal deploy | additive invariant |
 | D1–D5 | Negative/regression | focused pytest set | ☐ | | safety defaults |

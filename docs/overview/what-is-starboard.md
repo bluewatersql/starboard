@@ -27,10 +27,9 @@ You: "Why is my nightly ETL job taking 3 hours?"
 → Returns: Specific optimization recommendations with expected improvement
 ```
 
-Beyond free-form goals, Starboard ships three high-signal, deterministic surfaces
-over **public `system.*` data**: **Workload Review** (`starboard review`),
-**`genie ask`** (natural language → SQL), and **workspace discovery**
-(`starboard --discover`).
+Beyond free-form goals, Starboard ships two high-signal, deterministic surfaces
+over **public `system.*` data**: **Workload Review** (`starboard review`) and
+**workspace discovery** (`starboard --discover`).
 
 ---
 
@@ -68,9 +67,8 @@ estimates**, not finance-grade billing numbers.
 
 ### Store-Free by Default
 - **Multiple entry points** — CLI (`starboard`), the `python -m starboard_x.<cap>` middle tier, skills for Claude Code / Cursor, and an optional MCP server (`starboard-mcp`)
-- **In-memory state by default** — no database to provision; a UC-native durable backend (`uc`) is available, and `sqlite`/`postgres`/`lakebase` are opt-in extras
-- **Reference-file analytics context** — the default RAG path uses curated on-disk reference files + query packs, not an embedding/vector database
-- **TTL semantic cache** — enabled by default with no vector dependency; a similarity cache is opt-in behind a real vector backend
+- **In-memory state only** — no database to provision; durable CLI session persistence is via the JSON-file `SessionManager`
+- **Reference-file analytics context** — analytics context comes from curated on-disk reference files + query packs, not an embedding/vector database
 
 ---
 
@@ -118,8 +116,8 @@ For the complete architecture deep-dive, see [System Architecture](../architectu
 | **Runtime** | Python 3.12, asyncio, Pydantic V2, structlog |
 | **MCP** | stdio transport, Model Context Protocol (optional) |
 | **LLM** | OpenAI-compatible (GPT-4o, Claude via Databricks Model Serving) |
-| **State** | In-memory by default; UC-native durable backend; `sqlite`/`postgres`/`lakebase` via opt-in extras |
-| **Analytics context** | Curated reference files + query packs by default; managed Vector Search opt-in via `[vectorsearch]` |
+| **State** | In-memory only; no external database. CLI session persistence via JSON-file `SessionManager`. Redis cache opt-in via `[redis]` |
+| **Analytics context** | Curated reference files + query packs; no embeddings or vector database |
 | **Packaging** | `starboard`, `starboard-core` (+ `starboard_x`), `starboard-skills` |
 | **Quality** | ruff, mypy, pytest, import-linter kernel-purity contracts |
 

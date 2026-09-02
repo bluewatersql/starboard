@@ -102,14 +102,8 @@ The state database stores conversations, messages, episodes, facts, and user pro
 | 2,000 | ~1 GB |
 | 10,000 | ~5 GB |
 
-!!! note "Backend choice affects sizing"
-    SQLite is suitable for up to ~10,000 conversations. Beyond that, migrate to PostgreSQL for better concurrent access and query performance. See the [State Backends](state-backends.md) guide.
-
-### Vector Store
-
-The vector store holds embeddings for semantic search and caching. Each embedding is approximately 4 KB (1024 dimensions x 4 bytes; `EMBEDDING_DIMENSION` default is 1024).
-
-**Estimated size:** ~40 MB per 10,000 embeddings. Growth depends on the `ENABLE_SEMANTIC_CACHE` setting and conversation volume. The default `VECTOR_BACKEND=none` stores no embeddings at all.
+!!! note "In-memory state"
+    Conversation state is in-memory only — there is no database file to size. Conversation history is not durable across restarts; save important results with `--output-path`. CLI session metadata (named sessions) is stored in a small JSON file at `~/.starboard/sessions.db`. See the [State Management](state-backends.md) guide.
 
 ### Redis Cache
 
@@ -154,7 +148,7 @@ LLM API costs are typically the largest operational expense. The cost depends on
 ### Cost Optimization Strategies
 
 1. **Use smaller models for routing.** Set `DOMAIN_MODEL_OVERRIDES='{"router": "gpt-4o-mini"}'` to use a cheaper model for intent classification.
-2. **Enable semantic caching.** Set `ENABLE_SEMANTIC_CACHE=true` to cache similar queries (default TTL: 5 minutes for tool results).
+2. **Enable Redis caching.** Set `CACHE_BACKEND=redis` with `REDIS_URL` to share the TTL cache across replicas (default TTL: 5 minutes for tool results).
 3. **Set token budgets.** Use `LLM_MAX_TOKENS` to cap per-conversation spend.
 4. **Disable unused agents.** Set `DISABLED_AGENT_DOMAINS=diagnostic,discovery` if those domains are not needed.
 5. **Rely on automatic context summarization.** Long conversation history is compacted automatically by the context strategy once it exceeds internal turn thresholds — there is no toggle or environment variable to enable, and no per-request configuration.

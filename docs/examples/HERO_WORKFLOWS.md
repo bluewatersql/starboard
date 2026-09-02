@@ -118,7 +118,7 @@ with the offending tables and missing-policy evidence cited.
 
 - **Claude Code / Codex / OpenCode** — the `starboard-finops` skill, or the
   analytics agent (`mcp__starboard__analytics_agent`).
-- **CLI** — `starboard genie ask "top 10 cost drivers this month"`.
+- **CLI** — `starboard --goal "top 10 cost drivers this month"`.
 - **Genie** — the `analytics_agent` MCP tool over a Genie space.
 
 **Flow.** `build_analytics_context` builds RAG context over the billing
@@ -132,7 +132,7 @@ auto-stop, with each cost line attributed to a SKU from `system.billing.usage`.
 | Host | Entry point |
 |------|-------------|
 | Claude Code / Codex / OpenCode | skill `starboard-finops` → `mcp__starboard__analytics_agent` |
-| CLI | `starboard genie ask "top cost drivers"` |
+| CLI | `starboard --goal "top cost drivers"` |
 | Genie | `analytics_agent` MCP tool |
 
 ---
