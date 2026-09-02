@@ -65,12 +65,6 @@ server = [
     "rich>=13.0.0,<14.0.0",
     "structlog>=24.0.0",
     "redis>=5.0.0,<6.0.0",
-    "slowapi>=0.1.9,<1.0.0",
-    # Database
-    "asyncpg>=0.29.0,<1.0.0",
-    "pgvector>=0.3.0,<1.0.0",
-    "aiosqlite>=0.19.0,<1.0.0",
-    "sqlite-vec>=0.1.1,<1.0.0",
     # MCP protocol
     "mcp>=1.19.0,<2.0.0",
     "orjson>=3.11.4",

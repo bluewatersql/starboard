@@ -26,7 +26,7 @@ from starboard.infra.core.state_factory import (
 
 PYPROJECT = Path(__file__).parents[4] / "pyproject.toml"
 
-STORE_DRIVERS = ("redis", "asyncpg", "pgvector", "aiosqlite", "sqlite-vec")
+STORE_DRIVERS = ("redis",)
 
 
 @pytest.fixture(autouse=True)
@@ -122,7 +122,7 @@ class TestPackagingExtras:
     def test_store_extras_declared(self) -> None:
         data = tomllib.loads(PYPROJECT.read_text())
         extras = data["project"]["optional-dependencies"]
-        for extra in ("sqlite", "postgres", "redis", "memory", "vectorsearch", "all-stores"):
+        for extra in ("redis", "all-stores"):
             assert extra in extras, f"missing extra: {extra}"
 
     def test_dev_or_all_pulls_in_all_stores(self) -> None:

@@ -134,18 +134,13 @@ class TestPackagingExtras:
         data = tomllib.loads(_PYPROJECT.read_text(encoding="utf-8"))
         return data["project"]["optional-dependencies"]
 
-    def test_vectorsearch_pins_databricks_vectorsearch(self):
-        deps = self._extras()["vectorsearch"]
-        joined = " ".join(deps)
-        assert "databricks-vectorsearch" in joined
-        assert "sqlite-vec" not in joined
-
-    def test_sqlite_vec_not_in_default_dependencies(self):
+    def test_vector_drivers_not_in_default_dependencies(self):
+        # The vector/ANN stack was removed (reference-file RAG only); neither the
+        # sqlite-vec nor the managed vector-search driver ships anywhere now.
         data = tomllib.loads(_PYPROJECT.read_text(encoding="utf-8"))
         default_deps = " ".join(data["project"]["dependencies"])
         assert "sqlite-vec" not in default_deps
         assert "databricks-vectorsearch" not in default_deps
-
-    def test_sqlite_vec_remains_under_sqlite_extra(self):
-        deps = " ".join(self._extras()["sqlite"])
-        assert "sqlite-vec" in deps
+        extras = self._extras()
+        assert "vectorsearch" not in extras
+        assert "sqlite" not in extras
