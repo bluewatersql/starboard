@@ -299,9 +299,9 @@ async def create_agent_manager(
     Args:
         config: Environment configuration
         state_manager: Optional conversation state manager. If provided, used
-            instead of the default InMemoryConversationStateManager. Pass a
-            ConversationRepository backed by SQLiteStateStore for persistent
-            multi-turn sessions.
+            instead of the default InMemoryConversationStateManager. Durable
+            multi-turn CLI sessions are persisted separately by the JSON-file
+            SessionManager (see starboard.cli.sessions).
 
     Returns:
         Tuple of (manager, api, vector_store) — caller must close api and

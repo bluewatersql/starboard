@@ -12,15 +12,10 @@ from __future__ import annotations
 import atexit
 import json
 import os
-import warnings
 from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-# Module-level guard so the ``databricks``→``lakebase`` deprecation warning
-# (D-2.5) is emitted only once per process, no matter how many configs are built.
-_DATABRICKS_ALIAS_WARNED = False
 
 
 class EnvConfig(BaseSettings):
@@ -130,24 +125,10 @@ class EnvConfig(BaseSettings):
     environment: Literal["dev", "test", "staging", "production"] = "dev"
 
     # Database Backend
-    # Default is store-free (in-memory). Driver-backed backends
-    # (sqlite/postgres/lakebase) require their opt-in extra. ``uc`` (Unity
-    # Catalog native state, Statement Execution) is the durable, zero-external-DB
-    # server backend for low-write governed state (D-2.4); it is never
-    # auto-selected. The legacy value ``databricks`` is a **deprecated alias** for
-    # ``lakebase`` (D-2.5) — mapped by ``_alias_database_backend`` with a
-    # one-time warning so existing configs keep working.
-    database_backend: Literal[
-        "memory", "sqlite", "postgres", "lakebase", "uc"
-    ] = "memory"
-    database_url: str | None = None
-    sqlite_state_path: str = "./dev_data/starboard_state.db"
-    sqlite_memory_path: str = "./dev_data/starboard_memory.db"
-
-    # Connection Pools
-    postgres_min_pool_size: int = 5
-    postgres_max_pool_size: int = 20
-    postgres_command_timeout: int = 60
+    # State is memory-only (native-first simplification): conversation and memory
+    # state are ephemeral, in-process, driver-free. Durable CLI session
+    # persistence is handled separately by the JSON-file SessionManager.
+    database_backend: Literal["memory"] = "memory"
 
     # Cache Backend
     cache_backend: Literal["memory", "redis", "postgres"] = "memory"
@@ -199,33 +180,6 @@ class EnvConfig(BaseSettings):
         "2X-Small", "X-Small", "Small", "Medium", "Large", "X-Large",
         "2X-Large", "3X-Large", "4X-Large",
     })
-
-    @field_validator("database_backend", mode="before")
-    @classmethod
-    def _alias_database_backend(cls, v: Any) -> Any:
-        """Map the deprecated ``databricks`` backend value to ``lakebase`` (D-2.5).
-
-        The Lakebase/asyncpg adapter used to own the ``databricks`` literal; it is
-        renamed to ``lakebase`` to disambiguate from the new ``uc`` (Statement
-        Execution) backend. ``databricks`` keeps working as a deprecated alias so
-        no existing config hard-breaks; a one-time ``DeprecationWarning`` is
-        emitted per process.
-        """
-        if isinstance(v, str) and v.strip().lower() == "databricks":
-            global _DATABRICKS_ALIAS_WARNED
-            if not _DATABRICKS_ALIAS_WARNED:
-                _DATABRICKS_ALIAS_WARNED = True
-                warnings.warn(
-                    "database_backend='databricks' is deprecated; use "
-                    "'lakebase' (the Lakebase/Postgres adapter). The 'databricks' "
-                    "alias will be removed in a future release. Note: the new "
-                    "'uc' backend is the Unity Catalog native (Statement "
-                    "Execution) option.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-            return "lakebase"
-        return v
 
     @field_validator("databricks_warehouse_size", mode="before")
     @classmethod
@@ -403,35 +357,9 @@ class EnvConfig(BaseSettings):
             if not self.llm_api_key:
                 errors.append("LLM_API_KEY required (unless OFFLINE_MODE=true)")
 
-        # Validate database configuration
-        if (
-            self.database_backend in ("postgres", "lakebase")
-            and not self.database_url
-        ):
-            errors.append(
-                f"DATABASE_URL required for database_backend={self.database_backend}"
-            )
-
         # Validate cache configuration
         if self.cache_backend == "redis" and not self.redis_url:
             errors.append("REDIS_URL required for cache_backend=redis")
-
-        # Validate production environment
-        if (
-            self.environment in ("staging", "production")
-            and self.database_backend == "sqlite"
-        ):
-            errors.append(
-                "SQLite backend not recommended for staging/production "
-                "(use postgres or databricks)"
-            )
-
-        # Validate pool sizes
-        if self.postgres_min_pool_size > self.postgres_max_pool_size:
-            errors.append(
-                f"postgres_min_pool_size ({self.postgres_min_pool_size}) must be "
-                f"<= postgres_max_pool_size ({self.postgres_max_pool_size})"
-            )
 
         # Validate TTL values
         if self.cache_ttl < 0:
@@ -628,15 +556,6 @@ class EnvConfig(BaseSettings):
 
         # Database Backend
         os.environ["DATABASE_BACKEND"] = self.database_backend
-        if self.database_url is not None:
-            os.environ["DATABASE_URL"] = self.database_url
-        os.environ["SQLITE_STATE_PATH"] = self.sqlite_state_path
-        os.environ["SQLITE_MEMORY_PATH"] = self.sqlite_memory_path
-
-        # Connection Pools
-        os.environ["POSTGRES_MIN_POOL_SIZE"] = str(self.postgres_min_pool_size)
-        os.environ["POSTGRES_MAX_POOL_SIZE"] = str(self.postgres_max_pool_size)
-        os.environ["POSTGRES_COMMAND_TIMEOUT"] = str(self.postgres_command_timeout)
 
         # Cache Backend
         os.environ["CACHE_BACKEND"] = self.cache_backend
