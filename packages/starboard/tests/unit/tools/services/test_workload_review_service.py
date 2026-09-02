@@ -15,12 +15,6 @@ import asyncio
 
 import polars as pl
 import pytest
-from starboard.tools.services.validator_council import (
-    CouncilConfig,
-    CritiqueRequest,
-    ValidatorCouncil,
-    Verdict,
-)
 from starboard.tools.services.workload_review_service import (
     WorkloadReviewService,
 )
@@ -126,24 +120,6 @@ class TestWorkloadReviewService:
         )
 
 
-class _DropByIdModel:
-    """Fake council model that drops findings whose id is in ``drop_ids``."""
-
-    def __init__(self, drop_ids: frozenset[str]) -> None:
-        self._drop_ids = drop_ids
-
-    @property
-    def model_id(self) -> str:
-        return "fake"
-
-    async def critique(
-        self, request: CritiqueRequest, *, seed: int
-    ) -> tuple[Verdict, float]:
-        if request.finding_id in self._drop_ids:
-            return (Verdict.DROP, 0.9)
-        return (Verdict.KEEP, 0.9)
-
-
 @pytest.mark.unit
 class TestRunValidated:
     def test_no_gate_no_validator_matches_plain_run(self) -> None:
@@ -154,7 +130,6 @@ class TestRunValidated:
             rf.finding.id for rf in plain.findings
         ]
         assert validated.gate is None
-        assert validated.council is None
 
     def test_severity_gate_suppresses_sub_threshold_findings(self) -> None:
         service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
@@ -171,24 +146,6 @@ class TestRunValidated:
         assert validated.gate is not None
         assert validated.gate.suppressed_count >= 1
 
-    def test_council_suppresses_rejected_findings(self) -> None:
-        service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
-        council = ValidatorCouncil(
-            [_DropByIdModel(frozenset({"warehouse_auto_stop_disabled::wh-idle"}))],
-            config=CouncilConfig(model_ids=("fake",)),
-        )
-        validated = _run(service.run_validated(["warehouse"], validator=council))
-        ids = [rf.finding.id for rf in validated.review.findings]
-        assert "warehouse_auto_stop_disabled::wh-idle" not in ids
-        assert validated.council is not None
-        assert validated.council.suppressed_count == 1
-        # Spend stays under the council's bounded ceiling.
-        assert (
-            validated.council.total_model_calls
-            <= validated.council.max_possible_calls
-        )
-
-
 @pytest.mark.unit
 class TestWorkloadReviewProgress:
     """The service reports phase progress so a long scan is not silent."""
@@ -201,29 +158,15 @@ class TestWorkloadReviewProgress:
         assert any("scanning" in e for e in events)
         assert any("scan complete" in e for e in events)
 
-    def test_run_validated_emits_gate_and_council_progress(self) -> None:
+    def test_run_validated_emits_gate_progress(self) -> None:
         service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
-
-        class _KeepAll:
-            @property
-            def model_id(self) -> str:
-                return "fake"
-
-            async def critique(self, request: CritiqueRequest, *, seed: int):
-                return (Verdict.KEEP, 1.0)
-
-        council = ValidatorCouncil(
-            [_KeepAll()], config=CouncilConfig(model_ids=("fake",), max_passes=1)
-        )
         events: list[str] = []
         _run(
             service.run_validated(
                 ["warehouse"],
                 gate=SeverityGate(min_severity=Severity.LOW),
-                validator=council,
                 progress=events.append,
             )
         )
 
         assert any("severity gate" in e for e in events)
-        assert any("validating" in e for e in events)

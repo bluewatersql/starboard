@@ -84,15 +84,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable the discovery scan cache (re-run every evidence query).",
     )
-    # --- D1c: validator council + severity gate (opt-in) ------------------- #
-    parser.add_argument(
-        "--validate",
-        action="store_true",
-        help=(
-            "Gate findings through the bounded validator council before "
-            "surfacing them (model ids + max passes come from config)."
-        ),
-    )
+    # --- severity gate (opt-in) -------------------------------------------- #
     parser.add_argument(
         "--min-severity",
         default=None,
@@ -174,33 +166,9 @@ def _build_gate(args: argparse.Namespace):
     return SeverityGate(**kwargs)
 
 
-def _build_validator(args: argparse.Namespace, config, err: Console):
-    """Build the validator council from config, or None (degrades on failure).
-
-    Model ids + bounded max-passes come from :class:`CouncilConfig` (env/config),
-    never hard-coded. If no LLM client can be built (e.g. offline), the council
-    is skipped with a warning rather than failing the review.
-    """
-    if not args.validate:
-        return None
-    from starboard import CouncilConfig, build_council, create_llm_client
-
-    try:
-        llm_client = create_llm_client(config)
-    except Exception as exc:  # noqa: BLE001 - degrade to no-council, keep the review
-        err.print(
-            f"[yellow]! --validate requested but no model client is available "
-            f"({exc}); surfacing findings without council validation.[/yellow]"
-        )
-        return None
-    council_config = CouncilConfig.from_env(default_model=config.llm_model)
-    return build_council(llm_client, council_config)
-
-
 async def _run_review(
     args: argparse.Namespace,
     workspace_label: str | None,
-    err: Console,
     progress: Callable[[str], None] | None = None,
 ):
     from starboard import WorkloadReviewService
@@ -208,7 +176,6 @@ async def _run_review(
 
     config = _resolve_config(args)
     gate = _build_gate(args)
-    validator = _build_validator(args, config, err)
 
     client = AsyncDatabricksClient(cfg=config)
     sql_executor = AsyncSQLExecutor(client)
@@ -220,16 +187,15 @@ async def _run_review(
         workspace=workspace_label,
     )
     async with client:
-        if gate is None and validator is None:
+        if gate is None:
             review = await service.run(_parse_domains(args.domains), progress=progress)
-            return review, None, None
+            return review, None
         validated = await service.run_validated(
             _parse_domains(args.domains),
             gate=gate,
-            validator=validator,
             progress=progress,
         )
-        return validated.review, validated.gate, validated.council
+        return validated.review, validated.gate
 
 
 def _render_table(review, console: Console) -> None:
@@ -365,11 +331,7 @@ def run_review(argv: list[str]) -> int:
     # stays a clean envelope.
     scope = ", ".join(_parse_domains(args.domains))
     target = f" ({workspace_label})" if workspace_label else ""
-    err.print(
-        f"[dim]Workload Review{target} — domains: {scope}"
-        + ("; validating findings" if args.validate else "")
-        + "…[/dim]"
-    )
+    err.print(f"[dim]Workload Review{target} — domains: {scope}…[/dim]")
 
     try:
         with err.status("Starting review…", spinner="dots") as status:
@@ -377,8 +339,8 @@ def run_review(argv: list[str]) -> int:
             def _progress(message: str) -> None:
                 status.update(message)
 
-            review, gate_outcome, council = asyncio.run(
-                _run_review(args, workspace_label, err, progress=_progress)
+            review, gate_outcome = asyncio.run(
+                _run_review(args, workspace_label, progress=_progress)
             )
     except KeyboardInterrupt:
         err.print("\n[yellow]Interrupted by user[/yellow]")
@@ -422,50 +384,26 @@ def run_review(argv: list[str]) -> int:
 
     if args.json:
         data = review.model_dump(mode="json")
-        if gate_outcome is not None or council is not None:
-            data["validation"] = {
-                "gate_suppressed": (
-                    gate_outcome.suppressed_count if gate_outcome else 0
-                ),
-                "council_suppressed": (council.suppressed_count if council else 0),
-                "council_model_calls": (council.total_model_calls if council else 0),
-                "council_max_possible_calls": (
-                    council.max_possible_calls if council else 0
-                ),
-                "council_disabled_models": (
-                    list(council.disabled_model_ids) if council else []
-                ),
-            }
+        if gate_outcome is not None:
+            data["validation"] = {"gate_suppressed": gate_outcome.suppressed_count}
         if delta is not None:
             data["action_rate"] = delta.model_dump(mode="json")
         _emit_json(ok=True, command="run", data=data)
     else:
         _render_table(review, out)
-        _render_validation(gate_outcome, council, out)
+        _render_validation(gate_outcome, out)
         _render_action_rate(delta, out)
     return EXIT_OK
 
 
-def _render_validation(gate_outcome, council, console: Console) -> None:
-    """Print a short validation summary when the D1c pipeline ran."""
-    if gate_outcome is None and council is None:
+def _render_validation(gate_outcome, console: Console) -> None:
+    """Print a short severity-gate summary when the gate ran."""
+    if gate_outcome is None:
         return
-    if council is not None and council.disabled_model_ids:
-        console.print(
-            "[yellow]! council models unreachable and skipped for this run: "
-            f"{', '.join(council.disabled_model_ids)}[/yellow] "
-            "[dim](check the endpoint names in "
-            "STARBOARD_REVIEW_COUNCIL_MODELS)[/dim]"
-        )
-    parts: list[str] = []
-    if gate_outcome is not None:
-        parts.append(f"severity gate suppressed {gate_outcome.suppressed_count}")
-    if council is not None:
-        parts.append(
-            f"council suppressed {council.suppressed_count} "
-            f"({council.total_model_calls}/{council.max_possible_calls} model calls)"
-        )
-    console.print(f"[dim]Validation: {'; '.join(parts)}.[/dim]\n")
+    console.print(
+        f"[dim]Validation: severity gate suppressed "
+        f"{gate_outcome.suppressed_count}.[/dim]\n"
+    )
 
 
 def _render_action_rate(delta, console: Console) -> None:

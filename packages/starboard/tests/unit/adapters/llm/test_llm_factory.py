@@ -52,11 +52,9 @@ class TestLLMFactory:
             mock_config.llm_seed = 42
             mock_config.llm_planning_model = None
             mock_config.llm_judge_model = None
-            mock_config.llm_review_model = None
             mock_config.llm_synth_model = None
             mock_config.llm_planning_temperature = None
             mock_config.llm_judge_temperature = None
-            mock_config.llm_review_temperature = None
             mock_config.llm_synth_temperature = None
             mock_config_class.from_env.return_value = mock_config
 

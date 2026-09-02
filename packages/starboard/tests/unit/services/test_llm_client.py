@@ -32,11 +32,9 @@ class TestOpenAIProvider:
         cfg.llm_base_url = None
         cfg.llm_planning_model = None
         cfg.llm_judge_model = None
-        cfg.llm_review_model = None
         cfg.llm_synth_model = None
         cfg.llm_planning_temperature = None
         cfg.llm_judge_temperature = None
-        cfg.llm_review_temperature = None
         cfg.llm_synth_temperature = None
         cfg.llm_seed = 42  # Add seed to mock config
         return cfg
@@ -442,11 +440,9 @@ class TestOpenAIProviderStreaming:
         cfg.llm_base_url = None
         cfg.llm_planning_model = None
         cfg.llm_judge_model = None
-        cfg.llm_review_model = None
         cfg.llm_synth_model = None
         cfg.llm_planning_temperature = None
         cfg.llm_judge_temperature = None
-        cfg.llm_review_temperature = None
         cfg.llm_synth_temperature = None
         cfg.llm_seed = 42  # Add seed to mock config
         return cfg

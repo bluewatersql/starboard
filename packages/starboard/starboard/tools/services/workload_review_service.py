@@ -63,29 +63,23 @@ from starboard.discovery.query_packs.registry import (
     create_default_registry,
 )
 from starboard.infra.observability.logging import get_logger
-from starboard.tools.services.validator_council import (
-    CouncilResult,
-    ValidatorCouncil,
-)
 
 logger = get_logger(__name__)
 
 
 class ValidatedReview(BaseModel):
-    """A review plus the D1c gate/council decisions that shaped its findings.
+    """A review plus the severity-gate decision that shaped its findings.
 
-    ``review.findings`` holds only the findings that survived the severity gate
-    and (when configured) the validator council. ``gate`` / ``council`` carry the
-    suppression detail so callers can report what was filtered and at what model
-    spend. Either stage is ``None`` when it was not run (both ``None`` reproduces
-    the default, un-gated review verbatim).
+    ``review.findings`` holds only the findings that survived the severity gate.
+    ``gate`` carries the suppression detail so callers can report what was
+    filtered. ``gate`` is ``None`` when it was not run (reproducing the default,
+    un-gated review verbatim).
     """
 
     model_config = ConfigDict(frozen=True)
 
     review: WorkloadReview
     gate: GateOutcome | None = None
-    council: CouncilResult | None = None
 
 # Synthetic pack id/domain used to run only the evidence queries a review needs.
 _REVIEW_PACK_ID = "workload_review"
@@ -258,25 +252,20 @@ class WorkloadReviewService:
         domains: Sequence[str] | None = None,
         *,
         gate: SeverityGate | None = None,
-        validator: ValidatorCouncil | None = None,
         progress: Callable[[str], None] | None = None,
     ) -> ValidatedReview:
-        """Run a review, then optionally gate + council-validate its findings.
+        """Run a review, then optionally gate its findings by severity.
 
-        Opt-in D1c pipeline (PHASE_3 D-3.2): the default ``run`` behavior is
-        unchanged — this method only adds filtering when a ``gate`` and/or a
-        ``validator`` is supplied. The stages run in order (cheap, pure severity
-        gate first, then the bounded model council over the survivors) so the
-        council never spends model calls on findings the gate already dropped.
+        Opt-in pipeline: the default ``run`` behavior is unchanged — this method
+        only adds a pure severity-gate filter when a ``gate`` is supplied.
 
         Args:
             domains: Requested review domains (default D-3.7 scope).
             gate: A pure severity gate; ``None`` skips gating.
-            validator: A bounded validator council; ``None`` skips it.
 
         Returns:
             A :class:`ValidatedReview` whose ``review.findings`` are the
-            survivors, with the gate/council decisions attached.
+            survivors, with the gate decision attached.
         """
         review = await self.run(domains, progress=progress)
 
@@ -291,30 +280,15 @@ class WorkloadReviewService:
                     f"{review.finding_count} findings kept"
                 )
 
-        council_result: CouncilResult | None = None
-        if validator is not None:
-            council_result = await validator.review(candidates, progress=progress)
-            candidates = list(council_result.kept)
-
         final_review = review.model_copy(update={"findings": tuple(candidates)})
 
         logger.info(
             "workload_review_validated",
             base_findings=review.finding_count,
-            gate_suppressed=(
-                gate_outcome.suppressed_count if gate_outcome else 0
-            ),
-            council_suppressed=(
-                council_result.suppressed_count if council_result else 0
-            ),
-            council_model_calls=(
-                council_result.total_model_calls if council_result else 0
-            ),
+            gate_suppressed=(gate_outcome.suppressed_count if gate_outcome else 0),
             final_findings=final_review.finding_count,
         )
-        return ValidatedReview(
-            review=final_review, gate=gate_outcome, council=council_result
-        )
+        return ValidatedReview(review=final_review, gate=gate_outcome)
 
 
 __all__ = [

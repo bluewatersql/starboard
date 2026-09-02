@@ -77,8 +77,6 @@ class EnvConfig(BaseSettings):
     llm_planning_temperature: float | None = None
     llm_judge_model: str | None = None
     llm_judge_temperature: float | None = None
-    llm_review_model: str | None = None
-    llm_review_temperature: float | None = None
     llm_synth_model: str | None = None
     llm_synth_temperature: float | None = None
 
@@ -515,10 +513,6 @@ class EnvConfig(BaseSettings):
             os.environ["LLM_JUDGE_MODEL"] = self.llm_judge_model
         if self.llm_judge_temperature is not None:
             os.environ["LLM_JUDGE_TEMPERATURE"] = str(self.llm_judge_temperature)
-        if self.llm_review_model is not None:
-            os.environ["LLM_REVIEW_MODEL"] = self.llm_review_model
-        if self.llm_review_temperature is not None:
-            os.environ["LLM_REVIEW_TEMPERATURE"] = str(self.llm_review_temperature)
         if self.llm_synth_model is not None:
             os.environ["LLM_SYNTH_MODEL"] = self.llm_synth_model
         if self.llm_synth_temperature is not None:

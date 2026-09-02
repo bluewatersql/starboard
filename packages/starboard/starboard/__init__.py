@@ -42,8 +42,6 @@ _PUBLIC_API: dict[str, str] = {
     "create_llm_client": "starboard.adapters.llm",
     "AnalyticsSqlAdapter": "starboard.adapters.ports.analytics_sql",
     "LLMSQLGenerator": "starboard.tools.domain.analytics_sql.llm_sql_generator",
-    "CouncilConfig": "starboard.tools.services.validator_council",
-    "build_council": "starboard.tools.services.validator_council",
     "WorkloadReviewService": "starboard.tools.services.workload_review_service",
 }
 
@@ -67,12 +65,6 @@ if TYPE_CHECKING:
     from starboard.infra.observability.logging import get_logger as get_logger
     from starboard.tools.domain.analytics_sql.llm_sql_generator import (
         LLMSQLGenerator as LLMSQLGenerator,
-    )
-    from starboard.tools.services.validator_council import (
-        CouncilConfig as CouncilConfig,
-    )
-    from starboard.tools.services.validator_council import (
-        build_council as build_council,
     )
     from starboard.tools.services.workload_review_service import (
         WorkloadReviewService as WorkloadReviewService,

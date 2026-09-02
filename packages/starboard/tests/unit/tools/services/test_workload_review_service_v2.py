@@ -19,12 +19,6 @@ import asyncio
 
 import polars as pl
 import pytest
-from starboard.tools.services.validator_council import (
-    CouncilConfig,
-    CritiqueRequest,
-    ValidatorCouncil,
-    Verdict,
-)
 from starboard.tools.services.workload_review_service import WorkloadReviewService
 from starboard_core.domain.models.finding import Severity
 from starboard_core.domain.rules.gate import SeverityGate
@@ -140,24 +134,8 @@ class TestV2ServiceRouting:
         assert set(review.requested_domains) == {"jobs", "sql", "warehouse"}
 
 
-class _DropByIdModel:
-    """Deterministic stub council model — drops findings whose id is listed."""
-
-    def __init__(self, drop_ids: frozenset[str]) -> None:
-        self._drop_ids = drop_ids
-
-    @property
-    def model_id(self) -> str:
-        return "fake"
-
-    async def critique(self, request: CritiqueRequest, *, seed: int) -> tuple[Verdict, float]:
-        if request.finding_id in self._drop_ids:
-            return (Verdict.DROP, 0.9)
-        return (Verdict.KEEP, 0.9)
-
-
 @pytest.mark.unit
-class TestV2GateAndCouncil:
+class TestV2Gate:
     def test_severity_gate_suppresses_sub_threshold_v2_findings(self) -> None:
         service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
         validated = _run(
@@ -167,21 +145,3 @@ class TestV2GateAndCouncil:
         assert all(rf.finding.severity == Severity.HIGH for rf in validated.review.findings)
         assert validated.gate is not None
         assert validated.gate.suppressed_count >= 1
-
-    def test_council_suppresses_rejected_v2_finding(self) -> None:
-        service = WorkloadReviewService(_FakeSQLExecutor(), enable_cache=False)
-        # Finding id is ``{rule_id}::{entity_key}`` where entity_key prefers
-        # pipeline_name ("abandoned") over pipeline_id.
-        council = ValidatorCouncil(
-            [_DropByIdModel(frozenset({"dlt_stale_pipeline::abandoned"}))],
-            config=CouncilConfig(model_ids=("fake",)),
-        )
-        validated = _run(service.run_validated(["dlt"], validator=council))
-        ids = [rf.finding.id for rf in validated.review.findings]
-        assert "dlt_stale_pipeline::abandoned" not in ids
-        assert validated.council is not None
-        assert validated.council.suppressed_count == 1
-        assert (
-            validated.council.total_model_calls
-            <= validated.council.max_possible_calls
-        )
