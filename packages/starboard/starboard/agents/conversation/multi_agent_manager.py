@@ -639,21 +639,6 @@ class MultiAgentConversationManager:
             has_metadata=metadata is not None,
         )
 
-        # Prompt injection guardrail (log-only, does not block)
-        from starboard.agents.guardrails.injection_detector import (
-            scan_for_injection,
-        )
-
-        injection_result = scan_for_injection(user_message)
-        if injection_result.is_suspicious:
-            logger.warning(
-                "prompt_injection_scan_suspicious",
-                conversation_id=conversation_id,
-                user_id=user_id,
-                matched_patterns=injection_result.matched_patterns,
-                confidence=injection_result.confidence,
-            )
-
         # Load or create shared context
         shared_context = await self._context_manager.load_or_create(
             conversation_id, user_id

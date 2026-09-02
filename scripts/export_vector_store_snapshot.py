@@ -356,8 +356,8 @@ async def main():
         for path in possible_paths:
             console.print(f"  • {path}")
         console.print(
-            "\nPlease run the RAG build script first:\n"
-            "  python scripts/build_rag_vector_store.py"
+            "\nPlease build the RAG reference data first:\n"
+            "  python scripts/build_rag_reference_files.py"
         )
         return 1
 

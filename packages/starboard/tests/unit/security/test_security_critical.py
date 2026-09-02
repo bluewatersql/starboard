@@ -361,42 +361,6 @@ class TestCORSMethodsRestricted:
 
 
 # =============================================================================
-# 12: rate_limit.py — warning when limiter not attached
-# =============================================================================
-
-
-class TestRateLimitWarning:
-    """check_rate_limit must log a warning when limiter is not attached."""
-
-    def test_warning_logged_when_no_limiter(self) -> None:
-        """When app.state has no limiter, a warning must be logged."""
-        from fastapi import FastAPI, Request
-        from starboard.infra.middleware import rate_limit as rate_limit_module
-        from starboard.infra.middleware.rate_limit import check_rate_limit
-
-        app = FastAPI()
-        # Do NOT attach a limiter to app.state
-
-        scope = {
-            "type": "http",
-            "method": "GET",
-            "path": "/api/data",
-            "query_string": b"",
-            "headers": [],
-            "app": app,
-        }
-
-        request = Request(scope)
-        # Ensure no limiter on state
-        assert not hasattr(app.state, "limiter")
-
-        mock_logger = MagicMock()
-        with patch.object(rate_limit_module, "logger", mock_logger):
-            check_rate_limit(request, "10/minute")
-            mock_logger.warning.assert_called_once()
-
-
-# =============================================================================
 # 14: config.py sync_to_env — atexit cleanup of sensitive env vars
 # =============================================================================
 

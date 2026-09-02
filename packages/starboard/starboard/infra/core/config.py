@@ -171,10 +171,6 @@ class EnvConfig(BaseSettings):
             "Empty quarantines managed retrieval because wildcard columns are invalid."
         ),
     )
-    vector_metadata_llm_model: str = "databricks-gpt-5-mini"
-    vector_metadata_llm_temperature: float = 1.0
-    vector_metadata_llm_max_tokens: int = 5000
-
     # Semantic Cache Configuration
     # The DEFAULT semantic cache is a TTL-only exact-key cache with no vector
     # store and no embeddings (Phase 2 C4, D-2.9). ``semantic_cache_threshold``
@@ -183,10 +179,6 @@ class EnvConfig(BaseSettings):
     # behind ``starboard[sqlite]`` / ``starboard[vectorsearch]``).
     semantic_cache_threshold: float = 0.95  # Minimum similarity for cache hit (vector path only)
 
-    # Rate Limiting
-    rate_limit_enabled: bool = True
-    rate_limit_storage: str = "memory://"  # memory:// or redis://...
-    rate_limit_default: str = "100/minute"  # Default limit for unprotected routes
     max_request_size: int = 10 * 1024 * 1024  # 10MB default
 
     # Optional Features
@@ -696,10 +688,6 @@ class EnvConfig(BaseSettings):
         # Semantic Cache
         os.environ["SEMANTIC_CACHE_THRESHOLD"] = str(self.semantic_cache_threshold)
 
-        # Rate Limiting
-        os.environ["RATE_LIMIT_ENABLED"] = str(self.rate_limit_enabled).lower()
-        os.environ["RATE_LIMIT_STORAGE"] = self.rate_limit_storage
-        os.environ["RATE_LIMIT_DEFAULT"] = self.rate_limit_default
         os.environ["MAX_REQUEST_SIZE"] = str(self.max_request_size)
 
         # Optional Features
