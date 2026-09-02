@@ -14,7 +14,7 @@ The single, generated index of every Starboard capability surface: skills, MCP t
 | Skills | 10 | NL capabilities as `SKILL.md` prompts | [skills](skills/INDEX.md) |
 | MCP tools | 59 | Shared tool registry (callable over MCP) | [mcp-tools](mcp-tools/INDEX.md) |
 | Agents | 12 | Canonical agent definitions | [agents](agents/INDEX.md) |
-| CLI commands | 5 | `starboard` command surfaces | [cli-commands](cli-commands/INDEX.md) |
+| CLI commands | 4 | `starboard` command surfaces | [cli-commands](cli-commands/INDEX.md) |
 | Progressive helpers | 6 | `python -m starboard_x.<cap>` | [progressive-helpers](progressive-helpers/INDEX.md) |
 | Plugins | contract | Opt-in per-domain tool plugins | [plugins](plugins/INDEX.md) |
 

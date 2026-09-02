@@ -72,7 +72,6 @@ examples:
       - {kind: mcp-tools, name: build_analytics_context}
       - {kind: mcp-tools, name: build_sql_query}
       - {kind: mcp-tools, name: execute_sql_query}
-      - {kind: cli-commands, name: "starboard genie ask"}
     expect: [summary, findings, recommendations, cost_estimate]
     last_verified: 2026-08-29
   - id: workspace-health-scorecard

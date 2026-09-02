@@ -30,7 +30,7 @@ Live sources
 - Skills        — ``packages/starboard-skills/skills/starboard/*/SKILL.md``.
 - Agents        — ``packages/starboard-skills/agents/*.yaml``.
 - CLI commands  — the routed command groups in ``starboard.cli.cli.main`` /
-                  ``review_command`` / ``genie_command`` / ``auth_commands``.
+                  ``review_command`` / ``auth_commands``.
 - Helpers       — ``starboard_x.__main__._IMPLEMENTED`` / ``_DECLARED``
                   (``python -m starboard_x.<cap>``).
 - Plugins       — the ``starboard.mcp_tools`` entry-point contract + the sample
@@ -244,15 +244,9 @@ def collect_cli_commands() -> list[CliEntry]:
         ),
         CliEntry(
             command="starboard review",
-            purpose="Workload Review over public system.* data (validator council).",
+            purpose="Workload Review over public system.* data (severity gate).",
             invocation="starboard review [--domains jobs,sql,warehouse]",
             dispatch="starboard.cli.cli.review_command:run_review",
-        ),
-        CliEntry(
-            command="starboard genie ask",
-            purpose="Natural-language → SQL via the public NL-query path.",
-            invocation='starboard genie ask "<question>"',
-            dispatch="starboard.cli.cli.genie_command:run_genie",
         ),
         CliEntry(
             command="starboard auth",
@@ -420,8 +414,8 @@ def render_cli(entries: list[CliEntry]) -> str:
         _header(
             "CLI Commands",
             f"**{len(entries)} command surfaces** exposed by the `starboard` CLI. "
-            "The root command is the natural-language goal agent; `review`, "
-            "`genie`, and `auth` are routed command groups.",
+            "The root command is the natural-language goal agent; `review` "
+            "and `auth` are routed command groups.",
         )
         + "\n"
         "| Command | Purpose | Invocation |\n"

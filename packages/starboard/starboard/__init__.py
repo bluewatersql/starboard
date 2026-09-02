@@ -40,7 +40,6 @@ _PUBLIC_API: dict[str, str] = {
     "resolve_workspace_client": "starboard.infra.auth.resolver",
     "WorkspaceTarget": "starboard.infra.auth.resolver",
     "create_llm_client": "starboard.adapters.llm",
-    "AnalyticsSqlAdapter": "starboard.adapters.ports.analytics_sql",
     "LLMSQLGenerator": "starboard.tools.domain.analytics_sql.llm_sql_generator",
     "WorkloadReviewService": "starboard.tools.services.workload_review_service",
 }
@@ -50,9 +49,6 @@ if TYPE_CHECKING:
     # ``X as X`` marks each as an explicit re-export (the runtime source of truth is
     # ``_PUBLIC_API``; these bindings exist only for static analysis).
     from starboard.adapters.llm import create_llm_client as create_llm_client
-    from starboard.adapters.ports.analytics_sql import (
-        AnalyticsSqlAdapter as AnalyticsSqlAdapter,
-    )
     from starboard.infra.auth.resolver import (
         WorkspaceTarget as WorkspaceTarget,
     )

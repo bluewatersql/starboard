@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pytest
 from starboard.adapters.ports import (
-    AnalyticsSqlAdapter,
     NativeDiagnosticAdapter,
     SdkDbfsLogAdapter,
     SingleWorkspaceFleetAdapter,
@@ -21,7 +20,6 @@ from starboard.adapters.ports import (
 from starboard_core.ports.diagnostic_backend import DiagnosticBackendPort
 from starboard_core.ports.fleet_sql import FleetQuery, FleetSqlPort
 from starboard_core.ports.log_retrieval import LogQuery, LogRetrievalPort
-from starboard_core.ports.nl_query import NLQueryPort, WorkspaceCtx
 
 _ADAPTER_DIR = (
     Path(__file__).parents[5] / "starboard" / "starboard" / "adapters" / "ports"
@@ -67,9 +65,6 @@ class TestPublicAdaptersSatisfyProtocols:
 
     def test_native_diagnostic_adapter_satisfies_port(self) -> None:
         assert isinstance(NativeDiagnosticAdapter(), DiagnosticBackendPort)
-
-    def test_analytics_sql_adapter_satisfies_port(self) -> None:
-        assert isinstance(AnalyticsSqlAdapter(generator=object()), NLQueryPort)
 
     def test_single_workspace_fleet_adapter_satisfies_port(self) -> None:
         async def _exec(sql, params):
@@ -134,24 +129,6 @@ class TestNativeDiagnosticAdapter:
         assert result.summary is not None
         # evidence window ids surface for citation
         assert isinstance(result.evidence, tuple)
-
-
-@pytest.mark.unit
-class TestAnalyticsSqlAdapter:
-    async def test_ask_delegates_to_generator(self) -> None:
-        class _FakeGenerator:
-            async def generate(self, user_query, intent_context, rag_context, previous_errors=None):
-                return {
-                    "success": True,
-                    "sql": "SELECT 1",
-                    "explanation": "trivial",
-                }
-
-        adapter = AnalyticsSqlAdapter(generator=_FakeGenerator())
-        answer = await adapter.ask("how many jobs?", WorkspaceCtx(host="https://x"))
-        assert answer.success is True
-        assert answer.sql == "SELECT 1"
-        assert answer.explanation == "trivial"
 
 
 @pytest.mark.unit

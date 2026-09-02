@@ -7,7 +7,6 @@ wraps existing native code behind its Protocol; no new capability is added.
 Internal adapters are Phase 3 and do not ship here.
 """
 
-from starboard.adapters.ports.analytics_sql import AnalyticsSqlAdapter
 from starboard.adapters.ports.native_diagnostic import NativeDiagnosticAdapter
 from starboard.adapters.ports.sdk_dbfs_log import SdkDbfsLogAdapter
 from starboard.adapters.ports.single_workspace_fleet import SingleWorkspaceFleetAdapter
@@ -15,6 +14,5 @@ from starboard.adapters.ports.single_workspace_fleet import SingleWorkspaceFleet
 __all__ = [
     "SdkDbfsLogAdapter",
     "NativeDiagnosticAdapter",
-    "AnalyticsSqlAdapter",
     "SingleWorkspaceFleetAdapter",
 ]

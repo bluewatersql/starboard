@@ -2,7 +2,7 @@
 
 # CLI Commands
 
-**5 command surfaces** exposed by the `starboard` CLI. The root command is the natural-language goal agent; `review`, `genie`, and `auth` are routed command groups.
+**4 command surfaces** exposed by the `starboard` CLI. The root command is the natural-language goal agent; `review` and `auth` are routed command groups.
 
 [← Capability Catalog](../CATALOG.md)
 
@@ -10,8 +10,7 @@
 |---------|---------|------------|
 | `starboard --goal / --chat` | Natural-language goal agent (multi-agent loop) and interactive chat. | `starboard --goal "<request>" · starboard --chat` |
 | `starboard --discover` | Non-agentic workspace discovery and health assessment. | `starboard --discover` |
-| `starboard review` | Workload Review over public system.* data (validator council). | `starboard review [--domains jobs,sql,warehouse]` |
-| `starboard genie ask` | Natural-language → SQL via the public NL-query path. | `starboard genie ask "<question>"` |
+| `starboard review` | Workload Review over public system.* data (severity gate). | `starboard review [--domains jobs,sql,warehouse]` |
 | `starboard auth` | Auth-by-subtraction helpers (login / status) over the SDK credential chain. | `starboard auth login · starboard auth status` |
 
 **Inputs/outputs:** commands read flags/args and Databricks auth from the resolved credential chain (`--profile` / ambient); they print reports or JSON envelopes and use standard exit codes (`0` ok · `1` auth · `2` not-found · `3` api-error · `4` arg-error). Entry point: `starboard.cli.main:main`.
