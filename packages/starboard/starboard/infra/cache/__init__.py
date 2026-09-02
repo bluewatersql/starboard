@@ -3,15 +3,8 @@
 """
 Cache infrastructure.
 
-This package provides caching implementations:
-- TTLSemanticCache: TTL-only exact-key LLM response caching (default, no vector deps)
-- SemanticCache: Similarity-based LLM response caching (opt-in, requires a vector store)
+Provides the dependency-free async LRU cache (:mod:`async_lru_cache`). The
+similarity-based / TTL semantic-cache implementations were removed in the
+native-first simplification (they were only wired through the now-retired
+foundation container).
 """
-
-from starboard.infra.cache.semantic_cache import SemanticCache
-from starboard.infra.cache.ttl_semantic_cache import TTLSemanticCache
-
-__all__ = [
-    "SemanticCache",
-    "TTLSemanticCache",
-]

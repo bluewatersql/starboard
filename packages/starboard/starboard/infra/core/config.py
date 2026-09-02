@@ -143,8 +143,6 @@ class EnvConfig(BaseSettings):
     database_url: str | None = None
     sqlite_state_path: str = "./dev_data/starboard_state.db"
     sqlite_memory_path: str = "./dev_data/starboard_memory.db"
-    sqlite_vector_path: str = "./dev_data/starboard_vectors.db"
-    sqlite_reflexion_path: str = "./dev_data/starboard_reflexion.db"
 
     # Connection Pools
     postgres_min_pool_size: int = 5
@@ -154,30 +152,6 @@ class EnvConfig(BaseSettings):
     # Cache Backend
     cache_backend: Literal["memory", "redis", "postgres"] = "memory"
     cache_ttl: int = 300  # 5 minutes default
-
-    # Vector Store Backend
-    # Default is `none`: the analytics agent builds context from on-disk curated
-    # reference files (starboard_core/rag/knowledge/domains/*.md) with no
-    # embeddings and no vector store (Phase 2 C1, D-2.3). `inmemory`/`sqlite` and
-    # the managed `vectorsearch` path are opt-in escape hatches for ANN recall.
-    vector_backend: Literal[
-        "none", "inmemory", "sqlite", "chroma", "databricks", "postgres", "vectorsearch"
-    ] = "none"
-    embedding_dimension: int = 1024
-    vectorsearch_columns: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Explicit result columns from the live managed Vector Search index. "
-            "Empty quarantines managed retrieval because wildcard columns are invalid."
-        ),
-    )
-    # Semantic Cache Configuration
-    # The DEFAULT semantic cache is a TTL-only exact-key cache with no vector
-    # store and no embeddings (Phase 2 C4, D-2.9). ``semantic_cache_threshold``
-    # is only consulted on the opt-in similarity path, which is selected when a
-    # real ``vector_backend`` is set (``inmemory``/``sqlite``/``vectorsearch``,
-    # behind ``starboard[sqlite]`` / ``starboard[vectorsearch]``).
-    semantic_cache_threshold: float = 0.95  # Minimum similarity for cache hit (vector path only)
 
     max_request_size: int = 10 * 1024 * 1024  # 10MB default
 
@@ -189,15 +163,6 @@ class EnvConfig(BaseSettings):
     enable_caching: bool = True
     enable_observability: bool = True
     enable_pii_redaction: bool = True
-    # Reflexion (episodic agent learning) is dormant by default and opt-in
-    # behind a vector-store extra (``starboard[sqlite]`` / ``[vectorsearch]``);
-    # the container lazy-imports the vector driver only when this is True
-    # (Phase 2 C4, D-2.9).
-    enable_reflexion: bool = False
-    # The semantic cache is enabled by default but runs as a TTL-only exact-key
-    # cache with no vector dependency; the similarity path is opt-in via
-    # ``vector_backend`` (see ``semantic_cache_threshold``).
-    enable_semantic_cache: bool = True
 
     # Internal-data enablement gate (Phase-2 C5, D-2.7).
     # The allowlist is config-driven and EMPTY by default => the gate is CLOSED
@@ -667,8 +632,6 @@ class EnvConfig(BaseSettings):
             os.environ["DATABASE_URL"] = self.database_url
         os.environ["SQLITE_STATE_PATH"] = self.sqlite_state_path
         os.environ["SQLITE_MEMORY_PATH"] = self.sqlite_memory_path
-        os.environ["SQLITE_VECTOR_PATH"] = self.sqlite_vector_path
-        os.environ["SQLITE_REFLEXION_PATH"] = self.sqlite_reflexion_path
 
         # Connection Pools
         os.environ["POSTGRES_MIN_POOL_SIZE"] = str(self.postgres_min_pool_size)
@@ -678,15 +641,6 @@ class EnvConfig(BaseSettings):
         # Cache Backend
         os.environ["CACHE_BACKEND"] = self.cache_backend
         os.environ["CACHE_TTL"] = str(self.cache_ttl)
-
-        # Vector Store Backend
-        os.environ["VECTOR_BACKEND"] = self.vector_backend
-        os.environ["EMBEDDING_DIMENSION"] = str(self.embedding_dimension)
-        if self.vectorsearch_columns:
-            os.environ["VECTORSEARCH_COLUMNS"] = json.dumps(self.vectorsearch_columns)
-
-        # Semantic Cache
-        os.environ["SEMANTIC_CACHE_THRESHOLD"] = str(self.semantic_cache_threshold)
 
         os.environ["MAX_REQUEST_SIZE"] = str(self.max_request_size)
 
@@ -699,8 +653,6 @@ class EnvConfig(BaseSettings):
         os.environ["ENABLE_CACHING"] = str(self.enable_caching).lower()
         os.environ["ENABLE_OBSERVABILITY"] = str(self.enable_observability).lower()
         os.environ["ENABLE_PII_REDACTION"] = str(self.enable_pii_redaction).lower()
-        os.environ["ENABLE_REFLEXION"] = str(self.enable_reflexion).lower()
-        os.environ["ENABLE_SEMANTIC_CACHE"] = str(self.enable_semantic_cache).lower()
 
         # Warehouse Auto-Creation
         os.environ["AUTOCREATE_DBX_DW"] = str(self.autocreate_dbx_dw).lower()

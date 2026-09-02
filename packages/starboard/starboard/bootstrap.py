@@ -25,9 +25,7 @@ Usage::
         SQLiteStateStore,
         InMemoryConversationStateManager,
         # RAG / vector store
-        LLMClientEmbeddingProvider,
         MultiCollectionStore,
-        create_vector_store,
         # Context
         SharedContextProvider,
         # Config / logging
@@ -134,11 +132,7 @@ from starboard.infra.observability.logging import get_logger
 # ---------------------------------------------------------------------------
 # RAG / vector store
 # ---------------------------------------------------------------------------
-from starboard.infra.rag.adapters.embedding.llm_client_provider import (
-    LLMClientEmbeddingProvider,
-)
 from starboard.infra.rag.domain.protocols import MultiCollectionStore
-from starboard.infra.rag.services.vector_store_factory import create_vector_store
 
 # ---------------------------------------------------------------------------
 # Application factory
@@ -242,9 +236,7 @@ __all__ = [
     "get_config",
     "get_logger",
     # RAG / vector store
-    "LLMClientEmbeddingProvider",
     "MultiCollectionStore",
-    "create_vector_store",
     # Shared context
     "SharedContextProvider",
     # Discovery

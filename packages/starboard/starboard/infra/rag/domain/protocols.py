@@ -44,7 +44,6 @@ class EmbeddingProvider(Protocol):
     (OpenAI, Databricks, Azure, mock, etc.).
 
     Example Implementations:
-        - EmbeddingService (starboard.services.memory.embedding_service)
         - BaseLLMClient providers (OpenAI, Anthropic, etc.)
         - Custom providers (Databricks, Cohere, etc.)
         - Mock providers for testing

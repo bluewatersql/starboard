@@ -48,7 +48,6 @@ from starboard.bootstrap import (  # noqa: E402
     FinalOutputEvent,
     InMemoryConversationStateManager,
     IntentRouter,
-    LLMClientEmbeddingProvider,
     MultiAgentConversationManager,
     MultiCollectionStore,
     SharedContextProvider,
@@ -59,7 +58,6 @@ from starboard.bootstrap import (  # noqa: E402
     UserInputRequestEvent,
     create_llm_client,
     create_tool_registry,
-    create_vector_store,
     get_config,
 )
 from starboard.cli.cli.auth_commands import run_auth  # noqa: E402
@@ -324,25 +322,10 @@ async def create_agent_manager(
     # Create shared context provider
     provider = SharedContextProvider(api)
 
-    # Create vector store for Analytics Agent (RAG-based SQL generation).
-    # Uses in-memory store with auto-bootstrap; falls back gracefully if embeddings
-    # are unavailable. Without this, build_analytics_context is not registered and
-    # the Analytics Agent cannot perform RAG-grounded SQL generation.
+    # Analytics context is built from on-disk curated reference files
+    # (reference-file RAG); no vector store or embedding provider is constructed.
     vector_store = None
     embedding_provider = None
-    try:
-        embedding_provider = LLMClientEmbeddingProvider(llm_client=llm_client)
-        vector_store = await create_vector_store(config, embedding_provider)
-        logger.debug(
-            "vector_store_initialized_for_cli",
-            backend=type(vector_store).__name__ if vector_store else "none",
-        )
-    except Exception as e:
-        logger.warning(
-            "vector_store_init_failed_analytics_degraded",
-            error=str(e),
-            impact="build_analytics_context unavailable; Analytics Agent will generate SQL without RAG context",
-        )
 
     # Create tool registry (all tools - AgentFactory will filter per domain)
     tool_registry, request_input_tool = create_tool_registry(

@@ -96,8 +96,6 @@ def create_tool_registry(
     llm_client: Any | None = None,
     cache_store: Any | None = None,
     cache_factory: Any | None = None,
-    semantic_cache: Any | None = None,  # noqa: ARG001
-    reflexion_store: Any | None = None,  # noqa: ARG001
     vector_store: Any | None = None,
     embedding_service: Any | None = None,
 ) -> tuple[ToolRegistry, RequestUserInputTool]:
@@ -114,8 +112,6 @@ def create_tool_registry(
         llm_client: Optional LLM client for code analysis and analytics
         cache_store: Optional shared cache store for query result caching
         cache_factory: Optional CacheFactory for artifact exploration tools
-        semantic_cache: Unused (kept for backwards compatibility)
-        reflexion_store: Unused (kept for backwards compatibility)
         vector_store: Optional vector store for RAG discovery
         embedding_service: Optional embedding service for RAG
 

@@ -55,9 +55,6 @@ class TestZeroStoreDefaults:
     def test_default_backends_are_store_free(self) -> None:
         cfg = _default_config()
         assert cfg.database_backend == "memory"
-        # Phase 2 C1 (D-2.3): the analytics agent builds context from on-disk
-        # reference files by default — no vector store, no embeddings.
-        assert cfg.vector_backend == "none"
         assert cfg.cache_backend == "memory"
 
     def test_default_dev_state_store_is_inmemory(self) -> None:
