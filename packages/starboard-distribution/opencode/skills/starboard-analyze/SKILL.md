@@ -23,7 +23,22 @@ this loop — the data step below uses plain CLI fetches (no LLM), and you do th
 reasoning. Handing analysis to another model defeats the point of the skill and
 breaks when that model's credentials differ from your session's.
 
-## Step 1 — Load the data (deterministic, no LLM)
+## Step 1 — Confirm inputs
+
+Before loading data, confirm the run parameters with the user — but **only ask
+for what they haven't already given**. If their request already specifies a value
+(e.g. "analyze the last 60 days"), use it and skip that question. If they say
+"just go" / "use defaults", proceed with the defaults.
+
+Ask for (with defaults):
+
+- **Lookback window** — how many days of history to include (default: **30**).
+- **Scope** — all domains, or focus on specific ones (jobs, clusters, queries,
+  cost)? Default: **all**.
+- **Workspace / profile** — which `--profile` to target, if it's ambiguous
+  (default: the ambient `DATABRICKS_*` env / default profile).
+
+## Step 2 — Load the data (deterministic, no LLM)
 
 Determine what to analyze from user input (job ID, cluster ID, warehouse ID, or a
 named workload), then fetch data across all relevant domains. The commands are
@@ -41,7 +56,7 @@ starboard-helper cluster events --cluster-id <CLUSTER_ID> --limit 50
 
 Run additional commands as the workload scope demands (warehouse, query, finops).
 
-## Step 2 — Analyze the data yourself
+## Step 3 — Analyze the data yourself
 
 Read the returned data and connect findings across domains:
 
@@ -52,7 +67,7 @@ Read the returned data and connect findings across domains:
 - **Retry patterns → Failure modes** — are failures transient (retry works) or
   systematic?
 
-## Step 3 — Produce the comprehensive report
+## Step 4 — Produce the comprehensive report
 
 1. **Executive summary** — overall health in 2–3 sentences
 2. **Critical issues** — immediate action required
@@ -62,6 +77,18 @@ Read the returned data and connect findings across domains:
 6. **Estimated impact** — time/cost savings from top recommendations
 
 `$` figures are **list-price DBU estimates** — label them as such.
+
+### Offer to save the report
+
+After presenting the findings, **offer** to save them as a Markdown report:
+
+> "Want me to save this as a report? I'll write it to
+> `./starboard-reports/analyze-<YYYY-MM-DD>.md`."
+
+If the user accepts, create the `./starboard-reports/` directory if needed and
+write the full report there (use today's date; if a file for today already
+exists, add a `-2`, `-3`, … suffix). Confirm the path you wrote. Don't write
+anything unless the user opts in.
 
 ## Exit codes
 

@@ -5,7 +5,7 @@ description: >
   logs, and synthesize a root cause. Use when the user mentions a job or query
   failure, an exit code, OOM, a stack trace, or asks "why did this fail".
   Triggers: error, failure, exit code 137/143, OOMKilled, stack trace, root cause.
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read, Write
 ---
 
 # Starboard: Diagnostic Analysis
@@ -25,7 +25,22 @@ this loop — the data step below runs pure Python (no LLM), and you do the
 reasoning. Handing analysis to another model defeats the point of the skill and
 breaks when that model's credentials differ from your session's.
 
-## Step 1 — Load the data (deterministic Python, no LLM)
+## Step 1 — Confirm inputs
+
+Before loading data, confirm the failure context with the user — but **only ask
+for what they haven't already given**. If their request already specifies a value
+(e.g. "exit code 137 from run 98765"), use it and skip that question. If they
+have no additional context, proceed with what you have.
+
+Ask for (as applicable):
+
+- **Failing run / job ID** — the run ID or job ID of the failed execution, if
+  known.
+- **Exit code** — the numeric exit code reported by the executor, if available.
+- **Error log path** — path to an error log or stack trace file on disk, if
+  available (passed via `--text <file>` to the helper).
+
+## Step 2 — Load the data (deterministic Python, no LLM)
 
 Run the bundled helper. It executes dep-light analyzers out-of-context in Python
 and prints a single JSON envelope to stdout. The commands are pre-approved by this
@@ -59,7 +74,7 @@ starboard-helper diagnostic run-state --run-id <RUN_ID>
 starboard-helper diagnostic cluster-log --cluster-id <CLUSTER_ID> --limit 100
 ```
 
-## Step 2 — Analyze the data yourself
+## Step 3 — Analyze the data yourself
 
 Read the returned hypotheses and evidence windows:
 
@@ -70,7 +85,7 @@ Read the returned hypotheses and evidence windows:
 - **Cross-signals** — correlate the exit-code hypothesis with evidence window
   types to narrow to a primary root cause.
 
-## Step 3 — Produce the diagnostic report
+## Step 4 — Produce the diagnostic report
 
 1. **Overall assessment** — one sentence on the likely root cause
 2. **Primary hypothesis** — cause, confidence level, supporting evidence (cite
@@ -80,6 +95,18 @@ Read the returned hypotheses and evidence windows:
    the failure
 
 `$` figures are **list-price DBU estimates** — label them as such.
+
+### Offer to save the report
+
+After presenting the findings, **offer** to save them as a Markdown report:
+
+> "Want me to save this as a report? I'll write it to
+> `./starboard-reports/diagnostic-<YYYY-MM-DD>.md`."
+
+If the user accepts, create the `./starboard-reports/` directory if needed and
+write the full report there (use today's date; if a file for today already
+exists, add a `-2`, `-3`, … suffix). Confirm the path you wrote. Don't write
+anything unless the user opts in.
 
 ## Exit codes (from the bundled helper)
 

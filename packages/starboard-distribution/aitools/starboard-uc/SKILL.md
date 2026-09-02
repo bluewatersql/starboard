@@ -1,7 +1,7 @@
 ---
 name: starboard-uc
 description: "Analyze Unity Catalog metadata and governance — explore catalogs, schemas, tables, lineage, and governance posture. Use when the user asks about Unity Catalog, data governance, catalog/schema/table structure, or data lineage."
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read, Write
 ---
 
 # Starboard: Unity Catalog Analysis
@@ -21,7 +21,21 @@ this loop — the data step below runs pure Python (no LLM), and you do the
 reasoning. Handing analysis to another model defeats the point of the skill and
 breaks when that model's credentials differ from your session's.
 
-## Step 1 — Load the data (deterministic, no LLM)
+## Step 1 — Confirm inputs
+
+Before loading data, confirm the run parameters with the user — but **only ask
+for what they haven't already given**. If their request already specifies a value
+(e.g. "analyze catalog my_catalog"), use it and skip that question. If they say
+"just go" / "use defaults", proceed with the defaults.
+
+Ask for (with defaults):
+
+- **Scope** — which catalog and/or schema to analyze, or survey all catalogs?
+  Default: **survey all catalogs**.
+- **Workspace / profile** — which `--profile` to target, if it's ambiguous
+  (default: the ambient `DATABRICKS_*` env / default profile).
+
+## Step 2 — Load the data (deterministic, no LLM)
 
 ### Analyze a table schema on disk (bundled helper)
 
@@ -52,7 +66,7 @@ starboard-helper uc table --full-name <CATALOG>.<SCHEMA>.<TABLE>
 starboard-helper uc lineage --full-name <CATALOG>.<SCHEMA>.<TABLE>
 ```
 
-## Step 2 — Analyze the data yourself
+## Step 3 — Analyze the data yourself
 
 Read the returned rows and assess governance posture:
 
@@ -66,13 +80,25 @@ Read the returned rows and assess governance posture:
 - **Access patterns** — are schemas organized logically (bronze/silver/gold or
   domain-based)?
 
-## Step 3 — Produce the report
+## Step 4 — Produce the report
 
 1. Catalog/schema overview and health
 2. Governance gaps (missing owners, comments, tags)
 3. Data organization recommendations
 4. Lineage observations
 5. Priority: critical / high / medium / low
+
+### Offer to save the report
+
+After presenting the findings, **offer** to save them as a Markdown report:
+
+> "Want me to save this as a report? I'll write it to
+> `./starboard-reports/uc-<YYYY-MM-DD>.md`."
+
+If the user accepts, create the `./starboard-reports/` directory if needed and
+write the full report there (use today's date; if a file for today already
+exists, add a `-2`, `-3`, … suffix). Confirm the path you wrote. Don't write
+anything unless the user opts in.
 
 ## Exit codes
 

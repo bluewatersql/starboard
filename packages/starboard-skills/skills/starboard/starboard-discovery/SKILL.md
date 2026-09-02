@@ -1,7 +1,7 @@
 ---
 name: starboard-discovery
 description: "Discover and map a Databricks workspace — enumerate jobs, clusters, warehouses, and Unity Catalog assets to build a comprehensive inventory. Use when the user wants a workspace inventory, a health assessment, or to explore what exists in a workspace."
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read, Write
 ---
 
 # Starboard: Workspace Discovery
@@ -21,27 +21,40 @@ this loop — the data step below runs pure Python (no LLM), and you do the
 reasoning. Handing analysis to another model defeats the point of the skill and
 breaks when that model's credentials differ from your session's.
 
-## Step 1 — Load the data (deterministic Python, no LLM)
+## Step 1 — Confirm inputs
 
-Run the bundled helper. It executes the audit plus the discovery query packs
-out-of-context in Python and prints a single JSON envelope to stdout. The
-command is pre-approved by this skill's `allowed-tools`, so it runs without a
-permission prompt:
+Before loading data, confirm the run parameters with the user — but **only ask
+for what they haven't already given**. If their request already specifies a value
+(e.g. "discover the workspace for the last 90 days"), use it and skip that
+question. If they say "just go" / "use defaults", proceed with the defaults.
+
+Ask for (with defaults):
+
+- **Lookback window** — how many days of history to scan (default: **30**).
+- **Scope** — all domains, or focus on specific packs (e.g. `billing`, `jobs`,
+  `warehouse`)? Default: **all**.
+- **Workspace / profile** — which `--profile` to target, if it's ambiguous
+  (default: the ambient `DATABRICKS_*` env / default profile).
+
+## Step 2 — Load the data (deterministic Python, no LLM)
+
+Run the bundled helper with the confirmed parameters. It executes the audit plus
+the discovery query packs out-of-context in Python and prints a single JSON
+envelope to stdout. The command is pre-approved by this skill's `allowed-tools`,
+so it runs without a permission prompt:
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only
 ```
 
-Scope to specific domains with `--packs`, or widen the window with
-`--lookback-days`:
+Apply the confirmed inputs as flags — `--lookback-days N`, `--packs D ...`,
+`--profile NAME`:
 
 ```bash
+${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --lookback-days 90
 ${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs billing jobs
-${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --lookback-days 60
+${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --profile my-profile
 ```
-
-Pass `--profile <name>` to target a specific `~/.databrickscfg` profile
-(otherwise the ambient `DATABRICKS_*` env / default profile is used).
 
 Requires `pip install "starboard-kernel[discovery]"`.
 
@@ -68,15 +81,7 @@ starboard-helper warehouse list
 starboard-helper uc catalogs
 ```
 
-Drill into specific resources as needed:
-
-```bash
-starboard-helper uc schemas --catalog <CATALOG>
-starboard-helper cluster fetch --cluster-id <CLUSTER_ID>
-starboard-helper warehouse fetch --warehouse-id <WH_ID>
-```
-
-## Step 2 — Analyze the data yourself
+## Step 3 — Analyze the data yourself
 
 Read the returned rows and build a workspace map:
 
@@ -85,7 +90,9 @@ Read the returned rows and build a workspace map:
 - **Warehouses** — types (classic/serverless), sizes, states
 - **Data** — Unity Catalog hierarchy, schema and table counts
 
-## Step 3 — Produce the discovery report
+## Step 4 — Produce the discovery report
+
+Present the report on-screen, highest-value first:
 
 1. **Workspace summary** — counts of each resource type
 2. **Jobs inventory** — scheduled vs. manual, production vs. development indicators
@@ -95,6 +102,18 @@ Read the returned rows and build a workspace map:
 6. **Recommended next steps** — which domains to analyze in depth
 
 `$` figures are **list-price DBU estimates** — label them as such.
+
+### Offer to save the report
+
+After presenting the findings, **offer** to save them as a Markdown report:
+
+> "Want me to save this as a report? I'll write it to
+> `./starboard-reports/discovery-<YYYY-MM-DD>.md`."
+
+If the user accepts, create the `./starboard-reports/` directory if needed and
+write the full report there (use today's date; if a file for today already
+exists, add a `-2`, `-3`, … suffix). Confirm the path you wrote. Don't write
+anything unless the user opts in.
 
 ## Exit codes (from the bundled helper)
 

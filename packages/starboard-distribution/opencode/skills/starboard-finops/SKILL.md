@@ -23,7 +23,21 @@ this loop — the data step below runs plain Python / CLI fetches (no LLM), and 
 do the reasoning. Handing analysis to another model defeats the point of the
 skill and breaks when that model's credentials differ from your session's.
 
-## Step 1 — Load the data (deterministic, no LLM)
+## Step 1 — Confirm inputs
+
+Before loading data, confirm the run parameters with the user — but **only ask
+for what they haven't already given**. If their request already specifies a value
+(e.g. "show me billing for the last 90 days"), use it and skip that question. If
+they say "just go" / "use defaults", proceed with the defaults.
+
+Ask for (with defaults):
+
+- **Lookback window** — how many days of billing history to include (default:
+  **30**).
+- **Workspace / profile** — which `--profile` to target, if it's ambiguous
+  (default: the ambient `DATABRICKS_*` env / default profile).
+
+## Step 2 — Load the data (deterministic, no LLM)
 
 ### Workspace cost data (preferred — no account-admin required)
 
@@ -63,7 +77,7 @@ starboard-helper finops budgets
 starboard-helper finops log-delivery
 ```
 
-## Step 2 — Analyze the data yourself
+## Step 3 — Analyze the data yourself
 
 Read the returned usage/billing rows:
 
@@ -77,7 +91,7 @@ Read the returned usage/billing rows:
   exceeding thresholds?
 - **Optimization levers** — spot instances, serverless SQL, ephemeral job clusters.
 
-## Step 3 — Produce the report
+## Step 4 — Produce the report
 
 1. Consumption summary by product/SKU and time period
 2. Top cost drivers
@@ -86,6 +100,18 @@ Read the returned usage/billing rows:
 5. Priority: critical / high / medium / low
 
 `$` figures are **list-price DBU estimates** — label them as such.
+
+### Offer to save the report
+
+After presenting the findings, **offer** to save them as a Markdown report:
+
+> "Want me to save this as a report? I'll write it to
+> `./starboard-reports/finops-<YYYY-MM-DD>.md`."
+
+If the user accepts, create the `./starboard-reports/` directory if needed and
+write the full report there (use today's date; if a file for today already
+exists, add a `-2`, `-3`, … suffix). Confirm the path you wrote. Don't write
+anything unless the user opts in.
 
 ## Exit codes (from the bundled helper)
 

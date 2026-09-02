@@ -1,7 +1,7 @@
 ---
 name: starboard-workload-review
 description: "Review a Databricks workspace's jobs, SQL queries, and warehouses — plus opt-in DLT pipelines, ML/model-serving, and Vector Search surfaces — the way a code review reviews code: a ranked, evidence-cited set of findings with severity, impact/effort scores, and remediation, over public system.* data only. Use when the user wants a workload review, an optimization/health assessment of jobs/queries/warehouses/pipelines/ML/vector-search, or prioritized findings with citations."
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read, Write
 ---
 
 # Starboard: Workload Review
@@ -45,7 +45,23 @@ this loop — the data step below runs deterministic Python (no LLM), and you do
 the reasoning. Handing analysis to another model defeats the point of the skill
 and breaks when that model's credentials differ from your session's.
 
-## Step 1 — Load the data (deterministic Python, no LLM)
+## Step 1 — Confirm inputs
+
+Before loading data, confirm the run parameters with the user — but **only ask
+for what they haven't already given**. If their request already specifies a value
+(e.g. "review jobs for the last 60 days"), use it and skip that question. If they
+say "just go" / "use defaults", proceed with the defaults.
+
+Ask for (with defaults):
+
+- **Lookback window** — how many days of history to include (default: **30**).
+- **Domains** — jobs, sql, and warehouse are on by default; add `dlt`, `ml`, or
+  `vector-search` if the user mentions pipelines, ML, or Vector Search. Default:
+  **all default domains** (`jobs,sql,warehouse`).
+- **Workspace / profile** — which `--profile` to target, if it's ambiguous
+  (default: the ambient `DATABRICKS_*` env / default profile).
+
+## Step 2 — Load the data (deterministic Python, no LLM)
 
 Run the bundled Workload Review script. It executes the full review end-to-end
 against the resolved workspace — query packs + rule scoring, **no LLM** — and
@@ -103,7 +119,7 @@ starboard-helper warehouse list
 Shape the returned rows into the `{query_id: [rows]}` map and run
 `python -m starboard_x.review score`.
 
-## Step 2 — Analyze the findings yourself
+## Step 3 — Analyze the findings yourself
 
 Read the ranked findings from `data.findings` and assess the workspace:
 
@@ -114,7 +130,7 @@ Read the ranked findings from `data.findings` and assess the workspace:
 - **Cost exposure** — surface list-price DBU estimates from findings; always label
   as *list-price estimates*.
 
-## Step 3 — Produce the workload review
+## Step 4 — Produce the workload review
 
 Present findings highest-priority first; cite the `query_id` + row for each:
 
@@ -125,6 +141,18 @@ Present findings highest-priority first; cite the `query_id` + row for each:
 4. **Recommended actions** — top 3–5 remediations ordered by impact
 
 `$` figures are **list-price DBU estimates** — label them as such.
+
+### Offer to save the report
+
+After presenting the findings, **offer** to save them as a Markdown report:
+
+> "Want me to save this as a report? I'll write it to
+> `./starboard-reports/workload-review-<YYYY-MM-DD>.md`."
+
+If the user accepts, create the `./starboard-reports/` directory if needed and
+write the full report there (use today's date; if a file for today already
+exists, add a `-2`, `-3`, … suffix). Confirm the path you wrote. Don't write
+anything unless the user opts in.
 
 ## Exit codes
 
