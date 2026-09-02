@@ -41,20 +41,13 @@ See the skill body for raw fetch commands.
 
 ## Domain heuristics
 
-- **Duration**: Is query duration above expected thresholds for query complexity?
-- **Failures**: What error messages are present? Are they permission, syntax, or resource errors?
-- **Patterns**: Do slow queries share common tables, joins, or filter patterns?
-- **Warehouse**: Is the warehouse appropriately sized for the query workload?
+Apply domain expertise when reviewing the structured JSON output.
 
 ## Success criteria
 
 A complete analysis for this domain must include:
 
-1. Summary of query health / performance
-2. Root cause(s) of slowness or failures
-3. Specific SQL optimization recommendations (indexes, partitioning, rewrite suggestions)
-4. Warehouse sizing recommendations if applicable
-5. Priority: critical / high / medium / low
+Produce a structured, prioritized analysis with actionable recommendations.
 
 ## Ground rules
 

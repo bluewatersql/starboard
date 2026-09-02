@@ -299,6 +299,35 @@ class TestClaudeCodeBackend:
 
 
 # ---------------------------------------------------------------------------
+# Canonical skills-tree resolution (dev checkout vs. built wheel)
+# ---------------------------------------------------------------------------
+
+class TestCanonicalSkillsResolution:
+    def test_prefers_dev_tree_sibling(self, tmp_path):
+        """Editable checkout: skills live beside the package dir."""
+        from starboard_skills.maint.__main__ import _resolve_canonical_skills
+        pkg = tmp_path / "pkgroot" / "starboard_skills"
+        pkg.mkdir(parents=True)
+        dev = tmp_path / "pkgroot" / "skills" / "starboard"
+        dev.mkdir(parents=True)
+        assert _resolve_canonical_skills(pkg) == dev
+
+    def test_falls_back_to_vendored(self, tmp_path):
+        """Built wheel: skills are force-included inside the package dir."""
+        from starboard_skills.maint.__main__ import _resolve_canonical_skills
+        pkg = tmp_path / "pkgroot" / "starboard_skills"
+        vendored = pkg / "skills" / "starboard"
+        vendored.mkdir(parents=True)
+        assert _resolve_canonical_skills(pkg) == vendored
+
+    def test_module_constant_points_at_real_tree(self):
+        """The resolved constant must exist in this (editable) install."""
+        from starboard_skills.maint import __main__ as m
+        assert m._CANONICAL_SKILLS.is_dir()
+        assert (m._CANONICAL_SKILLS / "starboard-diagnostic" / "SKILL.md").is_file()
+
+
+# ---------------------------------------------------------------------------
 # Idempotent re-install
 # ---------------------------------------------------------------------------
 

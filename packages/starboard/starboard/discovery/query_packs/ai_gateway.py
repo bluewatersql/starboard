@@ -15,21 +15,21 @@ from starboard_core.domain.models.discovery.query import (
 _QUERIES = [
     SystemQuery(
         query_id="P-AG01", name="Endpoint Requests, Success Rate, and Tokens",
-        description="Serving endpoint request volume and token counts",
+        description="AI Gateway endpoint request volume, success rate, and token counts",
         sql_template="""\
 WITH cutoff AS (SELECT DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP()) AS dt)
-SELECT se.endpoint_name, se.served_entity_name, se.entity_type,
-  COUNT(*) AS total_requests, COUNT_IF(eu.status_code BETWEEN 200 AND 299) AS successful_requests,
-  COUNT_IF(eu.status_code >= 500) AS server_errors,
-  SUM(eu.input_token_count + eu.output_token_count) AS total_tokens
-FROM system.serving.endpoint_usage eu, cutoff
-JOIN system.serving.served_entities se USING (served_entity_id)
-WHERE eu.request_time >= cutoff.dt
-GROUP BY se.endpoint_name, se.served_entity_name, se.entity_type
+SELECT endpoint_name,
+  ANY_VALUE(destination_model) AS destination_model, ANY_VALUE(api_type) AS api_type,
+  COUNT(*) AS total_requests, COUNT_IF(status_code BETWEEN 200 AND 299) AS successful_requests,
+  COUNT_IF(status_code >= 500) AS server_errors,
+  SUM(total_tokens) AS total_tokens
+FROM system.ai_gateway.usage, cutoff
+WHERE event_time >= cutoff.dt
+GROUP BY endpoint_name
 ORDER BY total_requests DESC
 LIMIT {result_limit}""",
-        required_tables=("system.serving.endpoint_usage", "system.serving.served_entities",), domain="ai_gateway", required=False,
-        max_lookback_days=90,  # G5: serving.endpoint_usage retains ~90 days
+        required_tables=("system.ai_gateway.usage",), domain="ai_gateway", required=False,
+        max_lookback_days=90,  # consolidated onto system.ai_gateway.usage (parity with P-AG02/03/04)
         discovery_mode=DiscoveryMode.GENERAL, category=QueryCategory.PROFILE,
         metadata=QueryMetadata(summary="Serving endpoint request volume, success rate, and token counts", output_hint="Endpoints ranked by request volume"),
     ),

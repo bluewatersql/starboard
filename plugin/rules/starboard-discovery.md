@@ -34,12 +34,7 @@ Take the returned data and synthesize the inventory yourself.
 
 ### Tier-1 — bundled helper
 
-If `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, use the bundled pure analyzer (no network, pre-approved — no permission prompt):
-
-```bash
-${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only
-${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs finops_billing jobs
-```
+Not available for this domain — proceed to Tier-0.
 
 ### Tier-0 — raw fetch via `starboard-helper`
 
@@ -47,21 +42,13 @@ See the skill body for raw fetch commands.
 
 ## Domain heuristics
 
-- **Jobs**: Count, names, schedule patterns, cluster attachment types
-- **Clusters**: Running vs. terminated, job-attached vs. interactive
-- **Warehouses**: Types (classic/serverless), sizes, states
-- **Data**: Catalog hierarchy, number of schemas and tables
+Apply domain expertise when reviewing the structured JSON output.
 
 ## Success criteria
 
 A complete analysis for this domain must include:
 
-1. **Workspace summary**: Counts of each resource type
-2. **Jobs inventory**: Scheduled vs. manual, production vs. development indicators
-3. **Compute inventory**: Cluster and warehouse utilization snapshot
-4. **Data inventory**: Unity Catalog hierarchy overview
-5. **Observations**: Notable patterns, potential issues, quick wins
-6. **Recommended next steps**: Which domains to analyze in depth
+Produce a structured, prioritized analysis with actionable recommendations.
 
 ## Ground rules
 

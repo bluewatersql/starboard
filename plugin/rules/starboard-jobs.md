@@ -37,26 +37,17 @@ Not available for this domain — proceed to Tier-0.
 
 ### Tier-0 — raw fetch via `starboard-helper`
 
-```bash
-starboard-helper job fetch --job-id <JOB_ID>
-starboard-helper job runs --job-id <JOB_ID> --limit 10
-```
+See the skill body for raw fetch commands.
 
 ## Domain heuristics
 
-- **Failure patterns**: Are failures consistent (config issue) or intermittent (resource issue)?
-- **Performance**: Are run durations increasing over time? Possible data skew or cluster undersizing.
-- **Configuration**: Is the cluster correctly sized? Are retries configured appropriately?
-- **Cost**: Is the cluster kept alive between runs unnecessarily?
+Apply domain expertise when reviewing the structured JSON output.
 
 ## Success criteria
 
 A complete analysis for this domain must include:
 
-1. Summary of job health (healthy / degraded / failing)
-2. Root cause(s) of failures if any
-3. Specific, actionable recommendations
-4. Priority: critical / high / medium / low
+Produce a structured, prioritized analysis with actionable recommendations.
 
 ## Ground rules
 

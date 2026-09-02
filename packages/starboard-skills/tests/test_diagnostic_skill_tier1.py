@@ -6,7 +6,8 @@ Assert the canonical skill:
 - parses as fenced YAML frontmatter with ``name`` + ``description``,
 - pre-approves the bundled Tier-1 script via an ``allowed-tools`` prefix that
   matches the body command (prompt-free contract),
-- documents all three branches (MCP agent → Tier-1 script → Tier-0 helper),
+- is deterministic-first: documents the Tier-1 bundled script + Tier-0 helper as
+  the data paths and states the no-second-LLM contract (no MCP-agent handoff),
 - ships an executable ``scripts/run.sh`` that execs ``python -m starboard_x.diagnostic``,
 - stays under 500 lines with a description under 1,536 chars.
 """
@@ -75,12 +76,17 @@ class TestBody:
     def test_body_under_500_lines(self, skill_text: str) -> None:
         assert len(skill_text.splitlines()) <= 500
 
-    def test_three_branches_documented(self, skill_text: str) -> None:
+    def test_deterministic_first_no_second_llm(self, skill_text: str) -> None:
         _, body = _split_frontmatter(skill_text)
-        # Tier-2 MCP agent, Tier-1 bundled script, Tier-0 helper.
-        assert "mcp__starboard__diagnostic_agent" in body
+        # Deterministic-first: the bundled Tier-1 script and the Tier-0 helper are
+        # the documented data paths; the host (this LLM) analyzes the results.
         assert _BODY_COMMAND_PREFIX in body
         assert "starboard-helper" in body
+        # The old MCP-agent branch is removed — the skill must not hand analysis
+        # to a second, server-side LLM.
+        assert "mcp__starboard__diagnostic_agent" not in body
+        # The no-second-LLM contract is stated explicitly.
+        assert "no second LLM" in body
 
     def test_body_invokes_preapproved_prefix(self, skill_text: str) -> None:
         """The command the body tells Claude to run must match the allowed-tools prefix."""

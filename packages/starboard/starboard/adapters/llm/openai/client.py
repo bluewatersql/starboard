@@ -49,6 +49,7 @@ from starboard.adapters.llm.openai.schema_adapter import (
     prepare_tools_for_model,
     supports_structured_output,
 )
+from starboard.adapters.llm.openai.sdk_types import get_delta_content
 from starboard.adapters.llm.openai.streaming_handler import (
     build_streaming_usage,
     yield_error_event,
@@ -478,9 +479,12 @@ class OpenAIProvider(BaseLLMClient):
             async for chunk in stream:
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
-                    if delta.content:
+                    # Flatten reasoning-model block lists to text (delta.content
+                    # is a list for reasoning models, a str otherwise).
+                    content = get_delta_content(delta)
+                    if content:
                         chunk_count += 1
-                        yield delta.content
+                        yield content
 
                 if hasattr(chunk, "usage") and chunk.usage:
                     self.__collect_token_usage(chunk.usage)
@@ -820,10 +824,13 @@ class OpenAIProvider(BaseLLMClient):
             async for chunk in stream:
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
-                    if delta.content:
+                    # Flatten reasoning-model block lists to text before
+                    # accumulating (delta.content is a list for reasoning models).
+                    content = get_delta_content(delta)
+                    if content:
                         chunk_count += 1
-                        accumulated_content += delta.content
-                        yield delta.content
+                        accumulated_content += content
+                        yield content
 
                 if hasattr(chunk, "usage") and chunk.usage:
                     self.__collect_token_usage(chunk.usage)
@@ -1110,11 +1117,15 @@ class OpenAIProvider(BaseLLMClient):
                     delta = chunk.choices[0].delta
                     finish_reason = chunk.choices[0].finish_reason or finish_reason
 
-                    if hasattr(delta, "content") and delta.content:
+                    # Flatten reasoning-model block lists to text — the reasoning
+                    # engine does `accumulated_content += content`, which would
+                    # raise on a raw list (reasoning models emit list content).
+                    content = get_delta_content(delta)
+                    if content:
                         total_tokens_estimate += 1
                         yield {
                             "type": "content_delta",
-                            "content": delta.content,
+                            "content": content,
                             "finish_reason": finish_reason,
                         }
 

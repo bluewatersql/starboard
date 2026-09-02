@@ -14,10 +14,11 @@ agent_integration/technical.md §1.3):
   Claude Code launches any declared bundled ``mcpServers`` on plugin load, so a
   declared server would break a skills-only install (no ``starboard-mcp``, no LLM
   creds). MCP is an explicit opt-in the user wires up themselves (see README).
-- ``plugin/.mcp.json`` stays in the repo as a valid-JSON opt-in template: it
-  declares the ``starboard`` stdio server (``command: starboard-mcp``) with env
-  passthrough for ``DATABRICKS_HOST`` / ``LLM_*`` and **no hard-coded secrets**,
-  so users who want the full agent stack can copy it into their own ``.mcp.json``.
+- The plugin bundle ships **no ``.mcp.json``** at all. The plugin injects skills
+  and starts no server; a bundled ``.mcp.json`` in the loaded plugin dir risks a
+  host (Claude Code / Isaac) trying to spawn ``starboard-mcp`` on load and failing
+  ("can't find the mcp") on a skills-only install. MCP is an explicit opt-in the
+  user wires up in their own ``.mcp.json`` (``claude mcp add starboard -- …``).
 - ``.claude-plugin/marketplace.json`` (repo root) is valid JSON with ``name``,
   an ``owner`` **object**, and a ``plugins`` array listing the ``starboard`` plugin
   whose ``source`` (``./plugin``) resolves to a dir containing
@@ -146,34 +147,18 @@ def test_plugin_json_has_no_inert_enable_mcp_toggle() -> None:
         )
 
 
-def test_bundled_mcp_json_declares_starboard_server() -> None:
-    """The opt-in ``plugin/.mcp.json`` template parses and declares ``starboard``."""
-    mcp = _load_json(MCP_JSON)
-    assert "mcpServers" in mcp, ".mcp.json must contain an mcpServers object"
-    servers = mcp["mcpServers"]
-    assert isinstance(servers, dict) and "starboard" in servers, (
-        ".mcp.json must declare the 'starboard' server"
+def test_plugin_bundles_no_mcp_json() -> None:
+    """The plugin bundle must not ship a ``.mcp.json``.
+
+    The plugin injects skills and starts no server. A ``.mcp.json`` in the loaded
+    plugin dir risks a host (Claude Code / Isaac) trying to spawn ``starboard-mcp``
+    on plugin load and failing ("can't find the mcp") on a skills-only install.
+    MCP is an explicit opt-in the user wires up in their own ``.mcp.json``.
+    """
+    assert not MCP_JSON.exists(), (
+        f"the plugin must not bundle {MCP_JSON.name}: it can make a host try to "
+        "launch starboard-mcp on load. MCP is a user-wired opt-in (see README)."
     )
-    server = servers["starboard"]
-    assert server.get("command") == "starboard-mcp", "starboard server command must be 'starboard-mcp'"
-    # stdio transport form: {command, args, env, timeout}.
-    assert isinstance(server.get("args"), list), "starboard server must declare args (stdio transport)"
-    assert isinstance(server.get("timeout"), int), "starboard server must declare an integer timeout"
-
-
-def test_bundled_mcp_json_env_passthrough_without_secrets() -> None:
-    """Opt-in template: env passes through DATABRICKS_HOST / LLM_* by reference, no secrets."""
-    mcp = _load_json(MCP_JSON)
-    env = mcp["mcpServers"]["starboard"].get("env", {})
-    assert isinstance(env, dict) and env, "starboard server must declare an env block"
-    assert "DATABRICKS_HOST" in env, "env must pass through DATABRICKS_HOST"
-    assert any(k.startswith("LLM_") for k in env), "env must pass through the LLM_* credentials"
-    # Every value must be a ${VAR}/${user_config.*} reference — never a baked-in secret.
-    for key, value in env.items():
-        assert isinstance(value, str), f"env[{key!r}] must be a string reference"
-        assert re.fullmatch(r"\$\{[^}]+\}", value), (
-            f"env[{key!r}]={value!r} must be a ${{VAR}} reference, not a hard-coded value"
-        )
 
 
 # --------------------------------------------------------------------------- #

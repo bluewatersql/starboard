@@ -327,8 +327,8 @@ def detect_job_wasted_dbu_on_failures_retries(
 ) -> list[RowMatch]:
     """Flag jobs burning a large share of DBU on failed / retried runs.
 
-    Evidence: ``C-J04``. Triggers when ``wasted_dbu_pct`` (failure + retry DBU
-    as a share of total) ``>= JOB_WASTED_DBU_PCT_THRESHOLD``.
+    Evidence: ``C-J04``. Triggers when ``wasted_dbu_pct`` (failed-run DBU as a
+    share of total) ``>= JOB_WASTED_DBU_PCT_THRESHOLD``.
     """
     matches: list[RowMatch] = []
     for idx, row in enumerate(rows):
@@ -341,8 +341,8 @@ def detect_job_wasted_dbu_on_failures_retries(
                 row_index=idx,
                 row=dict(row),
                 current_state=(
-                    f"Job {jid} spent {wasted:g}% of its DBU on failed or retried "
-                    "runs — compute paid for repeatedly with no successful output."
+                    f"Job {jid} spent {wasted:g}% of its DBU on failed "
+                    "runs — compute paid for with no successful output."
                 ),
                 location=Location(entity=jid, entity_type="job"),
                 entity_key=jid,

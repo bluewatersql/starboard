@@ -8,35 +8,26 @@ metadata:
 
 # Starboard: Query Analysis
 
-Analyze Databricks SQL queries — fetch query history, identify slow queries, diagnose failures, and recommend optimizations.
+Analyze Databricks SQL queries — fetch query history, identify slow queries,
+diagnose failures, and recommend optimizations.
 
-## Dual-Mode Behavior
+## You are the analyst
 
-**Check which tools are available before proceeding:**
+**You** are the LLM for this skill. The skill hands you deterministic query
+history data; **you** read the rows and write the performance assessment and
+recommendations yourself.
 
-If `mcp__starboard__*` tools are available in your context, use them for full agent orchestration:
-```
-mcp__starboard__analyze_query  (or similar MCP tool)
-```
+Do **not** call the `starboard` goal agent, an MCP `*_analysis` / `synthesize_*`
+tool, a model-serving endpoint, or any other model. There is no second LLM in
+this loop — the data step below uses plain CLI fetches (no LLM), and you do the
+reasoning. Handing analysis to another model defeats the point of the skill and
+breaks when that model's credentials differ from your session's.
 
-If MCP tools are NOT available, use `starboard-helper` via Bash to fetch data, then apply analytical reasoning:
-```bash
-starboard-helper query fetch --query-id <QUERY_ID>
-starboard-helper query history --warehouse-id <WH_ID> --limit 25
-starboard-helper query slow --min-duration-ms 10000 --limit 25
-```
+## Step 1 — Load the data (deterministic, no LLM)
 
-## MCP Path
+Use `starboard-helper` to fetch query history. The commands are pre-approved by
+this skill's `allowed-tools`, so they run without a permission prompt:
 
-When `mcp__starboard__*` tools are available:
-1. Call the relevant MCP tool — the full agent stack handles orchestration, analysis, and recommendations.
-2. Return the agent's response directly.
-
-## Non-MCP Path
-
-When MCP tools are NOT available, follow these steps:
-
-### Step 1: Fetch query history or specific query
 ```bash
 # For a specific query:
 starboard-helper query fetch --query-id <QUERY_ID>
@@ -45,28 +36,31 @@ starboard-helper query fetch --query-id <QUERY_ID>
 starboard-helper query history --warehouse-id <WH_ID> --limit 25
 
 # For slow queries:
-starboard-helper query slow --min-duration-ms 10000
+starboard-helper query slow --min-duration-ms 10000 --limit 25
 ```
 
-### Step 2: Apply analytical reasoning
+## Step 2 — Analyze the data yourself
 
-Based on the structured JSON output, analyze:
-- **Duration**: Is query duration above expected thresholds for query complexity?
-- **Failures**: What error messages are present? Are they permission, syntax, or resource errors?
-- **Patterns**: Do slow queries share common tables, joins, or filter patterns?
-- **Warehouse**: Is the warehouse appropriately sized for the query workload?
+Read the returned query records:
 
-### Step 3: Produce recommendations
+- **Duration** — is query duration above expected thresholds for query complexity?
+- **Failures** — what error messages are present? Are they permission, syntax, or
+  resource errors?
+- **Patterns** — do slow queries share common tables, joins, or filter patterns?
+- **Warehouse** — is the warehouse appropriately sized for the query workload?
 
-Output a structured analysis:
+## Step 3 — Produce the report
+
 1. Summary of query health / performance
 2. Root cause(s) of slowness or failures
-3. Specific SQL optimization recommendations (indexes, partitioning, rewrite suggestions)
+3. Specific SQL optimization recommendations (indexes, partitioning, rewrite
+   suggestions)
 4. Warehouse sizing recommendations if applicable
 5. Priority: critical / high / medium / low
 
-## Exit Codes
+## Exit codes
+
 - 0: success
-- 1: authentication error — check DATABRICKS_HOST and DATABRICKS_TOKEN env vars
+- 1: authentication error — check `DATABRICKS_HOST` and `DATABRICKS_TOKEN`
 - 2: query not found — verify query ID
 - 3: API error — check workspace connectivity

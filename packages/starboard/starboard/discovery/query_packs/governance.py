@@ -26,6 +26,7 @@ SELECT
 FROM system.access.table_lineage
 WHERE event_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())   -- partition pruning (G2)
   AND event_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
+  AND target_table_name IS NOT NULL   -- drop rows with no recorded downstream target
 GROUP BY ALL
 ORDER BY pipeline_references DESC
 LIMIT 500
@@ -114,10 +115,7 @@ SELECT
   usage_unit
 FROM system.billing.usage
 WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-  AND (
-    billing_origin_product = 'DELTA_CACHE'
-    OR sku_name LIKE '%STORAGE%'
-  )
+  AND sku_name LIKE '%STORAGE%'
 GROUP BY ALL
 ORDER BY usage_quantity DESC
 LIMIT {result_limit}

@@ -22,17 +22,22 @@ On activation:
 
 ## Tool selection
 
-1. **MCP agent.** If `mcp__starboard__review` is available, call it and write its
-   output to `.starboard/findings.json`.
-2. **Bundled Tier-1 script.** If the `starboard-workload-review` skill's
-   `${CLAUDE_SKILL_DIR}/scripts/run.sh` is accessible:
+This is a skills-first plugin: prefer the bundled script. Do **not** try to
+start or connect to an MCP server — if the `mcp__starboard__*` tools are not
+already present in your session, skip straight to the bundled script.
+
+1. **Bundled Tier-1 script — preferred.** If the `starboard-workload-review`
+   skill's `${CLAUDE_SKILL_DIR}/scripts/run.sh` is accessible:
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/run.sh --output .starboard/findings.json
    ```
-3. **CLI.** If `starboard` is installed:
+2. **CLI.** If `starboard` is installed:
    ```bash
    starboard review --output .starboard/findings.json --lookback-days 7
    ```
+3. **MCP agent (only inside a Starboard MCP host).** *Only* if
+   `mcp__starboard__review` is already available in your session, call it and
+   write its output to `.starboard/findings.json`.
 
 ## Output contract
 Write `.starboard/findings.json` with the standard envelope:

@@ -11,36 +11,50 @@ from __future__ import annotations
 from typing import Any
 
 
+def _text_from_content_block(block: Any) -> str:
+    """Extract streamable text from a single structured content block.
+
+    Handles the reasoning-model shape emitted by Claude models served over the
+    OpenAI-compatible endpoint, where a block is a dict/object such as
+    ``{"type": "text", "text": "..."}`` or
+    ``{"type": "reasoning", "summary": [{"type": "summary_text", "text": "..."}]}``.
+    Signatures and non-text fields are ignored.
+    """
+
+    def _get(obj: Any, key: str) -> Any:
+        if isinstance(obj, dict):
+            return obj.get(key)
+        return getattr(obj, key, None)
+
+    text = _get(block, "text")
+    if isinstance(text, str) and text:
+        return text
+
+    # Reasoning blocks carry their text under a nested "summary" list.
+    summary = _get(block, "summary")
+    if isinstance(summary, list):
+        return "".join(_text_from_content_block(item) for item in summary)
+
+    return ""
+
+
 def get_delta_content(delta: Any) -> str | None:
-    """Extract content from a streaming delta, or None."""
-    return getattr(delta, "content", None) or None
+    """Extract content text from a streaming delta, or None.
 
-
-def get_delta_tool_calls(delta: Any) -> list[Any] | None:
-    """Extract tool calls from a streaming delta, or None."""
-    calls = getattr(delta, "tool_calls", None)
-    return calls if calls else None
-
-
-def get_tool_call_id(tc_delta: Any) -> str | None:
-    """Extract tool call ID from a delta."""
-    return getattr(tc_delta, "id", None) or None
-
-
-def get_tool_call_function_name(tc_delta: Any) -> str | None:
-    """Extract function name from a tool call delta."""
-    fn = getattr(tc_delta, "function", None)
-    if fn is None:
+    Most models set ``delta.content`` to a plain string. Reasoning models
+    (e.g. Claude served over the OpenAI-compatible endpoint) instead set it to
+    a list of structured content blocks; those are flattened to their text so
+    the caller always receives a string per the streaming contract.
+    """
+    content = getattr(delta, "content", None)
+    if content is None:
         return None
-    return getattr(fn, "name", None) or None
-
-
-def get_tool_call_function_args(tc_delta: Any) -> str | None:
-    """Extract function arguments from a tool call delta."""
-    fn = getattr(tc_delta, "function", None)
-    if fn is None:
-        return None
-    return getattr(fn, "arguments", None) or None
+    if isinstance(content, str):
+        return content or None
+    if isinstance(content, list):
+        text = "".join(_text_from_content_block(block) for block in content)
+        return text or None
+    return None
 
 
 def get_chunk_usage(chunk: Any) -> Any | None:

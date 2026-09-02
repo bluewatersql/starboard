@@ -6,18 +6,27 @@ allowed-tools: Bash(starboard-helper:*), Read
 
 # Starboard: Comprehensive Analysis
 
-Run a comprehensive analysis of a Databricks workload — combining job, cluster, query, and cost data into a unified optimization report.
+Run a comprehensive analysis of a Databricks workload — combining job, cluster,
+query, and cost data into a unified optimization report.
 
-## Dual-Mode Behavior
+## You are the analyst
 
-**Check which tools are available before proceeding:**
+**You** are the LLM for this skill. The skill hands you deterministic data from
+multiple domains; **you** synthesize the cross-domain findings and write the
+unified report yourself.
 
-If `mcp__starboard__*` tools are available in your context, use them for full agent orchestration:
-```
-mcp__starboard__analyze  (or similar MCP tool)
-```
+Do **not** call the `starboard` goal agent, an MCP `*_analysis` / `synthesize_*`
+tool, a model-serving endpoint, or any other model. There is no second LLM in
+this loop — the data step below uses plain CLI fetches (no LLM), and you do the
+reasoning. Handing analysis to another model defeats the point of the skill and
+breaks when that model's credentials differ from your session's.
 
-If MCP tools are NOT available, use `starboard-helper` via Bash across multiple domains, then synthesize findings:
+## Step 1 — Load the data (deterministic, no LLM)
+
+Determine what to analyze from user input (job ID, cluster ID, warehouse ID, or a
+named workload), then fetch data across all relevant domains. The commands are
+pre-approved by this skill's `allowed-tools`, so they run without a permission
+prompt:
 
 ```bash
 # Gather data from all relevant domains
@@ -28,46 +37,33 @@ starboard-helper cluster fetch --cluster-id <CLUSTER_ID>
 starboard-helper cluster events --cluster-id <CLUSTER_ID> --limit 50
 ```
 
-## MCP Path
+Run additional commands as the workload scope demands (warehouse, query, finops).
 
-When `mcp__starboard__*` tools are available:
-1. Call the relevant MCP tool — the full agent stack handles orchestration, analysis, and recommendations.
-2. Return the agent's response directly.
+## Step 2 — Analyze the data yourself
 
-## Non-MCP Path
+Read the returned data and connect findings across domains:
 
-When MCP tools are NOT available, follow this multi-step investigation:
+- **Job → Cluster** — does job configuration match cluster sizing for the
+  workload?
+- **Run history → Events** — do cluster error events correlate with job failures?
+- **Duration trends → Cost** — is increasing run duration driving cost growth?
+- **Retry patterns → Failure modes** — are failures transient (retry works) or
+  systematic?
 
-### Step 1: Identify the workload
-Determine what to analyze from user input: job ID, cluster ID, warehouse ID, or a named workload.
+## Step 3 — Produce the comprehensive report
 
-### Step 2: Fetch data across all relevant domains
-Run multiple `starboard-helper` commands to gather comprehensive data:
-- Job configuration and recent runs
-- Cluster configuration and events
-- Query history (if SQL workload)
-- Run state details for failed runs
+1. **Executive summary** — overall health in 2–3 sentences
+2. **Critical issues** — immediate action required
+3. **Performance analysis** — bottlenecks and optimization opportunities
+4. **Cost analysis** — waste and rightsizing opportunities
+5. **Recommended actions** — ordered by impact, with specific implementation steps
+6. **Estimated impact** — time/cost savings from top recommendations
 
-### Step 3: Cross-domain synthesis
+`$` figures are **list-price DBU estimates** — label them as such.
 
-Connect findings across domains:
-- **Job → Cluster**: Does job configuration match cluster sizing for the workload?
-- **Run history → Events**: Do cluster error events correlate with job failures?
-- **Duration trends → Cost**: Is increasing run duration driving cost growth?
-- **Retry patterns → Failure modes**: Are failures transient (retry works) or systematic?
+## Exit codes
 
-### Step 4: Produce comprehensive report
-
-Output a unified analysis:
-1. **Executive summary**: Overall health in 2-3 sentences
-2. **Critical issues**: Immediate action required
-3. **Performance analysis**: Bottlenecks and optimization opportunities
-4. **Cost analysis**: Waste and rightsizing opportunities
-5. **Recommended actions**: Ordered by impact, with specific implementation steps
-6. **Estimated impact**: Time/cost savings from top recommendations
-
-## Exit Codes
 - 0: success
-- 1: authentication error — check DATABRICKS_HOST and DATABRICKS_TOKEN env vars
+- 1: authentication error — check `DATABRICKS_HOST` and `DATABRICKS_TOKEN`
 - 2: resource not found
 - 3: API error — check workspace connectivity

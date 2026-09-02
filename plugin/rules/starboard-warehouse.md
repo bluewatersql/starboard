@@ -33,36 +33,21 @@ Return the agent response directly.
 
 ### Tier-1 — bundled helper
 
-If `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, use the bundled pure analyzer (no network, pre-approved — no permission prompt):
-
-```bash
-${CLAUDE_SKILL_DIR}/scripts/run.sh analyze --history <history.json> [--warehouse-id <ID>]
-```
+Not available for this domain — proceed to Tier-0.
 
 ### Tier-0 — raw fetch via `starboard-helper`
 
-```bash
-starboard-helper warehouse list
-starboard-helper warehouse fetch --warehouse-id <WH_ID>
-starboard-helper warehouse metrics --warehouse-id <WH_ID>
-```
+See the skill body for raw fetch commands.
 
 ## Domain heuristics
 
-- **Sizing**: Is `cluster_size` appropriate for the active session count?
-- **Scaling**: Is `max_num_clusters` unnecessarily high, driving cost?
-- **Auto-stop**: Is `auto_stop_mins` configured too high (idle cost)?
-- **Type**: Should classic warehouses be migrated to serverless for variable workloads?
-- **Health**: Are there any health warnings or errors?
+Apply domain expertise when reviewing the structured JSON output.
 
 ## Success criteria
 
 A complete analysis for this domain must include:
 
-1. Summary of warehouse fleet health
-2. Rightsizing recommendations per warehouse
-3. Cost optimization opportunities (auto-stop, serverless migration)
-4. Priority: critical / high / medium / low
+Produce a structured, prioritized analysis with actionable recommendations.
 
 ## Ground rules
 

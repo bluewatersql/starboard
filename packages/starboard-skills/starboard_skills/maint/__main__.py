@@ -40,7 +40,23 @@ from starboard_skills.maint.state import (
 
 _ALL_HOSTS = ["claude-code", "isaac", "codex", "opencode"]
 _PACKAGE_DIR = Path(starboard_skills.__file__).parent
-_CANONICAL_SKILLS = _PACKAGE_DIR / "skills" / "starboard"
+
+
+def _resolve_canonical_skills(package_dir: Path = _PACKAGE_DIR) -> Path:
+    """Locate the canonical skills tree (repo dev checkout or built wheel).
+
+    In an editable/dev checkout the tree lives beside the package at
+    ``<pkg-parent>/skills/starboard``; in a built wheel it is vendored inside
+    the package at ``<pkg>/skills/starboard`` (hatch ``force-include``). Prefer
+    the dev-tree sibling when present, else fall back to the vendored copy.
+    """
+    dev = package_dir.parent / "skills" / "starboard"
+    if dev.is_dir():
+        return dev
+    return package_dir / "skills" / "starboard"
+
+
+_CANONICAL_SKILLS = _resolve_canonical_skills()
 
 # The plugin dir for Isaac (dev-mode path; falls back to package skills).
 def _plugin_dir() -> Path:

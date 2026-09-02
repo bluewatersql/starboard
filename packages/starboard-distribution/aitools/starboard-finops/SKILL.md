@@ -1,69 +1,94 @@
 ---
 name: starboard-finops
-description: "Analyze Databricks cost and usage — fetch billable usage, review budgets, and identify cost optimization opportunities. Use when the user asks about spend, billing, cost drivers, budgets, or FinOps and cost optimization."
-allowed-tools: Bash(starboard-helper:*), Read
+description: "Analyze Databricks cost and usage — load list-price DBU consumption from system.billing.usage, review budgets, and identify cost optimization opportunities. Use when the user asks about spend, billing, cost drivers, budgets, or FinOps and cost optimization."
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper:*), Read
 ---
 
 # Starboard: FinOps Analysis
 
-Analyze Databricks cost and usage — fetch billable usage, review budgets, and identify cost optimization opportunities.
+Analyze Databricks cost and usage — load DBU consumption from Unity Catalog
+system tables, review budgets, and identify cost optimization opportunities.
 
-## Dual-Mode Behavior
+## You are the analyst
 
-**Check which tools are available before proceeding:**
+**You** are the LLM for this skill. The skill hands you deterministic usage and
+billing data; **you** read the rows and write the cost assessment and
+recommendations yourself.
 
-If `mcp__starboard__*` tools are available in your context, use them for full agent orchestration:
+Do **not** call the `starboard` goal agent, an MCP `*_analysis` / `synthesize_*`
+tool, a model-serving endpoint, or any other model. There is no second LLM in
+this loop — the data step below runs plain Python / CLI fetches (no LLM), and you
+do the reasoning. Handing analysis to another model defeats the point of the
+skill and breaks when that model's credentials differ from your session's.
+
+## Step 1 — Load the data (deterministic, no LLM)
+
+### Workspace cost data (preferred — no account-admin required)
+
+Cost/usage on the workspace-read-only path comes from `system.billing.usage`
+(list-price **DBU quantities**, not dollars). Run the bundled helper — it
+executes the billing query pack out-of-context in Python and prints one JSON
+envelope to stdout. It is pre-approved by this skill's `allowed-tools`, so it
+runs without a permission prompt:
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs billing
 ```
-mcp__starboard__analyze_finops  (or similar MCP tool)
+
+Widen the window with `--lookback-days`, or target a profile with `--profile`:
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs billing --lookback-days 90
+${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs billing --profile my-profile
 ```
 
-If MCP tools are NOT available, use `starboard-helper` via Bash to fetch data, then apply analytical reasoning:
+The envelope is `{ok, domain, command, data, meta}`. Read the `billing` entry in
+`data.packs[]`: each `results[]` query carries the **actual rows** (`columns` +
+`rows`) — DBU consumption by `billing_origin_product` / `sku_name` and by month.
+`data.domain_analyses` is always `[]` here (proof no LLM ran). Requires
+`pip install "starboard-kernel[discovery]"`.
+
+### Account-level billing (optional — requires account-admin credentials)
+
+If you are authenticated with **account-admin** credentials (account console
+host + `DATABRICKS_ACCOUNT_ID`), you can also pull account-scoped artifacts.
+These use the Account API and return "Not Found" on a plain workspace token, so
+they are optional:
+
 ```bash
 starboard-helper finops usage --start-date YYYY-MM-DD --end-date YYYY-MM-DD
 starboard-helper finops budgets
 starboard-helper finops log-delivery
 ```
 
-## MCP Path
+## Step 2 — Analyze the data yourself
 
-When `mcp__starboard__*` tools are available:
-1. Call the relevant MCP tool — the full agent stack handles orchestration, analysis, and recommendations.
-2. Return the agent's response directly.
+Read the returned usage/billing rows:
 
-## Non-MCP Path
+- **Cost drivers** — which products/SKUs (Jobs Compute, SQL Compute, All-Purpose)
+  dominate DBU consumption?
+- **Trends** — is consumption increasing month-over-month? Which workloads are
+  growing?
+- **Waste** — All-Purpose clusters with low utilization (idle cost), oversized
+  compute.
+- **Budget alerts** (if account data available) — are any budgets close to or
+  exceeding thresholds?
+- **Optimization levers** — spot instances, serverless SQL, ephemeral job clusters.
 
-When MCP tools are NOT available, follow these steps:
+## Step 3 — Produce the report
 
-### Step 1: Fetch usage data
-```bash
-starboard-helper finops usage --start-date 2024-01-01 --end-date 2024-01-31
-```
-
-### Step 2: Review budgets and alerts
-```bash
-starboard-helper finops budgets
-```
-
-### Step 3: Apply analytical reasoning
-
-Based on the structured JSON output, analyze:
-- **Cost drivers**: Which SKUs (Jobs Compute, SQL Compute, All-Purpose) dominate spend?
-- **Trends**: Is spend increasing month-over-month? Which workloads are growing?
-- **Waste**: Are there All-Purpose clusters with low utilization (idle cost)?
-- **Budget alerts**: Are any budgets close to or exceeding thresholds?
-- **Optimization levers**: Spot instances, serverless SQL, job cluster ephemeral patterns.
-
-### Step 4: Produce recommendations
-
-Output a structured analysis:
-1. Cost summary by SKU and time period
+1. Consumption summary by product/SKU and time period
 2. Top cost drivers
 3. Waste identification (idle resources, oversized clusters)
 4. Specific optimization actions with estimated savings
 5. Priority: critical / high / medium / low
 
-## Exit Codes
+`$` figures are **list-price DBU estimates** — label them as such.
+
+## Exit codes (from the bundled helper)
+
 - 0: success
-- 1: authentication error — check DATABRICKS_HOST, DATABRICKS_ACCOUNT_ID, and DATABRICKS_TOKEN env vars
+- 1: authentication error — check `DATABRICKS_HOST` / `DATABRICKS_TOKEN` (or `--profile`)
 - 2: resource not found
-- 3: API error — note: billable usage requires account-level access
+- 3: API error — check workspace connectivity
+- 4: bad arguments (e.g. an unknown `--packs` value)

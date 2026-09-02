@@ -55,6 +55,7 @@ WHERE cl.event_date >= cutoff.dt
   AND cl.source_column_name IS NOT NULL
   AND cl.target_column_name IS NOT NULL
   AND cl.source_table_full_name IS NOT NULL
+  AND cl.target_table_full_name IS NOT NULL
 GROUP BY cl.source_table_full_name, cl.source_column_name
 ORDER BY downstream_columns DESC
 LIMIT {result_limit}
@@ -74,6 +75,8 @@ pii AS (
   FROM system.access.column_lineage cl, cutoff
   WHERE cl.event_date >= cutoff.dt
     AND cl.source_column_name IS NOT NULL
+    AND cl.target_column_name IS NOT NULL
+    AND cl.target_table_full_name IS NOT NULL
     AND LOWER(cl.source_column_name) RLIKE
       '(email|ssn|social_security|passport|credit_card|card_number|date_of_birth|first_name|last_name|full_name|phone|address|zip|postal|tax_id|national_id|ip_address)'
 )
@@ -104,6 +107,7 @@ WHERE cl.event_date >= cutoff.dt
   AND cl.target_column_name IS NOT NULL
   AND cl.source_column_name IS NOT NULL
   AND cl.target_table_full_name IS NOT NULL
+  AND cl.source_table_full_name IS NOT NULL
 GROUP BY cl.target_table_full_name, cl.target_column_name
 ORDER BY upstream_columns DESC
 LIMIT {result_limit}

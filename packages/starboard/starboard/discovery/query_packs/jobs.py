@@ -180,7 +180,6 @@ run_summary AS (
     workspace_id,
     job_id,
     run_id,
-    COUNT(*) - 1      AS repairs,
     MAX(result_state) AS final_result_state
   FROM system.lakeflow.job_run_timeline, cutoff
   WHERE period_start_time >= cutoff.dt
@@ -192,9 +191,7 @@ job_stats AS (
     workspace_id,
     job_id,
     COUNT(DISTINCT run_id)                                               AS total_runs,
-    COUNT(DISTINCT CASE WHEN final_result_state = 'FAILED' THEN run_id END) AS failures,
-    COUNT(DISTINCT CASE WHEN repairs > 0 THEN run_id END)               AS retried_runs,
-    SUM(repairs)                                                         AS total_repairs
+    COUNT(DISTINCT CASE WHEN final_result_state = 'FAILED' THEN run_id END) AS failures
   FROM run_summary
   GROUP BY workspace_id, job_id
 ),
@@ -216,7 +213,6 @@ dbu_by_state AS (
     rs.job_id,
     ROUND(SUM(rd.run_dbus), 2)                                                              AS total_dbus,
     ROUND(SUM(CASE WHEN rs.final_result_state = 'FAILED' THEN rd.run_dbus ELSE 0 END), 2)  AS failure_dbus,
-    ROUND(SUM(CASE WHEN rs.repairs > 0            THEN rd.run_dbus ELSE 0 END), 2)          AS retry_dbus,
     ROUND(AVG(rd.run_dbus), 2)                                                              AS avg_dbus_per_run
   FROM run_summary rs
   LEFT JOIN run_dbus rd USING (workspace_id, job_id, run_id)
@@ -228,18 +224,16 @@ SELECT
   js.workspace_id,
   js.total_runs,
   js.failures,
-  js.retried_runs,
-  js.total_repairs,
   ROUND(TRY_DIVIDE(js.failures * 100.0, js.total_runs), 1)                 AS failure_rate_pct,
-  ROUND(TRY_DIVIDE(js.total_repairs * 1.0, js.total_runs), 2)              AS avg_repairs_per_run,
   ds.total_dbus,
   ds.failure_dbus,
-  ds.retry_dbus,
-  ROUND(TRY_DIVIDE((ds.failure_dbus + ds.retry_dbus) * 100.0, ds.total_dbus), 1) AS wasted_dbu_pct
+  -- "Wasted" DBU = DBU spent on failed runs. (Retry/repair DBU was dropped: the
+  -- only available signal, timeline-row count, measures state snapshots not repairs.)
+  ROUND(TRY_DIVIDE(ds.failure_dbus * 100.0, ds.total_dbus), 1)             AS wasted_dbu_pct
 FROM job_stats js
 LEFT JOIN latest_jobs  j  USING (workspace_id, job_id)
 LEFT JOIN dbu_by_state ds USING (workspace_id, job_id)
-ORDER BY (ds.failure_dbus + ds.retry_dbus) DESC
+ORDER BY ds.failure_dbus DESC
 LIMIT {result_limit}
 """
 
@@ -401,7 +395,7 @@ JOBS_PACK = QueryPack(
         SystemQuery(
             query_id="C-J04",
             name="Compound Reliability Scorecard",
-            description="Failure rates, retries, and wasted DBU by job",
+            description="Failure rates and failure-attributed DBU by job",
             sql_template=C_J04_SQL,
             required_tables=(
                 "system.lakeflow.job_run_timeline",

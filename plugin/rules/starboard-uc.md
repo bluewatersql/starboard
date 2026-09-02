@@ -33,39 +33,21 @@ Return the agent response directly.
 
 ### Tier-1 — bundled helper
 
-If `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, use the bundled pure analyzer (no network, pre-approved — no permission prompt):
-
-```bash
-${CLAUDE_SKILL_DIR}/scripts/run.sh analyze --input <table.json>
-```
+Not available for this domain — proceed to Tier-0.
 
 ### Tier-0 — raw fetch via `starboard-helper`
 
-```bash
-starboard-helper uc catalogs
-starboard-helper uc schemas --catalog <CATALOG>
-starboard-helper uc tables --catalog <CATALOG> --schema <SCHEMA>
-starboard-helper uc table --full-name <CATALOG>.<SCHEMA>.<TABLE>
-starboard-helper uc lineage --full-name <CATALOG>.<SCHEMA>.<TABLE>
-```
+See the skill body for raw fetch commands.
 
 ## Domain heuristics
 
-- **Governance**: Do tables have owners and comments? Missing metadata is a governance gap.
-- **Lineage**: Are there orphaned tables (no upstream/downstream)? Potential dead data.
-- **Table types**: Are MANAGED vs EXTERNAL tables used appropriately?
-- **Data formats**: Are legacy formats (CSV, JSON) used where Delta would be better?
-- **Access patterns**: Are schemas organized logically (bronze/silver/gold or domain-based)?
+Apply domain expertise when reviewing the structured JSON output.
 
 ## Success criteria
 
 A complete analysis for this domain must include:
 
-1. Catalog/schema overview and health
-2. Governance gaps (missing owners, comments, tags)
-3. Data organization recommendations
-4. Lineage observations
-5. Priority: critical / high / medium / low
+Produce a structured, prioritized analysis with actionable recommendations.
 
 ## Ground rules
 

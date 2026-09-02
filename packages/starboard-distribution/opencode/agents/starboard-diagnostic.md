@@ -13,22 +13,26 @@ and synthesize a root cause with remediation steps.
 
 ## Tool selection
 
-Pick the highest tier available:
+This is a skills-first plugin: prefer the bundled helper. Do **not** try to
+start or connect to an MCP server — if the `mcp__starboard__*` tools are not
+already present in your session, skip straight to the bundled helper. Pick the
+first available:
 
-1. **MCP agent.** If `mcp__starboard__diagnostic_agent` is available, call it and
-   return its response directly.
-2. **Bundled helper.** If the `starboard-diagnostic` skill's
+1. **Bundled helper — preferred.** If the `starboard-diagnostic` skill's
    `${CLAUDE_SKILL_DIR}/scripts/run.sh` is accessible:
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/run.sh triage-exit --exit-code <N> [--context "<log>"]
    ${CLAUDE_SKILL_DIR}/scripts/run.sh extract-evidence --text <file>
    ${CLAUDE_SKILL_DIR}/scripts/run.sh rca --text <file> [--exit-code <N>]
    ```
-3. **Raw fetch (Tier 0).** Otherwise use `starboard-helper`:
+2. **Raw fetch (Tier 0).** Otherwise use `starboard-helper`:
    ```bash
    starboard-helper diagnostic run-state --run-id <RUN_ID>
    starboard-helper diagnostic cluster-log --cluster-id <CLUSTER_ID> --limit 100
    ```
+3. **MCP agent (only inside a Starboard MCP host).** *Only* if
+   `mcp__starboard__diagnostic_agent` is already available in your session,
+   call it and return its response directly.
 
 ## Workflow
 

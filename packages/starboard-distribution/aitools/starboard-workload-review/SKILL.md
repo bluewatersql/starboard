@@ -33,26 +33,24 @@ The opt-in domains are **additive** — v1 defaults and their findings are
 unchanged, and each new finding still cites its evidence `query_id` + row. All `$`
 framing is a **list-price DBU estimate**, never a finance-grade figure.
 
-## Dual-Mode Behavior
+## You are the analyst
 
-**Check which tools are available before proceeding:**
+**You** are the LLM for this skill. The skill hands you deterministic review
+findings; **you** read the ranked findings and evidence citations and write the
+workload review report yourself.
 
-If `mcp__starboard__*` tools are available in your context, use them for full
-agent orchestration (the agent stack runs the review and the validator council):
+Do **not** call the `starboard` goal agent, an MCP `*_analysis` / `synthesize_*`
+tool, a model-serving endpoint, or any other model. There is no second LLM in
+this loop — the data step below runs deterministic Python (no LLM), and you do
+the reasoning. Handing analysis to another model defeats the point of the skill
+and breaks when that model's credentials differ from your session's.
 
-```
-mcp__starboard__review  (or similar MCP tool)
-```
+## Step 1 — Load the data (deterministic Python, no LLM)
 
-If MCP tools are NOT available, run the bundled Tier-1 review script below.
-
-## Tier 1 — bundled review (deterministic, no LLM)
-
-If `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, run the deterministic Workload
-Review end-to-end against the resolved workspace (query packs + rule scoring,
-**no LLM**). It emits the stable JSON envelope
-(`{ok, domain, command, data|error, meta}`) to stdout and runs out-of-context in
-Python — the command is pre-approved, so no permission prompt appears:
+Run the bundled Workload Review script. It executes the full review end-to-end
+against the resolved workspace — query packs + rule scoring, **no LLM** — and
+emits the stable JSON envelope (`{ok, domain, command, data|error, meta}`) to
+stdout. The command is pre-approved, so no permission prompt appears:
 
 ```bash
 # Default scope: jobs + sql + warehouse
@@ -66,7 +64,11 @@ ${CLAUDE_SKILL_DIR}/scripts/run.sh --workspace my-profile --lookback-days 60
 ${CLAUDE_SKILL_DIR}/scripts/run.sh --domains dlt,ml,vector-search
 ```
 
-Read the JSON and synthesize the review:
+Requires `pip install "starboard"` (the server package supplies the SDK-backed
+pack execution).
+
+### What comes back
+
 - `data.findings` — ranked findings; each has `finding` (severity, score,
   category, summary, rationale, current_state, suggested_fix) and `evidence`
   (a list of `{query_id, row_index, row}` citations).
@@ -75,14 +77,10 @@ Read the JSON and synthesize the review:
 - `data.cost_basis` — the public $ basis label; findings are DBU / utilization
   based (a **list-price estimate**, never a finance-grade figure).
 
-Requires `pip install "starboard"` (the server package supplies the SDK-backed
-pack execution). Present findings highest-priority first, and cite the
-`query_id` + row for each.
+### Offline scoring (pure, pre-fetched rows)
 
-## Offline scoring (pure, pre-fetched rows)
-
-When you already have query-pack rows (e.g. from a prior discovery run) and want
-to score them without touching the workspace, use the pure SDK-free helper:
+When you already have query-pack rows and want to score them without touching the
+workspace, use the pure SDK-free helper:
 
 ```bash
 python -m starboard_x.review score --rows rows.json --domains jobs,sql,warehouse
@@ -91,25 +89,47 @@ python -m starboard_x.review score --rows rows.json --domains jobs,sql,warehouse
 where `rows.json` maps each evidence `query_id` to a list of row objects
 (e.g. `{"W-W02": [{"warehouse_id": "wh1", "auto_stop_waste_pct": 80.0}]}`).
 
-## Tier 0 — assemble from `starboard-helper` (no bundled script)
+### Fallback — assemble from starboard-helper
 
-If neither the MCP tools nor the bundled Tier-1 script are available, gather the
-per-domain inputs with the zero-dep `starboard-helper` CLI and then score them
-with the offline helper above:
+If the bundled script is unavailable, gather per-domain inputs with
+`starboard-helper` and score them with the offline helper above:
 
 ```bash
 starboard-helper job list
-starboard-helper query list
+starboard-helper query history
 starboard-helper warehouse list
 ```
 
 Shape the returned rows into the `{query_id: [rows]}` map and run
-`python -m starboard_x.review score`. This keeps the review available on the pure
-fetch tier when the server package is not installed.
+`python -m starboard_x.review score`.
 
-## Exit Codes
+## Step 2 — Analyze the findings yourself
+
+Read the ranked findings from `data.findings` and assess the workspace:
+
+- **Severity and score** — which findings are critical / high / medium / low?
+- **Evidence citations** — each finding cites `query_id` + row; confirm the data
+  supports the finding.
+- **Domain coverage** — note any `degraded` domains where evidence is partial.
+- **Cost exposure** — surface list-price DBU estimates from findings; always label
+  as *list-price estimates*.
+
+## Step 3 — Produce the workload review
+
+Present findings highest-priority first; cite the `query_id` + row for each:
+
+1. **Executive summary** — overall workspace health in 2–3 sentences
+2. **Ranked findings** — severity, score, category, summary, evidence citation,
+   and suggested fix per finding
+3. **Domain coverage** — which domains were reviewed and any degraded coverage
+4. **Recommended actions** — top 3–5 remediations ordered by impact
+
+`$` figures are **list-price DBU estimates** — label them as such.
+
+## Exit codes
+
 - 0: success
-- 1: authentication error — check the workspace profile / DATABRICKS_HOST + DATABRICKS_TOKEN
+- 1: authentication error — check the workspace profile / `DATABRICKS_HOST` + `DATABRICKS_TOKEN`
 - 2: resource not found
 - 3: API error — check workspace connectivity
 - 4: argument error — check `--domains` / `--rows`

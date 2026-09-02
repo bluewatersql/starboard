@@ -13,25 +13,31 @@ Use only public system.* data. Report list-price DBU estimates only.
 
 ## Tool selection
 
-1. **MCP agent.** If `mcp__starboard__review` is available, call it and return
-   its response directly (the agent stack runs the review and validator council).
-2. **Bundled Tier-1 script.** If the `starboard-workload-review` skill's
-   `${CLAUDE_SKILL_DIR}/scripts/run.sh` is accessible:
+This is a skills-first plugin: prefer the bundled script. Do **not** try to
+start or connect to an MCP server — if the `mcp__starboard__*` tools are not
+already present in your session, skip straight to the bundled script.
+
+1. **Bundled Tier-1 script — preferred.** If the `starboard-workload-review`
+   skill's `${CLAUDE_SKILL_DIR}/scripts/run.sh` is accessible:
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/run.sh                                  # all domains
    ${CLAUDE_SKILL_DIR}/scripts/run.sh --domains warehouse,sql          # restrict
    ${CLAUDE_SKILL_DIR}/scripts/run.sh --workspace my-profile --lookback-days 60
    ```
-3. **Offline scoring.** If you have pre-fetched rows:
+2. **Offline scoring.** If you have pre-fetched rows:
    ```bash
    python -m starboard_x.review score --rows rows.json --domains jobs,sql,warehouse
    ```
-4. **Tier 0.** Gather with `starboard-helper`, then score offline:
+3. **Tier 0.** Gather with `starboard-helper`, then score offline:
    ```bash
    starboard-helper job list
    starboard-helper query list
    starboard-helper warehouse list
    ```
+4. **MCP agent (only inside a Starboard MCP host).** *Only* if
+   `mcp__starboard__review` is already available in your session, call it and
+   return its response directly (the agent stack runs the review and validator
+   council).
 
 ## Report format
 Present findings highest-priority first. For each finding include:

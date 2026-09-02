@@ -104,14 +104,29 @@ class QueryRecord:
         Returns:
             Typed QueryRecord instance.
         """
-        # Handle start_time parsing
+        # Handle start_time parsing. Accept ISO strings, epoch timestamps
+        # (Databricks/SDK emit epoch milliseconds as ints), and datetimes;
+        # anything else becomes None so downstream `.hour` access is safe.
         start_time = raw.get("start_time")
         if isinstance(start_time, str):
-            # Try parsing ISO format
             try:
                 start_time = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
                 start_time = None
+        elif isinstance(start_time, bool):
+            # bool is an int subclass — never a timestamp.
+            start_time = None
+        elif isinstance(start_time, (int, float)):
+            # Heuristic: values above ~1e11 are epoch milliseconds, else seconds.
+            try:
+                ts = float(start_time)
+                start_time = datetime.fromtimestamp(
+                    ts / 1000.0 if ts > 1e11 else ts, tz=UTC
+                )
+            except (ValueError, OSError, OverflowError):
+                start_time = None
+        elif not isinstance(start_time, datetime):
+            start_time = None
 
         return cls(
             statement_id=raw.get("statement_id") or "",

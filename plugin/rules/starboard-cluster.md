@@ -37,32 +37,17 @@ Not available for this domain — proceed to Tier-0.
 
 ### Tier-0 — raw fetch via `starboard-helper`
 
-```bash
-starboard-helper cluster list
-starboard-helper cluster list --filter-by-state RUNNING
-starboard-helper cluster fetch --cluster-id <CLUSTER_ID>
-starboard-helper cluster events --cluster-id <CLUSTER_ID> --limit 50
-starboard-helper cluster spark-context --cluster-id <CLUSTER_ID>
-```
+See the skill body for raw fetch commands.
 
 ## Domain heuristics
 
-- **Sizing**: Is the node type and worker count appropriate for the workload?
-- **Autoscaling**: Is autoscale configured and within appropriate min/max bounds?
-- **Events**: Are there recurring error events (OOM, node lost, preemption)?
-- **Spark config**: Are there performance-relevant configs set (shuffle partitions, memory fractions)?
-- **Lifespan**: Are long-running clusters accumulating state or should they be ephemeral?
-- **Source**: Are clusters created interactively (risk) vs. job-attached (preferred for production)?
+Apply domain expertise when reviewing the structured JSON output.
 
 ## Success criteria
 
 A complete analysis for this domain must include:
 
-1. Cluster fleet overview
-2. Right-sizing recommendations with list-price DBU $/month impact
-3. Event-based failure diagnosis
-4. Spark configuration tuning suggestions
-5. Priority: critical / high / medium / low
+Produce a structured, prioritized analysis with actionable recommendations.
 
 ## Ground rules
 

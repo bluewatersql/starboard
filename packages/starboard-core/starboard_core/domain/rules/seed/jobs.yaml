@@ -45,13 +45,13 @@ rules:
     severity: high
     default_effort: S
     default_impact: 3
-    bad: A job where a third of total DBU is burned on failed or retried runs.
-    good: Nearly all DBU goes to runs that succeed on the first attempt.
+    bad: A job where a third of total DBU is burned on failed runs.
+    good: Nearly all DBU goes to runs that succeed.
     suggested_fix: >-
       Address the failures driving the wasted spend, and cap or remove blind
       retries that re-run expensive work without changing the outcome.
     detect: >-
-      The reliability scorecard reports wasted_dbu_pct (failure + retry DBU as
+      The reliability scorecard reports wasted_dbu_pct (failed-run DBU as
       a share of total) at or above the review threshold.
     evidence_query: C-J04
     source: null

@@ -167,9 +167,34 @@ LIMIT {result_limit}
 CRS_02_SQL = """\
 -- DBU cost features per cluster (DBU-only).
 -- List-price $ projection is applied at the tool layer, not in this pack.
+-- coverage_pct: per-workspace share of DBU attributable to a specific cluster. The
+-- remainder is serverless / non-cluster product usage (no usage_metadata.cluster_id,
+-- so nothing to right-size) — a completeness signal for the cost ranking below.
+WITH usage AS (
+  SELECT
+    workspace_id,
+    usage_metadata.cluster_id                                  AS cluster_id,
+    sku_name,
+    usage_quantity,
+    usage_start_time,
+    usage_end_time
+  FROM system.billing.usage
+  WHERE usage_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP())
+),
+ws_coverage AS (
+  SELECT
+    workspace_id,
+    ROUND(
+      SUM(CASE WHEN cluster_id IS NOT NULL THEN usage_quantity ELSE 0 END) * 100.0
+        / NULLIF(SUM(usage_quantity), 0),
+      1
+    )                                                          AS coverage_pct
+  FROM usage
+  GROUP BY workspace_id
+)
 SELECT
   u.workspace_id,
-  u.usage_metadata.cluster_id                                  AS cluster_id,
+  u.cluster_id,
   ARRAY_JOIN(COLLECT_SET(u.sku_name), ', ')                    AS sku_names,
   ROUND(SUM(u.usage_quantity), 2)                              AS total_dbus,
   ROUND(
@@ -179,11 +204,12 @@ SELECT
           1
         ),
     2
-  )                                                            AS dbus_per_day
-FROM system.billing.usage u
-WHERE u.usage_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_TIMESTAMP())
-  AND u.usage_metadata.cluster_id IS NOT NULL
-GROUP BY u.workspace_id, u.usage_metadata.cluster_id
+  )                                                            AS dbus_per_day,
+  ANY_VALUE(c.coverage_pct)                                    AS coverage_pct
+FROM usage u
+JOIN ws_coverage c USING (workspace_id)
+WHERE u.cluster_id IS NOT NULL
+GROUP BY u.workspace_id, u.cluster_id
 ORDER BY dbus_per_day DESC NULLS LAST
 LIMIT {result_limit}
 """
@@ -712,7 +738,7 @@ job_workloads AS (
 ),
 pipeline_workloads AS (
   SELECT
-    CAST(NULL AS STRING)                                       AS workspace_id,
+    p.workspace_id                                            AS workspace_id,
     'PIPELINE'                                                 AS workload_type,
     p.pipeline_id                                              AS workload_id,
     CAST(NULL AS STRING)                                       AS sizing_direction,

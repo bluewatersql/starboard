@@ -35,18 +35,17 @@ helpers at runtime, so pre-approved skill commands run without a permission prom
 
 ## Optional: enable the MCP server (full agent stack)
 
-The committed plugin is **skills-only by default** and declares **no `mcpServers`**. Claude Code
-launches any bundled `mcpServers` a plugin declares as soon as the plugin loads, so shipping a
-server entry would break a skills-only install (it would try to spawn `starboard-mcp` with no
-binary and no LLM credentials). MCP is therefore an explicit opt-in you add yourself.
+The plugin is **skills-only** and ships **no `.mcp.json`** and **no `mcpServers`**. Claude Code
+launches any bundled `mcpServers` a plugin declares — and may try to spawn a `.mcp.json` server in
+the loaded plugin dir — as soon as the plugin loads, so bundling a server entry would break a
+skills-only install (it would try to spawn `starboard-mcp` with no binary and no LLM credentials).
+MCP is therefore an explicit opt-in you add to **your own** `.mcp.json`, never inside the plugin.
 
-The repo keeps `plugin/.mcp.json` as a ready-made template for the `starboard` stdio server. To run
-the full 7-agent stack:
+To run the full 7-agent stack:
 
 1. Install the server and its dependencies: `pip install starboard` and set the LLM credentials
    (`LLM_PROVIDER` / `LLM_API_KEY` / `LLM_MODEL`) plus `DATABRICKS_HOST`.
-2. Register the server with Claude Code, either by copying the `starboard` entry from
-   `plugin/.mcp.json` into your own `.mcp.json`, or with the CLI:
+2. Register the `starboard` stdio server with Claude Code in your own config:
 
    ```bash
    claude mcp add starboard -- starboard-mcp --transport stdio

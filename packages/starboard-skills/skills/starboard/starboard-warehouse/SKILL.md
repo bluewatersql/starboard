@@ -6,37 +6,29 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper
 
 # Starboard: Warehouse Analysis
 
-Analyze Databricks SQL warehouses — inspect configuration, monitor state, identify sizing and cost issues.
+Analyze Databricks SQL warehouses — inspect configuration, monitor state, identify
+sizing and cost issues.
 
-## Dual-Mode Behavior
+## You are the analyst
 
-**Check which tools are available before proceeding:**
+**You** are the LLM for this skill. The skill hands you deterministic warehouse
+data; **you** read the configuration, health, and metrics and write the assessment
+and recommendations yourself.
 
-If `mcp__starboard__*` tools are available in your context, use them for full agent orchestration:
-```
-mcp__starboard__analyze_warehouse  (or similar MCP tool)
-```
+Do **not** call the `starboard` goal agent, an MCP `*_analysis` / `synthesize_*`
+tool, a model-serving endpoint, or any other model. There is no second LLM in
+this loop — the data step below runs pure Python (no LLM), and you do the
+reasoning. Handing analysis to another model defeats the point of the skill and
+breaks when that model's credentials differ from your session's.
 
-If MCP tools are NOT available, use `starboard-helper` via Bash to fetch data, then apply analytical reasoning:
-```bash
-starboard-helper warehouse list
-starboard-helper warehouse fetch --warehouse-id <WH_ID>
-starboard-helper warehouse metrics --warehouse-id <WH_ID>
-```
+## Step 1 — Load the data (deterministic, no LLM)
 
-## MCP Path
+### Score a query-history file (bundled helper)
 
-When `mcp__starboard__*` tools are available:
-1. Call the relevant MCP tool — the full agent stack handles orchestration, analysis, and recommendations.
-2. Return the agent's response directly.
-
-## Tier 1 — bundled helper (pure analyzer, no I/O)
-
-If MCP tools are unavailable but `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, and
-you already have a warehouse **query-history JSON** on disk (e.g. from
+If you already have a warehouse **query-history JSON** on disk (e.g. from
 `starboard-helper` or `system.query.history`), score it locally with the pure
-fingerprint + health analyzer — no `databricks-sdk`, no network. It emits the
-stable JSON envelope to stdout and is pre-approved (no permission prompt):
+fingerprint + health analyzer — no network required. It emits the stable JSON
+envelope to stdout and is pre-approved (no permission prompt):
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/run.sh analyze --history <history.json> [--warehouse-id <ID>]
@@ -45,46 +37,42 @@ ${CLAUDE_SKILL_DIR}/scripts/run.sh analyze --history <history.json> [--warehouse
 The history is either a JSON list of query records or an object
 `{"records": [...], "warehouse_id": ..., "warehouse_name": ...}`. Read the
 returned `data.fingerprint` + `data.health` (score, status, risk factors,
-recommendations) and produce the report. Requires
-`pip install "starboard-kernel[warehouse]"`. To fetch live warehouse config/state
-instead, use the Tier-0 `starboard-helper` commands below.
+recommendations), then proceed to Step 2. Requires
+`pip install "starboard-kernel[warehouse]"`.
 
-## Non-MCP Path (Tier 0 — raw fetch)
+### Fetch live warehouse data (starboard-helper)
 
-When neither MCP nor the bundled helper is available, follow these steps:
+To inspect live warehouse configuration and state, use `starboard-helper`:
 
-### Step 1: List all warehouses
 ```bash
 starboard-helper warehouse list
-```
-Review: warehouse names, states, sizes, types (classic vs. serverless).
-
-### Step 2: Inspect specific warehouse
-```bash
 starboard-helper warehouse fetch --warehouse-id <WH_ID>
 starboard-helper warehouse metrics --warehouse-id <WH_ID>
 ```
-Review: cluster count, active sessions, auto-stop configuration, health status.
 
-### Step 3: Apply analytical reasoning
+## Step 2 — Analyze the data yourself
 
-Based on the structured JSON output, analyze:
-- **Sizing**: Is `cluster_size` appropriate for the active session count?
-- **Scaling**: Is `max_num_clusters` unnecessarily high, driving cost?
-- **Auto-stop**: Is `auto_stop_mins` configured too high (idle cost)?
-- **Type**: Should classic warehouses be migrated to serverless for variable workloads?
-- **Health**: Are there any health warnings or errors?
+Read the returned configuration and metrics:
 
-### Step 4: Produce recommendations
+- **Sizing** — is `cluster_size` appropriate for the active session count?
+- **Scaling** — is `max_num_clusters` unnecessarily high, driving cost?
+- **Auto-stop** — is `auto_stop_mins` configured too high (idle cost)?
+- **Type** — should classic warehouses be migrated to serverless for variable
+  workloads?
+- **Health** — are there any health warnings or errors?
 
-Output a structured analysis:
+## Step 3 — Produce the report
+
 1. Summary of warehouse fleet health
 2. Rightsizing recommendations per warehouse
 3. Cost optimization opportunities (auto-stop, serverless migration)
 4. Priority: critical / high / medium / low
 
-## Exit Codes
+`$` figures are **list-price DBU estimates** — label them as such.
+
+## Exit codes
+
 - 0: success
-- 1: authentication error — check DATABRICKS_HOST and DATABRICKS_TOKEN env vars
+- 1: authentication error — check `DATABRICKS_HOST` and `DATABRICKS_TOKEN`
 - 2: warehouse not found — verify warehouse ID
 - 3: API error — check workspace connectivity

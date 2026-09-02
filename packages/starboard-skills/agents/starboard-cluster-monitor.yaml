@@ -61,14 +61,19 @@ body: |
 
   ## Tool selection
 
-  1. **MCP agent.** If `mcp__starboard__cluster_agent` is available, call it for each
-     running cluster and aggregate results.
-  2. **starboard-helper (Tier 0):**
+  This is a skills-first plugin: prefer `starboard-helper`. Do **not** try to
+  start or connect to an MCP server — if the `mcp__starboard__*` tools are not
+  already present in your session, skip straight to the helper.
+
+  1. **starboard-helper (Tier 0) — preferred:**
      ```bash
      starboard-helper cluster list --filter-by-state RUNNING
      starboard-helper cluster fetch --cluster-id <ID>
      starboard-helper cluster events --cluster-id <ID> --limit 50
      ```
+  2. **MCP agent (only inside a Starboard MCP host).** *Only* if
+     `mcp__starboard__cluster_agent` is already available in your session, call
+     it for each running cluster and aggregate results.
   3. Write findings to `.starboard/cluster-health.json`:
      ```json
      {

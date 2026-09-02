@@ -8,93 +8,100 @@ metadata:
 
 # Starboard: Workspace Discovery
 
-Discover and map a Databricks workspace — enumerate jobs, clusters, warehouses, and Unity Catalog assets to build a comprehensive inventory.
+Discover and map a Databricks workspace — enumerate jobs, clusters, warehouses,
+and Unity Catalog assets to build a comprehensive inventory.
 
-## How this skill runs — you are the analyst
+## You are the analyst
 
-You already have an LLM: **yourself**. This skill's job is to hand you the
-**deterministic workspace data**; *you* synthesize the inventory, observations,
-and recommendations. Do **not** hand the analysis off to a separate, server-side
-LLM — that defeats the purpose of a lightweight skill and breaks when the
-server's credential differs from your session's. Pick the first data source
-available, in order:
+**You** are the LLM for this skill. The skill hands you deterministic workspace
+data; **you** read the rows and write the inventory, observations, and
+recommendations yourself.
 
-## Tier 1 — bundled helper (deterministic, no LLM) — preferred
+Do **not** call the `starboard` goal agent, an MCP `*_analysis` / `synthesize_*`
+tool, a model-serving endpoint, or any other model. There is no second LLM in
+this loop — the data step below runs pure Python (no LLM), and you do the
+reasoning. Handing analysis to another model defeats the point of the skill and
+breaks when that model's credentials differ from your session's.
 
-If `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, run the deterministic discovery
-pipeline (audit + query packs, **no LLM analysis**). It emits the stable JSON
-envelope (`{ok, domain, command, data|error, meta}`) to stdout and runs
-out-of-context in Python — the command is pre-approved, so no permission prompt
-appears:
+## Step 1 — Load the data (deterministic Python, no LLM)
+
+Run the bundled helper. It executes the audit plus the discovery query packs
+out-of-context in Python and prints a single JSON envelope to stdout. The
+command is pre-approved by this skill's `allowed-tools`, so it runs without a
+permission prompt:
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only
-${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs finops_billing jobs
 ```
 
-The envelope's `data.packs[].results[]` carries the **actual rows** (`columns` +
-`rows`, with `row_count` and a `truncated` flag) alongside `data.audit`. Read
-those and synthesize the inventory yourself. Requires
-`pip install "starboard-kernel[discovery]"`. For raw per-resource enumeration
-instead, use the Tier-0 `starboard-helper` commands below.
+Scope to specific domains with `--packs`, or widen the window with
+`--lookback-days`:
 
-## MCP data tools (optional — deterministic only)
-
-If `mcp__starboard__run_discovery_queries` is available it returns the same
-deterministic query data and is an equivalent source to Tier 1. **Do not** call
-the server-side analysis/synthesis tools (`start_discovery_analysis`,
-`get_discovery_analysis_progress`, `synthesize_discovery_report`) from a host
-agent — those spin up a *second*, server-side LLM. Take the returned data and
-analyze it yourself.
-
-## Tier 0 — raw fetch via `starboard-helper`
-
-When neither the bundled helper nor MCP data tools are available, enumerate
-resources directly:
-
-### Step 1: Enumerate all resource types
 ```bash
-# Jobs
+${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --packs billing jobs
+${CLAUDE_SKILL_DIR}/scripts/run.sh run --data-only --lookback-days 60
+```
+
+Pass `--profile <name>` to target a specific `~/.databrickscfg` profile
+(otherwise the ambient `DATABRICKS_*` env / default profile is used).
+
+Requires `pip install "starboard-kernel[discovery]"`.
+
+### What comes back
+
+The envelope is `{ok, domain, command, data, meta}`:
+
+- `data.audit.succeeded` — did the workspace audit run.
+- `data.packs[]` — one entry per query pack (`audit`, `billing`, `jobs`,
+  `governance`, `migration`, and any you selected). Each `results[]` query
+  carries the **actual rows**: `columns`, `rows`, `row_count`, and a
+  `truncated` flag.
+- `data.domain_analyses` — always `[]` on this path (proof no LLM ran).
+
+### Fallback — raw per-resource fetch
+
+If the bundled helper is unavailable, enumerate directly with `starboard-helper`
+and reason over what it returns:
+
+```bash
 starboard-helper job list --limit 100
-
-# Clusters
 starboard-helper cluster list
-
-# SQL Warehouses
 starboard-helper warehouse list
-
-# Unity Catalog
 starboard-helper uc catalogs
 ```
 
-### Step 2: Drill into key resources
-For any resources of interest, use domain-specific commands to get details:
+Drill into specific resources as needed:
+
 ```bash
 starboard-helper uc schemas --catalog <CATALOG>
 starboard-helper cluster fetch --cluster-id <CLUSTER_ID>
 starboard-helper warehouse fetch --warehouse-id <WH_ID>
 ```
 
-### Step 3: Build workspace inventory
+## Step 2 — Analyze the data yourself
 
-Synthesize findings into a workspace map:
-- **Jobs**: Count, names, schedule patterns, cluster attachment types
-- **Clusters**: Running vs. terminated, job-attached vs. interactive
-- **Warehouses**: Types (classic/serverless), sizes, states
-- **Data**: Catalog hierarchy, number of schemas and tables
+Read the returned rows and build a workspace map:
 
-### Step 4: Produce discovery report
+- **Jobs** — count, schedule patterns, cluster attachment types
+- **Clusters** — running vs. terminated, job vs. interactive
+- **Warehouses** — types (classic/serverless), sizes, states
+- **Data** — Unity Catalog hierarchy, schema and table counts
 
-Output a structured inventory:
-1. **Workspace summary**: Counts of each resource type
-2. **Jobs inventory**: Scheduled vs. manual, production vs. development indicators
-3. **Compute inventory**: Cluster and warehouse utilization snapshot
-4. **Data inventory**: Unity Catalog hierarchy overview
-5. **Observations**: Notable patterns, potential issues, quick wins
-6. **Recommended next steps**: Which domains to analyze in depth
+## Step 3 — Produce the discovery report
 
-## Exit Codes
+1. **Workspace summary** — counts of each resource type
+2. **Jobs inventory** — scheduled vs. manual, production vs. development indicators
+3. **Compute inventory** — cluster and warehouse utilization snapshot
+4. **Data inventory** — Unity Catalog hierarchy overview
+5. **Observations** — notable patterns, potential issues, quick wins
+6. **Recommended next steps** — which domains to analyze in depth
+
+`$` figures are **list-price DBU estimates** — label them as such.
+
+## Exit codes (from the bundled helper)
+
 - 0: success
-- 1: authentication error — check DATABRICKS_HOST and DATABRICKS_TOKEN env vars
+- 1: authentication error — check `DATABRICKS_HOST` / `DATABRICKS_TOKEN` (or `--profile`)
 - 2: resource not found
 - 3: API error — check workspace connectivity
+- 4: bad arguments (e.g. an unknown `--packs` value)

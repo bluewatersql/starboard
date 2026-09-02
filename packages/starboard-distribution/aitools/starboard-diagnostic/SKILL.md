@@ -13,49 +13,75 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/run.sh *), Bash(starboard-helper
 Diagnose Databricks job/query failures: decode exit codes into ranked hypotheses,
 extract verbatim evidence windows from error logs, and synthesize a root cause.
 
-## Path selection (three branches)
+## You are the analyst
 
-Pick the highest tier available in your context, then stop:
+**You** are the LLM for this skill. The skill hands you deterministic failure
+data; **you** read the hypotheses and evidence windows and write the root-cause
+assessment and remediation yourself.
 
-1. **Tier 2 — MCP agent.** If `mcp__starboard__diagnostic_agent` is available,
-   call it. The full server stack handles orchestration, analysis, and
-   recommendations; return its response directly.
-2. **Tier 1 — bundled helper (this skill's default).** Else, if
-   `${CLAUDE_SKILL_DIR}/scripts/run.sh` exists, use it (see below). The dep-light
-   analyzers run out-of-context in Python and emit compact JSON to stdout.
-3. **Tier 0 — raw fetch.** Else, fall back to `starboard-helper` to fetch failure
-   context, then reason over it yourself:
-   ```bash
-   starboard-helper diagnostic run-state --run-id <RUN_ID>
-   starboard-helper diagnostic cluster-log --cluster-id <CLUSTER_ID> --limit 100
-   ```
+Do **not** call the `starboard` goal agent, an MCP `*_analysis` / `synthesize_*`
+tool, a model-serving endpoint, or any other model. There is no second LLM in
+this loop — the data step below runs pure Python (no LLM), and you do the
+reasoning. Handing analysis to another model defeats the point of the skill and
+breaks when that model's credentials differ from your session's.
 
-## Tier-1 usage
+## Step 1 — Load the data (deterministic Python, no LLM)
 
-All commands emit the stable JSON envelope
-(`{ok, domain, command, data|error, meta}`) to stdout. Run them via the bundled
-script — it is pre-approved, so no permission prompt appears:
+Run the bundled helper. It executes dep-light analyzers out-of-context in Python
+and prints a single JSON envelope to stdout. The commands are pre-approved by this
+skill's `allowed-tools`, so they run without a permission prompt:
 
-- **Exit code:**   `${CLAUDE_SKILL_DIR}/scripts/run.sh triage-exit --exit-code <N>`
+- **Exit code:**  `${CLAUDE_SKILL_DIR}/scripts/run.sh triage-exit --exit-code <N>`
   (add `--context "<log text>"` or `--text <file>` to sharpen the hypothesis)
-- **Error log:**   `${CLAUDE_SKILL_DIR}/scripts/run.sh extract-evidence --text <file>`
-- **End-to-end:**  `${CLAUDE_SKILL_DIR}/scripts/run.sh rca --text <file> [--exit-code <N>]`
+- **Error log:**  `${CLAUDE_SKILL_DIR}/scripts/run.sh extract-evidence --text <file>`
+- **End-to-end:** `${CLAUDE_SKILL_DIR}/scripts/run.sh rca --text <file> [--exit-code <N>]`
 
-### Workflow
+### What comes back
 
-1. If the failure has an exit code, start with `triage-exit` to get ranked
-   hypotheses (OOM, cancellation, container limit, crash) with next steps.
-2. If you have an error log or stack trace on disk, run `extract-evidence` (or go
-   straight to `rca`) to pull the fatal exception, cause chain, and OOM windows
-   with stable citation IDs.
-3. Read the JSON and produce a report: overall assessment, the primary hypothesis
-   with confidence, supporting evidence (cite window IDs), and prioritized
-   remediation steps.
+The envelope is `{ok, domain, command, data|error, meta}`:
+
+- `triage-exit` → `data.hypotheses` — ranked failure causes (OOM, cancellation,
+  container limit, crash) with confidence and next steps.
+- `extract-evidence` / `rca` → `data.evidence_windows` — fatal exception, cause
+  chain, and OOM windows with stable citation IDs; `data.assessment` when `rca`
+  is used.
 
 For the exit-code table and evidence-window types, see [reference.md](reference.md).
 For sample invocations and expected JSON, see [examples.md](examples.md).
 
-## Exit codes (all tiers)
+### Fallback — raw fetch
+
+If the bundled helper is unavailable, fetch failure context with `starboard-helper`
+and reason over what it returns:
+
+```bash
+starboard-helper diagnostic run-state --run-id <RUN_ID>
+starboard-helper diagnostic cluster-log --cluster-id <CLUSTER_ID> --limit 100
+```
+
+## Step 2 — Analyze the data yourself
+
+Read the returned hypotheses and evidence windows:
+
+- **Exit code** — match the code to ranked hypotheses; note confidence and any
+  discriminating signals in the log context.
+- **Evidence windows** — locate the fatal exception and cause chain; check for
+  OOM patterns (GC overhead, container killed, executor lost).
+- **Cross-signals** — correlate the exit-code hypothesis with evidence window
+  types to narrow to a primary root cause.
+
+## Step 3 — Produce the diagnostic report
+
+1. **Overall assessment** — one sentence on the likely root cause
+2. **Primary hypothesis** — cause, confidence level, supporting evidence (cite
+   window IDs)
+3. **Evidence summary** — verbatim key lines with citation IDs
+4. **Prioritized remediation** — specific steps ordered by likelihood of resolving
+   the failure
+
+`$` figures are **list-price DBU estimates** — label them as such.
+
+## Exit codes (from the bundled helper)
 
 - `0` success
 - `1` authentication error — check `DATABRICKS_HOST` / `DATABRICKS_TOKEN`

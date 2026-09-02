@@ -179,3 +179,64 @@ print("OK")
             f"stdout={result.stdout!r} stderr={result.stderr!r}"
         )
         assert "OK" in result.stdout
+
+
+class TestEpochTimestamps:
+    """Regression: QueryRecord.from_dict must accept epoch-ms/int start_time.
+
+    Databricks/SDK query records carry ``start_time`` as epoch milliseconds
+    (int), not ISO strings. Before the fix the analyzer did ``r.start_time.hour``
+    on a raw int and raised ``'int' object has no attribute 'hour'``.
+    """
+
+    def test_from_dict_parses_epoch_ms(self) -> None:
+        from datetime import datetime
+
+        from starboard_core.domain.analyzers.warehouse_analyzer import QueryRecord
+
+        rec = QueryRecord.from_dict({"start_time": 1_760_000_000_000})  # ms
+        assert isinstance(rec.start_time, datetime)
+        assert rec.start_time.hour is not None  # no AttributeError
+
+    def test_from_dict_bad_start_time_is_none(self) -> None:
+        from starboard_core.domain.analyzers.warehouse_analyzer import QueryRecord
+
+        assert QueryRecord.from_dict({"start_time": True}).start_time is None
+        assert QueryRecord.from_dict({"start_time": {"nope": 1}}).start_time is None
+        assert QueryRecord.from_dict({}).start_time is None
+
+    def test_analyze_epoch_ms_history_no_crash(self) -> None:
+        """End-to-end: an epoch-ms history analyzes without the .hour crash."""
+        import time
+
+        now_ms = int(time.time() * 1000)
+        history = {
+            "warehouse_id": "wh1",
+            "records": [
+                {
+                    "statement_id": "s1",
+                    "warehouse_id": "wh1",
+                    "statement_type": "SELECT",
+                    "total_duration_ms": 1200,
+                    "waiting_in_queue_ms": 50,
+                    "read_bytes": 1000,
+                    "written_bytes": 0,
+                    "start_time": now_ms,
+                    "executed_by": "u1",
+                }
+            ],
+        }
+        hist_file = Path("/tmp/wh_epoch_regression.json")
+        hist_file.write_text(json.dumps(history), encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, "-m", "starboard_x.warehouse", "analyze", "--history", str(hist_file)],
+            capture_output=True,
+            text=True,
+            cwd=str(_CORE_DIR),
+        )
+        assert result.returncode == 0, (
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+        envelope = json.loads(result.stdout)
+        assert envelope["ok"] is True
+        assert envelope["data"]["fingerprint"]["total_queries"] == 1

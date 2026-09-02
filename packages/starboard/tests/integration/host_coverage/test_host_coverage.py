@@ -78,6 +78,7 @@ _SKILLS_WITH_SCRIPTS: frozenset[str] = frozenset(
     {
         "starboard-diagnostic",
         "starboard-discovery",
+        "starboard-finops",
         "starboard-uc",
         "starboard-warehouse",
         "starboard-workload-review",

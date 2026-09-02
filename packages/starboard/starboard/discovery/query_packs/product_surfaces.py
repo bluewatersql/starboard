@@ -88,8 +88,8 @@ SELECT
   COUNT(DISTINCT DATE(usage_date))                AS monitored_days
 FROM system.billing.usage
 WHERE usage_date >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
-  AND (billing_origin_product = 'LAKEHOUSE_MONITORING'
-       OR sku_name LIKE '%LAKEHOUSE_MONITORING%')
+  AND (billing_origin_product = 'DATA_QUALITY_MONITORING'
+       OR sku_name LIKE '%DATA_QUALITY%')
 GROUP BY ALL
 ORDER BY usage_quantity DESC
 LIMIT {result_limit}
@@ -237,9 +237,7 @@ task_stats AS (
     run_id,
     task_key,
     MAX(result_state)                             AS result_state,
-    COUNT(*)                                      AS execution_count,
-    ROUND(AVG(CAST(period_end_time - period_start_time AS LONG)) / 60.0, 2) AS avg_duration_mins,
-    SUM(CASE WHEN result_state = 'FAILED' THEN 1 ELSE 0 END) AS failure_count
+    ROUND(AVG(CAST(period_end_time - period_start_time AS LONG)) / 60.0, 2) AS avg_duration_mins
   FROM system.lakeflow.job_task_run_timeline
   WHERE period_start_time >= DATEADD(DAY, -{lookback_days}, CURRENT_DATE())
     AND result_state IS NOT NULL
@@ -251,13 +249,13 @@ SELECT
   ts.workspace_id,
   ts.task_key,
   COUNT(DISTINCT ts.run_id)                       AS runs_with_this_task,
-  SUM(ts.execution_count)                         AS total_executions,
+  COUNT(*)                                        AS total_executions,
   ROUND(AVG(ts.avg_duration_mins), 2)             AS avg_task_duration_mins,
   ROUND(MAX(ts.avg_duration_mins), 2)             AS max_task_duration_mins,
-  SUM(ts.failure_count)                           AS total_task_failures,
+  SUM(CASE WHEN ts.result_state = 'FAILED' THEN 1 ELSE 0 END) AS total_task_failures,
   ROUND(
-    TRY_DIVIDE(SUM(ts.failure_count) * 100.0,
-               SUM(ts.execution_count)), 1
+    TRY_DIVIDE(SUM(CASE WHEN ts.result_state = 'FAILED' THEN 1 ELSE 0 END) * 100.0,
+               COUNT(*)), 1
   )                                               AS failure_rate_pct
 FROM task_stats ts
 LEFT JOIN latest_jobs j USING (workspace_id, job_id)
