@@ -36,7 +36,6 @@ dependencies = [
     # `%pip install` never *downgrades* the runtime's Arrow — a downgrade breaks
     # PySpark's Arrow conversions. Only the stable `pa.ipc` API is used.
     "pyarrow>=18.0.0,<22.0.0",
-    "numpy>=1.24.0,<3.0.0",
     "sqlglot>=27.29.0,<28.0.0",
     # Prompt templating
     "Jinja2>=3.1.0",

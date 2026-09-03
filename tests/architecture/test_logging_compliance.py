@@ -33,6 +33,9 @@ _STDLIB_LOGGING_ALLOWLIST = frozenset(
         "infra/observability/tracing.py",
         # The CLI uses stdlib logging (not part of the server's structlog convention).
         "cli/cli/main.py",
+        # The `starboard review` CLI configures structlog to stderr (keeping stdout
+        # clean for --json); same logging-setup role as main.py.
+        "cli/cli/review_command.py",
     ]
 )
 
