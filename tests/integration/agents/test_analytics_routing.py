@@ -25,8 +25,8 @@ class MockLLMClient:
         self.model = "gpt-4o-mini"
         self.calls = []
 
-    def json_response(self, messages, model, temperature):
-        """Mock LLM classification response."""
+    async def json_response(self, messages, model, temperature):
+        """Mock LLM classification response (async: IntentRouter awaits it)."""
         self.calls.append(
             {
                 "messages": messages,

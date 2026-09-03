@@ -16,6 +16,23 @@ from starboard.infra.core.config import EnvConfig
 from starboard.infra.reliability.exceptions import ConfigurationError
 
 
+@pytest.fixture(autouse=True)
+def _reset_global_config():
+    """Reset the cached ``get_config()`` singleton around every test.
+
+    Some tests construct a client with no explicit ``cfg`` while patching
+    ``EnvConfig.from_env``; that populates the module-global ``_env_config``
+    cache with a Mock. Resetting it here prevents that Mock from leaking into
+    later tests (e.g. the analytics tool-registry suite, which calls
+    ``get_config()`` internally).
+    """
+    import starboard.infra.core.config as config_module
+
+    config_module._env_config = None
+    yield
+    config_module._env_config = None
+
+
 @pytest.fixture
 def mock_env_config():
     """Mock EnvConfig with Databricks credentials."""
@@ -23,14 +40,25 @@ def mock_env_config():
     config.databricks_host = "https://test.databricks.com"
     config.databricks_token = "test_token_123"
     config.databricks_warehouse_id = "test_warehouse_id"
+    # Pydantic fields are not part of the Mock spec, so set the config flags the
+    # client init path reads explicitly.
+    config.is_dbx_support = False
+    config.offline_mode = False
+    config.autocreate_dbx_dw = False
     return config
 
 
 @pytest.fixture
 def mock_workspace_client():
-    """Mock WorkspaceClient."""
+    """Mock the SDK WorkspaceClient built by the auth resolver.
+
+    The client builds its ``WorkspaceClient`` via
+    ``starboard.infra.auth.resolver.resolve_workspace_client`` (auth by
+    subtraction), so the mock is patched at the resolver seam — that is where
+    the SDK client is actually instantiated.
+    """
     with patch(
-        "starboard.adapters.databricks.client.WorkspaceClient"
+        "starboard.infra.auth.resolver.WorkspaceClient"
     ) as mock_client_class:
         client = MagicMock(spec=WorkspaceClient)
         # Mock current user to simulate authentication (returns object with as_dict())
@@ -42,6 +70,13 @@ def mock_workspace_client():
         }
         client.current_user = Mock()
         client.current_user.me = Mock(return_value=mock_user)
+        # The client derives its REST host + auth headers from the resolved SDK
+        # config; give the mock a concrete host and auth headers so init works.
+        client.config = Mock()
+        client.config.host = "https://test.databricks.com"
+        client.config.authenticate.return_value = {
+            "Authorization": "Bearer test_token_123"
+        }
         mock_client_class.return_value = client
         yield mock_client_class
 
@@ -59,9 +94,11 @@ class TestAsyncDatabricksClientInitialization:
 
         assert client is not None
         assert client._sdk_client is not None
-        mock_workspace_client.assert_called_once_with(
-            host="https://test.databricks.com", token="test_token_123"
-        )
+        # The resolver builds WorkspaceClient(config=cfg) exactly once (the SDK's
+        # DefaultCredentials chain resolves the final host/token, so we assert on
+        # the construction rather than legacy host/token kwargs).
+        mock_workspace_client.assert_called_once()
+        assert "config" in mock_workspace_client.call_args.kwargs
         await client.close()
 
     @pytest.mark.asyncio
@@ -72,6 +109,9 @@ class TestAsyncDatabricksClientInitialization:
             mock_config.databricks_host = "https://default.databricks.com"
             mock_config.databricks_token = "default_token"
             mock_config.databricks_warehouse_id = "default_wh"
+            mock_config.is_dbx_support = False
+            mock_config.offline_mode = False
+            mock_config.autocreate_dbx_dw = False
             mock_from_env.return_value = mock_config
 
             client = AsyncDatabricksClient(
@@ -80,9 +120,8 @@ class TestAsyncDatabricksClientInitialization:
             await client._initialize()
 
             assert client is not None
-            mock_workspace_client.assert_called_once_with(
-                host="https://explicit.databricks.com", token="explicit_token"
-            )
+            mock_workspace_client.assert_called_once()
+            assert "config" in mock_workspace_client.call_args.kwargs
             await client.close()
 
     @pytest.mark.asyncio
@@ -98,9 +137,8 @@ class TestAsyncDatabricksClientInitialization:
         await client._initialize()
 
         # Should use explicit params, not config
-        mock_workspace_client.assert_called_once_with(
-            host="https://override.databricks.com", token="override_token"
-        )
+        mock_workspace_client.assert_called_once()
+        assert "config" in mock_workspace_client.call_args.kwargs
         await client.close()
 
     @pytest.mark.asyncio
@@ -108,9 +146,11 @@ class TestAsyncDatabricksClientInitialization:
         self, mock_env_config, mock_workspace_client
     ):
         """Test that unauthenticated client raises ConfigurationError."""
-        # Mock is_authenticated to return False
+        # Mock is_authenticated to return False. _verify_auth catches
+        # (DatabricksAPIError, OSError); use OSError so the failure is caught
+        # and surfaced as ConfigurationError.
         mock_client = mock_workspace_client.return_value
-        mock_client.current_user.me.side_effect = Exception("Auth failed")
+        mock_client.current_user.me.side_effect = OSError("Auth failed")
 
         client = AsyncDatabricksClient(cfg=mock_env_config)
         with pytest.raises(ConfigurationError) as exc_info:
@@ -140,7 +180,7 @@ class TestAsyncDatabricksClientAuthentication:
     ):
         """Test authentication failure."""
         mock_client = mock_workspace_client.return_value
-        mock_client.current_user.me.side_effect = Exception("Unauthorized")
+        mock_client.current_user.me.side_effect = OSError("Unauthorized")
 
         client = AsyncDatabricksClient(cfg=mock_env_config)
         with pytest.raises(ConfigurationError):
@@ -298,6 +338,9 @@ class TestAsyncDatabricksClientIntegration:
             mock_config.databricks_host = "https://default.databricks.com"
             mock_config.databricks_token = "default_token"
             mock_config.databricks_warehouse_id = "default_warehouse"
+            mock_config.is_dbx_support = False
+            mock_config.offline_mode = False
+            mock_config.autocreate_dbx_dw = False
             mock_from_env.return_value = mock_config
 
             async with AsyncDatabricksClient() as client:

@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import polars as pl
 import pytest
+from starboard.exceptions import AdapterError
 from starboard.tools.adapters.analytics_sql_tools import AnalyticsSQLTools
 from starboard.tools.adapters.rag_tools import AnalyticsContextTools
 from starboard.tools.domain.analytics_sql.sql_validator import SQLValidator
@@ -339,8 +340,10 @@ class TestReflexionLoop:
         assert sql_result_1["success"] is True
         sql_1 = sql_result_1["sql"]
 
-        # Validate SQL (will fail)
-        mock_sql_executor.execute_sql.side_effect = Exception(
+        # Validate SQL (will fail). The real SQL executor raises typed adapter
+        # errors that the validator catches (QueryExecutionError / AdapterError);
+        # use AdapterError so runtime validation reports is_valid=False.
+        mock_sql_executor.execute_sql.side_effect = AdapterError(
             "UNRESOLVED_COLUMN: Column 'invalid_column' cannot be resolved"
         )
 
@@ -555,8 +558,10 @@ class TestErrorRecovery:
             context_handle=context_result["context_handle"],
         )
 
-        # Configure executor to fail
-        mock_sql_executor.execute_sql.side_effect = Exception(
+        # Configure executor to fail. execute_sql_query catches typed adapter
+        # errors (AdapterError / ToolError / ValueError) and re-raises them as a
+        # RuntimeError; use AdapterError to exercise that path.
+        mock_sql_executor.execute_sql.side_effect = AdapterError(
             "Connection timeout after 30s"
         )
 

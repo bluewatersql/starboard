@@ -278,8 +278,10 @@ class TestDomainAgentRunStream:
             config=agent_config,
         )
 
-        # Mock the reasoning loop to yield events and complete
-        async def mock_reasoning_loop(state):
+        # Mock the reasoning loop to yield events and complete. run_stream calls
+        # the module-level reasoning_loop_stream(state=..., config=..., ...) with
+        # keyword args, so accept **kwargs.
+        async def mock_reasoning_loop(state, **kwargs):
             yield create_thinking_event(
                 step=1,
                 content="Thinking...",
@@ -293,8 +295,9 @@ class TestDomainAgentRunStream:
             # The agent checks state.completed after the loop, so this should work
             yield create_thinking_event(step=1, content="Done", is_complete=True)
 
-        with patch.object(
-            agent, "_reasoning_loop_stream", side_effect=mock_reasoning_loop
+        with patch(
+            "starboard.agents.domain.domain_agent.reasoning_loop_stream",
+            side_effect=mock_reasoning_loop,
         ):
             events = []
             async for event in agent.run_stream(
@@ -326,12 +329,13 @@ class TestDomainAgentRunStream:
         )
 
         # Mock reasoning loop to raise error
-        async def mock_reasoning_loop_error(state):
+        async def mock_reasoning_loop_error(state, **kwargs):
             raise RuntimeError("Test error")
             yield  # Make it a generator
 
-        with patch.object(
-            agent, "_reasoning_loop_stream", side_effect=mock_reasoning_loop_error
+        with patch(
+            "starboard.agents.domain.domain_agent.reasoning_loop_stream",
+            side_effect=mock_reasoning_loop_error,
         ):
             events = []
             async for event in agent.run_stream(
@@ -364,12 +368,13 @@ class TestDomainAgentRunStream:
         )
 
         # Mock reasoning loop
-        async def mock_reasoning_loop(state):
+        async def mock_reasoning_loop(state, **kwargs):
             state.completed = True
             yield create_thinking_event(step=1, content="test", is_complete=False)
 
-        with patch.object(
-            agent, "_reasoning_loop_stream", side_effect=mock_reasoning_loop
+        with patch(
+            "starboard.agents.domain.domain_agent.reasoning_loop_stream",
+            side_effect=mock_reasoning_loop,
         ):
             events = []
             async for event in agent.run_stream(
@@ -482,7 +487,7 @@ class TestDomainAgentIntegration:
         )
 
         # Mock the reasoning loop to simulate a complete execution
-        async def mock_complete_workflow(state):
+        async def mock_complete_workflow(state, **kwargs):
             # Simulate thinking
             yield create_thinking_event(
                 step=1, content="Analyzing query...", is_complete=False
@@ -504,8 +509,9 @@ class TestDomainAgentIntegration:
             # Mark as completed
             state.completed = True
 
-        with patch.object(
-            agent, "_reasoning_loop_stream", side_effect=mock_complete_workflow
+        with patch(
+            "starboard.agents.domain.domain_agent.reasoning_loop_stream",
+            side_effect=mock_complete_workflow,
         ):
             events = []
             async for event in agent.run_stream(
