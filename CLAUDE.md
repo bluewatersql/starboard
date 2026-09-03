@@ -16,20 +16,27 @@ AI-powered Databricks workload analysis and optimization. It ships three surface
 `$` figures on the public path are **list-price DBU estimates** — label them as such. Finance-grade cost is
 internal-only and not shipped here.
 
-## Monorepo layout (5 packages, `uv` workspace)
+## Monorepo layout (7 workspace members, `uv` workspace)
 
 ```
 packages/
 ├── starboard-core/          # Pure kernel: DTOs, ports, analyzers (starboard_core)
 │                            #   + starboard_x/ progressive helpers (python -m starboard_x.<cap>)
+│                            #   Published as the `starboard-kernel` wheel (kernel tier).
+├── starboard-capability/    # Thin meta-wheel = starboard-kernel[all] (capability tier)
+├── starboard-core-alias/    # One-release deprecation alias: starboard-core → starboard-kernel
 ├── starboard/               # FastAPI server + adapters + tools + CLI (the full experience wheel)
 ├── starboard-skills/        # Canonical skills tree + starboard-helper
 ├── starboard-internal/      # INTERNAL-ONLY gated port adapters — never in a public wheel
 └── starboard-plugin-sample/ # Sample MCP-tools plugin (entry-point discovery demo)
 ```
 
-Workspace members are declared in `[tool.uv.workspace]` in the root `pyproject.toml`. `starboard-internal`
-is a workspace member for local dev/verification only; it is **not** a dependency of any public wheel.
+The seven workspace members are declared in `[tool.uv.workspace]` in the root `pyproject.toml`.
+`starboard-capability` / `starboard-core-alias` are the packaging shims of the tier model
+(kernel → capability → experience); `starboard-core-alias` is a transitional deprecation alias.
+`starboard-internal` is a workspace member for local dev/verification only; it is **not** a dependency
+of any public wheel. A separate `packages/starboard-distribution/` holds generated distribution bundles
+(`aitools`, `opencode`) and is deliberately **not** a workspace member or a Python package.
 
 ## Architecture model
 
