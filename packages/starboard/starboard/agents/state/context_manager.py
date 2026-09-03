@@ -20,9 +20,6 @@ from typing import TYPE_CHECKING, Any
 import structlog
 
 if TYPE_CHECKING:
-    from starboard.agents.multi_agent_manager import (
-        ConversationStateManager,  # type: ignore[import-untyped]
-    )
     from starboard.agents.state.shared_context import SharedAgentContext
 
 from starboard.agents.state.agent_state import Message, WorkingMemory
@@ -58,7 +55,7 @@ class ContextManager:
         ```
     """
 
-    def __init__(self, state_manager: ConversationStateManager) -> None:
+    def __init__(self, state_manager: Any) -> None:
         """
         Initialize context manager.
 

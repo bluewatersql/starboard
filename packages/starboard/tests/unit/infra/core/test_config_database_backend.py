@@ -15,7 +15,6 @@ from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
-
 from starboard.infra.core.config import EnvConfig
 
 
@@ -59,9 +58,11 @@ class TestDatabaseBackendRemovedValues:
 
     @pytest.mark.parametrize("backend", _REMOVED)
     def test_removed_backend_via_env_raises(self, backend: str):
-        with patch.dict(os.environ, {"DATABASE_BACKEND": backend}, clear=False):
-            with pytest.raises(ValidationError) as exc_info:
-                EnvConfig.from_env()
+        with (
+            patch.dict(os.environ, {"DATABASE_BACKEND": backend}, clear=False),
+            pytest.raises(ValidationError) as exc_info,
+        ):
+            EnvConfig.from_env()
         message = str(exc_info.value)
         assert self._ACTIONABLE_FRAGMENT in message
 
