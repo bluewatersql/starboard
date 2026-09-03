@@ -34,7 +34,7 @@ success criteria derived from the canonical skills tree:
 
 ```bash
 starboard review [--domains jobs,sql,warehouse]   # multi-domain review
-starboard --discover [--lookback-days 30]         # workspace health assessment
+starboard genie ask "<question>"                  # NL→SQL
 ```
 
 ## Content-model schema
