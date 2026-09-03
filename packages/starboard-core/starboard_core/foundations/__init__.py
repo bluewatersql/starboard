@@ -3,36 +3,25 @@
 """
 Foundation layer for shared infrastructure.
 
-This package provides protocols and models for:
-- Vector similarity search (RAG)
-- Reflexion-based learning
-- Semantic caching
+Immutable data models shared across the kernel — vector search results/records
+and reflexion learnings — used by the reference-file RAG context models. (The
+orphaned VectorStore/ReflexionStore/SemanticCache protocols + the CacheEntry
+model were removed: the vector/embedding/semantic-cache stack was deleted in the
+native-first simplification and nothing implemented or consumed them.)
 
 Usage:
-    >>> from starboard_core.foundations import VectorStore, VectorRecord
-    >>> from starboard_core.foundations import ReflexionLearning, SemanticCache
+    >>> from starboard_core.foundations import VectorRecord, VectorSearchResult
+    >>> from starboard_core.foundations import ReflexionLearning
 """
 
 from starboard_core.foundations.models import (
-    CacheEntry,
     ReflexionLearning,
     VectorRecord,
     VectorSearchResult,
 )
-from starboard_core.foundations.protocols import (
-    ReflexionStore,
-    SemanticCache,
-    VectorStore,
-)
 
 __all__ = [
-    # Models
     "VectorSearchResult",
     "VectorRecord",
     "ReflexionLearning",
-    "CacheEntry",
-    # Protocols
-    "VectorStore",
-    "ReflexionStore",
-    "SemanticCache",
 ]

@@ -6,8 +6,6 @@ Foundation data models for shared infrastructure.
 This module defines immutable data classes used across the foundation layer:
 - Vector search results and records
 - Reflexion learnings
-- Cache entries
-- RAG context models
 """
 
 from dataclasses import dataclass, field
@@ -119,43 +117,3 @@ class ReflexionLearning:
             raise ValueError("problem cannot be empty")
         if not self.solution:
             raise ValueError("solution cannot be empty")
-
-
-@dataclass(frozen=True)
-class CacheEntry:
-    """Entry in semantic cache.
-
-    Attributes:
-        id: Unique cache key
-        query: Original query text
-        query_embedding: Embedding of the query
-        response: Cached response
-        created_at: Cache creation time
-        ttl: Time-to-live in seconds
-        metadata: Additional context (model, parameters, etc.)
-
-    Example:
-        >>> entry = CacheEntry(
-        ...     id="cache_123",
-        ...     query="Show me top 10 expensive jobs",
-        ...     query_embedding=[0.1, 0.2, ...],
-        ...     response={"jobs": [...]},
-        ...     created_at=datetime.now(),
-        ...     ttl=300,
-        ...     metadata={"model": "gpt-4", "temperature": 0.4}
-        ... )
-    """
-
-    id: str
-    query: str
-    query_embedding: list[float]
-    response: Any
-    created_at: datetime
-    ttl: int
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def is_expired(self) -> bool:
-        """Check if cache entry has expired."""
-        age_seconds = (datetime.now(UTC) - self.created_at).total_seconds()
-        return age_seconds > self.ttl
