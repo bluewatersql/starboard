@@ -1,10 +1,10 @@
 # Copyright (c) 2025 Databricks, Inc.
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
-"""Additive-invariant parity tests across all four ports (UNIFIED_PLAN §3.5).
+"""Additive-invariant parity tests across the public-backed ports (UNIFIED_PLAN §3.5).
 
-For each port, the REAL public adapter is registered as ``public`` and the REAL
-internal adapter (driven by a stub backend — no live internal call) as
-``internal``. The tests assert:
+For each port that has BOTH a public and an internal adapter, the REAL public
+adapter is registered as ``public`` and the REAL internal adapter (driven by a
+stub backend — no live internal call) as ``internal``. The tests assert:
 
 * **Gate CLOSED** -> the PUBLIC adapter is selected and its capability contract
   still holds (it returns a well-formed port DTO).
@@ -12,6 +12,12 @@ internal adapter (driven by a stub backend — no live internal call) as
   SUPERSET: the public DTO fields are still present, plus additive enrichment.
 
 This is the merge gate proving no capability is lost when the gate closes.
+
+``NL_QUERY`` is intentionally excluded: the native-first simplification removed
+the public NL→SQL adapter (public NL Q&A is delegated to the host's native
+Genie), so there is no public baseline to prove parity against. The internal
+``CuratedGenieRoomAdapter`` remains a gated, internal-only enhancement and is
+covered by ``test_seam.py``.
 """
 
 from __future__ import annotations
@@ -21,7 +27,6 @@ from typing import Any
 
 import pytest
 from starboard.adapters.ports import (
-    AnalyticsSqlAdapter,
     NativeDiagnosticAdapter,
     SdkDbfsLogAdapter,
     SingleWorkspaceFleetAdapter,
@@ -30,9 +35,7 @@ from starboard.ports.registry import Port, PortRegistry
 from starboard_core.ports.diagnostic_backend import Candidate
 from starboard_core.ports.fleet_sql import FleetQuery
 from starboard_core.ports.log_retrieval import LogBundle, LogQuery
-from starboard_core.ports.nl_query import NLAnswer, WorkspaceCtx
 from starboard_internal.centralized_fleet_adapter import CentralizedFleetSqlAdapter
-from starboard_internal.curated_genie_adapter import CuratedGenieRoomAdapter
 from starboard_internal.dbr_doctor_adapter import DbrDoctorAdapter
 from starboard_internal.logs_summariser_adapter import LogsSummariserAdapter
 
@@ -54,17 +57,6 @@ class _FakeDBFS:
 
     def read_dbfs_chunk(self, path: str, offset: int, length: int) -> bytes:
         return b"" if offset else b"ERROR boom\nWARN noise"
-
-
-class _FakeGenerator:
-    async def generate(
-        self,
-        user_query: str,
-        intent_context: Any,
-        rag_context: Any,
-        previous_errors: list[str] | None = None,
-    ) -> dict[str, Any]:
-        return {"success": True, "sql": "SELECT 1", "explanation": "native"}
 
 
 async def _fake_executor(sql: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -90,21 +82,14 @@ class _StubDoctor:
         }
 
 
-class _StubGenie:
-    async def ask(self, *, room: Any, question: str) -> Mapping[str, Any]:
-        return {"success": True, "sql": "SELECT 2", "explanation": "curated"}
-
-
 def _registry() -> PortRegistry:
     reg = PortRegistry()
     reg.register_public(Port.LOG_RETRIEVAL, SdkDbfsLogAdapter(dbfs_client=_FakeDBFS()))
     reg.register_public(Port.DIAGNOSTIC_BACKEND, NativeDiagnosticAdapter())
-    reg.register_public(Port.NL_QUERY, AnalyticsSqlAdapter(_FakeGenerator()))
     reg.register_public(Port.FLEET_SQL, SingleWorkspaceFleetAdapter(_fake_executor))
 
     reg.register_internal(Port.LOG_RETRIEVAL, LogsSummariserAdapter(_StubTriage()))
     reg.register_internal(Port.DIAGNOSTIC_BACKEND, DbrDoctorAdapter(_StubDoctor()))
-    reg.register_internal(Port.NL_QUERY, CuratedGenieRoomAdapter(_StubGenie()))
     reg.register_internal(Port.FLEET_SQL, CentralizedFleetSqlAdapter(_fake_executor))
     return reg
 
@@ -122,12 +107,6 @@ class TestGateClosedKeepsPublicCapability:
         adapter = _registry().select_adapter(Port.DIAGNOSTIC_BACKEND, gate_open=False)
         assert isinstance(adapter, NativeDiagnosticAdapter)
         assert adapter.classify(_STACK_TRACE)  # capability holds
-
-    async def test_nl_query_public_selected(self) -> None:
-        adapter = _registry().select_adapter(Port.NL_QUERY, gate_open=False)
-        assert isinstance(adapter, AnalyticsSqlAdapter)
-        answer = await adapter.ask("q", WorkspaceCtx())
-        assert isinstance(answer, NLAnswer) and answer.sql == "SELECT 1"
 
     async def test_fleet_public_selected(self) -> None:
         adapter = _registry().select_adapter(Port.FLEET_SQL, gate_open=False)
@@ -158,14 +137,6 @@ class TestGateOpenInternalIsSuperset:
         result = await internal_adapter.analyze(Candidate(kind="stack_trace", raw="x"))
         assert result.summary and "artifact_kind" in result.metadata  # public parity
         assert result.metadata["semantic_layer"] == "true"  # additive
-
-    async def test_nl_query_internal_superset(self) -> None:
-        reg = _registry()
-        internal_adapter = reg.select_adapter(Port.NL_QUERY, gate_open=True)
-        assert isinstance(internal_adapter, CuratedGenieRoomAdapter)
-        answer = await internal_adapter.ask("q", WorkspaceCtx())
-        assert answer.sql == "SELECT 2"  # public field present
-        assert answer.metadata["curated"] == "true"  # additive
 
     async def test_fleet_internal_superset(self) -> None:
         reg = _registry()

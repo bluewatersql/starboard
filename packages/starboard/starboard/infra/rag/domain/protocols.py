@@ -49,23 +49,16 @@ class EmbeddingProvider(Protocol):
         - Mock providers for testing
 
     Example:
-        # Using existing EmbeddingService
-        from starboard.services.memory import EmbeddingService
-        from starboard.infra.rag.adapters.storage import SQLiteMultiCollectionStore
+        # Any object with async ``embed`` / ``embed_batch`` methods satisfies
+        # this Protocol; the shipped implementation is the LLM client's
+        # embedding API. (Reference-file RAG needs no vector store — the
+        # embedding/vector stack was removed in the native-first simplification.)
+        class MyEmbeddingProvider:
+            async def embed(self, text: str) -> list[float]:
+                ...
 
-        embedding_service = EmbeddingService(api_key="<your-llm-api-key>", container=container)
-        store = SQLiteMultiCollectionStore(
-            db_path="vectors.db",
-            embedding_provider=embedding_service,
-        )
-
-        # Using mock for testing
-        from starboard.infra.rag.adapters.embedding import MockEmbeddingProvider
-
-        store = SQLiteMultiCollectionStore(
-            db_path="test.db",
-            embedding_provider=MockEmbeddingProvider(),
-        )
+            async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+                ...
     """
 
     async def embed(self, text: str) -> list[float]:

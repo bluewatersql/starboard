@@ -8,8 +8,7 @@ Exercises the ``WorkloadReviewService`` end-to-end for the new opt-in domains
 * ``run(["dlt"|"ml"|"vector-search"])`` selects exactly the new domains'
   evidence queries, runs them, and produces ranked, evidence-cited findings;
 * the ``vector-search`` hyphen alias routes to the vector_search rule-domain;
-* the severity gate + validator-council path is exercised with a deterministic
-  stub model client; and
+* the severity gate is exercised with a deterministic stub model client; and
 * the v1 default review (jobs/sql/warehouse) is unchanged by the additions.
 """
 

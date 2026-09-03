@@ -90,14 +90,6 @@ results/
 dev_data/
 **/dev_data/
 
-# Generated RAG bootstrap snapshot (large binary embeddings + JSON exported by
-# scripts/export_vector_store_snapshot.py). Ignore the exported data but keep
-# the directory/package markers so the package structure stays in the repo.
-# (Ignore contents, not the dir itself, so the marker negations below apply.)
-**/rag/data/bootstrap/*
-!**/rag/data/bootstrap/.gitkeep
-!**/rag/data/bootstrap/__init__.py
-
 # ML Models (top-level only, not package submodules)
 /models/
 /embeddings/

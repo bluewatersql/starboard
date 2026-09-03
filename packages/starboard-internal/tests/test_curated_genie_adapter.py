@@ -3,9 +3,9 @@
 """Tests for the D8 internal ``NLQueryPort`` adapter (curated Genie rooms).
 
 Driven by a stub Genie backend (no live internal call). Asserts room selection
-from ``WorkspaceCtx.extra`` and that the adapter is a strict superset of the
-public ``AnalyticsSqlAdapter``: the public ``NLAnswer`` fields are preserved and
-the curated-room provenance is additive.
+from ``WorkspaceCtx.extra`` and that the adapter returns a well-formed
+:class:`NLAnswer` (``success`` / ``sql`` / ``explanation``) with the
+curated-room provenance added additively in ``metadata``.
 """
 
 from __future__ import annotations

@@ -2,13 +2,12 @@
 # Licensed under the Databricks Open Model License. See LICENSE for the full text.
 """Gated internal ``NLQueryPort`` adapter — curated Genie rooms (Phase-3 D8).
 
-Where the PUBLIC adapter (``AnalyticsSqlAdapter``) answers NL questions with
-native analytics-SQL generation, this internal adapter routes the question to a
-**curated Genie room** (selected from :mod:`starboard_internal._genie_rooms`) for
-a higher-fidelity answer. It is a strict SUPERSET (UNIFIED_PLAN §3.5): the
-returned :class:`NLAnswer` still carries the public ``success`` / ``sql`` /
-``explanation`` fields; the room provenance (key, ``go/`` link, conversation id)
-is added additively in ``metadata``.
+On the public path, NL Q&A is delegated to the host's native Genie (there is no
+public ``NLQueryPort`` adapter). This gated internal adapter routes the question
+to a **curated Genie room** (selected from :mod:`starboard_internal._genie_rooms`)
+for a higher-fidelity answer. The returned :class:`NLAnswer` carries the standard
+``success`` / ``sql`` / ``explanation`` fields; the room provenance (key, ``go/``
+link, conversation id) is added additively in ``metadata`` (UNIFIED_PLAN §3.5).
 
 The zero-arg factory builds the **real** Genie backend (Databricks Genie
 Conversation API) when the internal deployment env is present
