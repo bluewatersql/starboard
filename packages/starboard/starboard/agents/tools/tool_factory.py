@@ -96,8 +96,6 @@ def create_tool_registry(
     llm_client: Any | None = None,
     cache_store: Any | None = None,
     cache_factory: Any | None = None,
-    vector_store: Any | None = None,
-    embedding_service: Any | None = None,
 ) -> tuple[ToolRegistry, RequestUserInputTool]:
     """Create and populate a ToolRegistry with all agent tools.
 
@@ -112,8 +110,6 @@ def create_tool_registry(
         llm_client: Optional LLM client for code analysis and analytics
         cache_store: Optional shared cache store for query result caching
         cache_factory: Optional CacheFactory for artifact exploration tools
-        vector_store: Optional vector store for RAG discovery
-        embedding_service: Optional embedding service for RAG
 
     Returns:
         Tuple of (ToolRegistry, RequestUserInputTool instance)
@@ -170,38 +166,17 @@ def create_tool_registry(
         tools=["build", "validate", "execute"],
     )
 
-    # Import types for proper type checking
-    from starboard.infra.rag.domain.protocols import (
-        EmbeddingProvider,
-        MultiCollectionStore,
-    )
-
-    # Create analytics context tools. The default path (vector_backend="none")
-    # builds context from on-disk reference files and needs no vector store or
-    # embedding service; when a vector store IS present (opt-in sqlite / managed
-    # Vector Search) the embedding path is used instead.
-    use_vector_path = vector_store is not None and embedding_service is not None
-    if vector_store is not None and not isinstance(vector_store, MultiCollectionStore):
-        raise TypeError(
-            f"vector_store must be MultiCollectionStore, got {type(vector_store)}"
-        )
-    if embedding_service is not None and not isinstance(
-        embedding_service, EmbeddingProvider
-    ):
-        raise TypeError(
-            f"embedding_service must be EmbeddingProvider, got {type(embedding_service)}"
-        )
-
+    # Create analytics context tools. Context is built from on-disk curated
+    # reference files (reference-file RAG); there is no vector store or embedding
+    # service on the public path.
     analytics_context_tools = AnalyticsContextTools(
-        vector_store=vector_store if use_vector_path else None,
-        embedding_provider=embedding_service if use_vector_path else None,
         analytics_sql_tools=analytics_sql_tools,  # Inject for context handle storage
     )
     logger.info(
         "analytics_context_tools_initialized",
         workflow="agentic_rag",
         tools=["build_analytics_context"],
-        source="vector_store" if use_vector_path else "reference_files",
+        source="reference_files",
     )
 
     # Create warehouse tools

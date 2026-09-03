@@ -120,32 +120,17 @@ class TestToolFactory:
         mock_provider = Mock()  # SharedContextProvider mock
         mock_events = Mock()
         mock_llm = Mock()  # LLM client mock
-        mock_vector_store = Mock()
-        mock_vector_store.__class__.__name__ = "MultiCollectionStore"
-        mock_embedding = Mock()
-        mock_embedding.__class__.__name__ = "EmbeddingProvider"
 
-        # Patch type checks to pass
-        with (
-            patch(
-                "starboard.adapters.llm.openai.client.OpenAIProvider"
-            ) as MockProvider,
-            patch(
-                "starboard.agents.tools.tool_factory.isinstance"
-            ) as mock_isinstance,
-        ):
+        with patch(
+            "starboard.adapters.llm.openai.client.OpenAIProvider"
+        ) as MockProvider:
             MockProvider.return_value = mock_llm
-            # Make isinstance return True for our mocks
-            mock_isinstance.side_effect = lambda obj, cls: True
 
-            # Create registry with required vector_store and embedding_service
             registry, _ = create_tool_registry(
                 mock_api,
                 mock_provider,
                 mock_events,
                 llm_client=mock_llm,
-                vector_store=mock_vector_store,
-                embedding_service=mock_embedding,
             )
 
             # Verify it's a ToolRegistry
@@ -167,29 +152,17 @@ class TestToolFactory:
         mock_provider = Mock()  # SharedContextProvider mock
         mock_llm = Mock()  # LLM client mock
         mock_cache_factory = Mock()  # CacheFactory for artifact exploration
-        mock_vector_store = Mock()
-        mock_vector_store.__class__.__name__ = "MultiCollectionStore"
-        mock_embedding = Mock()
-        mock_embedding.__class__.__name__ = "EmbeddingProvider"
 
-        with (
-            patch(
-                "starboard.adapters.llm.openai.client.OpenAIProvider"
-            ) as MockProvider,
-            patch(
-                "starboard.agents.tools.tool_factory.isinstance"
-            ) as mock_isinstance,
-        ):
+        with patch(
+            "starboard.adapters.llm.openai.client.OpenAIProvider"
+        ) as MockProvider:
             MockProvider.return_value = mock_llm
-            mock_isinstance.side_effect = lambda obj, cls: True
 
             registry, _ = create_tool_registry(
                 mock_api,
                 mock_provider,
                 llm_client=mock_llm,
                 cache_factory=mock_cache_factory,
-                vector_store=mock_vector_store,
-                embedding_service=mock_embedding,
             )
 
             registered_tools = set(registry.list_tools())
@@ -208,28 +181,16 @@ class TestToolFactory:
         mock_api = Mock()
         mock_provider = Mock()  # SharedContextProvider mock
         mock_llm = Mock()  # LLM client mock
-        mock_vector_store = Mock()
-        mock_vector_store.__class__.__name__ = "MultiCollectionStore"
-        mock_embedding = Mock()
-        mock_embedding.__class__.__name__ = "EmbeddingProvider"
 
-        with (
-            patch(
-                "starboard.adapters.llm.openai.client.OpenAIProvider"
-            ) as MockProvider,
-            patch(
-                "starboard.agents.tools.tool_factory.isinstance"
-            ) as mock_isinstance,
-        ):
+        with patch(
+            "starboard.adapters.llm.openai.client.OpenAIProvider"
+        ) as MockProvider:
             MockProvider.return_value = mock_llm
-            mock_isinstance.side_effect = lambda obj, cls: True
 
             registry, _ = create_tool_registry(
                 mock_api,
                 mock_provider,
                 llm_client=mock_llm,
-                vector_store=mock_vector_store,
-                embedding_service=mock_embedding,
             )
 
             schemas = registry.get_tool_schemas()
@@ -266,14 +227,11 @@ class TestToolFactory:
         ) as MockProvider:
             MockProvider.return_value = mock_llm
 
-            # Create registry WITHOUT vector_store and embedding_service
             registry, _ = create_tool_registry(
                 mock_api,
                 mock_provider,
                 mock_events,
                 llm_client=mock_llm,
-                vector_store=None,  # Not provided in CLI mode
-                embedding_service=None,  # Not provided in CLI mode
             )
 
             # Verify it's a ToolRegistry
@@ -309,29 +267,17 @@ class TestToolExecution:
         mock_api = Mock()
         mock_provider = Mock()  # SharedContextProvider mock
         mock_llm = Mock()  # LLM client mock
-        mock_vector_store = Mock()
-        mock_vector_store.__class__.__name__ = "MultiCollectionStore"
-        mock_embedding = Mock()
-        mock_embedding.__class__.__name__ = "EmbeddingProvider"
 
-        with (
-            patch(
-                "starboard.adapters.llm.openai.client.OpenAIProvider"
-            ) as MockProvider,
-            patch(
-                "starboard.agents.tools.tool_factory.isinstance"
-            ) as mock_isinstance,
-        ):
+        with patch(
+            "starboard.adapters.llm.openai.client.OpenAIProvider"
+        ) as MockProvider:
             MockProvider.return_value = mock_llm
-            mock_isinstance.side_effect = lambda obj, cls: True
 
             # Create registry
             registry, _ = create_tool_registry(
                 mock_api,
                 mock_provider,
                 llm_client=mock_llm,
-                vector_store=mock_vector_store,
-                embedding_service=mock_embedding,
             )
 
             # Get the tool
@@ -355,29 +301,17 @@ class TestToolExecution:
         mock_provider = Mock()  # SharedContextProvider mock
         mock_llm = Mock()  # LLM client mock
         mock_cache_factory = Mock()  # CacheFactory for artifact exploration
-        mock_vector_store = Mock()
-        mock_vector_store.__class__.__name__ = "MultiCollectionStore"
-        mock_embedding = Mock()
-        mock_embedding.__class__.__name__ = "EmbeddingProvider"
 
-        with (
-            patch(
-                "starboard.adapters.llm.openai.client.OpenAIProvider"
-            ) as MockProvider,
-            patch(
-                "starboard.agents.tools.tool_factory.isinstance"
-            ) as mock_isinstance,
-        ):
+        with patch(
+            "starboard.adapters.llm.openai.client.OpenAIProvider"
+        ) as MockProvider:
             MockProvider.return_value = mock_llm
-            mock_isinstance.side_effect = lambda obj, cls: True
 
             registry, _ = create_tool_registry(
                 mock_api,
                 mock_provider,
                 llm_client=mock_llm,
                 cache_factory=mock_cache_factory,
-                vector_store=mock_vector_store,
-                embedding_service=mock_embedding,
             )
             schemas = registry.get_tool_schemas()
 

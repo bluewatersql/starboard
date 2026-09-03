@@ -49,7 +49,6 @@ from starboard.bootstrap import (  # noqa: E402
     InMemoryConversationStateManager,
     IntentRouter,
     MultiAgentConversationManager,
-    MultiCollectionStore,
     SharedContextProvider,
     StepCompleteEvent,
     ThinkingEvent,
@@ -288,7 +287,6 @@ async def create_agent_manager(
 ) -> tuple[
     MultiAgentConversationManager,
     AsyncDatabricksClient,
-    MultiCollectionStore | None,
 ]:
     """
     Create multi-agent conversation manager with given configuration.
@@ -304,8 +302,8 @@ async def create_agent_manager(
             SessionManager (see starboard.cli.sessions).
 
     Returns:
-        Tuple of (manager, api, vector_store) — caller must close api and
-        vector_store when done to avoid dangling threads/connections.
+        Tuple of (manager, api) — caller must close api when done to avoid
+        dangling threads/connections.
     """
     if not config:
         config = get_config()
@@ -324,8 +322,6 @@ async def create_agent_manager(
 
     # Analytics context is built from on-disk curated reference files
     # (reference-file RAG); no vector store or embedding provider is constructed.
-    vector_store = None
-    embedding_provider = None
 
     # Create tool registry (all tools - AgentFactory will filter per domain)
     tool_registry, request_input_tool = create_tool_registry(
@@ -334,8 +330,6 @@ async def create_agent_manager(
         events=None,
         input_callback=None,
         llm_client=llm_client,
-        vector_store=vector_store,
-        embedding_service=embedding_provider,
     )
 
     # Create IntentRouter
@@ -374,7 +368,7 @@ async def create_agent_manager(
     )
 
     logger.debug("agent_manager_ready", model=config.llm_model)
-    return manager, api, vector_store
+    return manager, api
 
 
 # =============================================================================
@@ -1353,7 +1347,6 @@ async def async_main(args: argparse.Namespace) -> None:
 
     # Track resources that must be closed on exit to prevent dangling threads
     _api: AsyncDatabricksClient | None = None
-    _vector_store: MultiCollectionStore | None = None
     session_mgr: SessionManager | None = None
 
     try:
@@ -1470,7 +1463,7 @@ async def async_main(args: argparse.Namespace) -> None:
             )
 
         try:
-            manager, _api, _vector_store = await create_agent_manager(
+            manager, _api = await create_agent_manager(
                 config, state_manager=session_state_manager
             )
         except Exception as e:
@@ -1678,9 +1671,6 @@ async def async_main(args: argparse.Namespace) -> None:
         if _api is not None:
             with contextlib.suppress(Exception):
                 await _api.close()
-        if _vector_store is not None and hasattr(_vector_store, "close"):
-            with contextlib.suppress(Exception):
-                await _vector_store.close()
         # Close log file handle if one was opened
         if _log_file_handle is not None:
             with contextlib.suppress(Exception):

@@ -321,8 +321,8 @@ class StarboardClient:
         Args:
             manager: MultiAgentConversationManager instance.
             session_mgr: Optional SessionManager for persistent sessions.
-            resources: Tuple of closeable resources (api, vector_store, etc.)
-                that will be closed when the client is closed.
+            resources: Tuple of closeable resources (e.g. api) that will be
+                closed when the client is closed.
         """
         self._manager = manager
         self._session_mgr = session_mgr
@@ -381,7 +381,7 @@ class StarboardClient:
             session_mgr = SessionManager(db_path=session_db)
             await session_mgr.connect()
 
-            manager, api, vector_store = await create_agent_manager(
+            manager, api = await create_agent_manager(
                 config, state_manager=session_mgr.conversation_repo
             )
         except (ConfigError, AuthenticationError, ConnectionError):
@@ -403,9 +403,7 @@ class StarboardClient:
             raise ConfigError(f"Failed to initialize client: {msg}") from exc
 
         resources: tuple[AsyncCloseable, ...] = tuple(
-            r
-            for r in (api, vector_store)
-            if r is not None and isinstance(r, AsyncCloseable)
+            r for r in (api,) if r is not None and isinstance(r, AsyncCloseable)
         )
 
         return cls(

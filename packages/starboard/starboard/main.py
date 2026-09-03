@@ -65,8 +65,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 events=None,
                 input_callback=None,
                 llm_client=llm_client,
-                vector_store=None,
-                embedding_service=None,
             )
             agent_factory = AgentFactory(
                 llm_client=llm_client,

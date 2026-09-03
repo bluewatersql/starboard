@@ -94,7 +94,7 @@ class TestCreateAgentManager:
 
             result = await create_agent_manager(mock_config)
 
-            manager, api_client, _vector_store = result
+            manager, api_client = result
             assert manager is mock_manager
             assert api_client is mock_api
             mock_create_llm.assert_called_once_with(cfg=mock_config)
@@ -418,7 +418,7 @@ class TestAsyncMain:
         ):
             mock_get_config.return_value = mock_config
             mock_merge.return_value = mock_config
-            mock_create.return_value = (mock_manager, MagicMock(), None)
+            mock_create.return_value = (mock_manager, MagicMock())
 
             # Should complete without raising
             await async_main(mock_args)
@@ -446,7 +446,7 @@ class TestAsyncMain:
         ):
             mock_get_config.return_value = mock_config
             mock_merge.return_value = mock_config
-            mock_create.return_value = (mock_manager, MagicMock(), None)
+            mock_create.return_value = (mock_manager, MagicMock())
 
             with pytest.raises(SystemExit) as exc_info:
                 await async_main(mock_args)
