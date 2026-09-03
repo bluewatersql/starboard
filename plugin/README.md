@@ -88,7 +88,7 @@ group and/or the open-source Skills CLI (skills-only bundle, no server). The com
 publicly documented; whether a third-party bundle like Starboard is installable through
 `databricks aitools` (vs. the Skills CLI) is still owner-gated. The full flow, the Agent Skills
 standard conformance, and the confirmation-needed items live in
-[`docs/distribution/databricks-aitools.md`](../docs/distribution/databricks-aitools.md).
+[`docs/guide/skills.md`](../docs/guide/skills.md).
 
 ## What is bundled
 

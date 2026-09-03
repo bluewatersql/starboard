@@ -1,7 +1,7 @@
 # Contributing to Starboard
 
 Thanks for contributing! This is the short version — the full guide is
-[`docs/guides/CONTRIBUTING.md`](docs/guides/CONTRIBUTING.md). If you are a coding agent, also read
+[`docs/contributing.md`](docs/contributing.md). If you are a coding agent, also read
 [`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ## Quick start
@@ -32,4 +32,4 @@ For larger changes also run `make test-integration`, `make test-golden`, `make t
 - Use [Conventional Commits](https://www.conventionalcommits.org/) and open PRs against `main`.
 
 Full workflow, code standards, testing requirements, and the PR/review process:
-[`docs/guides/CONTRIBUTING.md`](docs/guides/CONTRIBUTING.md).
+[`docs/contributing.md`](docs/contributing.md).

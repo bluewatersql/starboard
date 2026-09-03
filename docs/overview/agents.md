@@ -1,192 +1,113 @@
 # Agent Catalog
 
-Starboard AI Agent uses **8 domain-specialized agents**, each with dedicated tools, prompts, and Databricks expertise. An Intent Router automatically dispatches user requests to the appropriate agent.
+Agents power the `--goal` and `--chat` surfaces. When you send a natural-language goal, the **Intent Router** scores it against domain keyword patterns, extracts explicit identifiers (e.g. `statement_id`, `job_id`), and dispatches to the right specialist. Agents can hand off to each other when they surface issues outside their own domain.
 
-!!! note "Agents power free-form goals"
-    The multi-agent loop below runs for `starboard --goal "…"` and `starboard --chat`.
-    For quick, deterministic answers over public `system.*` data, Starboard also ships
-    two direct surfaces that do not require the full agent loop:
-    **`starboard review`** (Workload Review) and **`starboard --discover`** (workspace discovery).
+For a surface overview (CLI, skills, MCP tools) see [What is Starboard?](what-is-starboard.md) and the [CLI reference](../guide/cli.md).
 
 ---
 
-## How Routing Works
+## Routing
 
-When you send a message, the **Intent Router** classifies your request using a hybrid approach:
+```mermaid
+graph LR
+    G["--goal / --chat"] --> R[Intent Router]
+    R --> Q[Query]
+    R --> J[Job]
+    R --> UC[UC]
+    R --> CL[Cluster]
+    R --> AN[Analytics]
+    R --> WH[Warehouse]
+    R --> DI[Discovery]
+    R --> DG[Diagnostic]
+```
 
-1. **Pattern matching** — Fast keyword and regex matching for common patterns
-2. **LLM classification** — For ambiguous requests, an LLM call determines the best agent
-
-The router considers confidence scores and can trigger **agent handoffs** when a question spans multiple domains (e.g., a job analysis that reveals a cluster sizing issue).
-
----
-
-## Agent Overview
-
-### Query Agent
-
-**Domain:** SQL query optimization and analysis
-
-**When to use:** You have a slow SQL query, want to understand a query plan, or need optimization recommendations.
-
-**Key tools:** `resolve_query`, `analyze_query_plan`, `get_query_runtime_metrics`, `discover_tables`
-
-**Example questions:**
-- "Why is this SELECT query taking 45 minutes?"
-- "Analyze the explain plan for statement ID 01abc..."
-- "How can I optimize this join between two large tables?"
-
-[Full documentation →](../agents/domain/query.md)
+The router uses parallel domain scoring. Explicit identifiers give immediate high-confidence routes. At medium confidence (0.4–0.6) it presents numbered options; after one clarification attempt it makes a best-effort decision.
 
 ---
 
-### Job Agent
+## Agents
 
-**Domain:** Databricks job performance and debugging
+### Query
 
-**When to use:** A job is failing, running slowly, or you want to optimize job configurations.
-
-**Key tools:** `resolve_job`, `get_job_config`, `analyze_job_history`, `get_run_output`, `get_task_logs`, `get_source_code`, `analyze_code_quality`
-
-**Example questions:**
-- "Why did job 12345 fail last night?"
-- "Show me the performance trend for my nightly ETL job"
-- "What's causing the task dependency bottleneck in this workflow?"
-
-[Full documentation →](../agents/domain/job.md)
+**Domain:** SQL query optimization
+**Fires on:** `statement_id`, "optimize sql", "slow query", "full table scan", "scanning too much data"
+**Capabilities:** Fetches the execution plan (`EXPLAIN`), analyzes data scanning and shuffle, checks table schema and partitioning, quantifies cost savings.
+**Example:** `--goal "Why is statement_id:abc123 scanning 10 TB?"`
 
 ---
 
-### UC Agent (Unity Catalog)
+### Job
 
-**Domain:** Metadata, lineage, governance, and storage optimization
-
-**When to use:** You need to explore catalog assets, trace data lineage, audit access patterns, or optimize storage.
-
-**Key tools:** `list_uc_assets`, `get_table_metadata`, `get_table_lineage`, `get_table_grants`, `analyze_table_schema`, `get_table_history`, `analyze_access_patterns`, `analyze_storage_optimization`, `analyze_policy_coverage`
-
-**Example questions:**
-- "Show me all tables in the sales catalog"
-- "What's the lineage for the revenue_summary table?"
-- "Which tables have no access policies configured?"
-- "How much storage could we save by optimizing this table?"
-
-[Full documentation →](../agents/domain/uc.md)
+**Domain:** Databricks jobs and workflow optimization
+**Fires on:** `job_id`, "job failed", "slow pipeline", "OOM in task", "task keeps retrying"
+**Capabilities:** Inspects source code (notebooks/scripts) for anti-patterns, branches on serverless vs. standard compute (skips Spark logs on serverless), reads run output and task logs, prioritizes the critical path in multi-task workflows.
+**Example:** `--goal "Job 266829928906781 keeps failing at the aggregate task"`
 
 ---
 
-### Cluster Agent
+### UC (Unity Catalog)
 
-**Domain:** Compute cluster configuration, health, and optimization
-
-**When to use:** You want to right-size clusters, diagnose cluster issues, or understand resource utilization.
-
-**Key tools:** `list_clusters`, `get_cluster_config`, `get_cluster_health`, `get_cluster_metrics`, `get_cluster_events`, `get_spark_logs`
-
-**Example questions:**
-- "Is my interactive cluster right-sized for its workload?"
-- "Show me cluster utilization for the last 7 days"
-- "Why does this cluster keep restarting?"
-
-[Full documentation →](../agents/domain/cluster.md)
+**Domain:** Unity Catalog governance and table management
+**Fires on:** `catalog.schema.table`, "lineage", "schema drift", "who has access to", "list tables in"
+**Capabilities:** Asset discovery, table metadata and Delta history, lineage tracing (upstream/downstream), access grant inspection, storage optimization, schema drift detection.
+**Example:** `--goal "Show upstream lineage for cprice_main.core.orders"`
 
 ---
 
-### Analytics Agent (FinOps)
+### Cluster
 
-**Domain:** Cost analysis, billing, chargeback, and budget forecasting
-
-**When to use:** You need cost breakdowns, want to generate chargeback reports, or identify spending optimization opportunities.
-
-**Cost basis:** All `$` figures are **list-price DBU estimates** derived from public
-usage tables — not finance-grade billing numbers.
-
-**Key tools:** FinOps-specific analysis and reporting tools
-
-**Example questions:**
-- "What's our Databricks spend for the last quarter?"
-- "Generate a chargeback report by team"
-- "Which workloads are the most expensive?"
-- "Forecast our costs for next month"
-
-[Full documentation →](../agents/domain/analytics.md)
+**Domain:** Databricks cluster configuration and health
+**Fires on:** `cluster_id`, "cluster health", "autoscaling", "over-provisioned", "rightsizing"
+**Capabilities:** Fleet overview, 0–100 health scoring with per-metric breakdown, CPU/memory/IO utilization, autoscaling and spot-vs-on-demand recommendations. Routes SQL warehouse work to the Warehouse agent.
+**Example:** `--goal "Is cluster 1201-090640-dwj7ygpe over-provisioned?"`
 
 ---
 
-### Warehouse Agent
+### Analytics (FinOps)
 
-**Domain:** SQL warehouse portfolio management and optimization
-
-**When to use:** You want to optimize warehouse configurations, analyze usage patterns, or generate warehouse-level chargeback reports.
-
-**Key tools:** `get_warehouse_portfolio`, `get_warehouse_fingerprint`, `get_warehouse_health`, `configure_warehouse_slo`, `analyze_warehouse_topology`, `get_warehouse_user_activity`, `generate_warehouse_chargeback`, `generate_portfolio_chargeback`
-
-**Example questions:**
-- "Show me our SQL warehouse portfolio"
-- "Which warehouses are over-provisioned?"
-- "Generate a chargeback report for the data warehouse"
-- "What SLO should I set for the reporting warehouse?"
-
-[Full documentation →](../agents/domain/warehouse.md)
+**Domain:** Cost and DBU consumption analysis
+**Fires on:** "cost", "billing", "DBU spend", "expensive", "waste", "chargeback", "budget"
+**Capabilities:** Builds and executes SQL over `system.*` billing tables using curated reference-file context; self-corrects on SQL generation failures (up to 3 attempts); generates visualizations; attributes spend by workspace, job, warehouse, or user. All `$` figures are **list-price DBU estimates**.
+**Example:** `--goal "Which jobs consumed the most DBUs in the last 30 days?"`
 
 ---
 
-### Discovery Agent
+### Warehouse
 
-**Domain:** Workspace-wide health assessment and resource inventory
-
-**When to use:** You want a holistic view of your Databricks workspace, need to assess overall health, or want to inventory resources.
-
-**Key tools:** Discovery-specific scanning and assessment tools
-
-**Example questions:**
-- "Run a health assessment on this workspace"
-- "What resources exist in this workspace?"
-- "Are there any misconfigured resources?"
-
-[Full documentation →](../agents/domain/discovery.md)
+**Domain:** SQL warehouse portfolio optimization
+**Fires on:** `warehouse_id`, "warehouse health", "chargeback", "SLO", "consolidate warehouses"
+**Capabilities:** Portfolio overview, workload fingerprinting (P50–P99 latency baselines), 0–100 health scoring, SLO compliance tracking, user-level chargeback, topology and consolidation analysis.
+**Example:** `--goal "Generate a chargeback report for analytics-warehouse"`
 
 ---
 
-### Diagnostic Agent
+### Discovery
 
-**Domain:** Cross-domain troubleshooting and root cause analysis
-
-**When to use:** You have a complex issue that might span multiple domains, need root cause analysis, or want debugging assistance.
-
-**Key tools:** Cross-domain diagnostic and debugging tools
-
-**Example questions:**
-- "My pipeline is slow and I don't know why"
-- "Help me troubleshoot this intermittent failure"
-- "What's the root cause of these timeout errors?"
-
-[Full documentation →](../agents/domain/diagnostic.md)
+**Domain:** Workspace-wide health assessment
+**Fires on:** "workspace health", "health check", "audit my workspace", "--discover"
+**Capabilities:** 4-phase pipeline — audit active products → run query packs → analyze domains → synthesize graded report cards (A–F). Supports 30/60/90-day lookback. This is the same engine as `starboard --discover`.
+**Example:** `--goal "Run a 90-day workspace health check"`
 
 ---
 
-## Agent Capabilities Matrix
+### Diagnostic
 
-| Capability | Query | Job | UC | Cluster | Analytics | Warehouse | Discovery | Diagnostic |
-|-----------|:-----:|:---:|:--:|:-------:|:---------:|:---------:|:---------:|:----------:|
-| Read Databricks APIs | x | x | x | x | x | x | x | x |
-| SQL Analysis | x | | | | | x | | |
-| Cost Analysis | | | | | x | x | | |
-| Lineage Tracing | | | x | | | | | |
-| Log Analysis | | x | | | | | | x |
-| Health Scoring | | | | x | | x | x | |
-| Cross-Agent Handoff | x | x | x | x | x | x | x | x |
+**Domain:** Troubleshooting and root cause analysis
+**Fires on:** "error", "exception", "exit code 137", "debug", "OOM", stack traces, log files
+**Capabilities:** Artifact-first analysis (logs, stack traces, query profiles, code). Confidence-calibrated findings (HIGH/MEDIUM/LOW) with line-level evidence citations. Interprets exit codes (HOW vs. WHY). Has unrestricted tool access. Emits a structured fingerprint for specialist routing.
+**Example:** `--goal "Why did my job fail with exit code 137?"` (attach logs)
 
 ---
 
-## Cross-Agent Scenarios
+## How to choose a surface
 
-Complex questions often involve multiple agents working together:
+| I want to… | Use |
+|---|---|
+| Natural-language analysis inside a chat host | Skill (e.g. `starboard-job`) — routes to the right agent automatically |
+| Natural-language analysis from a terminal | `starboard --goal "…"` or `starboard --chat` |
+| Ranked, deterministic findings over public `system.*` data | `starboard review` |
+| Workspace health / inventory scan | `starboard --discover` |
+| Call a single typed operation | MCP tool (`mcp__starboard__*`) |
+| Offline / minimal install | `python -m starboard_x.<cap>` |
 
-| Scenario | Agents Involved |
-|----------|----------------|
-| Debug a failing job → discover cluster is undersized | Job → Cluster |
-| Optimize a query → trace lineage to find source tables | Query → UC |
-| Cost analysis → identify expensive warehouses → right-size | Analytics → Warehouse |
-| Workspace assessment → find ungoverned tables → audit access | Discovery → UC |
-| Pipeline debugging → check job, query, and cluster health | Diagnostic → Job → Query → Cluster |
+See [What is Starboard?](what-is-starboard.md) and the [CLI reference](../guide/cli.md) for full surface details.

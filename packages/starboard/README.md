@@ -11,7 +11,7 @@ system**, and the **tool catalog**. It hard-depends on the `starboard-core` kern
 `starboard` provides:
 
 - **CLI (`starboard`)** — direct, in-process agent execution with live terminal
-  progress, plus the deterministic surfaces `starboard review`, `starboard genie ask`,
+  progress, plus the deterministic surfaces `starboard review`,
   `starboard --discover`, and `starboard auth`.
 - **MCP server** — `starboard-mcp` (stdio transport, no FastAPI) and an optional
   Streamable HTTP transport mounted at `/mcp` by the `starboard-server` app.
@@ -46,7 +46,6 @@ starboard "Why is my nightly ETL job slow?"
 
 # Deterministic surfaces
 starboard review --rows 200
-starboard genie ask "top 10 most expensive queries last week"
 starboard --discover
 ```
 
@@ -115,14 +114,14 @@ Environment variables (set in `.env` or the environment):
 \* Auth is resolved by subtraction: Starboard reuses your Databricks CLI/SDK
 configuration where available. State is **in-memory by default** — no database to
 provision; `uc`/`sqlite`/`postgres`/`lakebase` backends are opt-in. See the
-[Configuration Guide](../../docs/CONFIGURATION.md) for the complete reference.
+[Configuration Guide](../../docs/guide/cli.md) for the complete reference.
 
 ## Architecture
 
 ```
 starboard/
     main.py              # Thin FastAPI app factory (health + optional /mcp)
-    cli/                 # CLI entry points and commands (review, genie ask, auth, --discover)
+    cli/                 # CLI entry points and commands (review, auth, --discover)
     mcp/                 # MCP server (stdio + HTTP transport), config, workspace tools
     agents/              # Multi-agent system (routing, domain agents, tool registry)
     tools/               # Tool implementations
@@ -154,8 +153,6 @@ make lint && make type-check
 
 ## Documentation
 
-- [System Architecture](../../docs/architecture/SYSTEM_ARCHITECTURE.md) -- Full system design
-- [API Reference](../../docs/api/API_REFERENCE.md) -- Programmatic surfaces (CLI, MCP, SDK)
-- [Tool Catalog](../../docs/tools/TOOL_CATALOG.md) -- Tool reference
-- [Configuration Guide](../../docs/CONFIGURATION.md) -- Environment variables
-- [Testing Guide](../../docs/TESTING.md) -- Testing strategies
+- [Architecture](../../docs/architecture.md) -- Full system design, API surfaces, and tool reference
+- [Configuration Guide](../../docs/guide/cli.md) -- Environment variables and CLI reference
+- [Testing Guide](../../docs/contributing.md) -- Testing strategies and contribution workflow

@@ -373,7 +373,6 @@ clean-deep: clean clean-debug
 
 docs:
 	@echo "$(BLUE)Building docs...$(NC)"
-	@python scripts/generate_diagrams.py --verbose 2>/dev/null --quality medium || true
 	@python -m mkdocs build --strict
 	@echo "$(GREEN)✓ Docs built: site/$(NC)"
 

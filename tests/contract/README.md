@@ -371,5 +371,5 @@ Track contract test health:
 
 **Last Updated**: 2025-11-28  
 **Version**: 1.0.0  
-**Related**: [Testing Guide](../../docs/TESTING.md), [API Reference](../../docs/API_REFERENCE.md)
+**Related**: [Testing Guide](../../docs/contributing.md), [API Reference](../../docs/architecture.md)
 

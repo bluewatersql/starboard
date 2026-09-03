@@ -24,4 +24,4 @@ without the FastAPI/MCP experience tier.
 To install only the domains you need, depend on the kernel extras directly, e.g.
 `pip install "starboard-kernel[warehouse,uc]"`.
 
-See [`docs/reference/INSTALL_TIERS.md`](../../docs/reference/INSTALL_TIERS.md).
+See [`docs/guide/quickstart.md`](../../docs/guide/quickstart.md).

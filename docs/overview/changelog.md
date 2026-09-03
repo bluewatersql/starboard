@@ -1,17 +1,8 @@
----
-title: Changelog
-description: Release history and notable changes for Starboard AI Agent.
-last_reviewed: 2026-08-27
-status: current
----
-
 # Changelog
-
-> **Docs** > **Overview** > **Changelog**
 
 The canonical changelog is maintained in the repository root at `CHANGELOG.md`. If
 there is ever a discrepancy, the root file wins. This page summarizes the
-user-facing capabilities of the current shipped design (Phases 0–3).
+user-facing capabilities of the current shipped design.
 
 ---
 
@@ -62,8 +53,8 @@ conversation; `review` and `--discover` are deterministic public-data paths.
 
 ---
 
-## Next Steps
+## See also
 
-- [What is Starboard?](what-is-starboard.md) — Product overview
-- [Quickstart](../QUICKSTART.md) — Install and run your first analysis
-- [Agent Catalog](agents.md) — Explore the domain agents
+- [What is Starboard?](what-is-starboard.md)
+- [Quickstart](../guide/quickstart.md)
+- [Agent Catalog](agents.md)

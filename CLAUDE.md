@@ -101,5 +101,5 @@ Config in `[tool.importlinter]` (root `pyproject.toml`). Run: `lint-imports` (or
 
 Engineering standards live in [`.cursor/01_engineering_standards.md`](.cursor/) … `08_frontend_standards.md`.
 User/developer/ops docs are under [`docs/`](docs/) (built with MkDocs). Contribution workflow:
-[`CONTRIBUTING.md`](CONTRIBUTING.md) → [`docs/guides/CONTRIBUTING.md`](docs/guides/CONTRIBUTING.md).
+[`CONTRIBUTING.md`](CONTRIBUTING.md) → [`docs/contributing.md`](docs/contributing.md).
 Agent operating rules: [`AGENTS.md`](AGENTS.md).

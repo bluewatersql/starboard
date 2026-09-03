@@ -1,140 +1,55 @@
-# What is Starboard AI Agent?
+# What is Starboard?
 
-**Starboard AI Agent** is an AI-powered analysis and optimization platform for Databricks workloads. It uses a multi-agent architecture where domain-specialized AI agents reason step-by-step to analyze SQL queries, jobs, pipelines, costs, and infrastructure — then provide actionable recommendations.
-
----
+**Starboard** is an AI-powered analysis and optimization tool for Databricks workloads. It ships three surfaces over one kernel: a **CLI** (`starboard`), an optional **MCP server** (`starboard-mcp`), and **Skills** (a Claude Code plugin). All three share the same domain agents, tools, and Databricks connectivity.
 
 ## How It Works
 
-Starboard runs from the command line (and from AI coding assistants via skills).
-Instead of a single chatbot, it uses **8 specialized agents**, each expert in a
-different Databricks domain. When you ask a question, an Intent Router classifies
-your request and dispatches it to the right agent. That agent then:
+Requests sent via `--goal` or `--chat` flow through an **Intent Router** that classifies your input and dispatches it to the right domain agent. That agent reasons step-by-step, dynamically selects and calls Databricks tools, and streams findings live to the terminal.
 
-1. **Reasons** about your question step-by-step
-2. **Selects tools** dynamically based on what data it needs
-3. **Calls Databricks APIs** to gather real information
-4. **Analyzes** the results using domain expertise
-5. **Returns** specific, actionable recommendations (with live progress in the terminal)
+**Two deterministic surfaces** run outside the agent loop, directly over public `system.*` data:
 
-```
-You: "Why is my nightly ETL job taking 3 hours?"
+- **`starboard review`** — ranked, evidence-cited findings across jobs, SQL, and warehouses. Includes a `SeverityGate`; all `$` figures are list-price DBU estimates.
+- **`starboard --discover`** — workspace health assessment and resource inventory (30/60/90-day lookback).
 
-→ Intent Router classifies as "Job Analysis"
-→ Job Agent activates
-→ Calls: resolve_job → get_job_config → analyze_job_history → get_cluster_config
-→ Finds: Undersized cluster, no autoscaling, shuffle spill
-→ Returns: Specific optimization recommendations with expected improvement
-```
-
-Beyond free-form goals, Starboard ships two high-signal, deterministic surfaces
-over **public `system.*` data**: **Workload Review** (`starboard review`) and
-**workspace discovery** (`starboard --discover`).
-
----
+For the full system design, see [Architecture](../architecture.md).
 
 ## Domain Agents
 
-| Agent | Domain | What It Does |
+The agent path (`--goal` / `--chat`) routes through 8 domain agents:
+
+| Agent | Domain | What it does |
 |-------|--------|-------------|
-| **Query Agent** | SQL Optimization | Analyzes query plans, identifies bottlenecks, suggests rewrites |
-| **Job Agent** | Job Performance | Debugs failing jobs, optimizes configurations, analyzes task dependencies |
-| **UC Agent** | Unity Catalog | Explores metadata, traces lineage, audits governance and access patterns |
-| **Cluster Agent** | Compute | Analyzes cluster configurations, health, utilization, and right-sizing |
-| **Analytics Agent** | FinOps & Cost | Cost analysis, chargeback, usage trends (list-price DBU estimates) |
-| **Warehouse Agent** | SQL Warehouses | Portfolio optimization, topology analysis, SLO configuration |
-| **Discovery Agent** | Workspace Health | Workspace-wide assessment, resource inventory, health scoring |
-| **Diagnostic Agent** | Troubleshooting | Root cause analysis, debugging, cross-domain issue diagnosis |
+| Query | SQL optimization | Analyzes query plans, identifies bottlenecks, suggests rewrites |
+| Job | Job performance | Debugs failing jobs, optimizes configurations, analyzes task dependencies |
+| UC | Unity Catalog | Explores metadata, traces lineage, audits governance and access patterns |
+| Cluster | Compute | Right-sizes clusters, diagnoses health, analyzes utilization |
+| Analytics | FinOps & cost | Cost analysis, chargeback, usage trends (list-price DBU estimates) |
+| Warehouse | SQL warehouses | Portfolio optimization, topology analysis, SLO configuration |
+| Discovery | Workspace health | Workspace-wide assessment, resource inventory, health scoring |
+| Diagnostic | Troubleshooting | Root cause analysis, cross-domain debugging |
 
-Each agent has access to specialized tools and domain-specific prompts that encode
-Databricks best practices. All `$` figures on the public path are **list-price DBU
-estimates**, not finance-grade billing numbers.
+See [Agents](agents.md) for the full capabilities matrix and cross-agent scenarios.
 
----
+## Store-Free by Default
 
-## Key Capabilities
+- **Memory-only state** — no database to provision; conversation and long-term memory are ephemeral and in-process.
+- **Durable CLI sessions** — the JSON-file `SessionManager` persists CLI session state across invocations.
+- **Reference-file analytics context** — curated on-disk reference files and query packs; no vector database or embeddings.
+- **Redis cache** — opt-in via `pip install 'starboard[redis]'`; in-memory TTL cache by default.
 
-### Intelligent Analysis
-- **Natural language interface** — Ask questions in plain English
-- **Multi-step reasoning** — Agents gather data iteratively, not in one shot
-- **Cross-agent handoffs** — Complex questions span multiple domains automatically
-- **Interruptible reasoning** — Provide additional context mid-analysis
+## Install
 
-### Live Progress
-- **Streaming terminal output** — Watch the agent think and call tools in real time
-- **Tool call visibility** — See which APIs are being called and what data is returned
-- **Evidence-cited findings** — `starboard review` cites the query pack + row for each finding
-
-### Store-Free by Default
-- **Multiple entry points** — CLI (`starboard`), the `python -m starboard_x.<cap>` middle tier, skills for Claude Code / Cursor, and an optional MCP server (`starboard-mcp`)
-- **In-memory state only** — no database to provision; durable CLI session persistence is via the JSON-file `SessionManager`
-- **Reference-file analytics context** — analytics context comes from curated on-disk reference files + query packs, not an embedding/vector database
-
----
-
-## Architecture at a Glance
-
+```bash
+pip install starboard           # CLI + agents + optional MCP server (no store drivers)
+pip install starboard-core      # Pure kernel + starboard_x helpers only
+pip install starboard-skills    # Skills plugin for Claude Code / Cursor
+pip install 'starboard[redis]'  # Add Redis cache support
 ```
-┌──────────────────────────────────────────────────────┐
-│                     Entry Points                       │
-│  CLI (starboard) │ starboard_x │ skills │ MCP server   │
-└──────────┬─────────────────────────────┬──────────────┘
-           │                             │
-           ▼                             ▼
-┌──────────────────────────────────────────────────────┐
-│                  starboard package                     │
-│  ┌─────────────┐  ┌──────────────────────────────┐   │
-│  │Intent Router │→│ Multi-Agent Conversation Mgr  │   │
-│  └─────────────┘  └──────────────────────────────┘   │
-│                           │                           │
-│  ┌────────────────────────┼───────────────────────┐  │
-│  │  Query │ Job │ UC │ Cluster │ Analytics │ ...  │  │
-│  │                Domain Agents                    │  │
-│  └────────────────────────┼───────────────────────┘  │
-│                           │                           │
-│  ┌────────────────────────┼───────────────────────┐  │
-│  │                    Tools (3-Layer)              │  │
-│  │   Domain (Logic) → Service (I/O) → Adapter     │  │
-│  └────────────────────────┼───────────────────────┘  │
-└───────────────────────────┼──────────────────────────┘
-                            │
-              ┌─────────────┼─────────────┐
-              ▼             ▼             ▼
-        Databricks      LLM Provider    State
-        APIs / system.* (OpenAI / Model  (in-memory
-                         Serving)         default; UC durable)
-```
-
-For the complete architecture deep-dive, see [System Architecture](../architecture/SYSTEM_ARCHITECTURE.md).
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Runtime** | Python 3.12, asyncio, Pydantic V2, structlog |
-| **MCP** | stdio transport, Model Context Protocol (optional) |
-| **LLM** | OpenAI-compatible (GPT-4o, Claude via Databricks Model Serving) |
-| **State** | In-memory only; no external database. CLI session persistence via JSON-file `SessionManager`. Redis cache opt-in via `[redis]` |
-| **Analytics context** | Curated reference files + query packs; no embeddings or vector database |
-| **Packaging** | `starboard`, `starboard-core` (+ `starboard_x`), `starboard-skills` |
-| **Quality** | ruff, mypy, pytest, import-linter kernel-purity contracts |
-
----
-
-## Who Is This For?
-
-- **Data Engineers** — Optimize slow queries, debug failing jobs, understand table lineage
-- **Platform Admins** — Deploy, configure, monitor, and troubleshoot the system
-- **FinOps Analysts** — Cost analysis, chargeback reports, budget optimization
-- **Developers** — Extend the system with new agents, tools, and integrations
-
----
 
 ## Next Steps
 
-- [Quickstart](../QUICKSTART.md) — Get running in 5 minutes
-- [Claude Code Integration](../CLAUDE_CODE_INTEGRATION.md) — MCP server setup
-- [CLI Reference](../user-guide/cli.md) — Command-line usage
-- [Agent Catalog](agents.md) — Deep dive into each agent's capabilities
+- [Quickstart](../guide/quickstart.md) — get running in 5 minutes
+- [CLI Reference](../guide/cli.md) — command flags, subcommands, and output options
+- [Reports](../guide/reports.md) — understanding `starboard review` output
+- [Agents](agents.md) — full agent catalog and capabilities matrix
+- [Architecture](../architecture.md) — system design deep-dive

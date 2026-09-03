@@ -45,7 +45,7 @@ starboard_core/
     └── cache.py         # Cache operations
 ```
 
-See [complete architecture documentation](../../docs/packages/starboard-core/architecture.md) for detailed information.
+See [complete architecture documentation](../../docs/architecture.md) for detailed information.
 
 ## Design Principles
 
@@ -57,19 +57,12 @@ See [complete architecture documentation](../../docs/packages/starboard-core/arc
 
 ### Package Documentation
 
-- **[Package Overview](../../docs/packages/starboard-core/index.md)** - Quick reference and links
-- **[Architecture](../../docs/packages/starboard-core/architecture.md)** - Complete architecture guide (650+ lines)
-- **[Module Reference](../../docs/packages/starboard-core/modules.md)** - Detailed module documentation
-
-### Diagrams
-
-- **[Architecture Diagram](../../docs/diagrams/generated/packages/starboard-core-architecture.png)** - Package structure
-- **[Data Flow](../../docs/diagrams/generated/packages/starboard-core-dataflow.png)** - Repository pattern flow
+- **[Architecture](../../docs/architecture.md)** - Complete architecture guide
 
 ### Project Documentation
 
 - **[Main Project README](../../README.md)** - Overall project information
-- **[System Architecture](../../docs/architecture/SYSTEM_ARCHITECTURE.md)** - System design
+- **[System Architecture](../../docs/architecture.md)** - System design
 - **[starboard README](../starboard/README.md)** - Full experience package (CLI + MCP server + agents) that builds on this kernel
 
 ## Related Packages

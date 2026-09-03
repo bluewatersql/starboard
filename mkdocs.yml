@@ -97,119 +97,17 @@ nav:
       - What is Starboard?: overview/what-is-starboard.md
       - Agent Catalog: overview/agents.md
       - Glossary: overview/glossary.md
-      - Quickstart: QUICKSTART.md
-      - Configuration: CONFIGURATION.md
       - Changelog: overview/changelog.md
 
-  - User Guide:
-      - CLI Reference: user-guide/cli.md
-      - Quick Reference: QUICK_REFERENCE.md
-      - Getting Started: guides/GETTING_STARTED.md
-      - Common Tasks: guides/COMMON_TASKS.md
-      - Skills: SKILLS.md
-      - Interruptible Reasoning: user-guide/interruptible-reasoning.md
-      - Understanding Reports: user-guide/understanding-reports.md
-      - Portfolio Readiness: reference/portfolio_readiness.md
-      - Troubleshooting: user-guide/troubleshooting.md
-      - FAQ: guides/FAQ.md
-      - Workflows:
-          - Query Optimization: user-guide/workflows/query-optimization.md
-          - Job Debugging: user-guide/workflows/job-debugging.md
-          - Cost Analysis: user-guide/workflows/cost-analysis.md
-          - Cluster Optimization: user-guide/workflows/cluster-optimization.md
-          - Warehouse Optimization: user-guide/workflows/warehouse-optimization.md
-          - Table Governance: user-guide/workflows/table-governance.md
-          - Workspace Discovery: user-guide/workflows/workspace-discovery.md
+  - Guide:
+      - Quickstart: guide/quickstart.md
+      - CLI Reference: guide/cli.md
+      - Workflows: guide/workflows.md
+      - Understanding Reports: guide/reports.md
+      - Skills & MCP: guide/skills.md
+      - Troubleshooting: guide/troubleshooting.md
 
-  - Agents:
-      - Overview: agents/README.md
-      - Domain Agents:
-          - Query: agents/domain/query.md
-          - Job: agents/domain/job.md
-          - Unity Catalog: agents/domain/uc.md
-          - Cluster: agents/domain/cluster.md
-          - Analytics (FinOps): agents/domain/analytics.md
-          - Warehouse: agents/domain/warehouse.md
-          - Discovery: agents/domain/discovery.md
-          - Diagnostic: agents/domain/diagnostic.md
-      - Framework:
-          - Intent Router: agents/framework/intent.md
+  - Architecture: architecture.md
 
-  - Architecture:
-      - System Architecture: architecture/SYSTEM_ARCHITECTURE.md
-      - Interruptible Reasoning (Design): INTERRUPTIBLE_REASONING.md
-      - Tool System: TOOL_ARCHITECTURE.md
-      - Token Budget: TOKEN_BUDGET.md
-      - Output Contracts: contracts/AGENT_OUTPUT_CONSUMERS.md
-
-  - Developer Guide:
-      - Contributing: guides/CONTRIBUTING.md
-      - Testing: TESTING.md
-      - Release Process: developer/release-process.md
-      - Standards:
-          - Engineering: developer/standards/engineering.md
-          - Prompts & Schemas: developer/standards/prompts-schemas.md
-          - Testing & Evals: developer/standards/testing-evals.md
-          - Security: developer/standards/security.md
-          - Observability & Cost: developer/standards/observability.md
-      - Agent Development:
-          - Overview: developer/agent/README.md
-          - Implementation Guide: developer/agent/IMPLEMENTATION_GUIDE.md
-          - Report UI Guidelines: developer/agent/REPORT_UI_GUIDELINES.md
-      - Tools & API:
-          - Tool Catalog: tools/TOOL_CATALOG.md
-          - Tool Development Guide: tools/TOOL_DEVELOPMENT_GUIDE.md
-          - API Reference: api/API_REFERENCE.md
-      - Packages:
-          - Integration Guide: integration/PACKAGE_INTEGRATION.md
-          - starboard-core:
-              - Overview: packages/starboard-core/index.md
-              - Architecture: packages/starboard-core/architecture.md
-              - Modules: packages/starboard-core/modules.md
-          - starboard:
-              - Overview: packages/starboard/index.md
-              - Architecture: packages/starboard/architecture.md
-          - starboard-skills: packages/starboard-skills/index.md
-          - starboard-internal: packages/starboard-internal/index.md
-          - starboard-plugin-sample: packages/starboard-plugin-sample/index.md
-
-  - Administration:
-      - State Backends: admin/state-backends.md
-      - Monitoring & Observability: admin/monitoring.md
-      - Capacity Planning: admin/capacity-planning.md
-      - Cost Estimation: admin/cost-estimation.md
-      - Backup & Recovery: admin/backup-recovery.md
-      - Security Hardening: admin/security-hardening.md
-
-  - Operations:
-      - Deployment: DEPLOYMENT.md
-      - Runbook: RUNBOOK.md
-      - Wave 4 QA Runbook: runbooks/wave4_qa_runbook.md
-      - Runbook Templates:
-          - Incident: runbooks/incident_template.md
-          - Rollback: runbooks/rollback_template.md
-          - Capacity Planning: runbooks/capacity_planning_template.md
-      - Makefile Guide: MAKEFILE_GUIDE.md
-      - S3 Connector: S3_CONNECTOR_GUIDE.md
-
-  - Reference Catalog:
-      - Capability Catalog: reference/CATALOG.md
-      - How to Choose: guides/AGENT_EXPERIENCE.md
-      - Skills: reference/skills/INDEX.md
-      - MCP Tools: reference/mcp-tools/INDEX.md
-      - Agents: reference/agents/INDEX.md
-      - CLI Commands: reference/cli-commands/INDEX.md
-      - Progressive Helpers: reference/progressive-helpers/INDEX.md
-      - Plugins: reference/plugins/INDEX.md
-      - Examples:
-          - Hero Workflows: examples/HERO_WORKFLOWS.md
-          - Personas (internal): examples/PERSONAS.md
-          - Validated Examples: examples/VALIDATED_EXAMPLES.md
-
-  - Integrations & Distribution:
-      - Install Tiers: reference/INSTALL_TIERS.md
-      - Databricks AI Tools: distribution/databricks-aitools.md
-      - Claude Code Integration: CLAUDE_CODE_INTEGRATION.md
-      - Agent Skills Distribution: AGENT_SKILLS_DISTRIBUTION.md
-      - Host Coverage: HOST_COVERAGE.md
+  - Contributing: contributing.md
 

@@ -126,7 +126,7 @@ cp examples/cursor-mcp.json <ide-mcp-config-path>
 ./scripts/setup-mcp.sh
 ```
 
-See [Claude Code Integration Guide](docs/CLAUDE_CODE_INTEGRATION.md) for full details, tool reference, and usage examples.
+See [Skills Guide](docs/guide/skills.md) for full details, tool reference, and usage examples.
 
 ### Testing
 
@@ -181,9 +181,6 @@ starboard --help
 ```bash
 # Workload Review — ranked, evidence-cited findings over public system.* data
 starboard review --domains jobs,sql,warehouse --lookback-days 30
-
-# Natural-language → SQL over public workspace data
-starboard genie ask "top 10 most expensive jobs last week"
 
 # Databricks auth (delegates to the SDK credential chain)
 starboard auth status
@@ -259,23 +256,17 @@ See [examples/env.example](examples/env.example) for full configuration options.
 ./scripts/databricks_deploy.sh prod   # Deploy to production
 ```
 
-See [Deployment Guide](docs/DEPLOYMENT.md) for all deployment options.
-
 ## Documentation
 
 ### Getting Started
-- [Quick Start](docs/QUICKSTART.md) — Get up and running
-- [Configuration](docs/CONFIGURATION.md) — Configuration guide
+- [Quick Start](docs/guide/quickstart.md) — Get up and running
+- [CLI Reference](docs/guide/cli.md) — Configuration and command reference
 
 ### Architecture & Design
-- [System Architecture](docs/architecture/SYSTEM_ARCHITECTURE.md) — Complete system design
-- [Tool Architecture](docs/TOOL_ARCHITECTURE.md) — Tool system design
-- [Interruptible Reasoning](docs/INTERRUPTIBLE_REASONING.md) — Agent reasoning patterns
+- [Architecture](docs/architecture.md) — System design and package structure
 
-### Operations
-- [Deployment](docs/DEPLOYMENT.md) — Production deployment guide
-- [Runbook](docs/RUNBOOK.md) — Operational procedures
-- [Testing](docs/TESTING.md) — Testing strategies
+### Contributing
+- [Contributing](docs/contributing.md) — Contribution workflow and standards
 
 ### Package Documentation
 - [starboard-core](packages/starboard-core/README.md)
@@ -299,7 +290,7 @@ This project follows strict Python engineering standards:
 - **Golden tests** for all prompts (versioned, never modified in place)
 - **Domain-driven design** with clear architectural layers
 
-Full standards are documented in [`docs/developer/standards/`](docs/developer/standards/).
+Full standards are documented in [`docs/contributing.md`](docs/contributing.md).
 Contribution workflow is described in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Contributing

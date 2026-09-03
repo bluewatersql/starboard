@@ -1,20 +1,6 @@
----
-title: Glossary
-description: Definitions of key terms used throughout Starboard AI Agent documentation.
-last_reviewed: 2026-03-24
-status: current
----
-
 # Glossary
 
-> **Docs** > **Overview** > **Glossary**
-> Reading time: 8 minutes
-
-**What you'll learn:**
-
-- Definitions of Starboard-specific terminology
-- Key Databricks concepts referenced in the documentation
-- Architecture and protocol terms used throughout the system
+Definitions of key terms used throughout Starboard documentation.
 
 ---
 
@@ -33,7 +19,7 @@ status: current
 : The agent architecture pattern where agents reason step-by-step, evaluating data before deciding next actions, rather than following a predefined workflow graph.
 
 **Conversation**
-: A persistent interaction session between a user and the agent system. Conversations store message history, working memory, and extracted facts.
+: A persistent interaction session between a user and the agent system. Conversations store message history and working memory.
 
 **ConversationSession**
 : In the SDK, a handle to a single multi-turn conversation that maintains context across successive `ask()` calls.
@@ -48,7 +34,7 @@ status: current
 : A unit of working memory that captures a summary of an interaction segment within a conversation.
 
 **Fact**
-: A piece of long-term memory extracted from conversations, stored with a confidence score and optional vector embedding for semantic search.
+: A piece of long-term memory extracted from conversations, stored with a confidence score.
 
 **Finding**
 : A specific issue or observation identified during analysis, backed by evidence from tool outputs. In Workload Review, each finding carries a severity, an impact/effort priority score, a suggested fix, and an evidence citation (the query-pack `query_id` + the row that triggered it).
@@ -112,16 +98,13 @@ status: current
 : A set of Databricks compute resources used to run notebooks, jobs, and interactive workloads. Clusters can be all-purpose or job-specific.
 
 **DBSQL**
-: Databricks SQL -- the SQL analytics service for running queries against data in Unity Catalog using SQL warehouses.
+: Databricks SQL — the SQL analytics service for running queries against data in Unity Catalog using SQL warehouses.
 
 **DBU**
-: Databricks Unit -- the unit of measure for Databricks compute consumption used in billing.
+: Databricks Unit — the unit of measure for Databricks compute consumption used in billing.
 
 **Job**
 : A Databricks workflow that runs one or more tasks on a schedule or trigger. Jobs can contain notebooks, JARs, Python scripts, and SQL tasks.
-
-**Lakebase**
-: A Databricks-native Postgres-compatible database service used as a state backend for Starboard in cloud deployments.
 
 **Statement ID**
 : A unique identifier for a SQL query execution in Databricks SQL, used to retrieve query text, execution plans, and runtime metrics.
@@ -149,10 +132,7 @@ status: current
 : The innermost layer in the three-layer tool architecture, containing pure business logic with no I/O dependencies. Fully deterministic and testable.
 
 **EventEmitter**
-: The component that publishes streaming events (thinking, tool start, tool end, final output) to connected clients during agent execution.
-
-**FastAPI**
-: The Python web framework used for the Starboard backend, providing REST endpoints and SSE streaming.
+: The component that publishes streaming events (thinking, tool start, tool end, final output) to the CLI / SDK during agent execution — an in-process stream.
 
 **Golden Test**
 : A snapshot test that captures LLM prompts and outputs to detect unintended changes in agent behavior across code modifications.
@@ -164,19 +144,16 @@ status: current
 : The Python validation library (V2) used at all system boundaries to enforce type safety on user inputs, LLM outputs, and API payloads.
 
 **Repository Pattern**
-: The data access pattern used for state management, providing abstract interfaces with pluggable implementations (SQLite, Postgres, Lakebase, InMemory, Redis).
+: The data access pattern used for state management, providing abstract interfaces with pluggable backends. The active state backend is memory-only (`database_backend="memory"`); Redis is an opt-in cache backend (`starboard[redis]`).
 
-**Semantic Cache**
-: Starboard's response cache. It runs **TTL-only** (exact-key) with no vector dependency. Redis is an opt-in cache backend (`starboard[redis]`).
+**Cache**
+: Starboard's response cache. It runs **TTL-only** (exact-key) with no vector dependency. In-memory by default; Redis is an opt-in cache backend (`starboard[redis]`).
 
 **Workload Review**
 : The `starboard review` flagship — a ranked, evidence-cited review of a workspace's jobs, SQL, and warehouses over public `system.*` data only. Findings are scored against a rule registry and filtered by the **severity gate** (`--min-severity` / `--min-score`). The review is read-only: it never writes back to your workspace.
 
 **Service Layer**
 : The middle layer in the three-layer tool architecture, responsible for orchestrating adapters, composing operations, and handling errors.
-
-**SSE (Server-Sent Events)**
-: The HTTP-based streaming protocol used by Starboard to push real-time agent events to clients. Simpler than WebSockets for one-way communication.
 
 ---
 
@@ -187,23 +164,19 @@ status: current
 | **CLI** | Command-Line Interface |
 | **DBU** | Databricks Unit |
 | **DBSQL** | Databricks SQL |
-| **DI** | Dependency Injection |
 | **FinOps** | Financial Operations (cloud cost management) |
 | **LLM** | Large Language Model |
 | **PII** | Personally Identifiable Information |
 | **RBAC** | Role-Based Access Control |
 | **SDK** | Software Development Kit |
 | **SLO** | Service Level Objective |
-| **SSE** | Server-Sent Events |
 | **TTL** | Time To Live |
 | **UC** | Unity Catalog |
 
 ---
 
-## Next Steps
+## See also
 
-- [What is Starboard?](what-is-starboard.md) -- Product overview
-- [Agent Catalog](agents.md) -- Deep dive into each agent
-- [FAQ](../guides/FAQ.md) -- Common questions answered
-- [Configuration Guide](../CONFIGURATION.md) -- Environment variable reference
-
+- [What is Starboard?](what-is-starboard.md)
+- [Agent Catalog](agents.md)
+- [Contributing](../contributing.md)

@@ -222,5 +222,5 @@ When adding new tests:
 - [Pytest Documentation](https://docs.pytest.org/)
 - [Pytest Fixtures](https://docs.pytest.org/en/stable/fixture.html)
 - [Package README](../../../README.md)
-- [Project Testing Guide](../../../../../docs/TESTING.md)
+- [Project Testing Guide](../../../../../docs/contributing.md)
 
