@@ -279,11 +279,13 @@ _SEED_YAML = (
     / "seed"
     / "portfolio_readiness.yaml"
 )
+# The portfolio-readiness reference now lives as a section of the Workflows guide
+# (docs/reference/ was consolidated away in the docs simplification).
 _REFERENCE_DOC = (
     Path(__file__).parents[6]
     / "docs"
-    / "reference"
-    / "portfolio_readiness.md"
+    / "guide"
+    / "workflows.md"
 )
 
 

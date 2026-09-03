@@ -35,6 +35,42 @@ starboard review --since before.json         # show resolved-rate delta
 **Output:** ranked findings with severity, priority score, suggested fix, and evidence citation.
 See [Reports](./reports.md) for how to read findings.
 
+### Portfolio Readiness (workload-maturity review)
+
+`starboard review --domains portfolio-readiness` grades a workspace's workloads against a
+*runtime-observable* maturity model, inferring maturity purely from signals every workspace
+already emits — no external system of record. All money references are **list-price DBU estimates**.
+
+**Signals (public `system.*` only):** consumption in DBU (`system.billing.usage`, via evidence
+queries `C-B01`/`C-J01`), run error-rate (`system.lakeflow.*`, via `C-J04`), and owner attribution
+(`run_as` identity). No CRM, forecast, or cross-account data is used; a workspace missing the optional
+`system.lakeflow.*` tables degrades the reliability signal gracefully rather than failing the review.
+
+**Maturity stages** — derived from current signals, not stored:
+
+| Stage | Consumption | Owner | Reliability |
+|-------|-------------|-------|-------------|
+| Dormant | none / negligible | — | — |
+| Pilot | below production scale | — | — |
+| Production | at/above production scale | — | — |
+| Optimized | at/above production scale | attributed | error-rate below the ceiling |
+
+A workload reaches **Optimized** only when it is simultaneously production-scale, owned, and reliable;
+the review surfaces the specific gap blocking advancement, each with a concrete progression action.
+
+**Rules:**
+
+| Rule | Evidence | Fires when | Progression action |
+|------|----------|-----------|--------------------|
+| `portfolio_untracked_production_consumption` | `C-B01` | unattributed consumption at/above the untracked DBU floor | attribute the workload (set an identity + owner/cost-center tags) |
+| `portfolio_unattended_production_job` | `C-J01` | production-scale job with a missing/unattributed `run_as` | assign an explicit owner |
+| `portfolio_unreliable_production_workload` | `C-J04` | production-scale job with a failure rate at/above the maturity ceiling | root-cause and stabilize before treating it as optimized |
+
+Thresholds are configurable defaults (named constants in `starboard_core.domain.rules.detectors`, not
+magic numbers embedded in the rules): the production-scale DBU floor, the untracked-consumption floor,
+and the Optimized reliability ceiling. Findings are ranked by the shared severity × impact / effort
+scorer and cite the exact evidence query and triggering row.
+
 ---
 
 ## Workspace Discovery
