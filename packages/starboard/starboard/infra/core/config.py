@@ -174,6 +174,22 @@ class EnvConfig(BaseSettings):
 
     # --- Field validators ---
 
+    _REMOVED_DATABASE_BACKENDS: ClassVar[frozenset[str]] = frozenset({
+        "sqlite", "postgres", "lakebase", "uc", "databricks",
+    })
+
+    @field_validator("database_backend", mode="before")
+    @classmethod
+    def _validate_database_backend(cls, v: Any) -> Any:
+        """Reject removed backends with an actionable migration message."""
+        if isinstance(v, str) and v.strip().lower() in cls._REMOVED_DATABASE_BACKENDS:
+            raise ValueError(
+                f"DATABASE_BACKEND={v!r} is no longer supported: Starboard state is "
+                "memory-only. Unset DATABASE_BACKEND or set it to 'memory'. "
+                "Durable CLI sessions are handled by the JSON-file SessionManager."
+            )
+        return v
+
     _VALID_WAREHOUSE_SIZES: ClassVar[frozenset[str]] = frozenset({
         "2X-Small", "X-Small", "Small", "Medium", "Large", "X-Large",
         "2X-Large", "3X-Large", "4X-Large",
