@@ -19,42 +19,23 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", message=".*urllib3.*")
 
 
-def _databricks_available() -> bool:
-    """Check if Databricks credentials are available."""
-    # Check for Databricks auth - either token or OAuth config
+def databricks_available() -> bool:
+    """Return True only when explicit Databricks env vars are present.
+
+    Deliberately avoids the SDK's default credential chain (~/.databrickscfg)
+    so that CI / offline runs — where DATABRICKS_HOST, DATABRICKS_TOKEN, and
+    DATABRICKS_CONFIG_PROFILE are all unset — always skip the
+    ``requires_databricks`` suite, even on machines that happen to have a
+    local Databricks profile configured.
+
+    Offline mode: all three vars unset  → False → skip
+    With creds:   HOST+TOKEN set        → True  → run
+    With profile: DATABRICKS_CONFIG_PROFILE set → True → run
+    """
     has_token = bool(os.environ.get("DATABRICKS_TOKEN"))
     has_host = bool(os.environ.get("DATABRICKS_HOST"))
     has_profile = bool(os.environ.get("DATABRICKS_CONFIG_PROFILE"))
-
-    # Try to import and validate Databricks SDK
-    if has_token and has_host:
-        return True
-    if has_profile:
-        return True
-
-    # Check if default auth works (databricks-cli profile)
-    try:
-        from databricks.sdk import WorkspaceClient
-
-        # Try to create client - will fail if no valid auth
-        client = WorkspaceClient()
-        # Try a simple API call to validate
-        client.current_user.me()
-        return True
-    except Exception:
-        return False
-
-
-# Cache the result to avoid repeated checks
-_DATABRICKS_AVAILABLE = None
-
-
-def databricks_available() -> bool:
-    """Cached check for Databricks availability."""
-    global _DATABRICKS_AVAILABLE
-    if _DATABRICKS_AVAILABLE is None:
-        _DATABRICKS_AVAILABLE = _databricks_available()
-    return _DATABRICKS_AVAILABLE
+    return (has_token and has_host) or has_profile
 
 
 def pytest_configure(config):
