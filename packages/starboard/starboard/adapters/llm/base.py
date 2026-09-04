@@ -145,19 +145,6 @@ class BaseLLMClient(ABC):
         pass
 
     @abstractmethod
-    async def embed(self, texts: list[str]) -> list[list[float]]:
-        """
-        Generate embeddings for texts.
-
-        Args:
-            texts: List of texts to embed
-
-        Returns:
-            List of embedding vectors
-        """
-        pass
-
-    @abstractmethod
     async def call_with_tools(
         self,
         messages: list[dict[str, Any]],

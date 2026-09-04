@@ -177,17 +177,6 @@ class OpenAIProvider(BaseLLMClient):
             timeout=llm_timeout,
         )
 
-        # Separate client for embeddings when embedding_base_url differs
-        embedding_base_url = getattr(cfg, "embedding_base_url", "") or ""
-        if embedding_base_url and embedding_base_url != (cfg.llm_base_url or ""):
-            self._embedding_client = AsyncOpenAI(
-                api_key=resolved_key,
-                base_url=embedding_base_url,
-                timeout=httpx.Timeout(60.0, connect=15.0),
-            )
-        else:
-            self._embedding_client = self.async_client
-
         # Circuit breaker for API resilience
         self.circuit_breaker = CircuitBreaker(
             failure_threshold=5, timeout_seconds=60, name="openai_api"
@@ -904,25 +893,6 @@ class OpenAIProvider(BaseLLMClient):
             raise
         except ValidationError:
             raise
-
-    @override
-    async def embed(self, texts: list[str]) -> list[list[float]]:
-        """Generate embeddings for texts using the configured model.
-
-        Args:
-            texts: List of texts to embed
-
-        Returns:
-            List of embedding vectors
-        """
-        if not texts:
-            return []
-
-        model = self.cfg.embedding_model or "databricks-bge-large-en"
-        response = await self._embedding_client.embeddings.create(
-            model=model, input=texts
-        )
-        return [data.embedding for data in response.data]
 
     @override
     @retry_with_backoff(max_attempts=3, initial_delay=2.0, max_delay=60.0)

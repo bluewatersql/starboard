@@ -39,7 +39,6 @@ def _clean_store_env(monkeypatch: pytest.MonkeyPatch) -> None:
     for var in (
         "DATABASE_BACKEND",
         "VECTOR_BACKEND",
-        "CACHE_BACKEND",
         "DATABASE_URL",
         "REDIS_URL",
     ):
@@ -55,7 +54,7 @@ class TestZeroStoreDefaults:
     def test_default_backends_are_store_free(self) -> None:
         cfg = _default_config()
         assert cfg.database_backend == "memory"
-        assert cfg.cache_backend == "memory"
+        assert cfg.redis_url is None  # no redis_url => driver-free in-memory cache
 
     def test_default_dev_state_store_is_inmemory(self) -> None:
         cfg = _default_config(environment="dev")

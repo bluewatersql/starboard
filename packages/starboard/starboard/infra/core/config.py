@@ -68,10 +68,6 @@ class EnvConfig(BaseSettings):
     llm_max_tokens: int = 75000
     llm_seed: int | None = None
 
-    embedding_model: str = "databricks-bge-large-en"
-    embedding_base_url: str = ""
-    embedding_cache_ttl: int = 86400  # 24 hours
-
     # Specialized LLM models for different operations
     llm_planning_model: str | None = None
     llm_planning_temperature: float | None = None
@@ -131,9 +127,9 @@ class EnvConfig(BaseSettings):
     # Cache Backend
     # The "postgres" cache backend was never implemented and was removed along
     # with the other non-memory state backends in the native-first simplification.
-    # Only "memory" (driver-free default) and "redis" (opt-in, starboard[redis])
-    # are supported. A validator below rejects "postgres" with an actionable message.
-    cache_backend: Literal["memory", "redis"] = "memory"
+    # Cache selection is driven by ``redis_url``: set it (with the starboard[redis]
+    # extra) to use the Redis cache, otherwise the driver-free in-memory cache is
+    # used. There is no separate cache_backend knob.
     cache_ttl: int = 300  # 5 minutes default
 
     max_request_size: int = 10 * 1024 * 1024  # 10MB default
@@ -191,23 +187,6 @@ class EnvConfig(BaseSettings):
                 f"DATABASE_BACKEND={v!r} is no longer supported: Starboard state is "
                 "memory-only. Unset DATABASE_BACKEND or set it to 'memory'. "
                 "Durable CLI sessions are handled by the JSON-file SessionManager."
-            )
-        return v
-
-    _REMOVED_CACHE_BACKENDS: ClassVar[frozenset[str]] = frozenset({
-        "postgres",
-    })
-
-    @field_validator("cache_backend", mode="before")
-    @classmethod
-    def _validate_cache_backend(cls, v: Any) -> Any:
-        """Reject removed cache backends with an actionable migration message."""
-        if isinstance(v, str) and v.strip().lower() in cls._REMOVED_CACHE_BACKENDS:
-            raise ValueError(
-                f"CACHE_BACKEND={v!r} is no longer supported: the postgres cache "
-                "backend was never implemented and has been removed. "
-                "Use 'memory' (default, driver-free) or 'redis' (opt-in via "
-                "starboard[redis] + REDIS_URL)."
             )
         return v
 
@@ -295,7 +274,7 @@ class EnvConfig(BaseSettings):
             return None
         return v
 
-    @field_validator("llm_base_url", "embedding_base_url", mode="before")
+    @field_validator("llm_base_url", mode="before")
     @classmethod
     def _ensure_url_scheme(cls, v: Any) -> Any:
         # Prepend https:// when a non-empty base URL lacks a scheme so the
@@ -393,16 +372,9 @@ class EnvConfig(BaseSettings):
                 errors.append("LLM_API_KEY required (unless OFFLINE_MODE=true)")
 
         # Validate cache configuration
-        if self.cache_backend == "redis" and not self.redis_url:
-            errors.append("REDIS_URL required for cache_backend=redis")
-
         # Validate TTL values
         if self.cache_ttl < 0:
             errors.append(f"cache_ttl must be non-negative, got {self.cache_ttl}")
-        if self.embedding_cache_ttl < 0:
-            errors.append(
-                f"embedding_cache_ttl must be non-negative, got {self.embedding_cache_ttl}"
-            )
 
         # Validate request size
         if self.max_request_size <= 0:
@@ -535,11 +507,6 @@ class EnvConfig(BaseSettings):
             os.environ["LLM_MAX_TOKENS"] = str(self.llm_max_tokens)
         if self.llm_seed is not None:
             os.environ["LLM_SEED"] = str(self.llm_seed)
-        if self.embedding_model is not None:
-            os.environ["EMBEDDING_MODEL"] = self.embedding_model
-        if self.embedding_base_url:
-            os.environ["EMBEDDING_BASE_URL"] = self.embedding_base_url
-        os.environ["EMBEDDING_CACHE_TTL"] = str(self.embedding_cache_ttl)
 
         # Specialized LLM models
         if self.llm_planning_model is not None:
@@ -589,7 +556,6 @@ class EnvConfig(BaseSettings):
         os.environ["DATABASE_BACKEND"] = self.database_backend
 
         # Cache Backend
-        os.environ["CACHE_BACKEND"] = self.cache_backend
         os.environ["CACHE_TTL"] = str(self.cache_ttl)
 
         os.environ["MAX_REQUEST_SIZE"] = str(self.max_request_size)

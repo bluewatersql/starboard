@@ -6,24 +6,22 @@ This module intentionally exposes a SINGLE agent-callable tool:
 `build_analytics_context`.
 
 Key design points:
-- Default path (``vector_backend="none"``) is embedding-free: query tables are
-  mapped to RAG resource domains and the matching curated reference files are
-  read from disk via ``starboard_core.rag.reference_loader`` (progressive
-  disclosure). No embedding round-trip, no vector store.
-- When a vector store IS provided (opt-in ``sqlite`` / managed Vector Search),
-  the original agentic-RAG embedding path is used unchanged.
+- Context is embedding-free: query tables are mapped to RAG resource domains and
+  the matching curated reference files are read from disk via
+  ``starboard_core.rag.reference_loader`` (progressive disclosure). No embedding
+  round-trip, no vector store — the vector/embedding stack was removed in the
+  native-first simplification.
 - Uses `rag_resource_domain` as the RAG resource-model domain field
   (distinct from agent routing domains like job/query/warehouse/etc.)
-- Gracefully degrades to an empty context when a domain file is missing or the
-  embedding endpoint is unavailable — the downstream context-handle contract is
-  identical on every path.
+- Gracefully degrades to an empty context when a domain file is missing — the
+  downstream context-handle contract is identical on every path.
 """
 
 from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from starboard_core.rag.models import RAGContext
 from starboard_core.rag.reference_loader import load_domain_references
@@ -31,16 +29,9 @@ from starboard_core.rag.resource_domains import (
     map_system_table_to_rag_resource_domains,
 )
 
-from starboard.exceptions import AdapterError
 from starboard.infra.observability.logging import get_logger
 from starboard.infra.rag.domain_keywords import resolve_domains_from_nl_query
 from starboard.tools.adapters.base import BaseToolAdapter
-
-if TYPE_CHECKING:
-    from starboard.infra.rag.domain import (
-        EmbeddingProvider,
-        MultiCollectionStore,
-    )
 
 logger = get_logger(__name__)
 
@@ -55,23 +46,14 @@ class AnalyticsContextTools(BaseToolAdapter):
 
     def __init__(
         self,
-        vector_store: MultiCollectionStore | None = None,
-        embedding_provider: EmbeddingProvider | None = None,
         analytics_sql_tools: Any | None = None,
     ):
         """Initialize analytics context tools.
 
         Args:
-            vector_store: Optional multi-collection vector store. When ``None``
-                (the default ``vector_backend="none"`` path) context is built
-                from on-disk reference files with no embeddings.
-            embedding_provider: Optional embedding provider (only used by the
-                vector-store path).
             analytics_sql_tools: Optional SQL tools instance for context handle storage
         """
         super().__init__()
-        self.vector_store = vector_store
-        self.embedding_provider = embedding_provider
         self.analytics_sql_tools = analytics_sql_tools
 
     async def build_analytics_context(
@@ -146,43 +128,18 @@ class AnalyticsContextTools(BaseToolAdapter):
                 "collections": collections,
                 "n_results_per_collection": n_results_per_collection,
                 "agent_domain": agent_domain,
-                "source": (
-                    "vector_store"
-                    if self.vector_store is not None
-                    else "reference_files"
-                ),
+                "source": "reference_files",
             },
         )
 
-        if self.vector_store is not None:
-            # Opt-in embedding path (vector_backend=sqlite / managed Vector Search)
-            try:
-                rag_context = await self.vector_store.search_multi_collection(
-                    query=query,
-                    collections=collections,
-                    n_results_per_collection=n_results_per_collection,
-                    domains=domains,
-                )
-            except (AdapterError, ValueError):
-                logger.warning(
-                    "embedding_search_failed_using_empty_context",
-                    extra={
-                        "query": query,
-                        "collections": collections,
-                        "domains": domains,
-                    },
-                    exc_info=True,
-                )
-                rag_context = RAGContext()
-        else:
-            # Default path: deterministic, embedding-free reference-file lookup.
-            # Resolve domains (explicit or extracted from the query) so the
-            # returned summary reports what was actually searched.
-            domains = domains or self._resolve_domains_from_query(query) or None
-            rag_context = self._build_context_from_reference_files(
-                domains=domains,
-                collections=collections,
-            )
+        # Deterministic, embedding-free reference-file lookup. Resolve domains
+        # (explicit or extracted from the query) so the returned summary reports
+        # what was actually searched.
+        domains = domains or self._resolve_domains_from_query(query) or None
+        rag_context = self._build_context_from_reference_files(
+            domains=domains,
+            collections=collections,
+        )
 
         if include_learnings:
             rag_context.learnings = []

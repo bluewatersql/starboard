@@ -23,8 +23,6 @@ Usage::
         create_llm_client,
         # State
         InMemoryConversationStateManager,
-        # RAG / vector store
-        MultiCollectionStore,
         # Context
         SharedContextProvider,
         # Config / logging
@@ -109,11 +107,6 @@ from starboard.infra.core.config import EnvConfig, get_config
 from starboard.infra.observability.logging import get_logger
 
 # ---------------------------------------------------------------------------
-# RAG / vector store
-# ---------------------------------------------------------------------------
-from starboard.infra.rag.domain.protocols import MultiCollectionStore
-
-# ---------------------------------------------------------------------------
 # Application factory
 # ---------------------------------------------------------------------------
 from starboard.main import create_app
@@ -170,8 +163,6 @@ __all__ = [
     "EnvConfig",
     "get_config",
     "get_logger",
-    # RAG / vector store
-    "MultiCollectionStore",
     # Shared context
     "SharedContextProvider",
     # Discovery

@@ -92,8 +92,6 @@ def _tools_no_vector_store() -> tuple[AnalyticsContextTools, MagicMock]:
     sql_tools = MagicMock()
     sql_tools.store_rag_context.return_value = "ctx_handle_nl"
     tools = AnalyticsContextTools(
-        vector_store=None,
-        embedding_provider=None,
         analytics_sql_tools=sql_tools,
     )
     return tools, sql_tools

@@ -271,7 +271,6 @@ LLM_PROVIDER=openai                      # openai | azure | databricks
 ### Cache
 
 ```bash
-CACHE_BACKEND=memory          # memory (default) or redis
 CACHE_TTL=300                 # default TTL in seconds
 REDIS_URL=redis://localhost:6379   # selects Redis when set; requires starboard[redis]
 ```

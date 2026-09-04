@@ -29,8 +29,6 @@ def _tools_with_handle() -> tuple[AnalyticsContextTools, MagicMock]:
     sql_tools = MagicMock()
     sql_tools.store_rag_context.return_value = "ctx_handle_ref"
     tools = AnalyticsContextTools(
-        vector_store=None,
-        embedding_provider=None,
         analytics_sql_tools=sql_tools,
     )
     return tools, sql_tools
@@ -69,24 +67,6 @@ class TestReferenceFilePath:
         # finops_billing resolved from the referenced system tables
         assert result["summary"]["tables_found"] > 0
         assert "finops_billing" in result["summary"]["domains_searched"]
-
-    @pytest.mark.asyncio
-    async def test_no_embedding_call_on_reference_path(self):
-        """The reference path never touches an embedding provider."""
-        embedding = MagicMock()
-        tools = AnalyticsContextTools(
-            vector_store=None,
-            embedding_provider=embedding,
-            analytics_sql_tools=MagicMock(store_rag_context=MagicMock(return_value="h")),
-        )
-
-        await tools.build_analytics_context(
-            user_query="costs",
-            rag_resource_domains=["finops_billing"],
-        )
-
-        embedding.embed.assert_not_called()
-        embedding.embed_batch.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_unknown_domain_degrades_to_empty_context(self):

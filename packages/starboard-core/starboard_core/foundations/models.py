@@ -4,63 +4,12 @@
 Foundation data models for shared infrastructure.
 
 This module defines immutable data classes used across the foundation layer:
-- Vector search results and records
 - Reflexion learnings
 """
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
-
-
-@dataclass(frozen=True)
-class VectorSearchResult:
-    """Result from vector similarity search.
-
-    Attributes:
-        id: Unique identifier for the vector
-        score: Similarity score (0.0 to 1.0, higher is more similar)
-        metadata: Additional metadata stored with the vector
-        content: Original text content
-
-    Example:
-        >>> result = VectorSearchResult(
-        ...     id="vec_123",
-        ...     score=0.95,
-        ...     metadata={"source": "documentation"},
-        ...     content="How to optimize Databricks clusters"
-        ... )
-    """
-
-    id: str
-    score: float
-    metadata: dict[str, Any]
-    content: str
-
-
-@dataclass(frozen=True)
-class VectorRecord:
-    """Vector embedding with metadata for storage.
-
-    Attributes:
-        id: Unique identifier
-        embedding: Dense vector representation (typically 1536 dims for OpenAI)
-        metadata: Additional metadata (tags, source, timestamps, etc.)
-        content: Original text content
-
-    Example:
-        >>> record = VectorRecord(
-        ...     id="vec_123",
-        ...     embedding=[0.1, 0.2, ...],  # 1536 dimensions
-        ...     metadata={"source": "docs", "type": "guide"},
-        ...     content="Cluster optimization guide"
-        ... )
-    """
-
-    id: str
-    embedding: list[float]
-    metadata: dict[str, Any]
-    content: str
 
 
 @dataclass(frozen=True)

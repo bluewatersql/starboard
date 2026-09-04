@@ -123,7 +123,7 @@ The 8 domain agents, the Intent Router, and which tools each agent gets are desc
 | **Conversation state** | Memory-only (`database_backend = "memory"`): in-process dict, ephemeral per process |
 | **Session persistence** | JSON-file `SessionManager` (`starboard.cli.sessions`) — durable across CLI invocations |
 | **RAG** | Reference-file only: curated `.md` files under `starboard_core/rag/knowledge/domains/` + query packs. No vector DB, no embeddings pipeline. |
-| **Cache** | In-memory by default (`cache_backend = "memory"`, TTL 300 s). Redis opt-in: `pip install 'starboard[redis]'` |
+| **Cache** | In-memory by default (TTL 300 s). Redis opt-in: `pip install 'starboard[redis]'` + set `REDIS_URL` |
 | **Auth** | Delegates to the Databricks SDK credential chain (`--profile` / ambient env; PAT optional). Apps OBO via the `credentials_strategy` seam. No custom credential management. |
 
 Config: `packages/starboard/starboard/infra/core/config.py`; env template: `examples/env.example`.
