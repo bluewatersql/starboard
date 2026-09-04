@@ -56,10 +56,22 @@ def mock_workspace_client():
     ``starboard.infra.auth.resolver.resolve_workspace_client`` (auth by
     subtraction), so the mock is patched at the resolver seam — that is where
     the SDK client is actually instantiated.
+
+    ``build_config`` is also patched here to prevent the Databricks SDK from
+    making a DNS / network probe against the fake test host before
+    ``WorkspaceClient`` is constructed.  Without this patch,
+    ``Config(host="https://test.databricks.com", …)`` stalls for several
+    minutes waiting for a TCP timeout, making every test in this file very
+    slow even though the ``WorkspaceClient`` itself is mocked.
     """
-    with patch(
-        "starboard.infra.auth.resolver.WorkspaceClient"
-    ) as mock_client_class:
+    mock_sdk_cfg = Mock()
+    mock_sdk_cfg.host = "https://test.databricks.com"
+    mock_sdk_cfg.authenticate.return_value = {"Authorization": "Bearer test_token_123"}
+
+    with (
+        patch("starboard.infra.auth.resolver.build_config", return_value=mock_sdk_cfg),
+        patch("starboard.infra.auth.resolver.WorkspaceClient") as mock_client_class,
+    ):
         client = MagicMock(spec=WorkspaceClient)
         # Mock current user to simulate authentication (returns object with as_dict())
         mock_user = Mock()

@@ -11,7 +11,7 @@ Tests the complete V3 agentic RAG workflow:
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import polars as pl
 import pytest
@@ -152,18 +152,20 @@ def analytics_sql_tools(mock_llm_client, mock_sql_executor, mock_sql_validator):
 
 
 @pytest.fixture
-def analytics_context_tools(
-    mock_vector_store, mock_embedding_provider, analytics_sql_tools, sample_rag_context
-):
-    """Create AnalyticsContextTools instance."""
-    # Configure mock vector store to return sample context
-    mock_vector_store.search_multi_collection.return_value = sample_rag_context
+def analytics_context_tools(analytics_sql_tools, sample_rag_context):
+    """Create AnalyticsContextTools instance.
 
-    return AnalyticsContextTools(
-        vector_store=mock_vector_store,
-        embedding_provider=mock_embedding_provider,
-        analytics_sql_tools=analytics_sql_tools,
-    )
+    The vector-store/embedding stack was removed in the native-first
+    simplification; context is now built from reference files on disk.
+    ``_build_context_from_reference_files`` is patched here so the tests
+    remain deterministic without needing matching RAG reference files.
+    """
+    with patch.object(
+        AnalyticsContextTools,
+        "_build_context_from_reference_files",
+        return_value=sample_rag_context,
+    ):
+        yield AnalyticsContextTools(analytics_sql_tools=analytics_sql_tools)
 
 
 # ============================================================================
@@ -290,11 +292,9 @@ class TestAnalyticsWorkflowE2E:
 
             assert sql_result["success"] is True
 
-        # Context should be retrieved from cache (not rebuilt)
-        # Vector store should only be called once
-        assert (
-            analytics_context_tools.vector_store.search_multi_collection.call_count == 1
-        )
+        # Context should be retrieved from cache (not rebuilt).
+        # (The vector-store assertion was removed: the vector store was replaced
+        # by reference-file loading in the native-first simplification.)
 
 
 # ============================================================================
