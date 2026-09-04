@@ -129,7 +129,11 @@ class EnvConfig(BaseSettings):
     database_backend: Literal["memory"] = "memory"
 
     # Cache Backend
-    cache_backend: Literal["memory", "redis", "postgres"] = "memory"
+    # The "postgres" cache backend was never implemented and was removed along
+    # with the other non-memory state backends in the native-first simplification.
+    # Only "memory" (driver-free default) and "redis" (opt-in, starboard[redis])
+    # are supported. A validator below rejects "postgres" with an actionable message.
+    cache_backend: Literal["memory", "redis"] = "memory"
     cache_ttl: int = 300  # 5 minutes default
 
     max_request_size: int = 10 * 1024 * 1024  # 10MB default
@@ -187,6 +191,23 @@ class EnvConfig(BaseSettings):
                 f"DATABASE_BACKEND={v!r} is no longer supported: Starboard state is "
                 "memory-only. Unset DATABASE_BACKEND or set it to 'memory'. "
                 "Durable CLI sessions are handled by the JSON-file SessionManager."
+            )
+        return v
+
+    _REMOVED_CACHE_BACKENDS: ClassVar[frozenset[str]] = frozenset({
+        "postgres",
+    })
+
+    @field_validator("cache_backend", mode="before")
+    @classmethod
+    def _validate_cache_backend(cls, v: Any) -> Any:
+        """Reject removed cache backends with an actionable migration message."""
+        if isinstance(v, str) and v.strip().lower() in cls._REMOVED_CACHE_BACKENDS:
+            raise ValueError(
+                f"CACHE_BACKEND={v!r} is no longer supported: the postgres cache "
+                "backend was never implemented and has been removed. "
+                "Use 'memory' (default, driver-free) or 'redis' (opt-in via "
+                "starboard[redis] + REDIS_URL)."
             )
         return v
 
