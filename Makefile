@@ -201,6 +201,12 @@ test-unit:
 	@pytest packages/starboard-core/tests/unit/ -v --tb=short
 	@pytest packages/starboard/tests/unit/ -v --tb=short
 	@pytest packages/starboard-skills/tests/unit/ -v --tb=short
+	@# starboard-internal is a dev/verification-only workspace member: run its unit
+	@# tests when it's installed (skip cleanly on a public-only checkout), and
+	@# exclude its live integration/ subdir from the unit gate.
+	@if python -c "import starboard_internal" >/dev/null 2>&1; then \
+		pytest packages/starboard-internal/tests/ --ignore=packages/starboard-internal/tests/integration -v --tb=short; \
+	else echo "$(YELLOW)starboard-internal not installed — skipping its unit tests$(NC)"; fi
 	@echo "$(GREEN)✓ Unit tests passed$(NC)"
 
 test-sdk:
@@ -211,7 +217,7 @@ test-sdk:
 test-integration:
 	@echo "$(BLUE)Running integration tests...$(NC)"
 	@pytest packages/starboard/tests/integration/ -v --tb=short
-	@pytest tests/integration/ -v --tb=short 2>/dev/null || true
+	@pytest tests/integration/ -v --tb=short
 	@echo "$(GREEN)✓ Integration tests passed$(NC)"
 
 test-golden:
@@ -270,7 +276,7 @@ format:
 	@ruff check --fix $(PY_PACKAGES) $(PY_TESTS)
 	@echo "$(GREEN)✓ Code formatted$(NC)"
 
-check: lint type-check test-unit test-architecture
+check: lint type-check test-unit test-architecture test-architecture-guidelines
 	@echo "$(GREEN)✓ All checks passed$(NC)"
 
 pre-commit:
