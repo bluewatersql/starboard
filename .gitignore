@@ -140,3 +140,5 @@ AGENTS.md
 # Editor/backup files
 *.bak
 *.bak2
+
+tmp/
