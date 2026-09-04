@@ -306,6 +306,33 @@ forbidden_modules = [
     "starboard_internal",
 ]
 
+# =============================================================================
+# Native-first simplification lock (P9) — removed subsystems stay removed
+# =============================================================================
+# The vector/embedding stack, the non-memory state backends (sqlite / postgres /
+# lakebase), and the unwired slowapi rate-limiter were deleted in the native-first
+# simplification (state is memory-only; RAG is reference-file only). Their drivers
+# are no longer dependencies. Forbidding the drivers across every public package
+# turns "we deleted it" into "it cannot come back": re-introducing any of these
+# subsystems would import one of these modules and fail this contract. KEPT.
+[[tool.importlinter.contracts]]
+name = "No removed-subsystem drivers (vector / non-memory state / rate-limit)"
+type = "forbidden"
+source_modules = [
+    "starboard",
+    "starboard_core",
+    "starboard_x",
+    "starboard_skills",
+]
+forbidden_modules = [
+    "slowapi",     # unwired rate-limit middleware (removed)
+    "sqlite_vec",  # sqlite vector extension (removed)
+    "pgvector",    # postgres vector extension (removed)
+    "aiosqlite",   # sqlite state backend driver (removed)
+    "asyncpg",     # postgres state backend driver (removed)
+    "psycopg2",    # postgres driver (removed)
+]
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"
