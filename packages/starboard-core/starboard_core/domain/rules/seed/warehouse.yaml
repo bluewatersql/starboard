@@ -1,0 +1,130 @@
+# Seed workload-review rules — warehouse domain (Phase-1 D3, data only).
+# Generic/public checks over public system.* signals; no internal references.
+version: "1.0.0"
+domain: warehouse
+rules:
+  - id: warehouse_auto_stop_disabled
+    name: Enable auto-stop on SQL warehouses
+    category: warehouse
+    short_description: >-
+      A warehouse left running with no queries bills compute for idle time.
+    rationale: >-
+      Disabling auto-stop (or setting a very long idle timeout) is a common
+      source of avoidable cost; idle running minutes produce no query value.
+    severity: high
+    default_effort: XS
+    default_impact: 4
+    bad: auto_stop_mins = 0  # never stops
+    good: auto_stop_mins = 10
+    suggested_fix: >-
+      Set a short auto-stop window (for example 5-10 minutes) unless a
+      documented low-latency SLA requires the warehouse to stay warm.
+    detect: >-
+      Warehouse config reports auto-stop disabled while warehouse_events show
+      long RUNNING stretches with zero query activity.
+    evidence_query: W-W02
+    source: null
+    enabled: true
+
+  - id: warehouse_persistently_underutilized
+    name: Right-size persistently under-utilized warehouses
+    category: warehouse
+    short_description: >-
+      A warehouse whose utilization stays well below its capacity is oversized
+      for its workload.
+    rationale: >-
+      Sustained low utilization (active tasks far below total task slots) means
+      the size or count of clusters exceeds demand and can be reduced.
+    severity: medium
+    default_effort: S
+    default_impact: 3
+    bad: Large warehouse holding steady under 30% utilization all week
+    good: Size the warehouse to the observed utilization band with headroom
+    suggested_fix: >-
+      Reduce the warehouse size (or max clusters) toward the observed
+      utilization band, then re-measure over a full trend window.
+    detect: >-
+      Utilization band (active_tasks / total_task_slots) sits in the
+      under-utilized range across the trend window.
+    evidence_query: W-W01
+    source: null
+    enabled: true
+
+  # Aligns with the action-plan opportunity catalog item OPP-WH-QUEUE.
+  - id: warehouse_queueing
+    name: Relieve SQL warehouse queueing at capacity
+    category: warehouse
+    short_description: >-
+      Queries that wait behind a full warehouse add latency the user sees but
+      the warehouse never reports as slow execution.
+    rationale: >-
+      A sustained share of queries waiting at capacity means concurrent demand
+      exceeds the warehouse's cluster capacity; dashboards and Genie spaces
+      feel slow even though each query executes quickly once it starts.
+    severity: medium
+    default_effort: S
+    default_impact: 3
+    bad: 15% of a busy warehouse's queries queue at capacity with max_clusters = 1
+    good: Queueing stays near zero at peak with max_clusters sized to demand
+    suggested_fix: >-
+      First find the driver of the peak load (the dashboard, Genie space or job
+      issuing most queries) and fix its SQL or refresh schedule. Then raise the
+      warehouse's max_clusters (max_num_clusters) or review its size so peak
+      concurrency is served without queueing; re-measure queueing after the
+      change. Added clusters add DBU at peak (list-price DBU estimate).
+    detect: >-
+      Warehouse utilization reports queued_query_pct (share of queries with
+      waiting_at_capacity_duration_ms > 0) at or above queued_pct, or
+      avg_capacity_wait_secs at or above avg_wait_secs, on a warehouse with at
+      least min_queries queries. High severity at high_volume_queries or more
+      with high_queued_pct, or a high_avg_wait_secs wait alongside a
+      triggering queued share. Rows without the queueing columns are skipped.
+    evidence_query: W-W01
+    params:
+      queued_pct: 10.0
+      avg_wait_secs: 10.0
+      wait_trigger_min_queued_pct: 1.0
+      min_queries: 1000
+      high_queued_pct: 25.0
+      high_avg_wait_secs: 30.0
+      high_volume_queries: 10000
+    source: null
+    enabled: true
+
+  # Aligns with the action-plan opportunity catalog item OPP-WH-RESIZE.
+  - id: warehouse_recent_resize
+    name: Measure a recent warehouse resize before changing it again
+    category: warehouse
+    short_description: >-
+      A warehouse whose size, cluster range or auto-stop changed in the last
+      days is still settling; queueing and load figures over the window mix
+      the old and new configuration.
+    rationale: >-
+      Acting on window-wide queueing or cost for a warehouse that was just
+      resized double-corrects: the change may already have fixed (or moved)
+      the problem. Measure the post-change behaviour first.
+    severity: medium
+    default_effort: XS
+    default_impact: 2
+    bad: Raising max_clusters again one day after it was raised from 1 to 3.
+    good: Re-measure queueing and DBU over a week after the change, then decide.
+    suggested_fix: >-
+      Compare queueing, execution time and DBU before and after the change
+      date over at least 7 days; only then resize again or revert.
+    detect: >-
+      Warehouse config history reports a change no older than recent_days (vs
+      as_of, default today) on a warehouse that also shows queueing in W-W01
+      (queued_query_pct >= queued_pct or avg_capacity_wait_secs >=
+      avg_wait_secs) or a daily execution-time change in W-W05 (last 7 vs 28
+      days, |change| >= exec_change_pct). When neither context query covers
+      the warehouse the change is reported at low severity (load not
+      measured).
+    evidence_query: W-W07
+    context_queries: [W-W01, W-W05]
+    params:
+      recent_days: 7
+      queued_pct: 5.0
+      avg_wait_secs: 10.0
+      exec_change_pct: 25.0
+    source: null
+    enabled: true

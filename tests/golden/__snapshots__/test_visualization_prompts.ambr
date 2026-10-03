@@ -1,0 +1,535 @@
+# serializer version: 1
+# name: TestVisualizationPromptSnapshots.test_area_chart_prompt_cumulative_trend
+  '''
+  Analyze this data and recommend a visualization:
+  
+  **Query Context:**
+  - Name: Cumulative Usage Over Time
+  - Description: Running total of resource usage
+  - Goals: Show accumulation over time
+  - Recommended Chart Types: area, line
+  
+  **Data Profile:**
+  ```json
+  {
+    "row_count": 24,
+    "column_count": 2,
+    "columns": {
+      "hour": {
+        "name": "hour",
+        "type": "Int64",
+        "null_count": 0,
+        "min": 0,
+        "max": 23,
+        "semantic_type": "time"
+      },
+      "cumulative_usage": {
+        "name": "cumulative_usage",
+        "type": "Float64",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 1000.0,
+        "mean": 500.0,
+        "semantic_type": "metric"
+      }
+    }
+  }
+  ```
+  
+  **Required Output Format:**
+  Return a JSON object with exactly these three fields:
+  ```json
+  {
+    "summary": "Brief description of the data and visualization choice",
+    "chart_recommendation": {
+      "chart_type": "bar|line|area|scatter|histogram|table",
+      "reasoning": "Explain why this chart type is appropriate",
+      "confidence": 0.0-1.0
+    },
+    "chart_config": {
+      "chart_type": "same as above",
+      "title": "Chart title",
+      "description": "Chart description (optional)",
+      "encodings": {
+        "x": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"},
+        "y": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}
+      },
+      "options": {}
+    }
+  }
+  ```
+  
+  **For table views (chart_type="table"):**
+  ```json
+  {
+    "chart_config": {
+      "chart_type": "table",
+      "title": "Data Table"
+    }
+  }
+  ```
+  Note: Omit encodings for tables!
+  
+  **Important:**
+  - chart_config is ALWAYS required (never null)
+  - For tables: ONLY include chart_type and title (no encodings)
+  - For charts: MUST include encodings with x and y
+  - Only use columns present in the data profile
+  - Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
+  - Prefer recommended chart types when provided
+  - DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
+  
+  '''
+# ---
+# name: TestVisualizationPromptSnapshots.test_bar_chart_prompt_categorical_comparison
+  '''
+  Analyze this data and recommend a visualization:
+  
+  **Query Context:**
+  - Name: Cost by Service
+  - Description: Total cost grouped by service type
+  - Goals: Compare costs across different services
+  - Recommended Chart Types: bar
+  
+  **Data Profile:**
+  ```json
+  {
+    "row_count": 10,
+    "column_count": 2,
+    "columns": {
+      "service_name": {
+        "name": "service_name",
+        "type": "Utf8",
+        "null_count": 0,
+        "unique_count": 10,
+        "semantic_type": "dimension"
+      },
+      "total_cost": {
+        "name": "total_cost",
+        "type": "Float64",
+        "null_count": 0,
+        "min": 100.0,
+        "max": 5000.0,
+        "mean": 1500.0,
+        "semantic_type": "metric"
+      }
+    }
+  }
+  ```
+  
+  **Required Output Format:**
+  Return a JSON object with exactly these three fields:
+  ```json
+  {
+    "summary": "Brief description of the data and visualization choice",
+    "chart_recommendation": {
+      "chart_type": "bar|line|area|scatter|histogram|table",
+      "reasoning": "Explain why this chart type is appropriate",
+      "confidence": 0.0-1.0
+    },
+    "chart_config": {
+      "chart_type": "same as above",
+      "title": "Chart title",
+      "description": "Chart description (optional)",
+      "encodings": {
+        "x": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"},
+        "y": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}
+      },
+      "options": {}
+    }
+  }
+  ```
+  
+  **For table views (chart_type="table"):**
+  ```json
+  {
+    "chart_config": {
+      "chart_type": "table",
+      "title": "Data Table"
+    }
+  }
+  ```
+  Note: Omit encodings for tables!
+  
+  **Important:**
+  - chart_config is ALWAYS required (never null)
+  - For tables: ONLY include chart_type and title (no encodings)
+  - For charts: MUST include encodings with x and y
+  - Only use columns present in the data profile
+  - Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
+  - Prefer recommended chart types when provided
+  - DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
+  
+  '''
+# ---
+# name: TestVisualizationPromptSnapshots.test_line_chart_prompt_time_series
+  '''
+  Analyze this data and recommend a visualization:
+  
+  **Query Context:**
+  - Name: Daily Cost Trend
+  - Description: Daily cost breakdown over time
+  - Goals: Show cost trends over time
+  - Recommended Chart Types: line, area
+  
+  **Data Profile:**
+  ```json
+  {
+    "row_count": 30,
+    "column_count": 2,
+    "columns": {
+      "date": {
+        "name": "date",
+        "type": "Date",
+        "null_count": 0,
+        "min": "2024-11-01",
+        "max": "2024-11-30",
+        "semantic_type": "time"
+      },
+      "total_cost": {
+        "name": "total_cost",
+        "type": "Float64",
+        "null_count": 0,
+        "min": 1234.56,
+        "max": 9876.54,
+        "mean": 5000.0,
+        "semantic_type": "metric"
+      }
+    }
+  }
+  ```
+  
+  **Required Output Format:**
+  Return a JSON object with exactly these three fields:
+  ```json
+  {
+    "summary": "Brief description of the data and visualization choice",
+    "chart_recommendation": {
+      "chart_type": "bar|line|area|scatter|histogram|table",
+      "reasoning": "Explain why this chart type is appropriate",
+      "confidence": 0.0-1.0
+    },
+    "chart_config": {
+      "chart_type": "same as above",
+      "title": "Chart title",
+      "description": "Chart description (optional)",
+      "encodings": {
+        "x": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"},
+        "y": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}
+      },
+      "options": {}
+    }
+  }
+  ```
+  
+  **For table views (chart_type="table"):**
+  ```json
+  {
+    "chart_config": {
+      "chart_type": "table",
+      "title": "Data Table"
+    }
+  }
+  ```
+  Note: Omit encodings for tables!
+  
+  **Important:**
+  - chart_config is ALWAYS required (never null)
+  - For tables: ONLY include chart_type and title (no encodings)
+  - For charts: MUST include encodings with x and y
+  - Only use columns present in the data profile
+  - Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
+  - Prefer recommended chart types when provided
+  - DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
+  
+  '''
+# ---
+# name: TestVisualizationPromptSnapshots.test_prompt_version
+  '1.0.0'
+# ---
+# name: TestVisualizationPromptSnapshots.test_prompt_with_no_recommendations
+  '''
+  Analyze this data and recommend a visualization:
+  
+  **Query Context:**
+  - Name: Generic Query
+  - Description: A query without specific visualization guidance
+  - Goals: general analysis
+  - Recommended Chart Types: any
+  
+  **Data Profile:**
+  ```json
+  {
+    "row_count": 15,
+    "column_count": 3,
+    "columns": {
+      "category": {
+        "name": "category",
+        "type": "Utf8",
+        "null_count": 0,
+        "unique_count": 15,
+        "semantic_type": "dimension"
+      },
+      "value_a": {
+        "name": "value_a",
+        "type": "Float64",
+        "null_count": 0,
+        "min": 1.0,
+        "max": 100.0,
+        "mean": 50.0,
+        "semantic_type": "metric"
+      },
+      "value_b": {
+        "name": "value_b",
+        "type": "Float64",
+        "null_count": 0,
+        "min": 10.0,
+        "max": 200.0,
+        "mean": 75.0,
+        "semantic_type": "metric"
+      }
+    }
+  }
+  ```
+  
+  **Required Output Format:**
+  Return a JSON object with exactly these three fields:
+  ```json
+  {
+    "summary": "Brief description of the data and visualization choice",
+    "chart_recommendation": {
+      "chart_type": "bar|line|area|scatter|histogram|table",
+      "reasoning": "Explain why this chart type is appropriate",
+      "confidence": 0.0-1.0
+    },
+    "chart_config": {
+      "chart_type": "same as above",
+      "title": "Chart title",
+      "description": "Chart description (optional)",
+      "encodings": {
+        "x": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"},
+        "y": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}
+      },
+      "options": {}
+    }
+  }
+  ```
+  
+  **For table views (chart_type="table"):**
+  ```json
+  {
+    "chart_config": {
+      "chart_type": "table",
+      "title": "Data Table"
+    }
+  }
+  ```
+  Note: Omit encodings for tables!
+  
+  **Important:**
+  - chart_config is ALWAYS required (never null)
+  - For tables: ONLY include chart_type and title (no encodings)
+  - For charts: MUST include encodings with x and y
+  - Only use columns present in the data profile
+  - Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
+  - Prefer recommended chart types when provided
+  - DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
+  
+  '''
+# ---
+# name: TestVisualizationPromptSnapshots.test_scatter_chart_prompt_correlation
+  '''
+  Analyze this data and recommend a visualization:
+  
+  **Query Context:**
+  - Name: Cost vs Usage Correlation
+  - Description: Analyze relationship between usage and cost
+  - Goals: Explore correlation between two metrics
+  - Recommended Chart Types: scatter
+  
+  **Data Profile:**
+  ```json
+  {
+    "row_count": 50,
+    "column_count": 2,
+    "columns": {
+      "usage_hours": {
+        "name": "usage_hours",
+        "type": "Float64",
+        "null_count": 0,
+        "min": 10.0,
+        "max": 1000.0,
+        "mean": 300.0,
+        "semantic_type": "metric"
+      },
+      "total_cost": {
+        "name": "total_cost",
+        "type": "Float64",
+        "null_count": 0,
+        "min": 50.0,
+        "max": 5000.0,
+        "mean": 1500.0,
+        "semantic_type": "metric"
+      }
+    }
+  }
+  ```
+  
+  **Required Output Format:**
+  Return a JSON object with exactly these three fields:
+  ```json
+  {
+    "summary": "Brief description of the data and visualization choice",
+    "chart_recommendation": {
+      "chart_type": "bar|line|area|scatter|histogram|table",
+      "reasoning": "Explain why this chart type is appropriate",
+      "confidence": 0.0-1.0
+    },
+    "chart_config": {
+      "chart_type": "same as above",
+      "title": "Chart title",
+      "description": "Chart description (optional)",
+      "encodings": {
+        "x": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"},
+        "y": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}
+      },
+      "options": {}
+    }
+  }
+  ```
+  
+  **For table views (chart_type="table"):**
+  ```json
+  {
+    "chart_config": {
+      "chart_type": "table",
+      "title": "Data Table"
+    }
+  }
+  ```
+  Note: Omit encodings for tables!
+  
+  **Important:**
+  - chart_config is ALWAYS required (never null)
+  - For tables: ONLY include chart_type and title (no encodings)
+  - For charts: MUST include encodings with x and y
+  - Only use columns present in the data profile
+  - Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
+  - Prefer recommended chart types when provided
+  - DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
+  
+  '''
+# ---
+# name: TestVisualizationPromptSnapshots.test_table_fallback_prompt_unsuitable_data
+  '''
+  Analyze this data and recommend a visualization:
+  
+  **Query Context:**
+  - Name: Job Configuration Details
+  - Description: Detailed job settings and parameters
+  - Goals: View detailed configuration
+  - Recommended Chart Types: any
+  
+  **Data Profile:**
+  ```json
+  {
+    "row_count": 3,
+    "column_count": 8,
+    "columns": {
+      "job_id": {
+        "name": "job_id",
+        "type": "Utf8",
+        "null_count": 0,
+        "semantic_type": "id"
+      },
+      "cluster_size": {
+        "name": "cluster_size",
+        "type": "Utf8",
+        "null_count": 0,
+        "semantic_type": "dimension"
+      },
+      "driver_type": {
+        "name": "driver_type",
+        "type": "Utf8",
+        "null_count": 0,
+        "semantic_type": "dimension"
+      },
+      "worker_type": {
+        "name": "worker_type",
+        "type": "Utf8",
+        "null_count": 0,
+        "semantic_type": "dimension"
+      },
+      "num_workers": {
+        "name": "num_workers",
+        "type": "Int64",
+        "null_count": 0,
+        "semantic_type": "metric"
+      },
+      "libraries": {
+        "name": "libraries",
+        "type": "Utf8",
+        "null_count": 2,
+        "semantic_type": "dimension"
+      },
+      "timeout": {
+        "name": "timeout",
+        "type": "Int64",
+        "null_count": 1,
+        "semantic_type": "metric"
+      },
+      "retry_policy": {
+        "name": "retry_policy",
+        "type": "Utf8",
+        "null_count": 0,
+        "semantic_type": "dimension"
+      }
+    }
+  }
+  ```
+  
+  **Required Output Format:**
+  Return a JSON object with exactly these three fields:
+  ```json
+  {
+    "summary": "Brief description of the data and visualization choice",
+    "chart_recommendation": {
+      "chart_type": "bar|line|area|scatter|histogram|table",
+      "reasoning": "Explain why this chart type is appropriate",
+      "confidence": 0.0-1.0
+    },
+    "chart_config": {
+      "chart_type": "same as above",
+      "title": "Chart title",
+      "description": "Chart description (optional)",
+      "encodings": {
+        "x": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"},
+        "y": {"field": "column_name", "type": "quantitative|nominal|ordinal|temporal", "title": "Axis title"}
+      },
+      "options": {}
+    }
+  }
+  ```
+  
+  **For table views (chart_type="table"):**
+  ```json
+  {
+    "chart_config": {
+      "chart_type": "table",
+      "title": "Data Table"
+    }
+  }
+  ```
+  Note: Omit encodings for tables!
+  
+  **Important:**
+  - chart_config is ALWAYS required (never null)
+  - For tables: ONLY include chart_type and title (no encodings)
+  - For charts: MUST include encodings with x and y
+  - Only use columns present in the data profile
+  - Match encoding types to column data types (temporal for dates, quantitative for numbers, nominal/ordinal for strings)
+  - Prefer recommended chart types when provided
+  - DO NOT include fields like x_axis_label, y_axis_label, stacked, show_legend, group_by - use encodings.x, encodings.y, encodings.color instead
+  
+  '''
+# ---

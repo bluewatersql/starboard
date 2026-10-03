@@ -1,0 +1,223 @@
+# Seed workload-review rules — jobs domain (Phase-3 D1c, data only).
+# Generic/public checks over public system.lakeflow.* + system.billing.usage
+# signals; no internal namespaces or references. DBU / rate based — never a
+# finance-grade dollar figure (D-3.8). Each evidence_query points at a real
+# jobs query-pack query_id (see starboard/discovery/query_packs/jobs.py).
+# Evaluator params (any rule): max_findings caps a rule's findings (default 20,
+# 0 = uncapped; de-duplicated by entity, highest score kept) so one rule cannot
+# dominate the review; requires_column suppresses a rule whose claim depends on
+# an evidence column no row carries.
+version: "1.0.0"
+domain: jobs
+rules:
+  - id: job_high_failure_rate
+    name: Fix jobs with a high run failure rate
+    category: jobs
+    short_description: >-
+      A job that fails a large share of its runs wastes compute and delays
+      downstream work.
+    rationale: >-
+      Persistent failures re-run compute for no delivered output and often
+      block dependent jobs; a high failure rate signals a fragile job that
+      needs a reliability fix rather than more retries.
+    severity: high
+    default_effort: S
+    default_impact: 4
+    bad: A daily job that fails 40% of its runs and is left on auto-retry.
+    good: Root-cause the failure so the job completes reliably on the first run.
+    suggested_fix: >-
+      Investigate the dominant failure mode (bad input, resource limits, flaky
+      dependency), fix the root cause, and add targeted retries only where a
+      transient failure is expected.
+    detect: >-
+      The reliability scorecard reports a run failure_rate_pct at or above the
+      review threshold over the trend window. Graded by run count and
+      materiality (failure_dbus, list-price DBU estimate): high only with at
+      least min_runs runs AND material failure DBU; fewer runs with material
+      failure DBU is medium; enough runs with immaterial failure DBU is low;
+      too few runs with immaterial failure DBU is not reported. Impact rises
+      by one at major_failure_dbu.
+    evidence_query: C-J04
+    params:
+      failure_rate_pct: 20.0
+      min_runs: 3
+      material_failure_dbu: 10.0
+      major_failure_dbu: 100.0
+    source: null
+    enabled: true
+
+  - id: job_wasted_dbu_on_failures_retries
+    name: Reduce DBU wasted on failed and retried job runs
+    category: jobs
+    short_description: >-
+      DBU spent on runs that fail or must be retried is pure waste — it buys
+      no successful output.
+    rationale: >-
+      Failed and retried runs still consume compute; a job whose failure and
+      retry DBU is a large share of its total spend is paying repeatedly for
+      the same result and is a high-value reliability target.
+    severity: high
+    default_effort: S
+    default_impact: 3
+    bad: A job where a third of total DBU is burned on failed runs.
+    good: Nearly all DBU goes to runs that succeed.
+    suggested_fix: >-
+      Address the failures driving the wasted spend, and cap or remove blind
+      retries that re-run expensive work without changing the outcome.
+    detect: >-
+      The reliability scorecard reports wasted_dbu_pct (failed-run DBU as
+      a share of total) at or above the review threshold. Graded like
+      job_high_failure_rate by run count and failure_dbus materiality, so a
+      100% share of a trivial DBU amount is never high.
+    evidence_query: C-J04
+    params:
+      wasted_dbu_pct: 25.0
+      min_runs: 3
+      material_failure_dbu: 10.0
+      major_failure_dbu: 100.0
+    source: null
+    enabled: true
+
+  - id: job_high_runtime_variance
+    name: Stabilize jobs with high runtime variance
+    category: jobs
+    short_description: >-
+      A job whose successful runtime swings widely is unpredictable to schedule
+      and to size for cost.
+    rationale: >-
+      Large runtime variance between the fastest and slowest successful runs
+      points at skew, contention, or unstable input volume; it makes SLAs and
+      capacity planning unreliable and often hides an avoidable slow path.
+    severity: medium
+    default_effort: M
+    default_impact: 3
+    bad: A job whose slowest successful run takes 5x as long as its fastest.
+    good: Successful runtimes cluster in a narrow, predictable band.
+    suggested_fix: >-
+      Profile the slow runs against the fast ones (data skew, shuffle,
+      contention for shared compute) and stabilize the dominant driver before
+      resizing the job.
+    detect: >-
+      Runtime-variance analysis reports a max/min successful-runtime ratio at
+      or above the review threshold (max_min_ratio) for jobs with at least
+      min_runs successful runs. At most max_findings jobs are reported (highest
+      score first) — C-J03 is row-capped, so its findings carry
+      evidence_capped when the query hit its limit.
+    evidence_query: C-J03
+    params:
+      max_min_ratio: 3.0
+      min_runs: 5
+      max_findings: 20
+    source: null
+    enabled: true
+
+  # Aligns with the action-plan opportunity catalog item OPP-JOB-OVERLAP.
+  - id: job_cron_overlap
+    name: Stop scheduled job runs from overlapping
+    category: jobs
+    short_description: >-
+      A scheduled job whose runs outlast its trigger interval starts new runs
+      while earlier ones are still active, each billing its own compute.
+    rationale: >-
+      Overlapping scheduled runs multiply compute for the same output and
+      compete for the same inputs; the pile-up is invisible in a per-run or
+      per-job DBU view and usually means the run length or the schedule needs
+      attention.
+    severity: medium
+    default_effort: S
+    default_impact: 3
+    bad: An hourly CRON job whose runs average 90 minutes, so most runs overlap.
+    good: Runs finish inside the schedule interval and never stack.
+    suggested_fix: >-
+      Shorten the run (wait tasks, the cause of a recent runtime step) or
+      lengthen the schedule interval. Capping max_concurrent_runs skips
+      triggers while a run is active, which changes effective cadence when
+      runs outlast the interval: confirm the freshness need with the owner
+      first.
+    detect: >-
+      Concurrent-run overlap reports, for a trigger_type in trigger_types
+      (default CRON) with at least min_runs runs and max_concurrent_runs at or
+      above min_concurrent_runs, a runs_started_while_running share of
+      total_runs at or above started_while_running_pct. High severity at
+      high_started_while_running_pct.
+    evidence_query: C-J08
+    params:
+      trigger_types: CRON
+      started_while_running_pct: 10.0
+      min_concurrent_runs: 2
+      min_runs: 5
+      high_started_while_running_pct: 50.0
+      max_findings: 20
+    source: null
+    enabled: true
+
+  # Aligns with the action-plan opportunity catalog item OPP-JOB-WAIT-TASK.
+  - id: job_wait_tasks
+    name: Move long wait and polling tasks off running compute
+    category: jobs
+    short_description: >-
+      A task that waits or polls (a sensor, a readiness check) holds a cluster
+      that bills while doing no work.
+    rationale: >-
+      Wait-shaped tasks keep job compute up for hours; they often lengthen
+      runs past the schedule interval and drive overlap. File-arrival or
+      table-update triggers, or a lightweight wait outside the main cluster,
+      remove the idle compute.
+    severity: medium
+    default_effort: M
+    default_impact: 3
+    bad: A wait_for_upstream task polling for 40 minutes on a large job cluster every run.
+    good: The job is triggered when its input lands, or the wait runs on minimal compute.
+    suggested_fix: >-
+      Replace the polling task with a file-arrival or table-update trigger, or
+      run the wait on a small dedicated task cluster or serverless task, then
+      re-measure task-hours.
+    detect: >-
+      Long-running task analysis reports a task whose task_key matches
+      task_key_pattern (wait / poll / sensor / readiness) with total_task_hours
+      at or above min_task_hours in the window. High severity at
+      high_task_hours.
+    evidence_query: C-J09
+    params:
+      task_key_pattern: "wait|poll|sensor|readiness"
+      min_task_hours: 10.0
+      high_task_hours: 100.0
+      max_findings: 20
+    source: null
+    enabled: true
+
+  # Aligns with the action-plan opportunity catalog item OPP-STEP-CHANGE.
+  # Workspace-level spend signal, reviewed with the jobs domain (the default
+  # scope) because job DBU dominates most step changes.
+  - id: spend_step_change
+    name: Explain a step change in daily DBU
+    category: billing
+    short_description: >-
+      Daily DBU that steps up and stays up points at a workload change — a new
+      job, a schedule change, a larger cluster — that nobody may have priced.
+    rationale: >-
+      A sustained lift in the 7-day mean daily DBU is the cheapest signal that
+      something changed; tying it to the workloads that moved on that date is
+      the first step of any cost conversation (list-price DBU estimate).
+    severity: medium
+    default_effort: S
+    default_impact: 3
+    bad: Daily DBU rises 60% overnight and stays there with no known cause.
+    good: Every sustained step in daily DBU is traced to an intended change.
+    suggested_fix: >-
+      Find the workloads whose DBU rose on the step date (top jobs and
+      pipelines before vs after), confirm whether the change was intended, and
+      size the lift as the at-stake figure.
+    detect: >-
+      Daily DBU (window plus a 7-day baseline) shows, per workspace, a day
+      whose 7-day mean daily DBU exceeds the 7 days before it by at least
+      min_lift_daily_dbus and min_lift_pct of the before mean (the discovery
+      facts step_change method). High severity at high_lift_pct.
+    evidence_query: F-03
+    params:
+      min_lift_pct: 20.0
+      min_lift_daily_dbus: 100.0
+      high_lift_pct: 50.0
+      span_days: 7
+    source: null
+    enabled: true

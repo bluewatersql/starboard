@@ -1,0 +1,37 @@
+# =============================================================================
+# starboard-core — one-release deprecation alias (Phase-1 X3 / D-1.2)
+# =============================================================================
+# The kernel distribution was renamed `starboard-core` -> `starboard-kernel`
+# (the IMPORT package `starboard_core` is unchanged). To avoid breaking existing
+# `pip install starboard-core` invocations, this thin META package keeps the
+# `starboard-core` distribution name alive for ONE release: it ships no code and
+# simply depends on `starboard-kernel`, so installing it pulls the renamed kernel.
+#
+#   DEPRECATED: install `starboard-kernel` instead. This alias will be dropped in
+#   the following release (additive-now, remove-later per D-1.2).
+#
+# The directory is `starboard-core-alias` so it does not collide with the kernel
+# package directory (`packages/starboard-core`, which now builds starboard-kernel).
+# =============================================================================
+
+[project]
+name = "starboard-core"
+version = "0.1.1"
+description = "Deprecated alias for starboard-kernel — install starboard-kernel instead"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Databricks Open Model License"}
+dependencies = [
+    # Pull the renamed kernel wheel. Version-pinned to keep the alias and the
+    # kernel it fronts in lockstep.
+    "starboard-kernel==0.1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Metadata-only wheel: no Python modules (the import package `starboard_core`
+# ships in the starboard-kernel wheel, never here — shipping it would collide).
+[tool.hatch.build.targets.wheel]
+bypass-selection = true

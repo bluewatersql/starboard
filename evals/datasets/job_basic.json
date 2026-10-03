@@ -1,0 +1,86 @@
+{
+  "domain": "job",
+  "version": "1.0.0",
+  "description": "Basic evaluation cases for the Job Agent",
+  "cases": [
+    {
+      "id": "job_001",
+      "description": "Job performance analysis request",
+      "input": {
+        "goal": "Why is my ETL job taking so long?",
+        "context": {
+          "job_id": "123456789"
+        }
+      },
+      "expected": {
+        "contains": ["job", "performance", "run"],
+        "category": "JOB",
+        "min_confidence": 0.8
+      },
+      "tags": ["performance", "analysis"]
+    },
+    {
+      "id": "job_002",
+      "description": "Job failure diagnosis",
+      "input": {
+        "goal": "My job failed last night, what happened?",
+        "context": {
+          "job_id": "987654321"
+        }
+      },
+      "expected": {
+        "contains": ["job", "failure", "error"],
+        "category": "JOB",
+        "min_confidence": 0.8
+      },
+      "tags": ["failure", "diagnostic"]
+    },
+    {
+      "id": "job_003",
+      "description": "Job configuration review",
+      "input": {
+        "goal": "Is my job configured correctly for optimal performance?",
+        "context": {
+          "job_name": "daily_aggregation_pipeline"
+        }
+      },
+      "expected": {
+        "contains": ["job", "configuration"],
+        "category": "JOB",
+        "min_confidence": 0.7
+      },
+      "tags": ["configuration", "optimization"]
+    },
+    {
+      "id": "job_004",
+      "description": "Job cost analysis",
+      "input": {
+        "goal": "How much is this job costing me?",
+        "context": {
+          "job_id": "456789123"
+        }
+      },
+      "expected": {
+        "contains": ["job", "cost"],
+        "category": "JOB",
+        "min_confidence": 0.7
+      },
+      "tags": ["cost", "finops"]
+    },
+    {
+      "id": "job_005",
+      "description": "Job cluster configuration",
+      "input": {
+        "goal": "What cluster should I use for my job?",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["cluster", "job"],
+        "category": "JOB",
+        "min_confidence": 0.6
+      },
+      "tags": ["cluster", "configuration"]
+    }
+  ]
+}
+

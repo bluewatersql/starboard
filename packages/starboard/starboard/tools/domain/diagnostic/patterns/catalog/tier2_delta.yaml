@@ -1,0 +1,185 @@
+# Tier 2 Delta Lake Patterns
+# Delta Lake specific issues
+version: "1.0.0"
+
+patterns:
+  # ============================================================================
+  # CONCURRENT WRITE PATTERNS
+  # ============================================================================
+  - id: delta_concurrent_write
+    name: "Delta Lake Concurrent Write Conflict"
+    category: storage
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "ConcurrentModificationException"
+      - "concurrent write"
+      - "transaction conflict"
+      - "CommitFailedException"
+      - "delta concurrent"
+
+    regex_patterns:
+      - "(?i)ConcurrentModificationException"
+      - "(?i)concurrent.*write.*conflict"
+      - "(?i)transaction.*conflict"
+      - "CommitFailedException"
+      - "(?i)delta.*concurrent"
+      - "OptimisticTransaction.*conflict"
+
+    root_cause: |
+      Multiple writers attempted to modify the same Delta table simultaneously, 
+      causing a transaction conflict. Delta Lake's optimistic concurrency 
+      control detected the conflict and aborted one or more transactions.
+
+    symptoms:
+      - "ConcurrentModificationException in logs"
+      - "Write job fails intermittently"
+      - "Transaction aborted messages"
+
+    root_causes:
+      - "Multiple jobs writing to same table without coordination"
+      - "Overlapping partitions being modified"
+      - "Long-running transactions conflicting"
+      - "No retry logic for concurrent modifications"
+
+    remediation:
+      - "Coordinate writes to avoid overlapping modifications"
+      - "Use partition isolation (each writer handles different partitions)"
+      - "Implement retry with backoff for transient conflicts"
+      - "Consider table layout changes to reduce conflicts"
+
+    recommendations:
+      - id: partition_isolation
+        priority: high
+        action: "Isolate writers by partition"
+        implementation: |
+          # Each job writes to different partitions
+          df.write.format("delta") \
+            .mode("append") \
+            .partitionBy("date") \
+            .save("/path/to/table")
+        verification: "No concurrent modification errors"
+
+      - id: retry_conflicts
+        priority: medium
+        action: "Add retry logic for transient conflicts"
+        implementation: |
+          from tenacity import retry, stop_after_attempt, wait_exponential
+          
+          @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=60))
+          def write_with_retry(df, path):
+              df.write.format("delta").mode("append").save(path)
+        verification: "Writes succeed after retries"
+
+    evidence_checklist:
+      required:
+        - "ConcurrentModificationException or CommitFailedException"
+      supporting:
+        - "Multiple writers to same table"
+        - "Overlapping partition writes"
+
+    confidence_factors:
+      increase:
+        - "Multiple jobs running concurrently"
+        - "Same table path in multiple jobs"
+      decrease:
+        - "Single writer"
+        - "Partitions are isolated"
+
+    related_patterns:
+      - delta_corruption
+
+    docs:
+      - "https://docs.databricks.com/delta/concurrency-control.html"
+
+  # ============================================================================
+  # DELTA CORRUPTION PATTERNS
+  # ============================================================================
+  - id: delta_corruption
+    name: "Delta Table Corruption Detected"
+    category: storage
+    severity: critical
+    responsibility: infrastructure
+
+    keywords:
+      - "corrupted"
+      - "DeltaIllegalStateException"
+      - "invalid checkpoint"
+      - "missing files"
+      - "inconsistent state"
+
+    regex_patterns:
+      - "(?i)delta.*corrupt"
+      - "DeltaIllegalStateException"
+      - "(?i)invalid\\s*checkpoint"
+      - "(?i)missing.*parquet.*files"
+      - "(?i)inconsistent.*state"
+      - "(?i)checksum.*mismatch"
+
+    root_cause: |
+      Delta table metadata or data files are corrupted or inconsistent. 
+      This can occur due to incomplete writes, storage failures, or 
+      external modifications to table files.
+
+    symptoms:
+      - "DeltaIllegalStateException errors"
+      - "Checkpoint validation failures"
+      - "Missing data file references"
+      - "Reads fail with inconsistent state"
+
+    root_causes:
+      - "Interrupted write operation"
+      - "Storage backend failure"
+      - "External modification of Delta files"
+      - "Incomplete VACUUM operation"
+      - "Cloud storage eventual consistency issues"
+
+    remediation:
+      - "Run FSCK REPAIR TABLE to identify issues"
+      - "Restore from earlier version using time travel"
+      - "Rebuild table from clean source if needed"
+      - "Check storage backend for issues"
+
+    recommendations:
+      - id: fsck_repair
+        priority: high
+        action: "Run FSCK to identify and repair issues"
+        implementation: |
+          FSCK REPAIR TABLE delta.`/path/to/table`
+        verification: "FSCK reports no issues"
+
+      - id: time_travel_restore
+        priority: high
+        action: "Restore table to known good version"
+        implementation: |
+          -- Find last good version
+          DESCRIBE HISTORY delta.`/path/to/table`
+          
+          -- Restore to that version
+          RESTORE TABLE delta.`/path/to/table` TO VERSION AS OF 42
+        verification: "Table reads succeed after restore"
+
+    evidence_checklist:
+      required:
+        - "Corruption or inconsistent state error"
+      supporting:
+        - "Recent interrupted writes"
+        - "Storage failures in cloud logs"
+
+    confidence_factors:
+      increase:
+        - "DeltaIllegalStateException present"
+        - "Checksum mismatch errors"
+        - "Recent VACUUM or DELETE operations"
+      decrease:
+        - "Error is transient (retry succeeds)"
+        - "New table with few operations"
+
+    related_patterns:
+      - delta_concurrent_write
+      - disk_full
+
+    docs:
+      - "https://docs.databricks.com/delta/delta-utility.html"
+

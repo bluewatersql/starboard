@@ -1,0 +1,258 @@
+# Tier 1 SQL Patterns
+version: "1.0.0"
+
+patterns:
+  - id: column_not_found
+    name: "Column Not Found (AnalysisException)"
+    category: sql
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "AnalysisException"
+      - "cannot resolve"
+      - "column not found"
+      - "no such column"
+      - "given input columns"
+
+    regex_patterns:
+      - "AnalysisException.*cannot resolve"
+      - "cannot resolve ['\"`]\\w+['\"`]"
+      - "given input columns"
+      - "Column ['\"`]\\w+['\"`] does not exist"
+
+    exception_class: "AnalysisException"
+    message_pattern: "cannot resolve"
+
+    root_cause: |
+      SQL query references a column that doesn't exist in the input schema.
+      Could be a typo, schema change, or case sensitivity issue.
+
+    symptoms:
+      - "AnalysisException: cannot resolve 'column_name'"
+      - "given input columns: [actual, columns]"
+      - "Query compilation failure"
+
+    root_causes:
+      - "Column name typo"
+      - "Schema changed upstream"
+      - "Case sensitivity mismatch"
+      - "Column from wrong table in join"
+
+    remediation:
+      - "Check column name spelling and case"
+      - "Verify schema matches expected structure"
+      - "Use df.printSchema() to see actual columns"
+      - "Quote column names if using reserved words"
+
+    recommendations:
+      - id: check_schema
+        priority: high
+        action: "Verify table schema matches query"
+        implementation: |
+          # Print actual schema
+          df.printSchema()
+          # Or check specific column
+          "column_name" in df.columns
+        verification: "Column name matches schema"
+
+      - id: use_col_function
+        priority: medium
+        action: "Use col() function for safer column references"
+        implementation: |
+          from pyspark.sql.functions import col
+          df.select(col("column_name"))
+        verification: "Column references validated at compile time"
+
+    evidence_checklist:
+      required:
+        - "AnalysisException with column name"
+        - "List of available columns in error"
+      supporting:
+        - "Recent schema changes in table"
+        - "Similar column names in schema"
+
+    confidence_factors:
+      increase:
+        - "Clear column name in error message"
+        - "Input columns listed in error"
+      decrease:
+        - "Ambiguous error message"
+
+    related_patterns:
+      - table_or_view_not_found
+
+    docs:
+      - "https://docs.databricks.com/error-messages/analysis-exceptions.html"
+
+  - id: permission_denied
+    name: "Permission Denied (SQL or Unity Catalog)"
+    category: sql
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "PERMISSION_DENIED"
+      - "permission denied"
+      - "not authorized"
+      - "Access denied"
+      - "insufficient privileges"
+
+    regex_patterns:
+      - "PERMISSION_DENIED"
+      - "[Pp]ermission denied"
+      - "not authorized"
+      - "[Aa]ccess denied"
+      - "insufficient privileges"
+      - "User .* does not have .* permission"
+
+    message_pattern: "(PERMISSION_DENIED|permission denied|not authorized)"
+
+    root_cause: |
+      User or service principal lacks required permissions to access the 
+      resource. Could be table, schema, catalog, or storage location.
+
+    symptoms:
+      - "PERMISSION_DENIED error"
+      - "User does not have SELECT permission"
+      - "Access denied to storage location"
+
+    root_causes:
+      - "Missing table/schema grants"
+      - "Unity Catalog permissions not configured"
+      - "Storage credential missing"
+      - "Row-level security blocking access"
+
+    remediation:
+      - "Grant required permissions via Unity Catalog"
+      - "Check storage credential configuration"
+      - "Verify user/group membership"
+      - "Review row-level security policies"
+
+    recommendations:
+      - id: grant_permission
+        priority: high
+        action: "Grant required permissions"
+        implementation: |
+          -- Grant SELECT on table
+          GRANT SELECT ON TABLE catalog.schema.table TO `user@example.com`
+          
+          -- Or grant on schema
+          GRANT USE SCHEMA ON SCHEMA catalog.schema TO `user@example.com`
+        verification: "User can access the resource"
+
+      - id: check_grants
+        priority: medium
+        action: "Review current grants"
+        implementation: |
+          -- Show grants on table
+          SHOW GRANTS ON TABLE catalog.schema.table
+        verification: "Required grant is present"
+
+    evidence_checklist:
+      required:
+        - "Permission denied error message"
+        - "Resource name in error"
+      supporting:
+        - "User identity in error"
+        - "Required permission type mentioned"
+
+    confidence_factors:
+      increase:
+        - "Clear permission type in error"
+        - "Specific resource identified"
+      decrease:
+        - "Generic access error"
+
+    related_patterns:
+      - table_or_view_not_found
+
+    docs:
+      - "https://docs.databricks.com/data-governance/unity-catalog/manage-privileges.html"
+
+  - id: table_or_view_not_found
+    name: "Table or View Not Found"
+    category: sql
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "TABLE_OR_VIEW_NOT_FOUND"
+      - "table not found"
+      - "view not found"
+      - "does not exist"
+      - "is not found"
+
+    regex_patterns:
+      - "TABLE_OR_VIEW_NOT_FOUND"
+      - "Table or view .* not found"
+      - "['\"`]?\\w+\\.\\w+\\.\\w+['\"`]? (does not exist|is not found|not found)"
+      - "Table .* does not exist"
+
+    message_pattern: "(TABLE_OR_VIEW_NOT_FOUND|table.*not found|does not exist)"
+
+    root_cause: |
+      Referenced table or view does not exist in the catalog/schema.
+      Could be incorrect name, missing catalog/schema prefix, or object not created yet.
+
+    symptoms:
+      - "TABLE_OR_VIEW_NOT_FOUND error"
+      - "Table 'name' does not exist"
+      - "Query fails at analysis phase"
+
+    root_causes:
+      - "Table name typo"
+      - "Missing catalog or schema prefix"
+      - "Table not yet created (timing issue)"
+      - "Wrong environment (dev vs prod)"
+      - "Table was dropped"
+
+    remediation:
+      - "Verify full table path: catalog.schema.table"
+      - "Check current catalog/schema context"
+      - "List available tables in schema"
+      - "Verify table exists in expected environment"
+
+    recommendations:
+      - id: verify_table_path
+        priority: high
+        action: "Use fully qualified table name"
+        implementation: |
+          -- Always use full path
+          SELECT * FROM catalog.schema.table
+          
+          -- Or set context first
+          USE CATALOG catalog;
+          USE SCHEMA schema;
+        verification: "Table reference resolves correctly"
+
+      - id: list_tables
+        priority: medium
+        action: "List available tables"
+        implementation: |
+          SHOW TABLES IN catalog.schema
+        verification: "Expected table is listed"
+
+    evidence_checklist:
+      required:
+        - "Table/view not found error"
+        - "Table name in error message"
+      supporting:
+        - "Similar table names exist"
+        - "Recent table operations in history"
+
+    confidence_factors:
+      increase:
+        - "Full table path in error"
+        - "SHOW TABLES confirms missing"
+      decrease:
+        - "Transient error"
+        - "Table was just created"
+
+    related_patterns:
+      - column_not_found
+      - permission_denied
+
+    docs:
+      - "https://docs.databricks.com/sql/language-manual/sql-ref-syntax-aux-show-tables.html"
+

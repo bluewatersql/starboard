@@ -1,0 +1,53 @@
+# Starboard — Databricks App deployment descriptor
+#
+# Declares the OBO (on-behalf-of) OAuth scopes required for per-user
+# Unity Catalog and Genie access.  When deployed as a Databricks App the
+# platform forwards the authenticated end-user's token via the
+# X-Forwarded-Access-Token header; Starboard's FastAPI dependency
+# (``get_obo_client`` in ``starboard/main.py``) reads that header and
+# resolves a per-request WorkspaceClient so every SDK call runs under the
+# end user's identity rather than the App service-principal's identity.
+#
+# Prerequisites (Phase-3 O4 live-validation gate "App-env"):
+#   - Workspace must have Databricks Apps enabled.
+#   - The App service principal needs "Can Use" on the SQL Warehouse and
+#     "Can Browse" on the Unity Catalog.  Per-user (OBO) grants are resolved
+#     at request time via the forwarded user token.
+#   - Set STARBOARD_DATABRICKS_WAREHOUSE_ID to the warehouse id in secrets.
+#
+# See docs/DEPLOYMENT.md §"Databricks Apps OBO Auth" for the full flow.
+
+command:
+  - uvicorn
+  - starboard.main:create_app
+  - --host
+  - "0.0.0.0"
+  - --port
+  - "8000"
+  - --factory
+
+env:
+  - name: STARBOARD_LOG_JSON
+    value: "true"
+  - name: STARBOARD_ENVIRONMENT
+    value: "production"
+
+# ---------------------------------------------------------------------------
+# OBO OAuth scopes
+# ---------------------------------------------------------------------------
+# Declare the scopes the App requests on behalf of the end user.  The Databricks
+# Apps platform uses these to construct the forwarded-user token so the
+# WorkspaceClient built by ``get_obo_client`` can resolve UC/Genie grants.
+#
+# Scope reference:
+#   genie         — Databricks AI/BI Genie (query execution, room access)
+#   sql           — SQL Warehouse execution (JDBC/HTTP statement API)
+#   catalog.browse — Unity Catalog: list catalogs, schemas, and table metadata
+#   catalog.query  — Unity Catalog: execute SELECT on tables the user can access
+#   iam.current_user — Resolve end-user identity via SCIM /Me (used by describe_auth)
+oauth_scopes:
+  - genie
+  - sql
+  - catalog.browse
+  - catalog.query
+  - iam.current_user

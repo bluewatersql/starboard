@@ -1,0 +1,40 @@
+# =============================================================================
+# starboard-capability — capability-tier meta-wheel (Phase-1 X3 / D-1.2)
+# =============================================================================
+# The capability tier of the layered catalog, published as its own independently
+# installable wheel. It is a thin META package (no import package of its own): it
+# pulls the kernel wheel plus every `python -m starboard_x.<domain>` per-capability
+# extra, so `pip install starboard-capability` gives a consumer the full
+# progressive-helper surface (starboard_x) without the FastAPI/MCP experience tier.
+#
+#   pip install starboard-kernel        # kernel only: pure DTOs + analyzers
+#   pip install starboard-capability    # + starboard_x progressive helpers (all domains)
+#   pip install starboard               # full MCP server + CLI + agents
+#
+# The import packages (`starboard_core`, `starboard_x`) ship inside the
+# starboard-kernel wheel; this package only composes the dependency set. To install
+# a narrower slice, depend on the kernel extras directly, e.g.
+# `starboard-kernel[warehouse,uc]`.
+# =============================================================================
+
+[project]
+name = "starboard-capability"
+version = "0.1.1"
+description = "Starboard AI Agent - capability tier (kernel + starboard_x progressive helpers)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Databricks Open Model License"}
+dependencies = [
+    # Kernel wheel + all per-capability starboard_x extras.
+    "starboard-kernel[all]",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Metadata-only wheel: this package ships no Python modules of its own — it exists
+# purely to compose the capability-tier dependency set. `bypass-selection` tells
+# hatchling to build a valid wheel with no file inclusion.
+[tool.hatch.build.targets.wheel]
+bypass-selection = true

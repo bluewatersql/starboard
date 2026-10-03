@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "bundle_name": "starboard",
+  "bundle_version": "0.1.0",
+  "description": "AI-powered Databricks workload analysis: queries, jobs, Unity Catalog, clusters, FinOps, warehouses, and diagnostics. Skills-only bundle — no MCP server required.",
+  "format": "agent-skills",
+  "repository": "https://github.com/databricks/starboard",
+  "generated_at": "2026-10-02T00:25:12Z",
+  "skills": [
+    {
+      "name": "starboard-action-plan",
+      "path": "starboard-action-plan/",
+      "description": "The findings→plan vertical of the Starboard engagement workflow: turn workload-review or discovery findings into a verified, customer-ready action plan — scope the workspace, rank candidates by impact÷effort across cost and performance, verify the top ~8 live, and present a verified shortlist before building anything. You (the host) are the analyst — you reason, prioritize, and write; no second LLM, no fixed ranking formula. Use when the user wants an action plan, to prioritize/triage findings, or a 'what should I fix first' from a review or discovery."
+    },
+    {
+      "name": "starboard-analyze",
+      "path": "starboard-analyze/",
+      "description": "Run a comprehensive, cross-domain analysis of a Databricks workload — combining job, cluster, query, and cost data into a unified optimization report. Use when the user asks for an overall workload review, a full optimization report, or a combined health-and-cost assessment spanning multiple domains."
+    },
+    {
+      "name": "starboard-cluster",
+      "path": "starboard-cluster/",
+      "description": "Analyze Databricks clusters — inspect configuration, review events, diagnose failures, and recommend optimizations. Use when the user asks about cluster performance, autoscaling, node types, cluster failures, or compute sizing."
+    },
+    {
+      "name": "starboard-deliver",
+      "path": "starboard-deliver/",
+      "description": "The delivery vertical of the Starboard engagement workflow: deliver a finished plan or report to where the user wants it — a doc, a message, a deck outline, a ticket — by binding LOGICAL capabilities to whatever tools are present (Google Docs/Slack/Jira, by availability), rendered native to the destination, with preview+confirm, degrading visibly to local Markdown when nothing is bound. The deck is a local Markdown outline (no Slides build). Read-only to the customer workspace. Use when the user wants to publish/share/hand off a plan or report, or asks to put it in a Doc/Slack/deck/ticket."
+    },
+    {
+      "name": "starboard-diagnostic",
+      "path": "starboard-diagnostic/",
+      "description": "Diagnose Databricks failures — triage exit codes, extract evidence from error logs, and synthesize a root cause. Use when the user mentions a job or query failure, an exit code, OOM, a stack trace, or asks \"why did this fail\". Triggers: error, failure, exit code 137/143, OOMKilled, stack trace, root cause."
+    },
+    {
+      "name": "starboard-discovery",
+      "path": "starboard-discovery/",
+      "description": "Discover and map a Databricks workspace — enumerate jobs, clusters, warehouses, and Unity Catalog assets to build a comprehensive inventory. Use when the user wants a workspace inventory, a health assessment, or to explore what exists in a workspace."
+    },
+    {
+      "name": "starboard-engagement",
+      "path": "starboard-engagement/",
+      "description": "The reusable Starboard engagement scaffold — the shared phase flow, primitives, and templates that every customer-facing workflow composes (cost action plans, reliability reviews, QBR decks, CRM touchpoints). Load this alongside a vertical skill (e.g. starboard-action-plan, starboard-deliver): it supplies the beats (gather → scope → verify → present → synthesize → technical-review → humanize → deliver → recur), the composable primitives, and the doc/slide templates so the vertical stays thin and the output is customer-ready, not an agent dump. Use whenever you are running or authoring any Starboard engagement workflow."
+    },
+    {
+      "name": "starboard-finops",
+      "path": "starboard-finops/",
+      "description": "Analyze Databricks cost and usage — load list-price DBU consumption from system.billing.usage, review budgets, and identify cost optimization opportunities. Use when the user asks about spend, billing, cost drivers, budgets, or FinOps and cost optimization."
+    },
+    {
+      "name": "starboard-job",
+      "path": "starboard-job/",
+      "description": "Analyze Databricks jobs and workflows — fetch configuration, inspect run history, diagnose failures, and recommend optimizations. Use when the user asks about job failures, job or workflow performance, run history, or job scheduling."
+    },
+    {
+      "name": "starboard-query",
+      "path": "starboard-query/",
+      "description": "Analyze Databricks SQL query performance — fetch query history, find slow or failed queries, diagnose, and recommend optimizations. Use when the user asks about query performance, slow queries, warehouse query load, or SQL failures."
+    },
+    {
+      "name": "starboard-uc",
+      "path": "starboard-uc/",
+      "description": "Analyze Unity Catalog metadata and governance — explore catalogs, schemas, tables, lineage, and governance posture. Use when the user asks about Unity Catalog, data governance, catalog/schema/table structure, or data lineage."
+    },
+    {
+      "name": "starboard-warehouse",
+      "path": "starboard-warehouse/",
+      "description": "Analyze Databricks SQL warehouses — inspect configuration, monitor state, and identify sizing and cost issues. Use when the user asks about SQL warehouse configuration, warehouse sizing, autostop, or warehouse cost and performance."
+    },
+    {
+      "name": "starboard-workload-review",
+      "path": "starboard-workload-review/",
+      "description": "Review a Databricks workspace's jobs, SQL queries, and warehouses — plus opt-in DLT pipelines, ML/model-serving, and Vector Search surfaces — the way a code review reviews code: a ranked, evidence-cited set of findings with severity, impact/effort scores, and remediation, over public system.* data only. Use when the user wants a workload review, an optimization/health assessment of jobs/queries/warehouses/pipelines/ML/vector-search, or prioritized findings with citations."
+    }
+  ]
+}

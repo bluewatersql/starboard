@@ -1,0 +1,60 @@
+# Seed workload-review rules — Vector Search domain (Phase-2 D-a, data only).
+# Opt-in review surface over the already-present vector_search query pack; no
+# internal namespaces or references. DBU based — never a finance-grade dollar
+# figure. Each evidence_query points at a real vector_search query-pack query_id
+# (see starboard/discovery/query_packs/vector_search.py).
+version: "1.0.0"
+domain: vector_search
+rules:
+  - id: vector_search_idle_endpoint
+    name: Remove idle Vector Search endpoints
+    category: vector_search
+    short_description: >-
+      A Vector Search endpoint that is billing but serving no queries is paying
+      for capacity no one uses.
+    rationale: >-
+      A provisioned Vector Search endpoint bills for storage and serving capacity
+      whether or not it answers queries; an endpoint with spend but no query
+      activity in the window is idle capacity that can be removed for direct
+      savings.
+    severity: medium
+    default_effort: S
+    default_impact: 4
+    bad: An endpoint billing storage every day with zero queries in the window.
+    good: Delete the idle endpoint, or repoint traffic so it is actually used.
+    suggested_fix: >-
+      Confirm no application depends on the endpoint, then delete it; if it is
+      meant to be live, investigate why no queries are reaching it.
+    detect: >-
+      The idle-endpoint query returns the endpoint (billed storage or serving DBU
+      with no query activity in the lookback window).
+    evidence_query: P-VS03
+    source: null
+    enabled: true
+
+  - id: vector_search_high_cost_endpoint
+    name: Review the highest-cost Vector Search endpoints
+    category: vector_search
+    short_description: >-
+      The endpoints consuming the most DBU are the highest-value right-sizing
+      review targets.
+    rationale: >-
+      Vector Search cost concentrates in a few endpoints; the largest DBU
+      consumers are where right-sizing, sync-frequency, or index-tier changes pay
+      off most, so they are worth an explicit review even when nothing is
+      obviously broken.
+    severity: low
+    default_effort: S
+    default_impact: 2
+    bad: The top-DBU endpoint never reviewed for sizing or sync frequency.
+    good: Periodically review the largest endpoints against their query demand.
+    suggested_fix: >-
+      Review the endpoint's index size, sync frequency, and observed query demand
+      against its DBU consumption, and right-size or reduce sync frequency where
+      the spend outpaces the usage.
+    detect: >-
+      The endpoint billing-history query reports total_dbus at or above the
+      review threshold for the endpoint.
+    evidence_query: P-VS01
+    source: null
+    enabled: true

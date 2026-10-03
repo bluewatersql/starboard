@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
+"""Domain models for conversation patterns."""
+
+from starboard_core.domain.models.clarification import (
+    AmbiguityScore,
+    ClarificationOption,
+    ClarificationRequest,
+    ClarificationResponse,
+    ClarificationType,
+)
+
+from starboard.domain.models.conversation_patterns import (
+    ActionType,
+    AgentResponse,
+    NextStepOption,
+    OptionSelection,
+)
+
+__all__ = [
+    # Conversation patterns (Phases 1-3)
+    "ActionType",
+    "NextStepOption",
+    "AgentResponse",
+    "OptionSelection",
+    # Clarification requests (Phase 7)
+    "AmbiguityScore",
+    "ClarificationOption",
+    "ClarificationRequest",
+    "ClarificationResponse",
+    "ClarificationType",
+]

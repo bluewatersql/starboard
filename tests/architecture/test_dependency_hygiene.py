@@ -1,0 +1,393 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
+"""Architecture fitness test — GUIDELINE-010: Dependency hygiene.
+
+For each package in the monorepo, every top-level import used in the source
+code should correspond to a declared dependency in ``pyproject.toml``, and
+every declared dependency should be used somewhere in the source.
+
+The test performs a best-effort mapping:
+
+1. Parses ``[project].dependencies`` from each package's ``pyproject.toml``
+   using the ``tomllib`` standard-library module (Python 3.11+).
+2. Extracts the distribution name from each dependency specifier and maps it
+   to a likely import name (e.g. ``python-multipart`` → ``multipart``,
+   ``databricks-sdk`` → ``databricks``).
+3. Collects all top-level imports (``import X`` / ``from X import``) from the
+   package's source tree.
+4. Reports (a) imports with no matching declared dependency and (b) declared
+   dependencies with no matching import.
+
+Optional store/vector drivers live in ``[project.optional-dependencies]`` extras and are
+lazy-imported inside the selected backend branch; they are enumerated in
+``_OPTIONAL_DEPENDENCIES`` so the best-effort ``[project].dependencies``-only parser does not
+flag them as undeclared. Workspace sibling packages are enumerated in ``_WORKSPACE_PACKAGES``.
+"""
+
+from __future__ import annotations
+
+import ast
+import re
+import tomllib
+from pathlib import Path
+
+import pytest
+
+# Packages that are part of this workspace — skip undeclared-import checks for them
+_WORKSPACE_PACKAGES = {
+    "starboard_core",
+    "starboard",
+    "starboard_skills",
+    "starboard_x",  # Workspace sibling package (ships in the starboard-kernel wheel)
+    # X3 / D-1.2: `starboard-core` was renamed to the `starboard-kernel`
+    # distribution (import package `starboard_core` unchanged); `starboard-core`
+    # survives as a thin deprecation alias and `starboard-capability` as the
+    # kernel + starboard_x bundle. Their dist->import mappings (below) resolve to
+    # `starboard_core`, but list the synthesized names here too for robustness.
+    "starboard_kernel",
+    "starboard_capability",
+}
+
+# Known stdlib top-level modules — these need no declared dependency
+_STDLIB_MODULES = {
+    "abc",
+    "ast",
+    "asyncio",
+    "base64",
+    "builtins",
+    "collections",
+    "concurrent",
+    "configparser",
+    "contextlib",
+    "copy",
+    "dataclasses",
+    "datetime",
+    "decimal",
+    "difflib",
+    "email",
+    "enum",
+    "fnmatch",
+    "functools",
+    "gc",
+    "getpass",
+    "glob",
+    "gzip",
+    "hashlib",
+    "hmac",
+    "html",
+    "http",
+    "importlib",
+    "inspect",
+    "io",
+    "itertools",
+    "json",
+    "logging",
+    "math",
+    "mimetypes",
+    "os",
+    "pathlib",
+    "pickle",
+    "platform",
+    "posixpath",
+    "pprint",
+    "queue",
+    "random",
+    "re",
+    "shutil",
+    "signal",
+    "socket",
+    "sqlite3",
+    "ssl",
+    "stat",
+    "string",
+    "struct",
+    "subprocess",
+    "sys",
+    "tempfile",
+    "textwrap",
+    "threading",
+    "time",
+    "traceback",
+    "types",
+    "typing",
+    "unittest",
+    "urllib",
+    "uuid",
+    "warnings",
+    "weakref",
+    "xml",
+    "zipfile",
+    "__future__",
+    "tomllib",
+    "tomlib",
+    "argparse",
+    "atexit",
+    "contextvars",
+    "statistics",
+    "unicodedata",
+    "zoneinfo",
+}
+
+# Manual overrides: dist-name -> import-name when the mapping is non-obvious
+_DIST_TO_IMPORT: dict[str, str] = {
+    # The kernel distribution `starboard-kernel` (formerly `starboard-core`) and
+    # its `starboard-capability` bundle both ship / re-export the `starboard_core`
+    # import package; map them so the hygiene check treats them as satisfied.
+    "starboard-kernel": "starboard_core",
+    "starboard-capability": "starboard_core",
+    "python-multipart": "multipart",
+    "databricks-sdk": "databricks",
+    "databricks-sql-connector": "databricks",
+    "openai": "openai",
+    "tiktoken": "tiktoken",
+    "pyarrow": "pyarrow",
+    "sqlglot": "sqlglot",
+    "sqlparse": "sqlparse",
+    "rapidfuzz": "rapidfuzz",
+    "pydantic": "pydantic",
+    "pydantic-settings": "pydantic_settings",
+    "structlog": "structlog",
+    "uvicorn": "uvicorn",
+    "fastapi": "fastapi",
+    "websockets": "websockets",
+    "aiosqlite": "aiosqlite",
+    "aiohttp": "aiohttp",
+    "httpx": "httpx",
+    "requests": "requests",
+    "redis": "redis",
+    "asyncpg": "asyncpg",
+    "psycopg2-binary": "psycopg2",
+    "psycopg": "psycopg",
+    "numpy": "numpy",
+    "pandas": "pandas",
+    "polars": "polars",
+    "tenacity": "tenacity",
+    "cachetools": "cachetools",
+    "python-jose": "jose",
+    "cryptography": "cryptography",
+    "passlib": "passlib",
+    "bcrypt": "bcrypt",
+    "click": "click",
+    "rich": "rich",
+    "typer": "typer",
+    "pytest": "pytest",
+    "pytest-asyncio": "pytest_asyncio",
+    "respx": "respx",
+    "freezegun": "freezegun",
+    "factory-boy": "factory",
+    "faker": "faker",
+    "mypy": "mypy",
+    "ruff": "ruff",
+    "sqlite-vec": "sqlite_vec",
+    "sentence-transformers": "sentence_transformers",
+    "opentelemetry-api": "opentelemetry",
+    "opentelemetry-sdk": "opentelemetry",
+    "python-dotenv": "dotenv",
+    "pyyaml": "yaml",
+}
+
+# Dependencies that are used indirectly (not via Python import)
+_INDIRECT_DEPENDENCIES = {
+    "asyncpg",  # Used via SQLAlchemy async engine
+    "multipart",  # Required by FastAPI for form parsing
+    "pgvector",  # Used via SQL extension, not Python import
+    "sqlite_vec",  # Loaded as SQLite extension, not imported
+    "rich",  # Used by CLI (server declares for downstream consumers)
+    "dotenv",  # Used by CLI (server declares for downstream consumers)
+}
+
+# Version-constraint-only dependencies: declared to pin/cap a transitive package for runtime
+# compatibility (e.g. Databricks Runtime alignment) or security, not imported directly in source.
+_CONSTRAINT_ONLY_DEPENDENCIES = {
+    "cryptography",  # Capped <47 for DBR 17.3 msal 1.32.3; floored for CVE-2026-39892 baseline
+    "cffi",  # Capped <2 to match DBR 17.3's compiled _cffi_backend (1.17.1)
+    "protobuf",  # Pinned 5.29.5 to satisfy databricks-sdk 0.73.0 + DBR google/grpc stack
+}
+
+# Transitive dependencies that are technically undeclared but come from declared deps
+_KNOWN_TRANSITIVES = {
+    "starlette",  # Transitive via fastapi
+}
+
+# Dependencies declared in optional extras, actively used. Each of these is declared in
+# packages/starboard/pyproject.toml [project.optional-dependencies] and lazy-imported inside
+# the selected backend branch (state_factory/vector_store_factory), so they are legitimately
+# declared-and-used but absent from [project.dependencies].
+_OPTIONAL_DEPENDENCIES = {
+    "opentelemetry",  # In [observability] extras, actively used
+    "aiosqlite",  # In [sqlite] extra; lazy-imported by the sqlite state backend
+    "sqlite_vec",  # In [sqlite] extra; loaded as a SQLite extension by the sqlite vector backend
+    "asyncpg",  # In [postgres]/[memory] extras; lazy-imported by the postgres/lakebase backends
+    "redis",  # In [redis] extra; lazy-imported by the redis state backend
+}
+
+
+def _dist_to_import_name(dist: str) -> str:
+    """Convert a distribution name to its likely top-level import name."""
+    if dist in _DIST_TO_IMPORT:
+        return _DIST_TO_IMPORT[dist]
+    # Strip version specifiers
+    base = re.split(r"[>=<!;\[@ ]", dist)[0].strip().lower()
+    # Replace hyphens with underscores (common convention)
+    return base.replace("-", "_")
+
+
+def _parse_dependencies(pyproject_path: Path) -> list[str]:
+    """Return list of declared dependency distribution names."""
+    if tomllib is None:
+        return []
+    try:
+        data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    deps: list[str] = data.get("project", {}).get("dependencies", [])
+    names: list[str] = []
+    for dep in deps:
+        # e.g. "fastapi>=0.104.0,<1.0.0" -> "fastapi"
+        name = re.split(r"[>=<!;\[@ ]", dep)[0].strip()
+        if name:
+            names.append(name.lower())
+    return names
+
+
+def _collect_top_level_imports(source_dir: Path) -> set[str]:
+    """Return set of top-level module names imported in *source_dir*."""
+    imports: set[str] = set()
+    for py_file in source_dir.rglob("*.py"):
+        try:
+            tree = ast.parse(py_file.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.add(alias.name.split(".")[0])
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                imports.add(node.module.split(".")[0])
+    return imports
+
+
+def _check_package(
+    package_name: str, package_dir: Path, source_subdir: str, project_root: Path
+) -> tuple[list[str], list[str]]:
+    """Return (undeclared_imports, unused_deps) for a package."""
+    pyproject = package_dir / "pyproject.toml"
+    source_dir = package_dir / source_subdir
+    if not pyproject.exists() or not source_dir.exists():
+        return [], []
+
+    declared_dists = _parse_dependencies(pyproject)
+    declared_imports = {_dist_to_import_name(d) for d in declared_dists}
+
+    actual_imports = _collect_top_level_imports(source_dir)
+    # Remove stdlib, workspace packages, and private/relative imports
+    third_party = {
+        m
+        for m in actual_imports
+        if m not in _STDLIB_MODULES
+        and m not in _WORKSPACE_PACKAGES
+        and not m.startswith("_")
+    }
+
+    undeclared = sorted(
+        third_party
+        - declared_imports
+        - _WORKSPACE_PACKAGES
+        - _KNOWN_TRANSITIVES
+        - _OPTIONAL_DEPENDENCIES
+    )
+    unused = sorted(
+        declared_imports
+        - third_party
+        - _WORKSPACE_PACKAGES
+        - _INDIRECT_DEPENDENCIES
+        - _CONSTRAINT_ONLY_DEPENDENCIES
+    )
+    return undeclared, unused
+
+
+@pytest.mark.unit
+def test_server_package_dependency_hygiene(project_root: Path) -> None:
+    """starboard imports must all be declared; declared deps must be used."""
+    package_dir = project_root / "packages" / "starboard"
+    undeclared, unused = _check_package(
+        "starboard", package_dir, "starboard", project_root
+    )
+
+    messages: list[str] = []
+    if undeclared:
+        messages.append(
+            "  Undeclared imports (used but not in pyproject.toml):\n"
+            + "\n".join(f"    - {m}" for m in undeclared)
+        )
+    if unused:
+        messages.append(
+            "  Unused dependencies (declared but not imported):\n"
+            + "\n".join(f"    - {m}" for m in unused)
+        )
+
+    assert not messages, (
+        "GUIDELINE-010: Dependency hygiene violations in starboard:\n"
+        + "\n".join(messages)
+    )
+
+
+@pytest.mark.unit
+def test_cli_package_dependency_hygiene(project_root: Path) -> None:
+    """CLI is now part of the starboard package (no separate starboard-cli)."""
+    package_dir = project_root / "packages" / "starboard-cli"
+    if not package_dir.exists():
+        pytest.skip("starboard-cli merged into starboard package")
+
+
+def _project_table(pyproject_path: Path) -> dict:
+    return tomllib.loads(pyproject_path.read_text(encoding="utf-8")).get("project", {})
+
+
+def _dep_dist_name(spec: str) -> str:
+    return re.split(r"[>=<!~;\[@ ]", spec, maxsplit=1)[0].strip()
+
+
+@pytest.mark.unit
+def test_experience_tier_depends_on_renamed_kernel(project_root: Path) -> None:
+    """X3 / D-1.2: `starboard` depends on `starboard-kernel`, not `starboard-core`.
+
+    The experience wheel must pull the renamed kernel distribution directly (the
+    deprecation alias exists only for external consumers, not for the in-repo
+    dependency edge).
+    """
+    starboard = _project_table(project_root / "packages" / "starboard" / "pyproject.toml")
+    deps = {_dep_dist_name(d) for d in starboard.get("dependencies", [])}
+    assert "starboard-kernel" in deps, f"starboard must depend on starboard-kernel: {deps}"
+    assert "starboard-core" not in deps, (
+        "starboard's direct kernel dependency must be renamed to starboard-kernel; "
+        "the starboard-core alias is for external back-compat only"
+    )
+
+
+@pytest.mark.unit
+def test_starboard_core_stays_installable_as_alias(project_root: Path) -> None:
+    """D-1.2: `starboard-core` survives as a thin one-release deprecation alias."""
+    named: dict[str, dict] = {}
+    for pp in sorted((project_root / "packages").glob("*/pyproject.toml")):
+        proj = _project_table(pp)
+        if proj.get("name"):
+            named[proj["name"]] = proj
+
+    assert named.get("starboard-kernel") is not None, "kernel wheel must be starboard-kernel"
+
+    alias = named.get("starboard-core")
+    assert alias is not None, "starboard-core deprecation alias package is missing"
+    alias_deps = {_dep_dist_name(d) for d in alias.get("dependencies", [])}
+    assert "starboard-kernel" in alias_deps, (
+        f"starboard-core alias must depend on starboard-kernel: {alias_deps}"
+    )
+
+    capability = named.get("starboard-capability")
+    assert capability is not None, "starboard-capability tier wheel is missing"
+    cap_deps = {_dep_dist_name(d) for d in capability.get("dependencies", [])}
+    assert "starboard-kernel" in cap_deps, (
+        f"starboard-capability must depend on starboard-kernel: {cap_deps}"
+    )
+
+

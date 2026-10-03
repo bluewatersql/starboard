@@ -1,0 +1,65 @@
+# serializer version: 1
+# name: TestClusterMetricsGolden.test_snapshot_match
+  list([
+    dict({
+      'config': dict({
+        'auto_termination_minutes': 60,
+        'autoscale': dict({
+          'max_workers': None,
+          'min_workers': None,
+        }),
+        'cluster_id': 'test-cluster-001',
+        'cluster_name': 'Analytics Cluster',
+        'cluster_source': 'UI',
+        'data_security_mode': 'SINGLE_USER',
+        'dbr_version': '11.3.x-scala2.12',
+        'enable_elastic_disk': True,
+        'node_type': 'i3.xlarge',
+        'worker_count': 3,
+      }),
+      'resources': dict({
+        'driver': dict({
+          'cores_total': 4.0,
+          'gpus_total': 0.0,
+          'instances': 1,
+          'memory_total_GB': 30.0,
+        }),
+        'worker': dict({
+          'cores_total': 12.0,
+          'gpus_total': 0.0,
+          'instances': 3,
+          'memory_total_GB': 90.0,
+        }),
+      }),
+      'usage': dict({
+        'compute_utilization': dict({
+          'driver': dict({
+            'cpu_total_avg': 50.35,
+            'cpu_total_max': 54.7,
+            'cpu_total_min': 46.0,
+            'mem_used_avg': 66.85,
+            'mem_used_max': 68.3,
+            'mem_used_min': 65.4,
+          }),
+          'worker': dict({
+            'cpu_total_avg': 69.22,
+            'cpu_total_max': 78.6,
+            'cpu_total_min': 61.2,
+            'mem_used_avg': 77.17,
+            'mem_used_max': 82.1,
+            'mem_used_min': 72.1,
+          }),
+        }),
+        'disk_free_bytes_GB': dict({
+          'total_free_avg': 161.06,
+        }),
+        'network_MB': dict({
+          'received_total': 461.37,
+          'sent_to_recv_ratio': 0.5,
+          'sent_total': 230.69,
+          'total': 692.06,
+        }),
+      }),
+    }),
+  ])
+# ---

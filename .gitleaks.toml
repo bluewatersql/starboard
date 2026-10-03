@@ -1,0 +1,11 @@
+title = "Starboard gitleaks config"
+
+[allowlist]
+description = "Documentation examples; not real credentials."
+regexes = [
+    '''AKIAIOSFODNN7EXAMPLE''',
+    '''wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY''',
+]
+paths = [
+    '''^packages/.*/tests/.*test_sanitizer\.py$''',
+]

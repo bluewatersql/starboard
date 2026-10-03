@@ -1,0 +1,49 @@
+{
+  "domain": "warehouse",
+  "version": "1.0.0",
+  "description": "Basic evaluation cases for the Warehouse Portfolio Agent",
+  "cases": [
+    {
+      "id": "warehouse_001",
+      "description": "Portfolio overview request",
+      "input": {
+        "goal": "Show me all our SQL warehouses",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["warehouse", "portfolio"],
+        "min_confidence": 0.7
+      },
+      "tags": ["portfolio", "basic"]
+    },
+    {
+      "id": "warehouse_002",
+      "description": "Health check request",
+      "input": {
+        "goal": "How healthy is my analytics warehouse?",
+        "context": {
+          "warehouse_id": "abc123"
+        }
+      },
+      "expected": {
+        "contains": ["health", "warehouse"],
+        "min_confidence": 0.7
+      },
+      "tags": ["health", "analysis"]
+    },
+    {
+      "id": "warehouse_003",
+      "description": "Chargeback report request",
+      "input": {
+        "goal": "Generate a cost allocation report for my warehouses",
+        "context": {}
+      },
+      "expected": {
+        "contains": ["cost", "chargeback"],
+        "min_confidence": 0.6
+      },
+      "tags": ["chargeback", "cost"]
+    }
+  ]
+}
+

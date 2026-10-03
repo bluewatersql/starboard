@@ -1,0 +1,148 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.json
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.hypothesis/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+config.yaml
+!examples/config.yaml.example
+
+# Logs
+*.log
+logs/
+
+# Debug output
+.debug/
+
+# Output
+/output/
+/out/
+/**/discovery_output/
+*.md.tmp
+results/
+
+# Build artifacts
+*.whl
+*.tar.gz
+
+# uv: uv.lock is TRACKED for reproducible installs (do not ignore it).
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# SQLite / databases
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Data / checkpoints
+# Anchored to repo root so nested, intentionally-tracked data dirs
+# (e.g. tests/golden/**/data/, packages/*/rag/data/) stay versioned.
+/data/
+dev_data/
+**/dev_data/
+
+# ML Models (top-level only, not package submodules)
+/models/
+/embeddings/
+
+# OMC state
+.omc/
+
+# Temporary / cache
+tmp/
+temp/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Package-specific
+packages/*/dist/
+packages/*/build/
+packages/*/.pytest_cache/
+packages/*/.mypy_cache/
+packages/*/.ruff_cache/
+
+# Archived / working docs
+.archive/
+/changes/
+
+# Generated engagement / cost-review output (run artifacts, never source)
+starboard-reports/
+.starboard_reports/
+
+# Generated docs
+site/
+docs/diagrams/generated/
+
+# Local experimental code
+packages/starboard-server/experiment/
+
+# Git hooks (local only)
+.githooks/
+.claude/worktrees/
+
+# Internal AI-assistant / IDE tooling (not for OSS distribution)
+.cursor/
+.isaac/
+AGENTS.md
+**/AGENTS.md
+# Keep the published docs page (matched case-insensitively by **/AGENTS.md on
+# case-insensitive filesystems like macOS).
+!docs/overview/agents.md
+
+# Editor/backup files
+*.bak
+*.bak2
+
+.superpowers/

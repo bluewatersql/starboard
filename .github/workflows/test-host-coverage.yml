@@ -1,0 +1,63 @@
+name: Host Coverage Smoke Tests
+
+# Validates per-host discovery + invocation + auth + idempotence against
+# a clean install on Ubuntu and macOS.  Real hosts are NOT required — Claude
+# Code / Isaac tests check checked-in artifacts; Codex / OpenCode invoke
+# python -m starboard_x.* directly; MCP is checked via importlib.
+#
+# TODO (F-1-pkg-001): Remove workflow_dispatch once the internal PyPI proxy
+# issue is resolved and enable push/pull_request triggers unconditionally.
+on:
+  push:
+    branches:
+      - main
+      - "phase1/**"
+      - "wave4/**"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  host-coverage:
+    name: "Host Coverage (${{ matrix.os }}, Python ${{ matrix.python-version }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install workspace (all extras)
+        run: uv sync --all-extras
+
+      - name: Smoke tests — all five hosts
+        run: >-
+          uv run pytest
+          packages/starboard/tests/integration/host_coverage/
+          -v
+          --no-cov
+          -m integration
+          --tb=short
+
+      - name: Distribution drift check (make test-distribution)
+        # O5 (aitools mirror + manifest) lands in a later PR; this step will
+        # be a no-op until that PR merges.  continue-on-error so it does not
+        # block the host-coverage gate.
+        run: |
+          if make -n test-distribution 2>/dev/null; then
+            make test-distribution
+          else
+            echo "test-distribution target not yet available (O5 pending); skipping"
+          fi
+        continue-on-error: true

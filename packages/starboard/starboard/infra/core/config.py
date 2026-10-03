@@ -1,0 +1,711 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
+"""Application configuration using Pydantic BaseSettings.
+
+Environment variables are loaded automatically by Pydantic. The .env file
+is also supported. Field names map to uppercase env var names (e.g.,
+``databricks_host`` reads ``DATABRICKS_HOST``).
+"""
+
+from __future__ import annotations
+
+import atexit
+import json
+import os
+from typing import Any, ClassVar, Literal
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _starboard_internal_installed() -> bool:
+    """Whether the gated ``starboard-internal`` package is importable.
+
+    Uses :func:`importlib.util.find_spec` — which *locates* the package on the
+    import path but never executes/imports it — so this public module keeps the
+    "Public packages import no ``starboard_internal``" import-linter contract KEPT.
+    Any lookup failure is treated as "not installed" (fail-closed).
+    """
+    import importlib.util
+
+    try:
+        return importlib.util.find_spec("starboard_internal") is not None
+    except (ImportError, ValueError, ModuleNotFoundError):
+        return False
+
+
+class EnvConfig(BaseSettings):
+    """
+    Environment configuration for Databricks and LLM settings.
+
+    This is the main configuration used by agents, tools, and LLM clients.
+    Loaded from environment variables with sensible defaults.
+
+    Uses Pydantic BaseSettings for automatic type coercion, validation,
+    and .env file support.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        # No prefix — existing env vars don't use one
+    )
+
+    # Databricks Configuration
+    databricks_host: str | None = None
+    databricks_token: str | None = Field(
+        default=None,
+        repr=False,  # W5: never expose token in repr/traceback locals
+    )
+    databricks_warehouse_id: str | None = None
+    default_catalog: str = "main"
+    default_schema: str = "default"
+
+    # Warehouse Auto-Creation
+    autocreate_dbx_dw: bool = True
+    """When True and DATABRICKS_WAREHOUSE_ID is not set, auto-create a
+    serverless SQL warehouse on startup. Env var: AUTOCREATE_DBX_DW"""
+
+    databricks_warehouse_name: str = "STARBOARD_AGENT_DW"
+    """Name for the auto-created warehouse. Env var: DATABRICKS_WAREHOUSE_NAME"""
+
+    databricks_warehouse_size: str = "X-Large"
+    """T-shirt size for the auto-created warehouse. Env var: DATABRICKS_WAREHOUSE_SIZE"""
+
+    # Databricks Support Mode
+    is_dbx_support: bool = False
+    """When True, execute system catalog grants for the Databricks
+    support principal before any workloads. Env var: IS_DBX_SUPPORT"""
+
+    # LLM Configuration
+    llm_provider: str = "openai"
+    llm_api_key: str | None = Field(
+        default=None,
+        repr=False,  # W5: never expose API key in repr/traceback locals
+    )
+    llm_model: str = "databricks-claude-sonnet-4-5"
+    llm_base_url: str = ""
+    llm_temperature: float = 0.4
+    llm_max_tokens: int = 75000
+    llm_seed: int | None = None
+
+    # Specialized LLM models for different operations
+    llm_planning_model: str | None = None
+    llm_planning_temperature: float | None = None
+    llm_judge_model: str | None = None
+    llm_judge_temperature: float | None = None
+    llm_synth_model: str | None = None
+    llm_synth_temperature: float | None = None
+
+    # Multi-Agent Configuration
+    disabled_agent_domains: list[str] | None = None
+    """
+    List of domains to completely disable from routing.
+    These domains will never be selected by the router.
+    Example: ["diagnostic", "table", "compute"]
+    """
+
+    # Multi-Agent Model Configuration (Per-Domain Overrides)
+    domain_model_overrides: dict[str, str] | None = None
+    """
+    Per-domain model overrides for multi-agent system.
+    Maps domain names to model identifiers.
+    Example: {"router": "gpt-4o-mini", "query": "gpt-4o", "diagnostic": "o1-preview"}
+    """
+
+    domain_temperature_overrides: dict[str, float] | None = None
+    """
+    Per-domain temperature overrides for multi-agent system.
+    Maps domain names to temperature values (0.0-2.0).
+    Example: {"router": 0.2, "query": 0.3, "diagnostic": 0.7}
+    """
+
+    # Agent Configuration
+    tool_parallelism: int = 4
+
+    # Analytics Configuration
+    max_analysis_result_rows: int = Field(
+        default=50,
+        description=("Maximum number of rows to return from analytics queries."),
+    )
+
+    # Server Configuration
+    host: str = "0.0.0.0"
+    port: int = 8000
+    debug: bool = False
+    log_level: str = "INFO"
+    log_json: bool = False
+
+    # Environment
+    environment: Literal["dev", "test", "staging", "production"] = "dev"
+
+    # Database Backend
+    # State is memory-only (native-first simplification): conversation and memory
+    # state are ephemeral, in-process, driver-free. Durable CLI session
+    # persistence is handled separately by the JSON-file SessionManager.
+    database_backend: Literal["memory"] = "memory"
+
+    # Cache Backend
+    # The "postgres" cache backend was never implemented and was removed along
+    # with the other non-memory state backends in the native-first simplification.
+    # Cache selection is driven by ``redis_url``: set it (with the starboard[redis]
+    # extra) to use the Redis cache, otherwise the driver-free in-memory cache is
+    # used. There is no separate cache_backend knob.
+    cache_ttl: int = 300  # 5 minutes default
+
+    max_request_size: int = 10 * 1024 * 1024  # 10MB default
+
+    # Optional Features
+    redis_url: str | None = None
+    safe_mode: bool = False
+    offline_mode: bool = False
+    mock_llm: bool = False
+    enable_caching: bool = True
+    enable_observability: bool = True
+    enable_pii_redaction: bool = True
+
+    # Internal-data enablement gate (Phase-2 C5, D-2.7).
+    # The allowlist is config-driven and EMPTY by default => the gate is CLOSED
+    # (public path). Never hard-code a customer or internal host here. No
+    # internal adapter ships in Phase 2, so a wrong signal cannot leak data.
+    internal_context_host_allowlist: list[str] = Field(default_factory=list)
+    """Internal workspace hosts that signal an internal context (substring match).
+    Default empty => gate closed. Accepts a comma-separated string via env."""
+    enable_internal_adapters: bool = False
+    """Reserved for Phase 3 — whether gated internal adapters may be selected.
+    Default False (public-only). No internal adapter exists in Phase 2."""
+    internal_mode: bool = False
+    """Internal no-workspace mode (fail-CLOSED; R2 mitigation). Env: INTERNAL_MODE.
+
+    When this flag *activates* (see :attr:`internal_mode_active`), Starboard
+    analyzes internal telemetry WITHOUT resolving a live customer
+    ``WorkspaceClient``: it skips the workspace-auth-resolvable pre-flight (but
+    NOT the LLM key check) and disables warehouse auto-creation (no workspace =>
+    nothing to auto-create).
+
+    **Safe no-op in the public wheel.** Setting the flag alone does nothing. It
+    activates only when it is True AND ``enable_internal_adapters=True`` AND the
+    ``starboard-internal`` package is installed. With the internal package absent
+    or the adapters disabled the flag has NO effect: the gate stays closed and the
+    public path is fully functional. The activation guard lives on the config
+    (not on the field default) so a customer who sets ``INTERNAL_MODE=true`` in a
+    public deployment never opens the gate and never sees a crash — it is simply
+    ignored."""
+
+    # Discovery Configuration
+    discovery_lookback_days: int = 30
+    discovery_max_parallelism: int = 4
+    discovery_domains: list[str] | None = None
+    """
+    Domains to analyze. None = auto-detect from platform audit.
+    Example: ["billing", "jobs", "compute", "query_performance"]
+    """
+    discovery_data_only: bool = False
+    """Skip LLM analysis and only collect raw query data."""
+    discovery_output_dir: str = "./discovery_output"
+    discovery_llm_model: str | None = None
+    """LLM model override for discovery analysis. Falls back to llm_model."""
+    discovery_llm_temperature: float = 0.3
+    discovery_min_dbu_threshold: float = 10.0
+    """Minimum DBUs for a product to trigger its domain pack. Products below
+    this threshold are treated as inactive. Set to 0 to disable filtering."""
+    discovery_internal_source_account: str | None = None
+    """Account-scope target for an unattended/scheduled ``--discover`` run
+    against the gated internal mirror (internal_query_symmetry, Task 9). When
+    set, the CLI discovery entry builds ``EngineConfig(source="internal", ...)``
+    with NO interactive prompt (still hard-errors if the internal package/gate
+    is unavailable). Unset (default) => external source, unchanged behavior.
+    Env: DISCOVERY_INTERNAL_SOURCE_ACCOUNT."""
+    discovery_internal_source_workspace_id: str | None = None
+    """Workspace-scope target for the same unattended internal-source run.
+    Takes precedence over ``discovery_internal_source_account`` when both are
+    set (one account or one workspace_id per run). Env:
+    DISCOVERY_INTERNAL_SOURCE_WORKSPACE_ID."""
+
+    # --- Field validators ---
+
+    _REMOVED_DATABASE_BACKENDS: ClassVar[frozenset[str]] = frozenset({
+        "sqlite", "postgres", "lakebase", "uc", "databricks",
+    })
+
+    @field_validator("database_backend", mode="before")
+    @classmethod
+    def _validate_database_backend(cls, v: Any) -> Any:
+        """Reject removed backends with an actionable migration message."""
+        if isinstance(v, str) and v.strip().lower() in cls._REMOVED_DATABASE_BACKENDS:
+            raise ValueError(
+                f"DATABASE_BACKEND={v!r} is no longer supported: Starboard state is "
+                "memory-only. Unset DATABASE_BACKEND or set it to 'memory'. "
+                "Durable CLI sessions are handled by the JSON-file SessionManager."
+            )
+        return v
+
+    _VALID_WAREHOUSE_SIZES: ClassVar[frozenset[str]] = frozenset({
+        "2X-Small", "X-Small", "Small", "Medium", "Large", "X-Large",
+        "2X-Large", "3X-Large", "4X-Large",
+    })
+
+    @field_validator("databricks_warehouse_size", mode="before")
+    @classmethod
+    def _validate_warehouse_size(cls, v: Any) -> str:
+        """Validate warehouse size is a recognized Databricks T-shirt size."""
+        normalized = str(v).strip()
+        size_map = {s.lower(): s for s in cls._VALID_WAREHOUSE_SIZES}
+        canonical = size_map.get(normalized.lower())
+        if canonical is None:
+            raise ValueError(
+                f"Invalid warehouse size '{normalized}'. "
+                f"Must be one of: {', '.join(sorted(cls._VALID_WAREHOUSE_SIZES))}"
+            )
+        return canonical
+
+    @field_validator("databricks_warehouse_name", mode="before")
+    @classmethod
+    def _validate_warehouse_name(cls, v: Any) -> str:
+        """Validate warehouse name is not empty."""
+        name = str(v).strip()
+        if not name:
+            raise ValueError("Warehouse name cannot be empty")
+        return name
+
+    @field_validator("disabled_agent_domains", mode="before")
+    @classmethod
+    def _parse_disabled_domains(cls, v: Any) -> list[str] | None:
+        """Parse comma-separated string into list."""
+        if isinstance(v, str):
+            items = [d.strip() for d in v.split(",") if d.strip()]
+            return items if items else None
+        return v
+
+    @field_validator("discovery_domains", mode="before")
+    @classmethod
+    def _parse_discovery_domains(cls, v: Any) -> list[str] | None:
+        """Parse comma-separated string into list."""
+        if isinstance(v, str):
+            items = [d.strip() for d in v.split(",") if d.strip()]
+            return items if items else None
+        return v
+
+    @field_validator("internal_context_host_allowlist", mode="before")
+    @classmethod
+    def _parse_internal_allowlist(cls, v: Any) -> list[str]:
+        """Parse comma-separated string into list; empty => closed gate."""
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [h.strip() for h in v.split(",") if h.strip()]
+        return v
+
+    @field_validator("domain_model_overrides", mode="before")
+    @classmethod
+    def _parse_domain_model_overrides(cls, v: Any) -> dict[str, str] | None:
+        """Parse JSON string into dict."""
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, dict):
+                    return {k: str(val) for k, val in parsed.items()}
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass
+            return None
+        return v
+
+    @field_validator("domain_temperature_overrides", mode="before")
+    @classmethod
+    def _parse_domain_temp_overrides(cls, v: Any) -> dict[str, float] | None:
+        """Parse JSON string into dict."""
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, dict):
+                    return {k: float(val) for k, val in parsed.items()}
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass
+            return None
+        return v
+
+    @field_validator("llm_base_url", mode="before")
+    @classmethod
+    def _ensure_url_scheme(cls, v: Any) -> Any:
+        # Prepend https:// when a non-empty base URL lacks a scheme so the
+        # OpenAI/httpx client receives a connectable host (empty string is left
+        # untouched — it means "use the SDK/provider default").
+        if isinstance(v, str) and v and not v.startswith(("http://", "https://")):
+            return f"https://{v}"
+        return v
+
+    # --- Derived properties ---
+
+    def _strip_http_scheme(self, url: str) -> str:
+        if url.startswith(("http://", "https://")):
+            return url.split("://", 1)[1]
+        return url
+
+    @property
+    def databricks_host_no_scheme(self) -> str | None:
+        if not self.databricks_host:
+            return None
+        return self._strip_http_scheme(self.databricks_host)
+
+    @property
+    def databricks_http_path(self) -> str | None:
+        if not self.databricks_warehouse_id:
+            return None
+        return f"/sql/1.0/warehouses/{self.databricks_warehouse_id}"
+
+    @property
+    def internal_mode_active(self) -> bool:
+        """Whether internal no-workspace mode can actually take effect (R2).
+
+        Fail-CLOSED: True only when ALL preconditions hold — the flag is
+        requested, gated internal adapters are enabled, AND the internal package
+        is installed. If any is missing this is ``False`` and the public path is
+        unaffected (the flag is a no-op). This is the single guard every
+        internal-mode behavior (auth-skip, warehouse-autocreate suppression,
+        gate opening) consults, so the flag can never open the gate on its own in
+        a public wheel.
+        """
+        return (
+            self.internal_mode
+            and self.enable_internal_adapters
+            and _starboard_internal_installed()
+        )
+
+    # --- Auth resolution (A1: auth by subtraction) ---
+
+    def _auth_resolvable(self) -> bool:
+        """Return True if *some* Databricks credential is resolvable.
+
+        Mirrors the resolver precedence + the SDK ``DefaultCredentials`` chain:
+        inline host+token, a profile (``STARBOARD_WORKSPACE`` /
+        ``DATABRICKS_CONFIG_PROFILE``), OAuth client creds, a ``DATABRICKS_HOST``
+        env with a token/client secret, a ``~/.databrickscfg`` file, or an ambient
+        Databricks runtime. No network calls — this is a cheap pre-flight check.
+        """
+        from pathlib import Path
+
+        if self.databricks_host and self.databricks_token:
+            return True
+        if os.environ.get("STARBOARD_WORKSPACE") or os.environ.get(
+            "DATABRICKS_CONFIG_PROFILE"
+        ):
+            return True
+        if os.environ.get("DATABRICKS_CLIENT_ID") and os.environ.get(
+            "DATABRICKS_CLIENT_SECRET"
+        ):
+            return True
+        if os.environ.get("DATABRICKS_HOST") and (
+            os.environ.get("DATABRICKS_TOKEN")
+            or (
+                os.environ.get("DATABRICKS_CLIENT_ID")
+                and os.environ.get("DATABRICKS_CLIENT_SECRET")
+            )
+        ):
+            return True
+        # ~/.databrickscfg (or DATABRICKS_CONFIG_FILE) profile store.
+        config_file = os.environ.get("DATABRICKS_CONFIG_FILE") or str(
+            Path.home() / ".databrickscfg"
+        )
+        if Path(config_file).exists():
+            return True
+        # Ambient runtime (Databricks notebook / job / model serving / Apps).
+        return bool(os.environ.get("DATABRICKS_RUNTIME_VERSION"))
+
+    # --- Cross-field validation (same as original validate_config()) ---
+
+    def validate_config(self) -> None:
+        """
+        Validate configuration (cross-field rules).
+
+        Raises:
+            ValueError: If configuration is invalid
+        """
+        errors = []
+
+        # Validate required fields in non-offline mode.
+        # Auth-by-subtraction (A1): host/token are OPTIONAL. We only require that *some*
+        # Databricks credential is resolvable (inline host+token, a profile, client
+        # creds, a ~/.databrickscfg, or an ambient Databricks runtime). The SDK's unified
+        # credential chain resolves the rest.
+        if not self.offline_mode:
+            # Internal no-workspace mode analyzes internal telemetry without a
+            # live customer WorkspaceClient, so the workspace-auth pre-flight is
+            # skipped when it is *active* (fail-closed guard). The LLM key check is
+            # NEVER skipped — internal mode still runs the LLM analyzers.
+            if not self.internal_mode_active and not self._auth_resolvable():
+                errors.append(
+                    "No Databricks auth resolved. Provide --profile (or set "
+                    "DATABRICKS_CONFIG_PROFILE / STARBOARD_WORKSPACE), pass "
+                    "--databricks-host + (--databricks-token | DATABRICKS_CLIENT_ID/"
+                    "SECRET), configure a ~/.databrickscfg profile, or run on a "
+                    "Databricks runtime (unless OFFLINE_MODE=true)."
+                )
+            if not self.llm_api_key:
+                errors.append("LLM_API_KEY required (unless OFFLINE_MODE=true)")
+
+        # Validate cache configuration
+        # Validate TTL values
+        if self.cache_ttl < 0:
+            errors.append(f"cache_ttl must be non-negative, got {self.cache_ttl}")
+
+        # Validate request size
+        if self.max_request_size <= 0:
+            errors.append(
+                f"max_request_size must be positive, got {self.max_request_size}"
+            )
+
+        # Validate discovery configuration
+        if self.discovery_lookback_days not in (30, 60, 90):
+            errors.append(
+                f"discovery_lookback_days must be 30, 60, or 90, "
+                f"got {self.discovery_lookback_days}"
+            )
+        if self.discovery_max_parallelism < 1 or self.discovery_max_parallelism > 16:
+            errors.append(
+                f"discovery_max_parallelism must be 1-16, "
+                f"got {self.discovery_max_parallelism}"
+            )
+        if self.discovery_min_dbu_threshold < 0:
+            errors.append(
+                f"discovery_min_dbu_threshold must be >= 0, "
+                f"got {self.discovery_min_dbu_threshold}"
+            )
+
+        if errors:
+            raise ValueError(
+                "Configuration validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
+            )
+
+    # --- Backward-compatible class methods ---
+
+    @staticmethod
+    def _parse_json_dict(
+        env_value: str | None, value_type: type = str
+    ) -> dict[str, Any] | None:
+        """
+        Parse JSON dictionary from environment variable.
+
+        Args:
+            env_value: Raw environment variable value (JSON string)
+            value_type: Expected type for dictionary values (str or float)
+
+        Returns:
+            Parsed dictionary or None if not set or invalid
+        """
+        if not env_value:
+            return None
+
+        try:
+            parsed = json.loads(env_value)
+            if not isinstance(parsed, dict):
+                return None
+
+            if value_type is float:
+                return {k: float(v) for k, v in parsed.items()}
+            else:
+                return {k: str(v) for k, v in parsed.items()}
+        except (json.JSONDecodeError, ValueError, TypeError):
+            return None
+
+    @classmethod
+    def from_env(cls) -> EnvConfig:
+        """
+        Load configuration from environment variables.
+
+        Pydantic BaseSettings handles env var loading automatically.
+        This method also checks for OPENAI_API_KEY as fallback for llm_api_key.
+
+        Returns:
+            EnvConfig instance with values from environment
+        """
+        config = cls()
+
+        # Fallback: OPENAI_API_KEY -> llm_api_key (backward compat)
+        if config.llm_api_key is None:
+            openai_key = os.getenv("OPENAI_API_KEY")
+            if openai_key:
+                config = config.model_copy(update={"llm_api_key": openai_key})
+
+        return config
+
+    def sync_to_env(self) -> None:
+        """
+        Sync configuration values to runtime environment variables.
+
+        This enables services like Databricks SDK that read directly from
+        environment variables to pick up configuration from config files or CLI args.
+
+        Only syncs non-None values to avoid overwriting existing environment
+        variables with defaults.
+
+        Security Note:
+            This method writes secrets (DATABRICKS_TOKEN, LLM_API_KEY, etc.)
+            to ``os.environ``. This is **intentional and load-bearing** — the
+            Databricks SDK reads credentials from environment variables at
+            runtime. Do NOT remove this method.
+
+            Credentials in log output are protected by the ``redact_credentials``
+            structlog processor in ``infra/observability/logging.py``, which
+            strips tokens, passwords, and API keys from all structured log events.
+        """
+        # Databricks Configuration
+        if self.databricks_host is not None:
+            os.environ["DATABRICKS_HOST"] = self.databricks_host
+        if self.databricks_token is not None:
+            os.environ["DATABRICKS_TOKEN"] = self.databricks_token
+        if self.databricks_warehouse_id is not None:
+            os.environ["DATABRICKS_WAREHOUSE_ID"] = self.databricks_warehouse_id
+        if self.default_catalog is not None:
+            os.environ["DEFAULT_CATALOG"] = self.default_catalog
+        if self.default_schema is not None:
+            os.environ["DEFAULT_SCHEMA"] = self.default_schema
+
+        # LLM Configuration
+        if self.llm_provider is not None:
+            os.environ["LLM_PROVIDER"] = self.llm_provider
+        if self.llm_api_key is not None:
+            os.environ["LLM_API_KEY"] = self.llm_api_key
+            # Also set OPENAI_API_KEY for backward compatibility
+            if self.llm_provider == "openai":
+                os.environ["OPENAI_API_KEY"] = self.llm_api_key
+        if self.llm_model is not None:
+            os.environ["LLM_MODEL"] = self.llm_model
+        if self.llm_base_url is not None:
+            os.environ["LLM_BASE_URL"] = self.llm_base_url
+        if self.llm_temperature is not None:
+            os.environ["LLM_TEMPERATURE"] = str(self.llm_temperature)
+        if self.llm_max_tokens is not None:
+            os.environ["LLM_MAX_TOKENS"] = str(self.llm_max_tokens)
+        if self.llm_seed is not None:
+            os.environ["LLM_SEED"] = str(self.llm_seed)
+
+        # Specialized LLM models
+        if self.llm_planning_model is not None:
+            os.environ["LLM_PLANNING_MODEL"] = self.llm_planning_model
+        if self.llm_planning_temperature is not None:
+            os.environ["LLM_PLANNING_TEMPERATURE"] = str(self.llm_planning_temperature)
+        if self.llm_judge_model is not None:
+            os.environ["LLM_JUDGE_MODEL"] = self.llm_judge_model
+        if self.llm_judge_temperature is not None:
+            os.environ["LLM_JUDGE_TEMPERATURE"] = str(self.llm_judge_temperature)
+        if self.llm_synth_model is not None:
+            os.environ["LLM_SYNTH_MODEL"] = self.llm_synth_model
+        if self.llm_synth_temperature is not None:
+            os.environ["LLM_SYNTH_TEMPERATURE"] = str(self.llm_synth_temperature)
+
+        # Multi-Agent Configuration
+        if self.disabled_agent_domains is not None:
+            os.environ["DISABLED_AGENT_DOMAINS"] = ",".join(self.disabled_agent_domains)
+
+        # Multi-Agent Model Configuration
+        if self.domain_model_overrides is not None:
+            os.environ["DOMAIN_MODEL_OVERRIDES"] = json.dumps(
+                self.domain_model_overrides
+            )
+        if self.domain_temperature_overrides is not None:
+            os.environ["DOMAIN_TEMPERATURE_OVERRIDES"] = json.dumps(
+                self.domain_temperature_overrides
+            )
+
+        # Agent Configuration
+        os.environ["TOOL_PARALLELISM"] = str(self.tool_parallelism)
+
+        # Analytics Configuration
+        os.environ["MAX_ANALYSIS_RESULT_ROWS"] = str(self.max_analysis_result_rows)
+
+        # Server Configuration
+        os.environ["HOST"] = self.host
+        os.environ["PORT"] = str(self.port)
+        os.environ["DEBUG"] = str(self.debug).lower()
+        os.environ["LOG_LEVEL"] = self.log_level
+        os.environ["LOG_JSON"] = str(self.log_json).lower()
+
+        # Environment
+        os.environ["ENVIRONMENT"] = self.environment
+
+        # Database Backend
+        os.environ["DATABASE_BACKEND"] = self.database_backend
+
+        # Cache Backend
+        os.environ["CACHE_TTL"] = str(self.cache_ttl)
+
+        os.environ["MAX_REQUEST_SIZE"] = str(self.max_request_size)
+
+        # Optional Features
+        if self.redis_url is not None:
+            os.environ["REDIS_URL"] = self.redis_url
+        os.environ["SAFE_MODE"] = str(self.safe_mode).lower()
+        os.environ["OFFLINE_MODE"] = str(self.offline_mode).lower()
+        os.environ["MOCK_LLM"] = str(self.mock_llm).lower()
+        os.environ["ENABLE_CACHING"] = str(self.enable_caching).lower()
+        os.environ["ENABLE_OBSERVABILITY"] = str(self.enable_observability).lower()
+        os.environ["ENABLE_PII_REDACTION"] = str(self.enable_pii_redaction).lower()
+
+        # Warehouse Auto-Creation
+        os.environ["AUTOCREATE_DBX_DW"] = str(self.autocreate_dbx_dw).lower()
+        os.environ["DATABRICKS_WAREHOUSE_NAME"] = self.databricks_warehouse_name
+        os.environ["DATABRICKS_WAREHOUSE_SIZE"] = self.databricks_warehouse_size
+
+        # Databricks Support Mode
+        os.environ["IS_DBX_SUPPORT"] = str(self.is_dbx_support).lower()
+
+        # Discovery Configuration
+        os.environ["DISCOVERY_LOOKBACK_DAYS"] = str(self.discovery_lookback_days)
+        os.environ["DISCOVERY_MAX_PARALLELISM"] = str(self.discovery_max_parallelism)
+        if self.discovery_domains is not None:
+            os.environ["DISCOVERY_DOMAINS"] = ",".join(self.discovery_domains)
+        os.environ["DISCOVERY_DATA_ONLY"] = str(self.discovery_data_only).lower()
+        os.environ["DISCOVERY_OUTPUT_DIR"] = self.discovery_output_dir
+        if self.discovery_llm_model is not None:
+            os.environ["DISCOVERY_LLM_MODEL"] = self.discovery_llm_model
+        os.environ["DISCOVERY_LLM_TEMPERATURE"] = str(self.discovery_llm_temperature)
+        os.environ["DISCOVERY_MIN_DBU_THRESHOLD"] = str(
+            self.discovery_min_dbu_threshold
+        )
+
+        # Register cleanup handler to remove sensitive env vars on process exit.
+        # This limits the window in which secrets are exposed in the process environment.
+        _sensitive_env_keys = [
+            "DATABRICKS_TOKEN",
+            "LLM_API_KEY",
+            "OPENAI_API_KEY",
+        ]
+
+        def _cleanup_sensitive_env_vars() -> None:
+            for key in _sensitive_env_keys:
+                os.environ.pop(key, None)
+
+        atexit.register(_cleanup_sensitive_env_vars)
+
+
+# Global singleton instance
+_env_config: EnvConfig | None = None
+
+
+def get_config() -> EnvConfig:
+    """
+    Get the global EnvConfig singleton.
+
+    Returns:
+        EnvConfig instance loaded from environment variables
+    """
+    global _env_config
+    if _env_config is None:
+        _env_config = EnvConfig.from_env()
+    return _env_config
+
+
+def set_config(config: EnvConfig, *, sync_to_env: bool = True) -> None:
+    """
+    Set the global EnvConfig singleton.
+
+    Args:
+        config: EnvConfig instance to set as global singleton
+        sync_to_env: If True, sync config values to runtime environment variables.
+    """
+    global _env_config
+    _env_config = config
+    if sync_to_env:
+        config.sync_to_env()

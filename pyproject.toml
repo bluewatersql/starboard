@@ -1,0 +1,476 @@
+# =============================================================================
+# uv workspace root — NOT an installable package
+# =============================================================================
+#
+# This root pyproject.toml is the uv workspace coordinator for local development.
+# Individual packages are installed from their own directories:
+#   pip install packages/starboard/        # full: CLI + MCP server + all agents
+#   pip install packages/starboard-core/   # kernel tier -> `starboard-kernel` wheel
+#   pip install packages/starboard-skills/ # lightweight helpers + Claude skills
+#
+# The [project] section below uses a distinct name ("starboard-meta") to avoid
+# conflicting with the "starboard" workspace member in packages/starboard/.
+# =============================================================================
+
+[project]
+name = "starboard-meta"
+version = "0.1.0"
+description = "Starboard AI Agent - AI-powered Databricks workload analysis and optimization"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Databricks Open Model License"}
+dependencies = [
+    "detect-secrets>=1.5.0",
+]
+
+[project.optional-dependencies]
+# =============================================================================
+# Legacy composition extras (pre-tier). Retained for back-compat (additive
+# guarantee). These compose the meta package's OWN extras — note the
+# `starboard-meta[...]` self-references: an earlier revision mistakenly used the
+# bare `starboard[...]` form, which resolves to the sibling `starboard` package
+# (which has none of these extras) and made `uv sync` emit spurious
+# "does not have an extra named ..." warnings. The canonical install story is the
+# tier model below (`starboard-meta[kernel|capability|experience]`).
+# =============================================================================
+core = [
+    "pydantic>=2.12.3",
+    "typing-extensions>=4.14.1",
+]
+
+server = [
+    "starboard-meta[core]",
+    # FastAPI stack
+    "fastapi>=0.104.0,<1.0.0",
+    "uvicorn[standard]>=0.24.0,<1.0.0",
+    "python-multipart>=0.0.6",
+    # Databricks & LLM
+    "databricks-sdk>=0.73.0,<1.0.0",
+    "databricks-sql-connector>=3.0.0",
+    "openai>=2.6.0,<3.0.0",
+    "tiktoken>=0.12.0",
+    # Data processing
+    "pandas>=2.3.3,<3.0.0",
+    "polars>=1.17.0,<2.0.0",
+    "pyarrow>=18.0.0,<20.0.0",
+    "numpy>=1.24.0,<3.0.0",
+    "sqlglot>=27.29.0,<28.0.0",
+    # Configuration
+    "pydantic>=2.0.0,<3.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+    # Infrastructure
+    "httpx>=0.28.1,<1.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "pyyaml>=6.0.3",
+    "rich>=13.0.0,<14.0.0",
+    "structlog>=24.0.0",
+    "redis>=5.0.0,<6.0.0",
+    # MCP protocol
+    "mcp>=1.19.0,<2.0.0",
+    "orjson>=3.11.4",
+    "aiofiles>=24.1",
+    # Observability (core tracing)
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+]
+
+cli = [
+    "starboard-meta[server]",
+]
+
+sdk = [
+    "starboard-meta[server]",
+]
+
+all = [
+    "starboard-meta[server,cli,sdk]",
+]
+
+# =============================================================================
+# Capability-tier install targets (Phase-3 B5 — layered catalog / thin wheels)
+# =============================================================================
+# Stable, ADDITIVE extras that name the three tiers of the 3-tier model
+# (kernel -> capability -> experience). Each is a thin wheel that can be
+# installed on its own; a consumer installs exactly the tier they need and
+# layers the next on top. These aliases do NOT change the existing single-wheel
+# `pip install starboard` (full experience tier) — they only give the tiers
+# stable names:
+#
+#   pip install "starboard-meta[kernel]"      # kernel only: pure DTOs + analyzers
+#   pip install "starboard-meta[capability]"  # + starboard_x progressive helpers
+#   pip install "starboard-meta[experience]"  # full MCP server + CLI + agents
+#
+# The kernel tier already installs standalone (`pip install starboard-kernel`);
+# these extras document the composition and keep the layering explicit. Each tier
+# now maps to an independently-published wheel (Phase-1 X3): starboard-kernel,
+# starboard-capability, starboard.
+kernel = [
+    "starboard-kernel",
+]
+capability = [
+    # Kernel + the dep-ful `python -m starboard_x.<domain>` middle tier (all
+    # per-capability extras), published as its own thin wheel. To install only the
+    # domains you need, use the kernel extras directly (e.g. starboard-kernel[warehouse,uc]).
+    "starboard-capability",
+]
+experience = [
+    # The full experience tier. `starboard` already hard-depends on the kernel,
+    # so this pulls kernel + capability surface + the MCP server / CLI / agents.
+    "starboard",
+]
+
+# =============================================================================
+# Per-domain tool plugins (Phase-3 B5 — entry-point discovery)
+# =============================================================================
+# Optional per-domain plugins extend the built-in tool surface at runtime via
+# the `starboard.mcp_tools` entry-point group (contract:
+# starboard.tools.plugins.ToolPlugin). Plugins are separate thin wheels — never
+# a dependency of a Starboard wheel — so the catalog is opt-in and absent
+# plugins degrade cleanly (empty catalog). A distributing package declares:
+#
+#   [project.entry-points."starboard.mcp_tools"]
+#   my_domain_tool = "my_pkg.plugin:my_plugin"   # -> a ToolPlugin object
+#
+# See packages/starboard-plugin-sample for a complete reference scaffold.
+
+# Developer tooling (lint/type/import-contract gates).
+dev = [
+    "import-linter>=2.0",
+]
+
+# Documentation site toolchain (`make docs` / `make docs-serve`). These back the
+# mkdocs-material build declared in mkdocs.yml (mermaid2 for inline diagrams,
+# git-revision-date-localized for the "Last Updated" stamp, macros for the
+# git_revision_date_localized variable). Docs are not built in CI, so this group
+# keeps the local `mkdocs build --strict` gate reproducible.
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocs-mermaid2-plugin>=1.1",
+    "mkdocs-git-revision-date-localized-plugin>=1.2",
+    "mkdocs-macros-plugin>=1.0",
+]
+
+# NOTE: Console scripts (`starboard`, `starboard-server`, `starboard-mcp`) are
+# declared on the installable `starboard` package (packages/starboard/
+# pyproject.toml), not here — this workspace root is not an installable package
+# (`[tool.uv] package = false`), so entry points declared here would never be
+# installed.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "packages/starboard-core/starboard_core",
+    "packages/starboard/starboard",
+]
+
+# =============================================================================
+# uv workspace (local development only)
+# =============================================================================
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    # Kernel tier — the `starboard-kernel` wheel (import packages starboard_core +
+    # starboard_x). Directory name kept as starboard-core; only the DISTRIBUTION
+    # name was renamed (Phase-1 X3 / D-1.2).
+    "packages/starboard-core",
+    # Capability tier — thin meta-wheel `starboard-capability` = starboard-kernel[all].
+    "packages/starboard-capability",
+    # One-release deprecation alias: the `starboard-core` distribution -> starboard-kernel.
+    "packages/starboard-core-alias",
+    "packages/starboard",
+    "packages/starboard-skills",
+    # Internal-index-only seam skeleton (Phase-3 D-3.1). A workspace member for
+    # local dev/verification only — it is NOT a dependency of any public wheel
+    # (the root wheel's [tool.hatch.build.targets.wheel] packages list omits it),
+    # and must never be published to a public index.
+    "packages/starboard-internal",
+    # Reference scaffold used by local plugin contract tests and development.
+    # It remains opt-in and is not a dependency of any Starboard wheel.
+    "packages/starboard-plugin-sample",
+]
+
+[tool.uv.sources]
+starboard-kernel = { workspace = true }
+starboard-capability = { workspace = true }
+# Deprecation alias distribution (packages/starboard-core-alias). Keeps existing
+# `starboard-core` references (e.g. starboard-internal) resolving for one release.
+starboard-core = { workspace = true }
+starboard = { workspace = true }
+starboard-skills = { workspace = true }
+starboard-internal = { workspace = true }
+starboard-plugin-sample = { workspace = true }
+
+# =============================================================================
+# Tool configurations
+# =============================================================================
+
+# =============================================================================
+# import-linter — kernel boundary contract (Phase-1 B1)
+# =============================================================================
+# Enforces that the pure starboard-kernel (import package starboard_core) surface
+# (domain models, analyzers, transformers, Finding) never imports the heavy runtime
+# dependencies. databricks-sdk lives behind the starboard-kernel[databricks]
+# extra (used only by the DBFS log loader, via a lazy import); openai/fastapi/
+# mcp belong to the Tier-2 server package. Run with: `lint-imports`
+# (or `python -m importlinter lint`) from the repo root.
+[tool.importlinter]
+root_packages = ["starboard_core", "starboard_x", "starboard", "starboard_skills"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Kernel is free of databricks-sdk / openai / fastapi / mcp"
+type = "forbidden"
+source_modules = [
+    "starboard_core.domain",
+]
+forbidden_modules = [
+    # import-linter requires top-level names for external packages; forbidding
+    # the whole `databricks` namespace is stricter than just `databricks.sdk`
+    # and correct here (the kernel imports no `databricks.*` at all).
+    "databricks",
+    "openai",
+    "fastapi",
+    "mcp",
+]
+
+# The diagnostics-core trio (Phase-1 B2) is the dep-light middle tier. It must
+# stay stdlib-only: no databricks-sdk, and none of the heavier optional deps
+# (pyyaml belongs to the `diagnostics` extra / pattern layer, not the trio).
+[[tool.importlinter.contracts]]
+name = "starboard_x diagnostics-core trio is stdlib-only (no SDK / heavy deps)"
+type = "forbidden"
+source_modules = [
+    "starboard_x.diagnostic",
+]
+forbidden_modules = [
+    "databricks",
+    "openai",
+    "fastapi",
+    "mcp",
+    "yaml",
+    "pydantic",
+    # never let the dep-light tier reach back into the heavy server package.
+    "starboard",
+]
+
+# The Phase-2 D4 pure analyzers (`warehouse analyze` / `uc analyze`) and the
+# Phase-3 D1b `review score` helper wrap the kernel's SDK-free logic. They must
+# stay off `databricks-sdk` (the kernel boundary) and must not reach back into
+# the heavy server package. (discovery / sparklog legitimately reach the SDK
+# behind their extras and are excluded.)
+[[tool.importlinter.contracts]]
+name = "starboard_x pure analyzers (warehouse/uc/review/cluster/charts) are SDK-free"
+type = "forbidden"
+source_modules = [
+    "starboard_x.warehouse",
+    "starboard_x.uc",
+    "starboard_x.review",
+    "starboard_x.cluster",
+    "starboard_x.charts",
+]
+forbidden_modules = [
+    "databricks",
+    "openai",
+    "fastapi",
+    "mcp",
+    "starboard",
+]
+
+# =============================================================================
+# Governance boundary — the internal-package seam (Phase-3 D-3.1)
+# =============================================================================
+# The public packages ship the ports + public adapters + the registry + the
+# `starboard.port_adapters` entry-point CONTRACT only. The gated internal
+# adapters live in the separately-distributed `starboard-internal` package
+# (import package `starboard_internal`), which is internal-index-only and never
+# a dependency of a public wheel. This contract makes UNIFIED_PLAN §7 an enforced
+# build property: the dependency edge may only flow internal -> public, so no
+# public package may import `starboard_internal.*`. KEPT (do not remove).
+[[tool.importlinter.contracts]]
+name = "Public packages import no starboard_internal"
+type = "forbidden"
+source_modules = [
+    "starboard",
+    "starboard_core",
+    "starboard_x",
+    "starboard_skills",
+]
+forbidden_modules = [
+    "starboard_internal",
+]
+
+# =============================================================================
+# Native-first simplification lock (P9) — removed subsystems stay removed
+# =============================================================================
+# The vector/embedding stack, the non-memory state backends (sqlite / postgres /
+# lakebase), and the unwired slowapi rate-limiter were deleted in the native-first
+# simplification (state is memory-only; RAG is reference-file only). Their drivers
+# are no longer dependencies. Forbidding the drivers across every public package
+# turns "we deleted it" into "it cannot come back": re-introducing any of these
+# subsystems would import one of these modules and fail this contract. KEPT.
+[[tool.importlinter.contracts]]
+name = "No removed-subsystem drivers (vector / non-memory state / rate-limit)"
+type = "forbidden"
+source_modules = [
+    "starboard",
+    "starboard_core",
+    "starboard_x",
+    "starboard_skills",
+]
+forbidden_modules = [
+    "slowapi",     # unwired rate-limit middleware (removed)
+    "sqlite_vec",  # sqlite vector extension (removed)
+    "pgvector",    # postgres vector extension (removed)
+    "aiosqlite",   # sqlite state backend driver (removed)
+    "asyncpg",     # postgres state backend driver (removed)
+    "psycopg2",    # postgres driver (removed)
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by ruff format)
+    "B008",  # function calls in argument defaults
+    "B905",  # zip without explicit strict
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ARG", "S101", "B017"]  # Allow assert, unused args, bare exceptions in tests
+"**/tests/**/*.py" = ["ARG", "S101", "B017"]  # Allow assert, unused args, bare exceptions in all test files
+"scripts/*.py" = ["ARG001", "SIM102", "SIM105"]  # Scripts may have unused args, intentional nested ifs, and try-except-pass
+"**/tests/**/test_s3_*.py" = ["E402"]  # S3 tests mock sys.modules[boto3] before importing, so imports are intentionally not top-of-file
+"**/templates/notebook*.py" = ["F821"]  # Databricks notebook templates use the runtime-provided `spark` global
+
+[tool.mypy]
+python_version = "3.12"
+# Incrementally enable strict checking - disabled for now due to many legacy issues
+strict = false
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+# Exclude package-level tests/conftest to avoid duplicate module errors in monorepo
+# Also exclude experiment directories (prototype code)
+exclude = [
+    "^packages/.*/tests/",
+    "^packages/.*/conftest\\.py$",
+    "^packages/starboard/experiment/",
+    "^scripts/",
+    "^tests/",
+    "^changes/",
+    "\\.ipynb$",
+]
+
+# Type checking settings
+warn_redundant_casts = true
+warn_unused_ignores = false
+warn_return_any = false
+disallow_untyped_defs = false
+disallow_untyped_decorators = false
+check_untyped_defs = true
+
+# Allow incremental typing adoption
+[[tool.mypy.overrides]]
+module = [
+    "databricks.*",
+    "sqlglot.*",
+    "pandas.*",
+    "requests.*",
+    "pyarrow.*",
+    "starboard_core.*",
+    "polars.*",
+    "openai.*",
+    "structlog.*",
+    "redis.*",
+    "starboard.agents.config.agent_config",
+    # Missing stubs for optional/dev dependencies
+    "boto3.*",
+    "botocore.*",
+    "pyspark.*",
+    "yaml",
+]
+ignore_missing_imports = true
+
+# Scripts have complex types from external libs
+[[tool.mypy.overrides]]
+module = "starboard.tools.domain.analytics.scripts.*"
+ignore_errors = true
+
+# Experiment directory is prototype code - skip type checking
+[[tool.mypy.overrides]]
+module = "starboard.experiment.*"
+ignore_errors = true
+
+# Log parser has legacy type issues - skip strict checking
+[[tool.mypy.overrides]]
+module = "starboard_core.log_parser.*"
+ignore_errors = true
+
+[tool.basedpyright]
+exclude = ["**/*.ipynb", "examples/"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages/*/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "unit: Unit tests (no external dependencies)",
+    "integration: Integration tests (may call external services)",
+    "golden: Golden/snapshot tests for prompts",
+    "slow: Tests that take >1s to run",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["starboard_core", "starboard"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[[tool.uv.index]]
+name = "databricks-proxy"
+url = "https://pypi-proxy.dev.databricks.com/simple/"
+default = true

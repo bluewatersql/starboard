@@ -1,0 +1,177 @@
+# Tier 2 Unity Catalog Patterns
+# Permission and access issues
+version: "1.0.0"
+
+patterns:
+  # ============================================================================
+  # PERMISSION DENIED PATTERNS
+  # ============================================================================
+  - id: uc_permission_denied
+    name: "Unity Catalog Permission Denied"
+    category: sql
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "PERMISSION_DENIED"
+      - "access denied"
+      - "does not have"
+      - "insufficient privileges"
+      - "not authorized"
+
+    regex_patterns:
+      - "PERMISSION_DENIED"
+      - "(?i)access.*denied"
+      - "(?i)does\\s*not\\s*have.*permission"
+      - "(?i)insufficient\\s*privileg"
+      - "(?i)not\\s*authorized"
+      - "(?i)user.*cannot.*access"
+
+    root_cause: |
+      User or service principal lacks required permissions to access the 
+      Unity Catalog resource (catalog, schema, table, volume, function, etc.).
+      Unity Catalog enforces fine-grained access control.
+
+    symptoms:
+      - "PERMISSION_DENIED errors in query"
+      - "Cannot access table/catalog/schema"
+      - "Insufficient privileges message"
+
+    root_causes:
+      - "Missing SELECT/MODIFY/ALL PRIVILEGES grant"
+      - "User not added to appropriate group"
+      - "Service principal missing permissions"
+      - "Permissions revoked by admin"
+
+    remediation:
+      - "Check required permissions for the operation"
+      - "Request access from data owner or admin"
+      - "Grant appropriate permissions via GRANT statement"
+      - "Verify group membership"
+
+    recommendations:
+      - id: grant_select
+        priority: high
+        action: "Grant SELECT permission on the table"
+        implementation: |
+          GRANT SELECT ON TABLE catalog.schema.table TO `user@domain.com`
+        verification: "Query succeeds after grant"
+
+      - id: check_grants
+        priority: medium
+        action: "Check current permissions"
+        implementation: |
+          SHOW GRANTS ON TABLE catalog.schema.table
+          SHOW GRANTS TO `user@domain.com`
+        verification: "Required permissions are listed"
+
+    evidence_checklist:
+      required:
+        - "PERMISSION_DENIED or access denied error"
+      supporting:
+        - "Specific resource (table/catalog) mentioned"
+        - "User or principal identified"
+
+    confidence_factors:
+      increase:
+        - "PERMISSION_DENIED in error message"
+        - "Specific permission type mentioned (SELECT, MODIFY)"
+      decrease:
+        - "Admin user encountering error"
+        - "Error is for different resource"
+
+    related_patterns:
+      - uc_not_found
+
+    docs:
+      - "https://docs.databricks.com/data-governance/unity-catalog/manage-privileges.html"
+
+  # ============================================================================
+  # NOT FOUND PATTERNS
+  # ============================================================================
+  - id: uc_not_found
+    name: "Unity Catalog Resource Not Found"
+    category: sql
+    severity: medium
+    responsibility: user_code
+
+    keywords:
+      - "does not exist"
+      - "not found"
+      - "TABLE_OR_VIEW_NOT_FOUND"
+      - "SCHEMA_NOT_FOUND"
+      - "CATALOG_NOT_FOUND"
+
+    regex_patterns:
+      - "TABLE_OR_VIEW_NOT_FOUND"
+      - "SCHEMA_NOT_FOUND"
+      - "CATALOG_NOT_FOUND"
+      - "(?i)table.*does\\s*not\\s*exist"
+      - "(?i)catalog.*not\\s*found"
+      - "(?i)schema.*does\\s*not\\s*exist"
+
+    root_cause: |
+      Referenced Unity Catalog resource (catalog, schema, table, view, 
+      function, or volume) does not exist or is not accessible in the 
+      current catalog/schema context.
+
+    symptoms:
+      - "TABLE_OR_VIEW_NOT_FOUND errors"
+      - "Resource does not exist messages"
+      - "Query fails with not found error"
+
+    root_causes:
+      - "Typo in resource name"
+      - "Wrong catalog or schema context"
+      - "Resource was dropped or renamed"
+      - "Resource not yet created"
+
+    remediation:
+      - "Verify resource name spelling"
+      - "Check current catalog/schema context"
+      - "Use fully qualified name (catalog.schema.table)"
+      - "Verify resource exists with SHOW commands"
+
+    recommendations:
+      - id: use_fqn
+        priority: high
+        action: "Use fully qualified table name"
+        implementation: |
+          -- Instead of:
+          SELECT * FROM my_table
+          
+          -- Use:
+          SELECT * FROM my_catalog.my_schema.my_table
+        verification: "Query resolves the correct table"
+
+      - id: check_catalog
+        priority: medium
+        action: "Verify current catalog and schema"
+        implementation: |
+          SELECT current_catalog(), current_schema()
+          USE CATALOG my_catalog
+          USE SCHEMA my_schema
+        verification: "Correct catalog and schema are set"
+
+    evidence_checklist:
+      required:
+        - "NOT_FOUND error with resource name"
+      supporting:
+        - "Resource name in error message"
+        - "Query using short name"
+
+    confidence_factors:
+      increase:
+        - "Specific resource type in error (TABLE, SCHEMA, CATALOG)"
+        - "Typo or case mismatch in name"
+      decrease:
+        - "Resource name verified to exist"
+        - "Permission denied is actual issue"
+
+    related_patterns:
+      - uc_permission_denied
+      - column_not_found
+
+    docs:
+      - "https://docs.databricks.com/data-governance/unity-catalog/index.html"
+

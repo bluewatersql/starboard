@@ -1,0 +1,113 @@
+site_name: Starboard AI Agent Documentation
+site_description: AI-powered Databricks workload analysis and optimization
+site_url: https://starboard-ai.github.io/job-agent
+repo_url: https://github.com/starboard-ai/job-agent
+repo_name: starboard-ai/job-agent
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.follow
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang: en
+  - mermaid2
+  - git-revision-date-localized:
+      enable_creation_date: true
+      enable_git_follow: false
+      fallback_to_build_date: true
+      strict: false
+  - macros
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - def_list
+  - toc:
+      permalink: true
+      toc_depth: 4
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/starboard-ai
+
+nav:
+  - Home: index.md
+
+  - Overview:
+      - What is Starboard?: overview/what-is-starboard.md
+      - Agent Catalog: overview/agents.md
+      - Glossary: overview/glossary.md
+      - Changelog: overview/changelog.md
+
+  - Guide:
+      - Quickstart: guide/quickstart.md
+      - CLI Reference: guide/cli.md
+      - Workflows: guide/workflows.md
+      - Understanding Reports: guide/reports.md
+      - Skills & MCP: guide/skills.md
+      - Troubleshooting: guide/troubleshooting.md
+
+  - Architecture: architecture.md
+
+  - Contributing: contributing.md
+

@@ -1,0 +1,14 @@
+{#- Base template for domain agent system prompts.
+   Domains extend this and override blocks as needed.
+   Shared guideline sections are included at the bottom. -#}
+{% block domain_prompt %}{% endblock %}
+{% block tool_execution %}
+{% include "shared/tool_execution.jinja2" %}
+{% endblock %}
+{% block data_listing %}
+{% include "shared/data_listing.jinja2" %}
+{% endblock %}
+{% block next_steps %}{% endblock %}
+{% block complete_tool %}
+{% include "shared/response_format.jinja2" %}
+{% endblock %}
