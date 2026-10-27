@@ -1,0 +1,59 @@
+{
+  "domain": "query",
+  "version": "1.0.0",
+  "description": "Basic evaluation cases for the Query Optimization Agent",
+  "cases": [
+    {
+      "id": "query_001",
+      "description": "Basic query optimization request",
+      "input": {
+        "goal": "Optimize this SQL query for better performance",
+        "context": {
+          "sql_text": "SELECT * FROM orders WHERE date > '2024-01-01'"
+        }
+      },
+      "expected": {
+        "contains": ["query", "optimization"],
+        "category": "QUERY",
+        "min_confidence": 0.7
+      },
+      "tags": ["basic", "optimization"]
+    },
+    {
+      "id": "query_002",
+      "description": "Partition predicate optimization",
+      "input": {
+        "goal": "Why is my query scanning the entire table?",
+        "context": {
+          "sql_text": "SELECT * FROM sales WHERE amount > 1000",
+          "table_info": {
+            "partitioned_by": "date"
+          }
+        }
+      },
+      "expected": {
+        "contains": ["partition", "predicate", "filter"],
+        "category": "QUERY",
+        "min_confidence": 0.8
+      },
+      "tags": ["partition", "full-scan"]
+    },
+    {
+      "id": "query_003",
+      "description": "Join optimization request",
+      "input": {
+        "goal": "Optimize the joins in this query",
+        "context": {
+          "sql_text": "SELECT * FROM orders o JOIN customers c ON o.customer_id = c.id"
+        }
+      },
+      "expected": {
+        "contains": ["join"],
+        "category": "QUERY",
+        "min_confidence": 0.6
+      },
+      "tags": ["join", "optimization"]
+    }
+  ]
+}
+

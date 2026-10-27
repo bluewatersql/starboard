@@ -1,0 +1,12 @@
+{
+  "snapshot_version": "1.0",
+  "created_at": "<VOLATILE>",
+  "workspace": "ws-856",
+  "requested_domains": [
+    "jobs",
+    "sql",
+    "warehouse"
+  ],
+  "finding_ids": [],
+  "finding_count": 0
+}

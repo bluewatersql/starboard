@@ -1,0 +1,214 @@
+{
+  "data_only": true,
+  "trace_id": "trace-1",
+  "elapsed_ms": 1.0,
+  "errors": [
+    "F-02: PARSE_SYNTAX_ERROR"
+  ],
+  "audit": {
+    "succeeded": true
+  },
+  "facts": {
+    "window": {
+      "start": "2026-09-01",
+      "end": "2026-09-30",
+      "days": 30,
+      "label": "trailing 30 full days (excludes today)"
+    },
+    "total": {
+      "dbus": 600.5,
+      "dsu": null
+    },
+    "product_mix": [
+      {
+        "product": "JOBS",
+        "dbus": 600.5,
+        "pct": 100.0
+      }
+    ],
+    "months": null,
+    "top_jobs": null,
+    "top_pipelines": null,
+    "step_change": null,
+    "job_reliability": null,
+    "job_reliability_by_job": null,
+    "performance_mode": null,
+    "warehouses": null,
+    "top_warehouses": null,
+    "recent_config_changes": null,
+    "sources": {
+      "total": "F-01",
+      "window": "F-01",
+      "product_mix": "F-01"
+    },
+    "unavailable": {
+      "months": "source query F-02 failed: PARSE_SYNTAX_ERROR",
+      "top_jobs": "source query F-04 did not run (facts pack not selected)",
+      "top_pipelines": "source query F-05 did not run (facts pack not selected)",
+      "step_change": "source query F-03 did not run (facts pack not selected)",
+      "job_reliability": "source query F-06 did not run (facts pack not selected)",
+      "job_reliability_by_job": "source query F-12 did not run (facts pack not selected)",
+      "performance_mode": "source query F-07 did not run (facts pack not selected)",
+      "warehouses": "source query F-08 did not run (facts pack not selected); source query F-09 did not run (facts pack not selected)",
+      "top_warehouses": "source query F-11 did not run (facts pack not selected)",
+      "recent_config_changes": "source query F-10 did not run (facts pack not selected)"
+    },
+    "fallbacks": {},
+    "fallback_notes": {}
+  },
+  "pack_count": 2,
+  "packs": [
+    {
+      "pack": "billing",
+      "queries": 2,
+      "succeeded": 1,
+      "results": [
+        {
+          "query_id": "F-01",
+          "domain": "billing",
+          "succeeded": true,
+          "status": "succeeded",
+          "error": null,
+          "row_count": 1,
+          "columns": [
+            "workspace_id",
+            "billing_origin_product",
+            "usage_unit",
+            "window_start",
+            "window_end",
+            "usage_quantity"
+          ],
+          "rows": [
+            {
+              "workspace_id": "123",
+              "billing_origin_product": "JOBS",
+              "usage_unit": "DBU",
+              "window_start": "2026-09-01",
+              "window_end": "2026-09-30",
+              "usage_quantity": "600.5"
+            }
+          ],
+          "truncated": false,
+          "row_limit": null,
+          "limit_reached": false,
+          "lookback_days": 30,
+          "execution_time_ms": 12.3,
+          "attempts": 1,
+          "attempt_elapsed_ms": [
+            12.3
+          ]
+        },
+        {
+          "query_id": "F-02",
+          "domain": "billing",
+          "succeeded": false,
+          "status": "failed",
+          "error": "PARSE_SYNTAX_ERROR",
+          "row_count": 0,
+          "columns": [],
+          "rows": [],
+          "truncated": false,
+          "row_limit": null,
+          "limit_reached": false,
+          "lookback_days": 30,
+          "execution_time_ms": 12.3,
+          "attempts": 1,
+          "attempt_elapsed_ms": [
+            12.3
+          ]
+        }
+      ]
+    },
+    {
+      "pack": "Governance (UC)",
+      "queries": 1,
+      "succeeded": 1,
+      "results": [
+        {
+          "query_id": "G-01",
+          "domain": "governance",
+          "succeeded": true,
+          "status": "succeeded",
+          "error": null,
+          "row_count": 2,
+          "columns": [
+            "catalog",
+            "tables"
+          ],
+          "rows": [
+            {
+              "catalog": "main",
+              "tables": 3
+            },
+            {
+              "catalog": "dev",
+              "tables": 1
+            }
+          ],
+          "truncated": false,
+          "row_limit": null,
+          "limit_reached": false,
+          "lookback_days": 30,
+          "execution_time_ms": 12.3,
+          "attempts": 1,
+          "attempt_elapsed_ms": [
+            12.3
+          ]
+        }
+      ]
+    }
+  ],
+  "domain_analyses": [
+    {
+      "kind": "data_only_summary",
+      "domain": "billing",
+      "packs": [
+        "billing"
+      ],
+      "queries": 2,
+      "succeeded": 1,
+      "skipped": 0,
+      "failed": 1,
+      "rows_total": 1,
+      "nonempty_query_ids": [
+        "F-01"
+      ],
+      "limit_reached_ids": [],
+      "query_row_counts": {
+        "F-01": 1,
+        "F-02": 0
+      },
+      "data_paths": [
+        "data.packs[0]"
+      ],
+      "raw_paths": [
+        "raw/billing.json"
+      ]
+    },
+    {
+      "kind": "data_only_summary",
+      "domain": "governance",
+      "packs": [
+        "Governance (UC)"
+      ],
+      "queries": 1,
+      "succeeded": 1,
+      "skipped": 0,
+      "failed": 0,
+      "rows_total": 2,
+      "nonempty_query_ids": [
+        "G-01"
+      ],
+      "limit_reached_ids": [],
+      "query_row_counts": {
+        "G-01": 2
+      },
+      "data_paths": [
+        "data.packs[1]"
+      ],
+      "raw_paths": [
+        "raw/governance_uc.json"
+      ]
+    }
+  ]
+}

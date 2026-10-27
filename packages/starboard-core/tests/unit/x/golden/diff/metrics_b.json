@@ -1,0 +1,15 @@
+{
+  "statement_id": "s-2",
+  "metrics": {
+    "total_duration_ms": 9000,
+    "read_bytes": 536870912,
+    "rows_produced_count": 10,
+    "bytes_read_from_cache_pct": 40.0,
+    "photon_used": true,
+    "compilationTimeMs": 450,
+    "task_total_time_ms": 16000,
+    "pruned_files": 90,
+    "queue_wait_ms": 120
+  },
+  "operators": [{"id": "1", "value": 3000}]
+}

@@ -1,0 +1,48 @@
+{
+  "window": {
+    "start": "2026-09-01",
+    "end": "2026-09-30",
+    "days": 30,
+    "label": "trailing 30 full days (excludes today)"
+  },
+  "total": {
+    "dbus": 600.5,
+    "dsu": null
+  },
+  "product_mix": [
+    {
+      "product": "JOBS",
+      "dbus": 600.5,
+      "pct": 100.0
+    }
+  ],
+  "months": null,
+  "top_jobs": null,
+  "top_pipelines": null,
+  "step_change": null,
+  "job_reliability": null,
+  "job_reliability_by_job": null,
+  "performance_mode": null,
+  "warehouses": null,
+  "top_warehouses": null,
+  "recent_config_changes": null,
+  "sources": {
+    "total": "F-01",
+    "window": "F-01",
+    "product_mix": "F-01"
+  },
+  "unavailable": {
+    "months": "source query F-02 failed: PARSE_SYNTAX_ERROR",
+    "top_jobs": "source query F-04 did not run (facts pack not selected)",
+    "top_pipelines": "source query F-05 did not run (facts pack not selected)",
+    "step_change": "source query F-03 did not run (facts pack not selected)",
+    "job_reliability": "source query F-06 did not run (facts pack not selected)",
+    "job_reliability_by_job": "source query F-12 did not run (facts pack not selected)",
+    "performance_mode": "source query F-07 did not run (facts pack not selected)",
+    "warehouses": "source query F-08 did not run (facts pack not selected); source query F-09 did not run (facts pack not selected)",
+    "top_warehouses": "source query F-11 did not run (facts pack not selected)",
+    "recent_config_changes": "source query F-10 did not run (facts pack not selected)"
+  },
+  "fallbacks": {},
+  "fallback_notes": {}
+}

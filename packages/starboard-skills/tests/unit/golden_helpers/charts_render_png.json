@@ -1,0 +1,7 @@
+{
+  "exit": 0,
+  "files": {
+    "deliverables/charts/spend.png": "base64:iVBORy1mYWtl"
+  },
+  "stdout": "{\n  \"ok\": true,\n  \"domain\": \"charts\",\n  \"command\": \"render\",\n  \"data\": {\n    \"out_path\": \"<TMP>/deliverables/charts/spend.png\",\n    \"bytes_written\": 9,\n    \"kind\": \"spend-by-product\",\n    \"format\": \"png\"\n  },\n  \"error\": null,\n  \"meta\": {\n    \"format\": \"png\",\n    \"contract_version\": \"1.0\"\n  }\n}\n"
+}

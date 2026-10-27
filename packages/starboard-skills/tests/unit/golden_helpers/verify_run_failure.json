@@ -1,0 +1,7 @@
+{
+  "exit": 4,
+  "files": {
+    "analysis/verify/vt-job-run-tail.json": "{\n  \"ok\": false,\n  \"domain\": \"query\",\n  \"command\": \"sql\",\n  \"data\": {\n    \"verify\": {\n      \"vt_id\": \"vt-job-run-tail\",\n      \"title\": \"longest runs of one job\",\n      \"templates\": \"<TMP>/verify-sql.md\",\n      \"suffix\": null,\n      \"params\": null,\n      \"source\": \"public\",\n      \"sql_file\": null,\n      \"arg_error\": true,\n      \"required\": {\n        \"job_id\": \"--job-ids (exactly one id)\",\n        \"start\": \"--start\",\n        \"end\": \"--end\"\n      },\n      \"required_flags\": [\n        \"--job-ids\",\n        \"--start\",\n        \"--end\"\n      ]\n    }\n  },\n  \"error\": \"vt-job-run-tail: unfilled placeholder(s): {job_id} (--job-ids (exactly one id))\",\n  \"meta\": {\n    \"format\": \"json\",\n    \"contract_version\": \"1.0\"\n  }\n}\n"
+  },
+  "stdout": "{\n  \"ok\": false,\n  \"domain\": \"verify\",\n  \"command\": \"run\",\n  \"data\": null,\n  \"error\": \"vt-job-run-tail: unfilled placeholder(s): {job_id} (--job-ids (exactly one id))\",\n  \"meta\": {\n    \"format\": \"json\",\n    \"contract_version\": \"1.0\"\n  }\n}\n"
+}

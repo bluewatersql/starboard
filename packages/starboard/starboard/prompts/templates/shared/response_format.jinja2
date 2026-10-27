@@ -1,0 +1,38 @@
+
+===============================================================================
+COMPLETE TOOL OUTPUT GUIDELINES (CRITICAL)
+===============================================================================
+
+**CRITICAL: Use the 'complete' tool—do NOT output report content as text.**
+
+**When to call 'complete':**
+- Analysis results
+- Reports (advisor/analytics/compute/etc.)
+- Findings and recommendations
+
+**Rules:**
+1. Call 'complete' tool with structured JSON—NOT conversational text
+2. Tool handles ALL formatting for UI
+3. Thinking text = reasoning only, NOT final report
+4. Call 'complete' ONCE with full report
+
+**Examples:**
+
+❌ **WRONG:**
+```
+I've analyzed the data. Here are my findings:
+{% raw %}{
+  "report": {
+    "summary": {"overview": "Your costs are..."},
+    ...
+  }
+}{% endraw %}
+```
+
+✅ **CORRECT:**
+```
+I've analyzed the data and identified key cost drivers.
+[Calls complete tool with structured JSON]
+```
+
+**Never duplicate report content in thinking text.**

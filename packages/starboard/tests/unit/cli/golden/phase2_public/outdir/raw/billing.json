@@ -1,0 +1,49 @@
+{
+  "pack": "billing",
+  "domain": "billing",
+  "results": [
+    {
+      "query_id": "C-B01",
+      "domain": "billing",
+      "succeeded": true,
+      "status": "succeeded",
+      "error": null,
+      "row_count": 2,
+      "columns": [
+        "x"
+      ],
+      "rows": [
+        {
+          "x": 1
+        },
+        {
+          "x": 2
+        }
+      ],
+      "truncated": false,
+      "row_limit": null,
+      "limit_reached": false,
+      "lookback_days": null,
+      "execution_time_ms": 0.0,
+      "attempts": 0,
+      "attempt_elapsed_ms": []
+    },
+    {
+      "query_id": "C-B02",
+      "domain": "billing",
+      "succeeded": false,
+      "status": "failed",
+      "error": "PARSE_SYNTAX_ERROR",
+      "row_count": 0,
+      "columns": [],
+      "rows": [],
+      "truncated": false,
+      "row_limit": null,
+      "limit_reached": false,
+      "lookback_days": null,
+      "execution_time_ms": 0.0,
+      "attempts": 0,
+      "attempt_elapsed_ms": []
+    }
+  ]
+}

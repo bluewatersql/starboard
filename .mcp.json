@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "starboard": {
+      "command": "starboard-mcp",
+      "args": ["--transport", "stdio"],
+      "timeout": 900
+    }
+  }
+}

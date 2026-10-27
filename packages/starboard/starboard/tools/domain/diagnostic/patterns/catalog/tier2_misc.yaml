@@ -1,0 +1,271 @@
+# Tier 2 Miscellaneous Patterns
+# Network, Python worker, and Arrow conversion issues
+version: "1.0.0"
+
+patterns:
+  # ============================================================================
+  # NETWORK THROTTLING PATTERNS
+  # ============================================================================
+  - id: network_throttling
+    name: "Network Throttling or Rate Limiting"
+    category: network
+    severity: medium
+    responsibility: infrastructure
+
+    keywords:
+      - "throttled"
+      - "rate limit"
+      - "too many requests"
+      - "429"
+      - "SlowDown"
+      - "RequestLimitExceeded"
+
+    regex_patterns:
+      - "(?i)throttl"
+      - "(?i)rate\\s*limit"
+      - "(?i)too\\s*many\\s*requests"
+      - "HTTP\\s*429"
+      - "SlowDown"
+      - "RequestLimitExceeded"
+      - "(?i)bandwidth.*limit"
+
+    root_cause: |
+      Network requests are being throttled by cloud provider, external API, 
+      or storage backend. This typically occurs when request rates exceed 
+      service limits.
+
+    symptoms:
+      - "HTTP 429 errors"
+      - "SlowDown or throttling messages"
+      - "Intermittent connection failures"
+      - "Retry messages in logs"
+
+    root_causes:
+      - "Too many concurrent requests to storage"
+      - "API rate limits exceeded"
+      - "Cloud provider throttling (S3, ADLS, GCS)"
+      - "Too many small file operations"
+
+    remediation:
+      - "Reduce concurrent requests"
+      - "Implement exponential backoff"
+      - "Batch operations to reduce request count"
+      - "Request quota increase from cloud provider"
+
+    recommendations:
+      - id: reduce_parallelism
+        priority: high
+        action: "Reduce parallelism for storage operations"
+        implementation: |
+          # Reduce number of concurrent tasks
+          spark.conf.set("spark.sql.shuffle.partitions", "100")
+          # Use fewer executors with more cores
+        verification: "Throttling errors decrease"
+
+      - id: implement_backoff
+        priority: medium
+        action: "Enable retry with exponential backoff"
+        implementation: |
+          # Spark S3 retries
+          spark.conf.set("spark.hadoop.fs.s3a.retry.limit", "10")
+          spark.conf.set("spark.hadoop.fs.s3a.retry.interval", "500ms")
+        verification: "Transient errors are retried successfully"
+
+    evidence_checklist:
+      required:
+        - "Throttling or rate limit error message"
+      supporting:
+        - "HTTP 429 status code"
+        - "High request rate to storage"
+
+    confidence_factors:
+      increase:
+        - "429 or SlowDown in logs"
+        - "Many concurrent storage operations"
+      decrease:
+        - "Network is completely down"
+        - "Authentication error"
+
+    related_patterns:
+      - connection_timeout
+      - shuffle_fetch_failed
+
+    docs:
+      - "https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html"
+      - "https://docs.databricks.com/storage/index.html"
+
+  # ============================================================================
+  # PYTHON WORKER CRASH PATTERNS
+  # ============================================================================
+  - id: python_worker_crash
+    name: "Python Worker Process Crash"
+    category: execution
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "Python worker"
+      - "PythonException"
+      - "worker crashed"
+      - "PySpark"
+      - "python process"
+
+    regex_patterns:
+      - "(?i)python\\s*worker.*(?:crash|exit|fail)"
+      - "PythonException"
+      - "(?i)pyspark.*worker.*error"
+      - "(?i)python\\s*process.*(?:died|killed)"
+      - "SparkException.*Python"
+
+    root_cause: |
+      Python worker process crashed during PySpark execution. This can occur 
+      due to Python memory issues, native library problems, or errors in 
+      Python UDFs.
+
+    symptoms:
+      - "Python worker exited unexpectedly"
+      - "PythonException in logs"
+      - "Task failures in PySpark stages"
+
+    root_causes:
+      - "Python memory exhaustion (different from JVM)"
+      - "Native library crash (numpy, pandas, etc.)"
+      - "Serialization error in UDF"
+      - "Python exception in UDF not properly handled"
+
+    remediation:
+      - "Check Python error logs for exception details"
+      - "Increase Python memory limits"
+      - "Use vectorized/pandas UDFs instead of row-at-a-time"
+      - "Handle exceptions within UDFs"
+
+    recommendations:
+      - id: vectorized_udf
+        priority: high
+        action: "Replace scalar UDFs with pandas/vectorized UDFs"
+        implementation: |
+          from pyspark.sql.functions import pandas_udf
+          import pandas as pd
+          
+          @pandas_udf("double")
+          def my_pandas_udf(col: pd.Series) -> pd.Series:
+              return col * 2
+        verification: "No Python worker crashes"
+
+      - id: python_memory
+        priority: medium
+        action: "Increase Python worker memory"
+        implementation: |
+          spark.conf.set("spark.python.worker.memory", "4g")
+          spark.conf.set("spark.executor.pyspark.memory", "4g")
+        verification: "Python workers don't OOM"
+
+    evidence_checklist:
+      required:
+        - "Python worker crash or exit message"
+      supporting:
+        - "PySpark UDF in query"
+        - "Python traceback in logs"
+
+    confidence_factors:
+      increase:
+        - "PythonException in stack trace"
+        - "UDF referenced in query plan"
+      decrease:
+        - "No Python code in job"
+        - "JVM-only Spark SQL"
+
+    related_patterns:
+      - task_not_serializable
+      - java_heap_space
+
+    docs:
+      - "https://docs.databricks.com/pyspark/index.html"
+      - "https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html"
+
+  # ============================================================================
+  # ARROW CONVERSION PATTERNS
+  # ============================================================================
+  - id: arrow_conversion_error
+    name: "Arrow Conversion Error"
+    category: execution
+    severity: medium
+    responsibility: user_code
+
+    keywords:
+      - "Arrow"
+      - "ArrowException"
+      - "conversion error"
+      - "toPandas"
+      - "ArrowInvalid"
+
+    regex_patterns:
+      - "(?i)arrow.*(?:error|exception|invalid)"
+      - "ArrowInvalid"
+      - "ArrowException"
+      - "(?i)cannot.*convert.*arrow"
+      - "(?i)toPandas.*(?:error|fail)"
+      - "(?i)pandas.*arrow.*conversion"
+
+    root_cause: |
+      Error during Apache Arrow conversion between Spark and Pandas DataFrames. 
+      Common with complex types, large data, or unsupported data types.
+
+    symptoms:
+      - "ArrowInvalid or ArrowException errors"
+      - "toPandas() failures"
+      - "Pandas UDF conversion errors"
+
+    root_causes:
+      - "Unsupported data type for Arrow"
+      - "Null values in non-nullable Arrow types"
+      - "Data too large for single Arrow batch"
+      - "Schema mismatch between Spark and Pandas"
+
+    remediation:
+      - "Cast complex types to Arrow-compatible types"
+      - "Handle nulls before conversion"
+      - "Reduce batch size for large data"
+      - "Disable Arrow if not needed"
+
+    recommendations:
+      - id: handle_nulls_arrow
+        priority: high
+        action: "Handle null values before Arrow conversion"
+        implementation: |
+          # Fill nulls or filter them out
+          df = df.fillna({"col": default_value})
+          # Or cast to nullable type
+          df = df.withColumn("col", col("col").cast("string"))
+        verification: "Arrow conversion succeeds"
+
+      - id: disable_arrow
+        priority: low
+        action: "Disable Arrow if not needed"
+        implementation: |
+          spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "false")
+        verification: "Conversion uses fallback (slower but works)"
+
+    evidence_checklist:
+      required:
+        - "Arrow error in stack trace"
+      supporting:
+        - "toPandas() or pandas UDF in code"
+        - "Complex data types (arrays, structs, maps)"
+
+    confidence_factors:
+      increase:
+        - "ArrowInvalid in error message"
+        - "toPandas() or createDataFrame() in traceback"
+      decrease:
+        - "Arrow not enabled"
+        - "No Pandas/Python interop"
+
+    related_patterns:
+      - python_worker_crash
+      - task_not_serializable
+
+    docs:
+      - "https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html"
+      - "https://arrow.apache.org/docs/python/"
+

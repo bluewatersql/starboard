@@ -1,0 +1,8 @@
+{
+  "exit": 0,
+  "files": {
+    "analysis/verify/vt-product-totals.json": "{\n  \"ok\": true,\n  \"domain\": \"query\",\n  \"command\": \"sql\",\n  \"data\": {\n    \"columns\": [\n      \"a\"\n    ],\n    \"rows\": [\n      [\n        \"1\"\n      ]\n    ],\n    \"row_count\": 1,\n    \"limit_reached\": false,\n    \"state\": \"SUCCEEDED\",\n    \"read_only\": true,\n    \"verify\": {\n      \"vt_id\": \"vt-product-totals\",\n      \"title\": \"product totals, full days\",\n      \"templates\": \"<TMP>/verify-sql.md\",\n      \"suffix\": null,\n      \"params\": {\n        \"ws\": \"123\",\n        \"start\": \"2026-09-01\",\n        \"end\": \"2026-09-30\"\n      },\n      \"source\": \"public\",\n      \"sql_file\": \"vt-product-totals.sql\"\n    }\n  },\n  \"error\": null,\n  \"meta\": {\n    \"format\": \"json\",\n    \"contract_version\": \"1.0\"\n  }\n}\n",
+    "analysis/verify/vt-product-totals.sql": "SELECT billing_origin_product, SUM(usage_quantity) AS quantity\nFROM system.billing.usage\nWHERE workspace_id = '123'\n  AND usage_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30'\nGROUP BY 1\n"
+  },
+  "stdout": "{\n  \"ok\": true,\n  \"domain\": \"verify\",\n  \"command\": \"run\",\n  \"data\": {\n    \"vt_id\": \"vt-product-totals\",\n    \"sql_path\": \"<TMP>/analysis/verify/vt-product-totals.sql\",\n    \"json_path\": \"<TMP>/analysis/verify/vt-product-totals.json\",\n    \"row_count\": 1,\n    \"limit_reached\": false,\n    \"source\": \"public\",\n    \"params\": {\n      \"ws\": \"123\",\n      \"start\": \"2026-09-01\",\n      \"end\": \"2026-09-30\"\n    }\n  },\n  \"error\": null,\n  \"meta\": {\n    \"format\": \"json\",\n    \"contract_version\": \"1.0\"\n  }\n}\n"
+}

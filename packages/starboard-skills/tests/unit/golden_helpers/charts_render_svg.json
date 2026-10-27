@@ -1,0 +1,7 @@
+{
+  "exit": 0,
+  "files": {
+    "deliverables/charts/spend.svg": "<svg>fake</svg>"
+  },
+  "stdout": "{\n  \"ok\": true,\n  \"domain\": \"charts\",\n  \"command\": \"render\",\n  \"data\": {\n    \"out_path\": \"<TMP>/deliverables/charts/spend.svg\",\n    \"bytes_written\": 15,\n    \"kind\": \"spend-by-product\",\n    \"format\": \"svg\"\n  },\n  \"error\": null,\n  \"meta\": {\n    \"format\": \"svg\",\n    \"contract_version\": \"1.0\"\n  }\n}\n"
+}

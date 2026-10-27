@@ -1,0 +1,36 @@
+{
+  "name": "starboard",
+  "displayName": "Starboard \u2014 Databricks Analysis",
+  "version": "0.2.0",
+  "description": "AI-powered Databricks workload analysis: queries, jobs, Unity Catalog, clusters, FinOps, warehouses, and diagnostics. Skills-only CLI-helper mode \u2014 no server required.",
+  "author": {
+    "name": "Starboard",
+    "url": "https://github.com/bluewatersql/starboard"
+  },
+  "homepage": "https://github.com/bluewatersql/starboard",
+  "repository": "https://github.com/bluewatersql/starboard",
+  "keywords": [
+    "databricks",
+    "finops",
+    "unity-catalog",
+    "spark",
+    "optimization",
+    "diagnostics"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "agents": [
+    "./agents/starboard-analyze.md",
+    "./agents/starboard-cluster.md",
+    "./agents/starboard-cluster-monitor.md",
+    "./agents/starboard-diagnostic.md",
+    "./agents/starboard-discovery.md",
+    "./agents/starboard-finops.md",
+    "./agents/starboard-job.md",
+    "./agents/starboard-query.md",
+    "./agents/starboard-uc.md",
+    "./agents/starboard-warehouse.md",
+    "./agents/starboard-workload-review.md",
+    "./agents/starboard-workload-review-auto.md"
+  ]
+}

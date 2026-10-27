@@ -1,0 +1,141 @@
+# serializer version: 1
+# name: TestWarehouseQueryGolden.test_snapshot_match
+  dict({
+    'warehouses': dict({
+      'warehouse-001': dict({
+        'config': dict({
+          'channels': list([
+            'CHANNEL_NAME_CURRENT',
+            'CHANNEL_NAME_PREVIEW',
+          ]),
+          'client_app_mix': dict({
+            'PowerBI': 1,
+            'Spark SQL': 1,
+            'Tableau': 2,
+          }),
+          'dbsql_versions': list([
+            '2023.40',
+            '2023.45',
+          ]),
+          'warehouse_id': 'warehouse-001',
+        }),
+        'counts': dict({
+          'queries': 4,
+          'users': 2,
+        }),
+        'performance': dict({
+          'bytes': dict({
+            'cache_read_total': 2147483648,
+            'network_sent_total': 78643200,
+            'read_total': 8053063680,
+            'remote_read_total': 4026531840,
+            'spill_total': 314572800,
+            'write_remote_total': 393216000,
+          }),
+          'cache': dict({
+            'hit_rate': 0.25,
+            'hits': 1,
+          }),
+          'duration_ms': dict({
+            'avg': 1936.25,
+            'max': 3200.0,
+            'p50': 1847.5,
+            'p95': 3087.5,
+            'p99': 3177.5,
+          }),
+          'photon': dict({
+            'observations': 3,
+            'total_time_ms': 3350,
+            'usage_share_of_total_time': 0.4325371207230471,
+          }),
+          'rows': dict({
+            'produced_total': 3750000,
+            'read_total': 7500000,
+          }),
+          'scan': dict({
+            'files_read_total': 185,
+            'partitions_read_total': 750,
+          }),
+          'statement_type_mix': dict({
+            'INSERT': dict({
+              'avg_duration_ms': 3200.0,
+              'count': 1,
+            }),
+            'SELECT': dict({
+              'avg_duration_ms': 1515.0,
+              'count': 3,
+            }),
+          }),
+          'times_ms_avg': dict({
+            'compilation': 157.5,
+            'execution': 1750.0,
+            'task_total': 1650.0,
+          }),
+        }),
+      }),
+      'warehouse-002': dict({
+        'config': dict({
+          'channels': list([
+            'CHANNEL_NAME_CURRENT',
+          ]),
+          'client_app_mix': dict({
+            'DBT': 1,
+          }),
+          'dbsql_versions': list([
+            '2023.40',
+          ]),
+          'warehouse_id': 'warehouse-002',
+        }),
+        'counts': dict({
+          'queries': 1,
+          'users': 1,
+        }),
+        'performance': dict({
+          'bytes': dict({
+            'cache_read_total': 402653184,
+            'network_sent_total': 15728640,
+            'read_total': 1610612736,
+            'remote_read_total': 805306368,
+            'spill_total': 0,
+            'write_remote_total': 78643200,
+          }),
+          'cache': dict({
+            'hit_rate': 0.0,
+            'hits': 0,
+          }),
+          'duration_ms': dict({
+            'avg': 1500.0,
+            'max': 1500.0,
+            'p50': 1500.0,
+            'p95': 1500.0,
+            'p99': 1500.0,
+          }),
+          'photon': dict({
+            'observations': 1,
+            'total_time_ms': 650,
+            'usage_share_of_total_time': 0.43333333333333335,
+          }),
+          'rows': dict({
+            'produced_total': 750000,
+            'read_total': 1500000,
+          }),
+          'scan': dict({
+            'files_read_total': 35,
+            'partitions_read_total': 150,
+          }),
+          'statement_type_mix': dict({
+            'SELECT': dict({
+              'avg_duration_ms': 1500.0,
+              'count': 1,
+            }),
+          }),
+          'times_ms_avg': dict({
+            'compilation': 150.0,
+            'execution': 1325.0,
+            'task_total': 1250.0,
+          }),
+        }),
+      }),
+    }),
+  })
+# ---

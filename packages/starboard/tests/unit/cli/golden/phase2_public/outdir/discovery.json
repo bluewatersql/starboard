@@ -1,0 +1,164 @@
+{
+  "ok": true,
+  "domain": "discovery",
+  "command": "discover",
+  "data": {
+    "data_only": true,
+    "trace_id": "t",
+    "elapsed_ms": 0.0,
+    "errors": [],
+    "audit": null,
+    "facts": {
+      "window": {
+        "start": "<WINDOW_DATE>",
+        "end": "<WINDOW_DATE>",
+        "days": 30,
+        "label": "trailing 30 full days (excludes today)"
+      },
+      "total": null,
+      "product_mix": null,
+      "months": null,
+      "top_jobs": null,
+      "top_pipelines": null,
+      "step_change": null,
+      "job_reliability": null,
+      "job_reliability_by_job": null,
+      "performance_mode": null,
+      "warehouses": null,
+      "top_warehouses": null,
+      "recent_config_changes": null,
+      "sources": {},
+      "unavailable": {
+        "total": "source query F-01 did not run (facts pack not selected)",
+        "product_mix": "source query F-01 did not run (facts pack not selected)",
+        "months": "source query F-02 did not run (facts pack not selected)",
+        "top_jobs": "source query F-04 did not run (facts pack not selected)",
+        "top_pipelines": "source query F-05 did not run (facts pack not selected)",
+        "step_change": "source query F-03 did not run (facts pack not selected)",
+        "job_reliability": "source query F-06 did not run (facts pack not selected)",
+        "job_reliability_by_job": "source query F-12 did not run (facts pack not selected)",
+        "performance_mode": "source query F-07 did not run (facts pack not selected)",
+        "warehouses": "source query F-08 did not run (facts pack not selected); source query F-09 did not run (facts pack not selected)",
+        "top_warehouses": "source query F-11 did not run (facts pack not selected)",
+        "recent_config_changes": "source query F-10 did not run (facts pack not selected)"
+      },
+      "fallbacks": {},
+      "fallback_notes": {}
+    },
+    "pack_count": 1,
+    "packs": [
+      {
+        "pack": "billing",
+        "queries": 2,
+        "succeeded": 1,
+        "results": [
+          {
+            "query_id": "C-B01",
+            "domain": "billing",
+            "succeeded": true,
+            "status": "succeeded",
+            "error": null,
+            "row_count": 2,
+            "columns": [
+              "x"
+            ],
+            "rows": [
+              {
+                "x": 1
+              },
+              {
+                "x": 2
+              }
+            ],
+            "truncated": false,
+            "row_limit": null,
+            "limit_reached": false,
+            "lookback_days": null,
+            "execution_time_ms": 0.0,
+            "attempts": 0,
+            "attempt_elapsed_ms": []
+          },
+          {
+            "query_id": "C-B02",
+            "domain": "billing",
+            "succeeded": false,
+            "status": "failed",
+            "error": "PARSE_SYNTAX_ERROR",
+            "row_count": 0,
+            "columns": [],
+            "rows": [],
+            "truncated": false,
+            "row_limit": null,
+            "limit_reached": false,
+            "lookback_days": null,
+            "execution_time_ms": 0.0,
+            "attempts": 0,
+            "attempt_elapsed_ms": []
+          }
+        ]
+      }
+    ],
+    "domain_analyses": [
+      {
+        "kind": "data_only_summary",
+        "domain": "billing",
+        "packs": [
+          "billing"
+        ],
+        "queries": 2,
+        "succeeded": 1,
+        "skipped": 0,
+        "failed": 1,
+        "rows_total": 2,
+        "nonempty_query_ids": [
+          "C-B01"
+        ],
+        "limit_reached_ids": [],
+        "query_row_counts": {
+          "C-B01": 2,
+          "C-B02": 0
+        },
+        "data_paths": [
+          "data.packs[0]"
+        ],
+        "raw_paths": [
+          "raw/billing.json"
+        ]
+      }
+    ],
+    "limit_reached_ids": [],
+    "skipped": [],
+    "counts": {
+      "total": 2,
+      "succeeded": 1,
+      "skipped": 0,
+      "failed": 1,
+      "filtered": 0
+    },
+    "source": "internal",
+    "scope": {
+      "account": null,
+      "workspace_ids": [
+        "856"
+      ]
+    },
+    "lookback_days": 30,
+    "status": "partial",
+    "coverage": {
+      "billing": {
+        "succeeded": 1,
+        "skipped": 0,
+        "failed": 1,
+        "skipped_reasons": []
+      }
+    },
+    "coverage_caveats": [],
+    "report_cards": [],
+    "top_priorities": []
+  },
+  "error": null,
+  "meta": {
+    "format": "json",
+    "contract_version": "1.0"
+  }
+}

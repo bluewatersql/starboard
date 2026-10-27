@@ -1,0 +1,141 @@
+{
+  "ok": true,
+  "domain": "review",
+  "command": "run",
+  "data": {
+    "workspace": "ws-856",
+    "requested_domains": [
+      "jobs",
+      "sql",
+      "warehouse"
+    ],
+    "findings": [],
+    "domain_reports": [
+      {
+        "domain": "jobs",
+        "rule_domain": "jobs",
+        "rules_evaluated": 6,
+        "evidence_query_ids": [
+          "C-J03",
+          "C-J04",
+          "C-J08",
+          "C-J09",
+          "F-03"
+        ],
+        "degraded": true,
+        "degraded_reason": "evidence queries unavailable: C-J03, C-J04, C-J08, C-J09, F-03",
+        "finding_count": 0,
+        "unavailable_query_ids": [
+          "C-J03",
+          "C-J04",
+          "C-J08",
+          "C-J09",
+          "F-03"
+        ],
+        "evidence_capped_query_ids": [],
+        "suppressed_rules": {},
+        "capped_rules": {}
+      },
+      {
+        "domain": "sql",
+        "rule_domain": "query",
+        "rules_evaluated": 2,
+        "evidence_query_ids": [
+          "C-Q02"
+        ],
+        "degraded": true,
+        "degraded_reason": "evidence queries unavailable: C-Q02",
+        "finding_count": 0,
+        "unavailable_query_ids": [
+          "C-Q02"
+        ],
+        "evidence_capped_query_ids": [],
+        "suppressed_rules": {},
+        "capped_rules": {}
+      },
+      {
+        "domain": "warehouse",
+        "rule_domain": "warehouse",
+        "rules_evaluated": 4,
+        "evidence_query_ids": [
+          "W-W01",
+          "W-W02",
+          "W-W07"
+        ],
+        "degraded": true,
+        "degraded_reason": "evidence queries unavailable: W-W01, W-W02, W-W07",
+        "finding_count": 0,
+        "unavailable_query_ids": [
+          "W-W01",
+          "W-W02",
+          "W-W07"
+        ],
+        "evidence_capped_query_ids": [],
+        "suppressed_rules": {},
+        "capped_rules": {}
+      }
+    ],
+    "cost_basis": "DBU list-price estimate (workspace telemetry; not a finance-grade figure)",
+    "finding_count": 0,
+    "degraded": true,
+    "unavailable_queries": [
+      "C-J03",
+      "C-J04",
+      "C-J08",
+      "C-J09",
+      "C-Q02",
+      "F-03",
+      "W-W01",
+      "W-W02",
+      "W-W07"
+    ],
+    "unavailable_domains": [
+      "jobs",
+      "sql",
+      "warehouse"
+    ],
+    "products_dbu": {},
+    "evidence_report": {
+      "unavailable": {
+        "C-J03": "not in discovery output",
+        "C-J04": "not in discovery output",
+        "C-J08": "not in discovery output",
+        "C-J09": "not in discovery output",
+        "C-Q02": "not in discovery output",
+        "F-03": "not in discovery output",
+        "W-W01": "not in discovery output",
+        "W-W02": "not in discovery output",
+        "W-W05": "not in discovery output",
+        "W-W07": "not in discovery output"
+      },
+      "limit_reached_query_ids": [],
+      "query_lookback_days": {},
+      "query_attempts": {}
+    },
+    "discovery_skipped": [],
+    "coverage_note": "0 discovery queries skipped; 9 review evidence queries failed or missing in the discovery output (C-J03, C-J04, C-J08, C-J09, C-Q02, F-03, W-W01, W-W02, W-W07).",
+    "evidence_source": {
+      "kind": "discovery",
+      "path": "<ROOT>/outdir",
+      "envelope_file": "<ROOT>/outdir/discovery.json",
+      "discovery_source": "internal",
+      "discovery_generated_at": "<VOLATILE>",
+      "discovery_window": {
+        "start": "<WINDOW_DATE>",
+        "end": "<WINDOW_DATE>",
+        "days": 30,
+        "label": "trailing 30 full days (excludes today)"
+      },
+      "lookback_days": 30,
+      "workspace_ids": [
+        "856"
+      ],
+      "account": null
+    }
+  },
+  "error": null,
+  "meta": {
+    "format": "json",
+    "contract_version": "1.0"
+  }
+}

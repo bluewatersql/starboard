@@ -1,0 +1,147 @@
+[
+  {
+    "warehouse_id": "warehouse-001",
+    "duration": 1245,
+    "metrics": {
+      "compilation_time_ms": 120,
+      "execution_time_ms": 1100,
+      "task_total_time_ms": 1050,
+      "total_time_ms": 1245,
+      "photon_total_time_ms": 550,
+      "read_bytes": 1073741824,
+      "read_remote_bytes": 536870912,
+      "read_cache_bytes": 268435456,
+      "spill_to_disk_bytes": 0,
+      "network_sent_bytes": 10485760,
+      "write_remote_bytes": 52428800,
+      "rows_read_count": 1000000,
+      "rows_produced_count": 500000,
+      "read_files_count": 25,
+      "read_partitions_count": 100,
+      "result_from_cache": false
+    },
+    "statement_type": "SELECT",
+    "channel_used": {
+      "dbsql_version": "2023.40",
+      "name": "CHANNEL_NAME_CURRENT"
+    },
+    "client_application": "Tableau",
+    "executed_as_user_id": 12345
+  },
+  {
+    "warehouse_id": "warehouse-001",
+    "duration": 2450,
+    "metrics": {
+      "compilation_time_ms": 180,
+      "execution_time_ms": 2250,
+      "task_total_time_ms": 2100,
+      "total_time_ms": 2450,
+      "photon_total_time_ms": 1200,
+      "read_bytes": 2147483648,
+      "read_remote_bytes": 1073741824,
+      "read_cache_bytes": 536870912,
+      "spill_to_disk_bytes": 104857600,
+      "network_sent_bytes": 20971520,
+      "write_remote_bytes": 104857600,
+      "rows_read_count": 2000000,
+      "rows_produced_count": 1000000,
+      "read_files_count": 50,
+      "read_partitions_count": 200,
+      "result_from_cache": false
+    },
+    "statement_type": "SELECT",
+    "channel_used": {
+      "dbsql_version": "2023.40",
+      "name": "CHANNEL_NAME_CURRENT"
+    },
+    "client_application": "PowerBI",
+    "executed_as_user_id": 12345
+  },
+  {
+    "warehouse_id": "warehouse-001",
+    "duration": 850,
+    "metrics": {
+      "compilation_time_ms": 80,
+      "execution_time_ms": 750,
+      "task_total_time_ms": 700,
+      "total_time_ms": 850,
+      "read_bytes": 536870912,
+      "read_remote_bytes": 268435456,
+      "read_cache_bytes": 268435456,
+      "spill_to_disk_bytes": 0,
+      "network_sent_bytes": 5242880,
+      "write_remote_bytes": 26214400,
+      "rows_read_count": 500000,
+      "rows_produced_count": 250000,
+      "read_files_count": 10,
+      "read_partitions_count": 50,
+      "result_from_cache": true
+    },
+    "statement_type": "SELECT",
+    "channel_used": {
+      "dbsql_version": "2023.45",
+      "name": "CHANNEL_NAME_PREVIEW"
+    },
+    "client_application": "Tableau",
+    "user_id": 67890
+  },
+  {
+    "warehouse_id": "warehouse-001",
+    "duration": 3200,
+    "metrics": {
+      "compilation_time_ms": 250,
+      "execution_time_ms": 2900,
+      "task_total_time_ms": 2750,
+      "total_time_ms": 3200,
+      "photon_total_time_ms": 1600,
+      "read_bytes": 4294967296,
+      "read_remote_bytes": 2147483648,
+      "read_cache_bytes": 1073741824,
+      "spill_to_disk_bytes": 209715200,
+      "network_sent_bytes": 41943040,
+      "write_remote_bytes": 209715200,
+      "rows_read_count": 4000000,
+      "rows_produced_count": 2000000,
+      "read_files_count": 100,
+      "read_partitions_count": 400,
+      "result_from_cache": false
+    },
+    "statement_type": "INSERT",
+    "channel_used": {
+      "dbsql_version": "2023.45",
+      "name": "CHANNEL_NAME_PREVIEW"
+    },
+    "client_application": "Spark SQL",
+    "executed_as_user_id": 12345
+  },
+  {
+    "warehouse_id": "warehouse-002",
+    "duration": 1500,
+    "metrics": {
+      "compilation_time_ms": 150,
+      "execution_time_ms": 1325,
+      "task_total_time_ms": 1250,
+      "total_time_ms": 1500,
+      "photon_total_time_ms": 650,
+      "read_bytes": 1610612736,
+      "read_remote_bytes": 805306368,
+      "read_cache_bytes": 402653184,
+      "spill_to_disk_bytes": 0,
+      "network_sent_bytes": 15728640,
+      "write_remote_bytes": 78643200,
+      "rows_read_count": 1500000,
+      "rows_produced_count": 750000,
+      "read_files_count": 35,
+      "read_partitions_count": 150,
+      "result_from_cache": false
+    },
+    "statement_type": "SELECT",
+    "channel_used": {
+      "dbsql_version": "2023.40",
+      "name": "CHANNEL_NAME_CURRENT"
+    },
+    "client_application": "DBT",
+    "executed_as_user_id": 99999
+  }
+]
+

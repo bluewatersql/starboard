@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "domain": "discovery",
+  "command": "run",
+  "data": {
+    "output_path": "<OUT>",
+    "bytes": 5294,
+    "pack_count": 2,
+    "note": "Full JSON written to <OUT>. Read that file for the data."
+  },
+  "error": null,
+  "meta": {
+    "format": "json",
+    "contract_version": "1.0"
+  }
+}

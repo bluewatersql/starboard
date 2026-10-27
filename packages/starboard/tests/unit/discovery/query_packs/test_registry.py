@@ -1,0 +1,514 @@
+# Copyright (c) 2025 Databricks, Inc.
+# Licensed under the Databricks Open Model License. See LICENSE for the full text.
+"""Tests for QueryPackRegistry and conditional execution logic.
+
+Tests cover:
+- Registry construction and pack lookup
+- Conditional filtering by active products
+- ALWAYS_RUN_PACKS behavior
+- Include/exclude overrides
+- Default registry factory
+"""
+
+import pytest
+import structlog
+from starboard.discovery.query_packs.registry import (
+    ALWAYS_RUN_PACKS,
+    PRODUCT_TO_DOMAIN_PACKS,
+    QueryPackRegistry,
+    create_default_registry,
+)
+from starboard_core.domain.models.discovery.query import QueryPack, SystemQuery
+
+
+def _make_pack(pack_id: str, gating: frozenset[str] = frozenset()) -> QueryPack:
+    """Create a minimal QueryPack for testing."""
+    return QueryPack(
+        pack_id=pack_id,
+        domain=pack_id,
+        name=f"Test {pack_id}",
+        description="Test",
+        queries=(
+            SystemQuery(
+                query_id=f"{pack_id}-01",
+                name="Test query",
+                description="Test",
+                sql_template="SELECT 1",
+                required_tables=("system.billing.usage",),
+                domain=pack_id,
+            ),
+        ),
+        gating_products=gating,
+    )
+
+
+class TestQueryPackRegistry:
+    def test_construction(self):
+        r = QueryPackRegistry(packs=(_make_pack("a"), _make_pack("b")))
+        assert r.pack_count == 2
+
+    def test_get_pack(self):
+        r = QueryPackRegistry(packs=(_make_pack("billing"),))
+        assert r.get_pack("billing") is not None
+        assert r.get_pack("nonexistent") is None
+
+    def test_all_packs(self):
+        packs = (_make_pack("a"), _make_pack("b"), _make_pack("c"))
+        r = QueryPackRegistry(packs=packs)
+        assert len(r.all_packs) == 3
+
+
+class TestConditionalFiltering:
+    @pytest.fixture()
+    def registry(self) -> QueryPackRegistry:
+        return QueryPackRegistry(
+            packs=(
+                _make_pack("audit"),
+                _make_pack("billing"),
+                _make_pack("governance"),
+                _make_pack("facts"),
+                _make_pack("migration"),
+                _make_pack("jobs", frozenset({"JOBS"})),
+                _make_pack("compute", frozenset({"ALL_PURPOSE", "INTERACTIVE"})),
+                _make_pack("ml", frozenset({"MODEL_SERVING"})),
+                _make_pack("apps", frozenset({"APPS"})),
+            )
+        )
+
+    def test_always_run_packs_included(self, registry: QueryPackRegistry):
+        result = registry.get_packs_for_products(set())
+        pack_ids = {p.pack_id for p in result}
+        for always_id in ALWAYS_RUN_PACKS:
+            if registry.get_pack(always_id):
+                assert always_id in pack_ids
+
+    def test_product_gates_jobs(self, registry: QueryPackRegistry):
+        result = registry.get_packs_for_products({"JOBS"})
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+
+    def test_product_gates_compute(self, registry: QueryPackRegistry):
+        result = registry.get_packs_for_products({"ALL_PURPOSE"})
+        pack_ids = {p.pack_id for p in result}
+        assert "compute" in pack_ids
+
+    def test_no_ml_without_product(self, registry: QueryPackRegistry):
+        result = registry.get_packs_for_products({"JOBS"})
+        pack_ids = {p.pack_id for p in result}
+        assert "ml" not in pack_ids
+
+    def test_include_override(self, registry: QueryPackRegistry):
+        result = registry.get_packs_for_products(set(), include=["ml"])
+        pack_ids = {p.pack_id for p in result}
+        assert "ml" in pack_ids
+
+    def test_exclude_override(self, registry: QueryPackRegistry):
+        result = registry.get_packs_for_products(set(), exclude=["billing"])
+        pack_ids = {p.pack_id for p in result}
+        assert "billing" not in pack_ids
+
+    def test_target_domains_restricts_to_domain_plus_always_run(
+        self, registry: QueryPackRegistry
+    ):
+        # All products active, but restrict to the "jobs" domain: only the jobs
+        # pack plus the always-run core packs should survive (not everything).
+        result = registry.get_packs_for_products(
+            {"JOBS", "ALL_PURPOSE", "MODEL_SERVING"}, target_domains=["jobs"]
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "compute" not in pack_ids  # ALL_PURPOSE pack filtered out
+        assert "ml" not in pack_ids  # MODEL_SERVING pack filtered out
+        # Always-run core packs are preserved even under an explicit restriction.
+        assert pack_ids >= ALWAYS_RUN_PACKS
+
+    def test_target_domains_matches_pack_id_or_domain(self):
+        # A pack whose pack_id differs from its domain must be selectable by
+        # EITHER form. Force it eligible via ``include`` first (target_domains
+        # only restricts among already-eligible packs).
+        pack = QueryPack(
+            pack_id="query_perf",
+            domain="query_performance",
+            name="Query perf",
+            description="Test",
+            queries=(
+                SystemQuery(
+                    query_id="qp-01",
+                    name="q",
+                    description="d",
+                    sql_template="SELECT 1",
+                    required_tables=("system.query.history",),
+                    domain="query_performance",
+                ),
+            ),
+            gating_products=frozenset(),
+        )
+        r = QueryPackRegistry(packs=(_make_pack("audit"), pack))
+        by_id = {
+            p.pack_id
+            for p in r.get_packs_for_products(
+                set(), include=["query_perf"], target_domains=["query_perf"]
+            )
+        }
+        assert "query_perf" in by_id
+        by_domain = {
+            p.pack_id
+            for p in r.get_packs_for_products(
+                set(), include=["query_perf"], target_domains=["query_performance"]
+            )
+        }
+        assert "query_perf" in by_domain
+
+    def test_target_domains_unknown_selects_only_always_run(
+        self, registry: QueryPackRegistry
+    ):
+        result = registry.get_packs_for_products(
+            {"JOBS"}, target_domains=["does_not_exist"]
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" not in pack_ids
+        assert pack_ids <= set(ALWAYS_RUN_PACKS)
+
+    def test_known_selectors_covers_ids_and_domains(self):
+        # Validate against the real default registry: this is the exact set the
+        # discovery CLI uses to reject stale/unknown --packs values.
+        selectors = create_default_registry().known_selectors()
+        assert "billing" in selectors  # domain + id
+        assert "warehouse" in selectors
+        assert "jobs" in selectors
+        assert "finops_billing" not in selectors  # stale name is not valid
+
+    def test_exclude_overrides_always_run(self, registry: QueryPackRegistry):
+        result = registry.get_packs_for_products(set(), exclude=["governance"])
+        pack_ids = {p.pack_id for p in result}
+        assert "governance" not in pack_ids
+
+
+class TestThresholdFiltering:
+    @pytest.fixture()
+    def registry(self) -> QueryPackRegistry:
+        return QueryPackRegistry(
+            packs=(
+                _make_pack("audit"),
+                _make_pack("billing"),
+                _make_pack("governance"),
+                _make_pack("migration"),
+                _make_pack("jobs", frozenset({"JOBS"})),
+                _make_pack("apps", frozenset({"APPS"})),
+                _make_pack("ml", frozenset({"MODEL_SERVING"})),
+            )
+        )
+
+    def test_dict_products_above_threshold(self, registry: QueryPackRegistry):
+        """Products above threshold are included."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 500.0, "APPS": 200.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" in pack_ids
+
+    def test_dict_products_below_threshold_skipped(self, registry: QueryPackRegistry):
+        """Products below threshold are excluded from pack selection."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 500.0, "APPS": 5.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" not in pack_ids
+
+    def test_dict_product_at_exact_threshold(self, registry: QueryPackRegistry):
+        """Product exactly at threshold is included."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 10.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+
+    def test_all_products_below_threshold(self, registry: QueryPackRegistry):
+        """All products below threshold still returns always-run packs."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 1.0, "APPS": 2.0}, min_dbu_threshold=10.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" not in pack_ids
+        assert "apps" not in pack_ids
+        for always_id in ALWAYS_RUN_PACKS:
+            if registry.get_pack(always_id):
+                assert always_id in pack_ids
+
+    def test_threshold_zero_disables_filtering(self, registry: QueryPackRegistry):
+        """Threshold of 0 means no filtering."""
+        result = registry.get_packs_for_products(
+            {"JOBS": 0.001, "APPS": 0.001}, min_dbu_threshold=0.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" in pack_ids
+
+    def test_set_input_ignores_threshold(self, registry: QueryPackRegistry):
+        """Legacy set input works and ignores threshold."""
+        result = registry.get_packs_for_products(
+            {"JOBS", "APPS"}, min_dbu_threshold=99999.0
+        )
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" in pack_ids
+        assert "apps" in pack_ids
+
+    def test_empty_dict_only_always_run(self, registry: QueryPackRegistry):
+        """Empty dict returns only always-run packs."""
+        result = registry.get_packs_for_products({}, min_dbu_threshold=10.0)
+        pack_ids = {p.pack_id for p in result}
+        assert "jobs" not in pack_ids
+        assert "apps" not in pack_ids
+
+
+class TestProductMapping:
+    def test_all_products_have_packs(self):
+        for product, packs in PRODUCT_TO_DOMAIN_PACKS.items():
+            assert len(packs) > 0, f"Product {product} maps to empty pack list"
+
+    def test_known_products(self):
+        assert "JOBS" in PRODUCT_TO_DOMAIN_PACKS
+        assert "SQL" in PRODUCT_TO_DOMAIN_PACKS
+        assert "ALL_PURPOSE" in PRODUCT_TO_DOMAIN_PACKS
+        assert "MODEL_SERVING" in PRODUCT_TO_DOMAIN_PACKS
+        assert "DLT" in PRODUCT_TO_DOMAIN_PACKS
+        assert "DATA_SHARING" in PRODUCT_TO_DOMAIN_PACKS
+        assert "AI_GATEWAY" in PRODUCT_TO_DOMAIN_PACKS
+
+    def test_always_run_packs_nonempty(self):
+        assert len(ALWAYS_RUN_PACKS) >= 3
+
+
+class TestDefaultRegistry:
+    def test_creates_all_packs(self):
+        registry = create_default_registry()
+        # 27 baseline + cluster_right_sizing (Phase-2 Task-09)
+        # + serverless_attribution (G6) + facts (B1, data.facts sources) = 30,
+        # + genie + feature_store + realtime strategic SKU packs (issue #17) = 33.
+        assert registry.pack_count == 33
+
+    def test_audit_pack_present(self):
+        registry = create_default_registry()
+        audit = registry.get_pack("audit")
+        assert audit is not None
+        assert len(audit.queries) == 1
+
+    def test_all_queries_have_sql_template(self):
+        registry = create_default_registry()
+        for pack in registry.all_packs:
+            for query in pack.queries:
+                assert query.sql_template, f"{query.query_id} has empty SQL template"
+
+    def test_all_queries_have_required_tables(self):
+        registry = create_default_registry()
+        for pack in registry.all_packs:
+            for query in pack.queries:
+                assert len(query.required_tables) > 0, (
+                    f"{query.query_id} has no required_tables"
+                )
+
+    def test_sql_templates_use_lookback_parameter(self):
+        """All queries with time-based filtering should use {lookback_days}."""
+        registry = create_default_registry()
+        skip_ids = {"N-L03", "N-DT01"}
+        for pack in registry.all_packs:
+            for query in pack.queries:
+                if query.query_id in skip_ids:
+                    continue
+                if "INTERVAL" in query.sql_template:
+                    assert "{lookback_days}" in query.sql_template, (
+                        f"{query.query_id} uses INTERVAL but not {{lookback_days}}"
+                    )
+
+    def test_no_dollar_columns_in_sql(self):
+        """Verify DBU-only policy: no cost_usd or list_cost_usd in any SQL."""
+        registry = create_default_registry()
+        for pack in registry.all_packs:
+            for query in pack.queries:
+                sql_lower = query.sql_template.lower()
+                assert "cost_usd" not in sql_lower, (
+                    f"{query.query_id} contains 'cost_usd'"
+                )
+                assert "list_cost_usd" not in sql_lower, (
+                    f"{query.query_id} contains 'list_cost_usd'"
+                )
+                assert "pricing.default" not in sql_lower, (
+                    f"{query.query_id} contains 'pricing.default'"
+                )
+
+
+class TestPreviouslyEmptyRoutes:
+    """Regression: 4 products used to route to a pack that never queried their
+    system table. Each must now resolve to a pack whose queries read the
+    intended ``system.*`` table (A5 in the Phase-0 plan)."""
+
+    # product -> (expected pack_id, required system table)
+    _CASES = {
+        "PREDICTIVE_OPTIMIZATION": (
+            "predictive_optimization",
+            "system.storage.predictive_optimization_operations_history",
+        ),
+        "DATA_QUALITY_MONITORING": (
+            "data_quality",
+            "system.data_quality_monitoring.table_results",
+        ),
+        "DATA_CLASSIFICATION": (
+            "data_classification",
+            "system.data_classification.results",
+        ),
+        "NETWORKING": ("networking", "system.access.outbound_network"),
+    }
+
+    def test_routes_point_to_new_packs(self):
+        for product, (pack_id, _table) in self._CASES.items():
+            assert PRODUCT_TO_DOMAIN_PACKS[product] == [pack_id], (
+                f"{product} should route to [{pack_id!r}]"
+            )
+
+    def test_packs_query_their_target_table(self):
+        registry = create_default_registry()
+        for _product, (pack_id, table) in self._CASES.items():
+            pack = registry.get_pack(pack_id)
+            assert pack is not None, f"pack {pack_id} not registered"
+            tables = {t for q in pack.queries for t in q.required_tables}
+            assert table in tables, (
+                f"pack {pack_id} must query {table}; queries: {sorted(tables)}"
+            )
+
+    def test_preview_queries_degrade_gracefully(self):
+        """Preview/Beta tables should be optional (required=False)."""
+        registry = create_default_registry()
+        for _product, (pack_id, _table) in self._CASES.items():
+            pack = registry.get_pack(pack_id)
+            assert pack is not None
+            for query in pack.queries:
+                assert query.required is False, (
+                    f"{query.query_id} reads a Preview table and must be "
+                    "required=False to degrade gracefully"
+                )
+
+    def test_products_selection_includes_new_packs(self):
+        registry = create_default_registry()
+        for product, (pack_id, _table) in self._CASES.items():
+            selected = registry.get_packs_for_products({product})
+            assert pack_id in {p.pack_id for p in selected}, (
+                f"selecting product {product} should include pack {pack_id}"
+            )
+
+
+class TestStrategicSkuRoutes:
+    """AC4 (issue #17): GENIE / FEATURE_STORE / LAKEHOUSE_REAL_TIME each route to
+    a dedicated pack/domain. Assert MEMBERSHIP (the strategic pack is in the
+    route), not equality — the route may also carry attribution/ml packs."""
+
+    _STRATEGIC = {
+        "GENIE": "genie",
+        "FEATURE_STORE": "feature_store",
+        "LAKEHOUSE_REAL_TIME": "realtime",
+    }
+
+    def test_strategic_products_route_to_dedicated_pack(self):
+        for product, pack_id in self._STRATEGIC.items():
+            assert pack_id in PRODUCT_TO_DOMAIN_PACKS[product], (
+                f"{product} must route to its dedicated pack {pack_id!r}"
+            )
+
+    def test_strategic_selection_includes_dedicated_pack(self):
+        registry = create_default_registry()
+        for product, pack_id in self._STRATEGIC.items():
+            selected = {p.pack_id for p in registry.get_packs_for_products({product})}
+            assert pack_id in selected, (
+                f"selecting {product} should include pack {pack_id}"
+            )
+
+    def test_genie_reachable_from_sql(self):
+        # Genie spaces can bill under a shared SQL warehouse (GENIE absent from
+        # the audit); routing genie from SQL keeps the inventory reachable there.
+        assert "genie" in PRODUCT_TO_DOMAIN_PACKS["SQL"]
+        registry = create_default_registry()
+        selected = {p.pack_id for p in registry.get_packs_for_products({"SQL"})}
+        assert "genie" in selected
+
+    def test_feature_engineering_key_replaced_by_feature_store(self):
+        # FEATURE_ENGINEERING is not a real billing_origin_product; FEATURE_STORE is.
+        assert "FEATURE_ENGINEERING" not in PRODUCT_TO_DOMAIN_PACKS
+        assert PRODUCT_TO_DOMAIN_PACKS["FEATURE_STORE"] == [
+            "feature_store",
+            "ml",
+            "mlflow",
+        ]
+
+
+class TestLakebaseDualSkuRoute:
+    """Lakebase bills under BOTH DATABASE and LAKEBASE; filtering on DATABASE
+    alone drops ~99% of the spend. Both must route to the lakebase pack."""
+
+    def test_both_skus_route_to_lakebase(self):
+        assert "lakebase" in PRODUCT_TO_DOMAIN_PACKS["DATABASE"]
+        assert "lakebase" in PRODUCT_TO_DOMAIN_PACKS["LAKEBASE"]
+
+
+class TestUnmappedProductWarning:
+    """AC1: an above-threshold product with no route must emit a selection-time
+    warning (not be silently dropped)."""
+
+    def test_warning_fires_for_unmapped_product(self):
+        registry = create_default_registry()
+        with structlog.testing.capture_logs() as logs:
+            registry.get_packs_for_products({"MADE_UP_SKU": 123.0})
+        matched = [log for log in logs if log.get("event") == "unmapped_product_skipped"]
+        assert matched, logs
+        assert matched[0].get("product") == "MADE_UP_SKU"
+        assert matched[0].get("dbus") == 123.0
+
+    def test_warning_fires_in_select_for_plan(self):
+        registry = create_default_registry()
+        with structlog.testing.capture_logs() as logs:
+            registry.select_for_plan({"MADE_UP_SKU": 123.0})
+        assert any(log.get("event") == "unmapped_product_skipped" for log in logs), logs
+
+    def test_mapped_product_does_not_warn(self):
+        registry = create_default_registry()
+        with structlog.testing.capture_logs() as logs:
+            registry.get_packs_for_products({"JOBS": 123.0})
+        assert not any(
+            log.get("event") == "unmapped_product_skipped" for log in logs
+        )
+
+
+class TestProductsWithoutCoverage:
+    """AC2/AC3: D10 coverage gap derives from PRODUCT_TO_DOMAIN_PACKS ∩ registry,
+    filter-independent, and does not false-positive on products whose packs run."""
+
+    def test_mapped_products_are_covered(self):
+        registry = create_default_registry()
+        # Regression: these four used to be falsely reported as "no query pack"
+        # because the old D10 read per-pack gating_products.
+        prods = {
+            "ALL_PURPOSE": 100.0,
+            "INTERACTIVE": 50.0,
+            "BASE_ENVIRONMENTS": 20.0,
+            "DATA_SHARING": 10.0,
+        }
+        assert registry.products_without_coverage(prods) == []
+
+    def test_unmapped_product_is_uncovered(self):
+        registry = create_default_registry()
+        got = registry.products_without_coverage({"FAKE_SKU": 500.0, "JOBS": 100.0})
+        assert got == ["FAKE_SKU"]
+
+    def test_below_threshold_not_reported_as_uncovered(self):
+        registry = create_default_registry()
+        # FAKE_SKU is below threshold → it's a threshold drop, not a coverage gap.
+        got = registry.products_without_coverage(
+            {"FAKE_SKU": 1.0}, min_dbu_threshold=10.0
+        )
+        assert got == []
+
+    def test_coverage_is_filter_independent(self):
+        # A product mapped to a registered pack is covered regardless of any
+        # --domains filter the run applies (the method ignores run filters).
+        registry = create_default_registry()
+        assert registry.products_without_coverage({"GENIE": 100.0}) == []

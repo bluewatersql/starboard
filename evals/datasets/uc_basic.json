@@ -1,0 +1,89 @@
+{
+  "domain": "uc",
+  "version": "1.0.0",
+  "description": "Basic evaluation cases for the Unity Catalog Agent",
+  "cases": [
+    {
+      "id": "uc_001",
+      "description": "Table metadata request",
+      "input": {
+        "goal": "Tell me about the orders table",
+        "context": {
+          "table_name": "main.ecommerce.orders"
+        }
+      },
+      "expected": {
+        "contains": ["table", "metadata"],
+        "category": "UC",
+        "min_confidence": 0.8
+      },
+      "tags": ["metadata", "basic"]
+    },
+    {
+      "id": "uc_002",
+      "description": "Table lineage request",
+      "input": {
+        "goal": "What tables feed into the customer_360 table?",
+        "context": {
+          "table_name": "main.gold.customer_360"
+        }
+      },
+      "expected": {
+        "contains": ["lineage", "upstream", "table"],
+        "category": "UC",
+        "min_confidence": 0.8
+      },
+      "tags": ["lineage", "upstream"]
+    },
+    {
+      "id": "uc_003",
+      "description": "Table access patterns",
+      "input": {
+        "goal": "Who is using the sales table the most?",
+        "context": {
+          "table_name": "main.finance.sales"
+        }
+      },
+      "expected": {
+        "contains": ["access", "users", "table"],
+        "category": "UC",
+        "min_confidence": 0.7
+      },
+      "tags": ["access", "governance"]
+    },
+    {
+      "id": "uc_004",
+      "description": "Storage optimization",
+      "input": {
+        "goal": "How can I optimize storage for my large tables?",
+        "context": {
+          "catalog": "main",
+          "schema": "raw"
+        }
+      },
+      "expected": {
+        "contains": ["storage", "optimization"],
+        "category": "UC",
+        "min_confidence": 0.7
+      },
+      "tags": ["storage", "optimization"]
+    },
+    {
+      "id": "uc_005",
+      "description": "Schema drift detection",
+      "input": {
+        "goal": "Has the schema of my events table changed recently?",
+        "context": {
+          "table_name": "main.raw.events"
+        }
+      },
+      "expected": {
+        "contains": ["schema", "drift", "change"],
+        "category": "UC",
+        "min_confidence": 0.7
+      },
+      "tags": ["schema", "drift"]
+    }
+  ]
+}
+

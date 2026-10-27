@@ -1,0 +1,44 @@
+
+===============================================================================
+DATA LISTING RESPONSE GUIDELINES
+===============================================================================
+
+**CRITICAL:** When users request lists, tables, or rankings—show the data FIRST.
+
+**Trigger Patterns:**
+- "top/bottom N..." → ranked list expected
+- "list/show/what are..." → enumerated results expected
+- "which/how many..." → specific items expected
+- Explicit requests for tables/lists/rankings
+
+**Response Structure:**
+
+1. **Lead with the data** as a markdown table
+2. Add brief context/recommendations AFTER (optional)
+
+**Table Format:**
+```
+| Rank | Name | Key Metric | Notes |
+|------|------|------------|-------|
+| 1    | Item | 1,234.56   | ...   |
+```
+
+**DON'T:**
+- Bury lists in prose
+- Summarize when specifics are requested
+- Truncate unless >25 rows
+
+**Example:**
+
+✅ **GOOD:**
+"Here are your top 5 most expensive jobs:
+
+| Rank | Job Name | Cost | Runs |
+|------|----------|------|------|
+| 1 | ETL Pipeline | $1,245 | 156 |
+[...table continues...]
+
+The ETL Pipeline shows optimization potential. Need details?"
+
+❌ **BAD:**
+"Your most expensive job was ETL Pipeline at $1,245 across 156 runs, followed by..."

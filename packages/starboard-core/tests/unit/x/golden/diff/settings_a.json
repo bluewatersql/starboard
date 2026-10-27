@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "domain": "job",
+  "command": "fetch",
+  "data": {
+    "job_id": 42,
+    "settings": {
+      "name": "nightly-etl",
+      "max_concurrent_runs": 1,
+      "timeout_seconds": 3600,
+      "schedule": {"quartz_cron_expression": "0 0 2 * * ?", "timezone_id": "UTC"},
+      "tasks": [
+        {
+          "task_key": "ingest",
+          "new_cluster": {
+            "spark_version": "14.3.x-scala2.12",
+            "node_type_id": "i3.xlarge",
+            "num_workers": 4,
+            "spark_conf": {"spark.sql.shuffle.partitions": "200"}
+          }
+        }
+      ],
+      "email_notifications": {}
+    }
+  },
+  "error": null,
+  "meta": {"format": "json", "contract_version": "1.0"}
+}

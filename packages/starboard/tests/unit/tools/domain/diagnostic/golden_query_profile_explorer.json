@@ -1,0 +1,1916 @@
+{
+ "empty|cache io|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|cache io|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|cache io|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|orders|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|orders|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|orders|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|overview|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|overview|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|overview|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|range join hints, join strategies|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|range join hints, join strategies|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|range join hints, join strategies|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|scan tables|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|scan tables|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|scan tables|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|shuffle exchange|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|shuffle exchange|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|shuffle exchange|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|skew|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|skew|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|skew|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|slow bottleneck|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|slow bottleneck|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|slow bottleneck|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|spill memory|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|spill memory|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|spill memory|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|stage failed|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|stage failed|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|stage failed|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|zzz|detailed": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|zzz|exhaustive": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "empty|zzz|summary": {
+  "content": "## Query Profile (empty)\n\nNo operators found in profile.",
+  "evidence_count": 0,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|cache io|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|cache io|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|cache io|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|orders|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|orders|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|orders|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|overview|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|overview|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|overview|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|range join hints, join strategies|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|range join hints, join strategies|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|range join hints, join strategies|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|scan tables|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|scan tables|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|scan tables|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|shuffle exchange|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|shuffle exchange|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|shuffle exchange|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|skew|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|skew|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|skew|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|slow bottleneck|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|slow bottleneck|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|slow bottleneck|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|spill memory|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|spill memory|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|spill memory|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|stage failed|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|stage failed|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|stage failed|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|zzz|detailed": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|zzz|exhaustive": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "invalid|zzz|summary": {
+  "content": "## Query Profile (parse failed)\n\nUnable to parse JSON.",
+  "evidence_count": 0,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [],
+  "suggested_followups": []
+ },
+ "liquid|cache io|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 1.00 GB\n- **From Cache:** 1.0 KB (0.0%)\n- **From Remote Storage:** 1.00 GB (100.0%)\n\n### Cache Efficiency\n❌ **Low:** 3% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|cache io|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 1.00 GB\n- **From Cache:** 1.0 KB (0.0%)\n- **From Remote Storage:** 1.00 GB (100.0%)\n\n### Cache Efficiency\n❌ **Low:** 3% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|cache io|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 1.00 GB\n- **From Cache:** 1.0 KB (0.0%)\n- **From Remote Storage:** 1.00 GB (100.0%)\n\n### Cache Efficiency\n❌ **Low:** 3% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|orders|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Search Results for 'orders' (1 matches)\n\n- **Scan main.sales.orders** (ID: 1, Tag: UNKNOWN_DATA_SOURCE_SCAN_EXEC)\n",
+  "evidence_count": 1,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "search"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|orders|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Search Results for 'orders' (1 matches)\n\n- **Scan main.sales.orders** (ID: 1, Tag: UNKNOWN_DATA_SOURCE_SCAN_EXEC)\n",
+  "evidence_count": 1,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "search"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|orders|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Search Results for 'orders' (1 matches)\n\n- **Scan main.sales.orders** (ID: 1, Tag: UNKNOWN_DATA_SOURCE_SCAN_EXEC)\n",
+  "evidence_count": 1,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "search"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|overview|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Performance Overview\n\n### Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n### Timing Breakdown\n- **Total Time:** 12,000ms (12.0s)\n- Compilation: 500ms (4.2%)\n- Execution: 11,000ms (91.7%)\n- Result Fetch: 20ms (0.2%)\n- Planning: 100ms (0.8%)\n\n### Photon Usage\n- Task Total Time: 20,000ms\n- Photon Time: 9,000ms (45.0%)\n- ❌ Low Photon utilization - check for non-Photon operators\n\n### Data I/O\n- **Total Read:** 1.00 GB\n- From Cache: 1.0 KB (0.0%)\n- From Remote: 1.00 GB\n- Network Sent: 4.0 KB\n- ⚠️ **Spill to Disk:** 2.0 KB\n\n### Row Counts\n- Rows Read: 1,000,000\n- Rows Produced: 10\n- Selectivity: 0.0010%\n\n### Pruning Efficiency\n- Files Read: 40\n- Files Pruned: 60\n- Bytes Pruned: 4.9 KB\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|overview|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Performance Overview\n\n### Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n### Timing Breakdown\n- **Total Time:** 12,000ms (12.0s)\n- Compilation: 500ms (4.2%)\n- Execution: 11,000ms (91.7%)\n- Result Fetch: 20ms (0.2%)\n- Planning: 100ms (0.8%)\n\n### Photon Usage\n- Task Total Time: 20,000ms\n- Photon Time: 9,000ms (45.0%)\n- ❌ Low Photon utilization - check for non-Photon operators\n\n### Data I/O\n- **Total Read:** 1.00 GB\n- From Cache: 1.0 KB (0.0%)\n- From Remote: 1.00 GB\n- Network Sent: 4.0 KB\n- ⚠️ **Spill to Disk:** 2.0 KB\n\n### Row Counts\n- Rows Read: 1,000,000\n- Rows Produced: 10\n- Selectivity: 0.0010%\n\n### Pruning Efficiency\n- Files Read: 40\n- Files Pruned: 60\n- Bytes Pruned: 4.9 KB\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|overview|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Performance Overview\n\n### Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n### Timing Breakdown\n- **Total Time:** 12,000ms (12.0s)\n- Compilation: 500ms (4.2%)\n- Execution: 11,000ms (91.7%)\n- Result Fetch: 20ms (0.2%)\n- Planning: 100ms (0.8%)\n\n### Photon Usage\n- Task Total Time: 20,000ms\n- Photon Time: 9,000ms (45.0%)\n- ❌ Low Photon utilization - check for non-Photon operators\n\n### Data I/O\n- **Total Read:** 1.00 GB\n- From Cache: 1.0 KB (0.0%)\n- From Remote: 1.00 GB\n- Network Sent: 4.0 KB\n- ⚠️ **Spill to Disk:** 2.0 KB\n\n### Row Counts\n- Rows Read: 1,000,000\n- Rows Produced: 10\n- Selectivity: 0.0010%\n\n### Pruning Efficiency\n- Files Read: 40\n- Files Pruned: 60\n- Bytes Pruned: 4.9 KB\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|range join hints, join strategies|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Broadcast Nested Loop**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n\n⚠️ **1 joins have inequality conditions and may benefit from RANGE_JOIN hints:**\n\n**Join ID 3** (Broadcast Nested Loop)\n- Type: Inner\n- Left Keys: `ts`\n- Right Keys: `start`\n- **Condition (range candidate):** `ts >= start`\n\n**Recommendation:** Add RANGE_JOIN hints for these joins:\n```sql\nSELECT /*+ RANGE_JOIN(right_table, bin_size_seconds) */ ...\n```\nThe `bin_size` should match the typical range width (e.g., 86400 for daily ranges).\n\n### All Join Details\n\n#### Join 1: PhotonBroadcastNestedLoopJoin (ID: 3)\n- **Algorithm:** Broadcast Nested Loop\n- **Type:** Inner\n- **Build Side:** right\n- **Left Keys:** `ts`\n- **Right Keys:** `start`\n- **Condition:** `ts >= start`\n- **Wall Clock Time:** 6.0μs\n- **Output Rows:** 10\n\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|range join hints, join strategies|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Broadcast Nested Loop**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n\n⚠️ **1 joins have inequality conditions and may benefit from RANGE_JOIN hints:**\n\n**Join ID 3** (Broadcast Nested Loop)\n- Type: Inner\n- Left Keys: `ts`\n- Right Keys: `start`\n- **Condition (range candidate):** `ts >= start`\n\n**Recommendation:** Add RANGE_JOIN hints for these joins:\n```sql\nSELECT /*+ RANGE_JOIN(right_table, bin_size_seconds) */ ...\n```\nThe `bin_size` should match the typical range width (e.g., 86400 for daily ranges).\n\n### All Join Details\n\n#### Join 1: PhotonBroadcastNestedLoopJoin (ID: 3)\n- **Algorithm:** Broadcast Nested Loop\n- **Type:** Inner\n- **Build Side:** right\n- **Left Keys:** `ts`\n- **Right Keys:** `start`\n- **Condition:** `ts >= start`\n- **Wall Clock Time:** 6.0μs\n- **Output Rows:** 10\n\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|range join hints, join strategies|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Broadcast Nested Loop**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n\n⚠️ **1 joins have inequality conditions and may benefit from RANGE_JOIN hints:**\n\n**Join ID 3** (Broadcast Nested Loop)\n- Type: Inner\n- Left Keys: `ts`\n- Right Keys: `start`\n- **Condition (range candidate):** `ts >= start`\n\n**Recommendation:** Add RANGE_JOIN hints for these joins:\n```sql\nSELECT /*+ RANGE_JOIN(right_table, bin_size_seconds) */ ...\n```\nThe `bin_size` should match the typical range width (e.g., 86400 for daily ranges).\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|scan tables|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Data Sources (2 found)\n\n**Total Data Read:** 1.00 GB\n**Total Rows Read:** 1,000,000\n\n### Scanned Tables\n\n- `main.sales.orders` (1 scan(s))\n- `main.sales.items` (1 scan(s))\n",
+  "evidence_count": 2,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|scan tables|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Data Sources (2 found)\n\n**Total Data Read:** 1.00 GB\n**Total Rows Read:** 1,000,000\n\n### Scanned Tables\n\n- `main.sales.orders` (1 scan(s))\n- `main.sales.items` (1 scan(s))\n",
+  "evidence_count": 2,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|scan tables|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Data Sources (2 found)\n\n**Total Data Read:** 1.00 GB\n**Total Rows Read:** 1,000,000\n\n### Scanned Tables\n\n- `main.sales.orders` (1 scan(s))\n- `main.sales.items` (1 scan(s))\n",
+  "evidence_count": 2,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|shuffle exchange|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Shuffle Operations (1 found)\n\n**Total Network Transfer:** 4.0 KB\n\n### Shuffle Exchanges\n\n| ID | Name | Type |\n|----|------|------|\n| 4 | PhotonShuffleExchangeSink | Exchange |\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|shuffle exchange|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Shuffle Operations (1 found)\n\n**Total Network Transfer:** 4.0 KB\n\n### Shuffle Exchanges\n\n| ID | Name | Type |\n|----|------|------|\n| 4 | PhotonShuffleExchangeSink | Exchange |\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|shuffle exchange|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Shuffle Operations (1 found)\n\n**Total Network Transfer:** 4.0 KB\n\n### Shuffle Exchanges\n\nFound 1 shuffle operations in the plan.\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "liquid|skew|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Data Distribution Analysis\n\n**Read/Output Ratio:** 100,000.0x (1,000,000 read → 10 output)\n**Spill to Disk:** 2.0 KB\n\n### Skew Indicators\n\n⚠️ Very high read/output ratio suggests potential data skew or inefficient joins\n⚠️ Disk spill detected - may indicate memory pressure from skewed partitions\n",
+  "evidence_count": 2,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "skew"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|skew|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Data Distribution Analysis\n\n**Read/Output Ratio:** 100,000.0x (1,000,000 read → 10 output)\n**Spill to Disk:** 2.0 KB\n\n### Skew Indicators\n\n⚠️ Very high read/output ratio suggests potential data skew or inefficient joins\n⚠️ Disk spill detected - may indicate memory pressure from skewed partitions\n",
+  "evidence_count": 2,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "skew"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|skew|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Data Distribution Analysis\n\n**Read/Output Ratio:** 100,000.0x (1,000,000 read → 10 output)\n**Spill to Disk:** 2.0 KB\n\n### Skew Indicators\n\n⚠️ Very high read/output ratio suggests potential data skew or inefficient joins\n⚠️ Disk spill detected - may indicate memory pressure from skewed partitions\n",
+  "evidence_count": 2,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "skew"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|slow bottleneck|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Slowest Operators\n\n**Total Query Time:** 12,000 ms\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 3 | PhotonBroadcastNestedLoopJoin | 6,000 |\n| 2 | 1 | Scan main.sales.orders | 4,000 |\n| 3 | 2 | Scan main.sales.items | 1,000 |\n",
+  "evidence_count": 3,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|slow bottleneck|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Slowest Operators\n\n**Total Query Time:** 12,000 ms\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 3 | PhotonBroadcastNestedLoopJoin | 6,000 |\n| 2 | 1 | Scan main.sales.orders | 4,000 |\n| 3 | 2 | Scan main.sales.items | 1,000 |\n",
+  "evidence_count": 3,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|slow bottleneck|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Slowest Operators\n\n**Total Query Time:** 12,000 ms\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 3 | PhotonBroadcastNestedLoopJoin | 6,000 |\n| 2 | 1 | Scan main.sales.orders | 4,000 |\n| 3 | 2 | Scan main.sales.items | 1,000 |\n",
+  "evidence_count": 3,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|spill memory|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Memory Usage\n\n**Spill to Disk:** 2.0 KB\n\n⚠️ Disk spill detected. Consider:\n- Increasing executor memory\n- Adding more partitions to reduce partition size\n- Optimizing joins to reduce intermediate data\n",
+  "evidence_count": 1,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "memory"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|spill memory|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Memory Usage\n\n**Spill to Disk:** 2.0 KB\n\n⚠️ Disk spill detected. Consider:\n- Increasing executor memory\n- Adding more partitions to reduce partition size\n- Optimizing joins to reduce intermediate data\n",
+  "evidence_count": 1,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "memory"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|spill memory|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Memory Usage\n\n**Spill to Disk:** 2.0 KB\n\n⚠️ Disk spill detected. Consider:\n- Increasing executor memory\n- Adding more partitions to reduce partition size\n- Optimizing joins to reduce intermediate data\n",
+  "evidence_count": 1,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "memory"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|stage failed|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Spark Stages (2 total)\n\n### Summary\n- **Total Stages:** 2\n- **Completed:** 1\n- **Failed:** 1\n- **Total Tasks:** 14\n\n### ⚠️ Failed Stages\n\n**Stage 2**\n- Status: FAILED\n- Tasks: 4\n- **Failure Reason:** OOM\n\n\n### Slowest Stages\n\n- **Stage 1**: 4,000ms, 10 tasks, 10 completed\n",
+  "evidence_count": 2,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "stages"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|stage failed|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Spark Stages (2 total)\n\n### Summary\n- **Total Stages:** 2\n- **Completed:** 1\n- **Failed:** 1\n- **Total Tasks:** 14\n\n### ⚠️ Failed Stages\n\n**Stage 2**\n- Status: FAILED\n- Tasks: 4\n- **Failure Reason:** OOM\n\n\n### Slowest Stages\n\n- **Stage 1**: 4,000ms, 10 tasks, 10 completed\n",
+  "evidence_count": 2,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "stages"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|stage failed|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n## Spark Stages (2 total)\n\n### Summary\n- **Total Stages:** 2\n- **Completed:** 1\n- **Failed:** 1\n- **Total Tasks:** 14\n\n### ⚠️ Failed Stages\n\n**Stage 2**\n- Status: FAILED\n- Tasks: 4\n- **Failure Reason:** OOM\n\n",
+  "evidence_count": 2,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "stages"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|zzz|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Query Profile Overview\n\n**Query ID:** `q-1`\n**Status:** FINISHED\n**Total Time:** 12,000 ms\n**Data Read:** 1.00 GB\n**Rows Read:** 1,000,000\n\n### Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n**Operators:** 4 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 2\n",
+  "evidence_count": 4,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|zzz|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Query Profile Overview\n\n**Query ID:** `q-1`\n**Status:** FINISHED\n**Total Time:** 12,000 ms\n**Data Read:** 1.00 GB\n**Rows Read:** 1,000,000\n\n### Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n**Operators:** 4 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 2\n",
+  "evidence_count": 4,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "liquid|zzz|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `q-1`\n\n## Query Profile Overview\n\n**Query ID:** `q-1`\n**Status:** FINISHED\n**Total Time:** 12,000 ms\n**Data Read:** 1.00 GB\n**Rows Read:** 1,000,000\n\n### Original SQL\n\n```sql\nSELECT * FROM orders o JOIN items i ON o.ts >= i.start\n```\n\n**Operators:** 4 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 2\n",
+  "evidence_count": 4,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|cache io|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 0 B\n\n### Cache Efficiency\n❌ **Low:** 0% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|cache io|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 0 B\n\n### Cache Efficiency\n❌ **Low:** 0% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|cache io|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 0 B\n\n### Cache Efficiency\n❌ **Low:** 0% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|orders|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|orders|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|orders|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|overview|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Performance Overview\n\n\n### Data I/O\n- **Total Read:** 0 B\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|overview|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Performance Overview\n\n\n### Data I/O\n- **Total Read:** 0 B\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|overview|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Performance Overview\n\n\n### Data I/O\n- **Total Read:** 0 B\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|range join hints, join strategies|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Sort Merge**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n\n### All Join Details\n\n#### Join 1: SortMergeJoin (ID: 0)\n- **Algorithm:** Sort Merge\n- **Type:** SortMergeJoin\n- **Output Rows:** 5\n\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|range join hints, join strategies|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Sort Merge**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n\n### All Join Details\n\n#### Join 1: SortMergeJoin (ID: 0)\n- **Algorithm:** Sort Merge\n- **Type:** SortMergeJoin\n- **Output Rows:** 5\n\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|range join hints, join strategies|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Sort Merge**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|scan tables|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Data Sources (1 found)\n\n\n### Scanned Tables\n\n- `parquet` (1 scan(s))\n",
+  "evidence_count": 1,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|scan tables|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Data Sources (1 found)\n\n\n### Scanned Tables\n\n- `parquet` (1 scan(s))\n",
+  "evidence_count": 1,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|scan tables|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Data Sources (1 found)\n\n\n### Scanned Tables\n\n- `parquet` (1 scan(s))\n",
+  "evidence_count": 1,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|shuffle exchange|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Shuffle Operations (1 found)\n\n\n### Shuffle Exchanges\n\n| ID | Name | Type |\n|----|------|------|\n| 2 | Exchange hashpartitioning | Exchange |\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|shuffle exchange|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Shuffle Operations (1 found)\n\n\n### Shuffle Exchanges\n\n| ID | Name | Type |\n|----|------|------|\n| 2 | Exchange hashpartitioning | Exchange |\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|shuffle exchange|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Shuffle Operations (1 found)\n\n\n### Shuffle Exchanges\n\nFound 1 shuffle operations in the plan.\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard_array|skew|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|skew|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|skew|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|slow bottleneck|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Slowest Operators\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 0 | SortMergeJoin | 300 |\n",
+  "evidence_count": 1,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|slow bottleneck|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Slowest Operators\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 0 | SortMergeJoin | 300 |\n",
+  "evidence_count": 1,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|slow bottleneck|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Slowest Operators\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 0 | SortMergeJoin | 300 |\n",
+  "evidence_count": 1,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|spill memory|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|spill memory|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|spill memory|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|stage failed|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|stage failed|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|stage failed|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|zzz|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|zzz|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard_array|zzz|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|cache io|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 0 B\n\n### Cache Efficiency\n❌ **Low:** 0% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|cache io|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 0 B\n\n### Cache Efficiency\n❌ **Low:** 0% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|cache io|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Cache & I/O Analysis\n\n### Data Source Breakdown\n- **Total Bytes Read:** 0 B\n\n### Cache Efficiency\n❌ **Low:** 0% cache hit rate\nMost data read from remote storage. Consider:\n- Running queries to warm cache\n- Using Delta caching\n- Checking data locality\n",
+  "evidence_count": 1,
+  "focus_query": "cache io",
+  "has_more": false,
+  "sections_found": [
+   "cache"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|orders|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|orders|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|orders|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "orders",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|overview|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Performance Overview\n\n\n### Data I/O\n- **Total Read:** 0 B\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|overview|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Performance Overview\n\n\n### Data I/O\n- **Total Read:** 0 B\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|overview|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Performance Overview\n\n\n### Data I/O\n- **Total Read:** 0 B\n",
+  "evidence_count": 1,
+  "focus_query": "overview",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|range join hints, join strategies|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Sort Merge**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n\n### All Join Details\n\n#### Join 1: SortMergeJoin (ID: 0)\n- **Algorithm:** Sort Merge\n- **Type:** SortMergeJoin\n- **Output Rows:** 5\n\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|range join hints, join strategies|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Sort Merge**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n\n### All Join Details\n\n#### Join 1: SortMergeJoin (ID: 0)\n- **Algorithm:** Sort Merge\n- **Type:** SortMergeJoin\n- **Output Rows:** 5\n\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|range join hints, join strategies|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Join Operators (1 found)\n\n### Join Algorithms Used\n\n- **Sort Merge**: 1 occurrence(s)\n\n### Range Join Analysis\n❌ No RANGE_JOIN hints currently applied.\n",
+  "evidence_count": 1,
+  "focus_query": "range join hints, join strategies",
+  "has_more": false,
+  "sections_found": [
+   "joins"
+  ],
+  "suggested_followups": [
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|scan tables|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Data Sources (1 found)\n\n\n### Scanned Tables\n\n- `parquet` (1 scan(s))\n",
+  "evidence_count": 1,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|scan tables|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Data Sources (1 found)\n\n\n### Scanned Tables\n\n- `parquet` (1 scan(s))\n",
+  "evidence_count": 1,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|scan tables|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Data Sources (1 found)\n\n\n### Scanned Tables\n\n- `parquet` (1 scan(s))\n",
+  "evidence_count": 1,
+  "focus_query": "scan tables",
+  "has_more": false,
+  "sections_found": [
+   "scans"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|shuffle exchange|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Shuffle Operations (1 found)\n\n\n### Shuffle Exchanges\n\n| ID | Name | Type |\n|----|------|------|\n| 2 | Exchange hashpartitioning | Exchange |\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|shuffle exchange|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Shuffle Operations (1 found)\n\n\n### Shuffle Exchanges\n\n| ID | Name | Type |\n|----|------|------|\n| 2 | Exchange hashpartitioning | Exchange |\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|shuffle exchange|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Shuffle Operations (1 found)\n\n\n### Shuffle Exchanges\n\nFound 1 shuffle operations in the plan.\n",
+  "evidence_count": 1,
+  "focus_query": "shuffle exchange",
+  "has_more": false,
+  "sections_found": [
+   "shuffles"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "data sources, table scans",
+   "slow operators, execution time"
+  ]
+ },
+ "standard|skew|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|skew|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|skew|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "skew",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|slow bottleneck|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Slowest Operators\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 0 | SortMergeJoin | 300 |\n",
+  "evidence_count": 1,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|slow bottleneck|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Slowest Operators\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 0 | SortMergeJoin | 300 |\n",
+  "evidence_count": 1,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|slow bottleneck|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Slowest Operators\n\n| Rank | ID | Name | Time (ms) |\n|------|-----|------|-----------|\n| 1 | 0 | SortMergeJoin | 300 |\n",
+  "evidence_count": 1,
+  "focus_query": "slow bottleneck",
+  "has_more": false,
+  "sections_found": [
+   "performance"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|spill memory|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|spill memory|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|spill memory|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "spill memory",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|stage failed|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|stage failed|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|stage failed|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "stage failed",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|zzz|detailed": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|zzz|exhaustive": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ },
+ "standard|zzz|summary": {
+  "content": "# Query Profile Analysis\n\n**Query ID:** `unknown`\n\n## Query Profile Overview\n\n\n**Operators:** 3 total\n- Joins: 1\n- Shuffles: 1\n- Scans: 1\n",
+  "evidence_count": 3,
+  "focus_query": "zzz",
+  "has_more": false,
+  "sections_found": [
+   "overview"
+  ],
+  "suggested_followups": [
+   "join algorithms, broadcast vs shuffle",
+   "shuffle bottlenecks, network transfer",
+   "data sources, table scans"
+  ]
+ }
+}

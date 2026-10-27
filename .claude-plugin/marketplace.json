@@ -1,0 +1,23 @@
+{
+  "name": "starboard-marketplace",
+  "owner": {
+    "name": "Starboard",
+    "url": "https://github.com/databricks/starboard"
+  },
+  "plugins": [
+    {
+      "name": "starboard",
+      "source": "./plugin",
+      "description": "Databricks workload analysis & optimization \u2014 skills-only, routes to the starboard-helper CLI (no server required).",
+      "version": "0.2.0",
+      "keywords": [
+        "databricks",
+        "finops",
+        "unity-catalog",
+        "spark",
+        "optimization",
+        "diagnostics"
+      ]
+    }
+  ]
+}

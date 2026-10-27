@@ -1,0 +1,49 @@
+
+===============================================================================
+INTERACTIVE NEXT STEPS (REQUIRED)
+===============================================================================
+
+**CRITICAL:** `next_steps` is REQUIRED at TOP LEVEL of tool output (sibling to `report`, NOT nested).
+
+**JSON Structure:**
+{% raw %}```json
+{
+  "summary": { ... },
+  "findings": [ ... ],
+  "next_steps": [
+    {
+      "id": "unique_action_id_1",
+      "number": 1,
+      "title": "Short action title (3-7 words)",
+      "description": "One sentence explaining value",
+      "action_type": "continue | route | tool_call",
+      "target_agent": "agent_name or null",
+      "tool_name": "tool_name or null",
+      "parameters": { "key": "value" } or null
+    }
+  ]
+}
+```{% endraw %}
+
+**Action Types:**
+- `continue`: Stay with current agent
+- `route`: Hand off to specialist (compute/query/job/uc/analytics/warehouse)
+- `tool_call`: Pre-fill tool parameters
+
+**Requirements:**
+- ALWAYS 2-5 options (never 0 or >9)
+- Number sequentially from 1
+- First option = action-oriented (implement/fix/analyze)
+- Include routing option when cross-domain relevant
+- Titles: 3-7 words, action-focused
+- Descriptions: 1 sentence value proposition
+- Parameters: Include entity IDs or "context" field
+
+**Common Patterns:**
+1. Implement recommendation (continue)
+2. Drill into top finding (continue/tool_call)
+3. Analyze related resource (route)
+4. Compare to baseline (continue)
+5. Explain details (continue)
+
+**NEVER omit—UI requires this field.**

@@ -1,0 +1,15 @@
+{
+  "statement_id": "s-1",
+  "metrics": {
+    "total_duration_ms": 12000,
+    "read_bytes": 1073741824,
+    "rows_produced_count": 10,
+    "bytes_read_from_cache_pct": 12.5,
+    "spill_to_disk_bytes": 2048,
+    "photon_used": true,
+    "compilationTimeMs": 500,
+    "task_total_time_ms": 20000,
+    "pruned_files": 60
+  },
+  "operators": [{"id": "1", "value": 4000}]
+}

@@ -1,0 +1,247 @@
+# Tier 1 Network and Shuffle Patterns
+version: "1.0.0"
+
+patterns:
+  - id: shuffle_fetch_failed
+    name: "Shuffle Fetch Failed Exception"
+    category: shuffle
+    severity: high
+    responsibility: configuration
+
+    keywords:
+      - "FetchFailedException"
+      - "shuffle fetch"
+      - "fetch failed"
+      - "shuffle block"
+      - "Failed to fetch"
+
+    regex_patterns:
+      - "org\\.apache\\.spark\\.shuffle\\.FetchFailedException"
+      - "Failed to fetch.*shuffle"
+      - "shuffle.*fetch.*failed"
+      - "FetchFailedException"
+
+    exception_class: "FetchFailedException"
+
+    root_cause: |
+      Executor failed to fetch shuffle data from another executor. Common causes:
+      source executor died, network issues, shuffle file corruption, or disk 
+      space issues on the source executor.
+
+    symptoms:
+      - "FetchFailedException in logs"
+      - "Stage retry after fetch failure"
+      - "Executor lost before fetch complete"
+
+    root_causes:
+      - "Source executor OOM killed"
+      - "Network connectivity issues"
+      - "Shuffle file corrupted or deleted"
+      - "Disk full on source executor"
+
+    remediation:
+      - "Check if source executor had OOM issues"
+      - "Increase spark.reducer.maxReqsInFlight"
+      - "Enable external shuffle service"
+      - "Review network stability"
+
+    recommendations:
+      - id: enable_external_shuffle
+        priority: high
+        action: "Enable external shuffle service"
+        implementation: |
+          spark.shuffle.service.enabled = true
+        verification: "Shuffle operations survive executor failures"
+
+      - id: reduce_fetch_parallelism
+        priority: medium
+        action: "Reduce concurrent fetch requests"
+        implementation: |
+          spark.reducer.maxReqsInFlight = 1
+          spark.reducer.maxBlocksInFlightPerAddress = 1
+        verification: "Reduced fetch failures"
+
+    evidence_checklist:
+      required:
+        - "FetchFailedException in logs"
+      supporting:
+        - "Executor lost event before fetch failure"
+        - "Network timeout messages"
+        - "Disk space warnings"
+
+    confidence_factors:
+      increase:
+        - "Executor OOM kill before fetch failure"
+        - "Multiple executors failed to fetch from same source"
+        - "Network-related errors in same timeframe"
+      decrease:
+        - "Single transient failure"
+        - "Retry succeeded immediately"
+
+    related_patterns:
+      - exit_code_137
+      - executor_lost
+      - connection_timeout
+
+    docs:
+      - "https://docs.databricks.com/kb/scala/shuffle-fetch-failed.html"
+      - "https://spark.apache.org/docs/latest/configuration.html#shuffle-behavior"
+
+  - id: connection_timeout
+    name: "Connection Timeout or Reset"
+    category: network
+    severity: medium
+    responsibility: infrastructure
+
+    keywords:
+      - "Connection reset"
+      - "Connection timed out"
+      - "connection refused"
+      - "timeout"
+      - "broken pipe"
+
+    regex_patterns:
+      - "[Cc]onnection reset"
+      - "[Cc]onnection timed out"
+      - "[Cc]onnection refused"
+      - "[Bb]roken pipe"
+      - "java\\.net\\.(ConnectException|SocketException|SocketTimeoutException)"
+
+    exception_class: "java\\.net\\.(ConnectException|SocketException|SocketTimeoutException)"
+
+    root_cause: |
+      Network connection failed or was reset. Can indicate network instability,
+      firewall issues, DNS problems, or target service overload.
+
+    symptoms:
+      - "Connection reset by peer"
+      - "Connection timed out"
+      - "java.net.SocketException"
+
+    root_causes:
+      - "Network instability or packet loss"
+      - "Firewall blocking connection"
+      - "Target service overloaded"
+      - "DNS resolution failure"
+
+    remediation:
+      - "Check network connectivity between nodes"
+      - "Verify firewall rules"
+      - "Increase connection timeout settings"
+      - "Check target service health"
+
+    recommendations:
+      - id: increase_timeout
+        priority: medium
+        action: "Increase network timeout settings"
+        implementation: |
+          spark.network.timeout = 600s
+          spark.executor.heartbeatInterval = 20s
+        verification: "Reduced timeout errors"
+
+    evidence_checklist:
+      required:
+        - "Connection reset/timeout in logs"
+      supporting:
+        - "Multiple hosts affected"
+        - "Consistent failure pattern"
+
+    confidence_factors:
+      increase:
+        - "Multiple nodes experiencing same issue"
+        - "Consistent timeout threshold"
+        - "Network-related errors in cluster events"
+      decrease:
+        - "Single transient failure"
+        - "Immediate successful retry"
+
+    related_patterns:
+      - shuffle_fetch_failed
+      - executor_lost
+
+    docs:
+      - "https://docs.databricks.com/kb/clusters/network-connectivity.html"
+
+  - id: data_skew
+    name: "Data Skew Detected"
+    category: performance
+    severity: medium
+    responsibility: user_code
+
+    keywords:
+      - "skew"
+      - "data skew"
+      - "partition skew"
+      - "straggler"
+      - "slow task"
+
+    regex_patterns:
+      - "(?:data|partition)\\s+skew"
+      - "straggler\\s+task"
+      - "task.*significantly slower"
+
+    message_pattern: "skew"
+
+    root_cause: |
+      Uneven data distribution causes some tasks to process significantly more 
+      data than others. The job is limited by the slowest (straggler) task.
+
+    symptoms:
+      - "One task takes much longer than others"
+      - "Most tasks complete quickly, few take very long"
+      - "Max task duration >> median task duration"
+
+    root_causes:
+      - "Uneven partition key distribution"
+      - "Null values in join keys"
+      - "Hot keys in groupBy operations"
+      - "Poor choice of partitioning column"
+
+    remediation:
+      - "Identify skewed keys and handle separately"
+      - "Use salting technique for hot keys"
+      - "Filter out null keys before joins"
+      - "Repartition data more evenly"
+
+    recommendations:
+      - id: use_salting
+        priority: high
+        action: "Apply salting technique for skewed keys"
+        implementation: |
+          # Salt the join key
+          from pyspark.sql.functions import concat, lit, rand
+          df = df.withColumn("salted_key", concat(col("key"), lit("_"), (rand() * 10).cast("int")))
+        verification: "Task durations become more uniform"
+
+      - id: handle_nulls
+        priority: medium
+        action: "Handle null keys separately"
+        implementation: |
+          # Process null keys separately
+          non_null_df = df.filter(col("key").isNotNull())
+          null_df = df.filter(col("key").isNull())
+        verification: "Null key processing separated"
+
+    evidence_checklist:
+      required:
+        - "Evidence of skewed task durations"
+      supporting:
+        - "Max task duration > 5x median"
+        - "Few partitions with most data"
+
+    confidence_factors:
+      increase:
+        - "Spark UI shows task duration variance"
+        - "groupBy or join operations in plan"
+        - "Known skewed keys in data"
+      decrease:
+        - "Uniform task durations"
+        - "Small dataset"
+
+    related_patterns:
+      - gc_overhead_limit
+      - java_heap_space
+
+    docs:
+      - "https://docs.databricks.com/best-practices/data-skew.html"
+

@@ -1,0 +1,61 @@
+{
+  "ok": true,
+  "domain": "diff",
+  "command": "settings",
+  "data": {
+    "a": "settings_a.json",
+    "b": "settings_b.json",
+    "counts": {
+      "added": 3,
+      "removed": 2,
+      "changed": 3,
+      "unchanged": 7
+    },
+    "added": [
+      {
+        "path": "$.settings.tags.team",
+        "b": "data-eng"
+      },
+      {
+        "path": "$.settings.tasks[0].new_cluster.autoscale.max_workers",
+        "b": 8
+      },
+      {
+        "path": "$.settings.tasks[0].new_cluster.autoscale.min_workers",
+        "b": 2
+      }
+    ],
+    "removed": [
+      {
+        "path": "$.settings.tasks[0].new_cluster.num_workers",
+        "a": 4
+      },
+      {
+        "path": "$.settings.timeout_seconds",
+        "a": 3600
+      }
+    ],
+    "changed": [
+      {
+        "path": "$.settings.schedule.quartz_cron_expression",
+        "a": "0 0 2 * * ?",
+        "b": "0 30 2 * * ?"
+      },
+      {
+        "path": "$.settings.tasks[0].new_cluster.spark_conf[\"spark.sql.shuffle.partitions\"]",
+        "a": "200",
+        "b": "auto"
+      },
+      {
+        "path": "$.settings.tasks[0].new_cluster.spark_version",
+        "a": "14.3.x-scala2.12",
+        "b": "15.4.x-scala2.12"
+      }
+    ]
+  },
+  "error": null,
+  "meta": {
+    "format": "json",
+    "contract_version": "1.0"
+  }
+}

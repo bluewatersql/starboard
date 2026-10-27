@@ -1,0 +1,84 @@
+{
+  "ok": true,
+  "domain": "diff",
+  "command": "metrics",
+  "data": {
+    "a": "metrics_a.json",
+    "b": "metrics_b.json",
+    "counts": {
+      "keys": 9,
+      "changed": 6,
+      "only_a": 1,
+      "only_b": 1
+    },
+    "metrics": [
+      {
+        "key": "$.metrics.bytes_read_from_cache_pct",
+        "a": 12.5,
+        "b": 40.0,
+        "delta": 27.5,
+        "unit": "pp"
+      },
+      {
+        "key": "$.metrics.compilationTimeMs",
+        "a": 500,
+        "b": 450,
+        "delta": -50,
+        "unit": "ms"
+      },
+      {
+        "key": "$.metrics.pruned_files",
+        "a": 60,
+        "b": 90,
+        "delta": 30
+      },
+      {
+        "key": "$.metrics.queue_wait_ms",
+        "a": null,
+        "b": 120,
+        "delta": null,
+        "unit": "ms"
+      },
+      {
+        "key": "$.metrics.read_bytes",
+        "a": 1073741824,
+        "b": 536870912,
+        "delta": -536870912,
+        "unit": "bytes"
+      },
+      {
+        "key": "$.metrics.rows_produced_count",
+        "a": 10,
+        "b": 10,
+        "delta": 0,
+        "unit": "count"
+      },
+      {
+        "key": "$.metrics.spill_to_disk_bytes",
+        "a": 2048,
+        "b": null,
+        "delta": null,
+        "unit": "bytes"
+      },
+      {
+        "key": "$.metrics.task_total_time_ms",
+        "a": 20000,
+        "b": 16000,
+        "delta": -4000,
+        "unit": "ms"
+      },
+      {
+        "key": "$.metrics.total_duration_ms",
+        "a": 12000,
+        "b": 9000,
+        "delta": -3000,
+        "unit": "ms"
+      }
+    ]
+  },
+  "error": null,
+  "meta": {
+    "format": "json",
+    "contract_version": "1.0"
+  }
+}

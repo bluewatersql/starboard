@@ -1,0 +1,5 @@
+{
+  "exit": 0,
+  "files": {},
+  "stdout": "{\n  \"ok\": true,\n  \"domain\": \"job\",\n  \"command\": \"list\",\n  \"data\": {\n    \"jobs\": [\n      {\n        \"job_id\": 0,\n        \"name\": \"job-0\"\n      },\n      {\n        \"job_id\": 1,\n        \"name\": \"job-1\"\n      }\n    ],\n    \"count\": 2\n  },\n  \"error\": null,\n  \"meta\": {\n    \"format\": \"json\",\n    \"contract_version\": \"1.0\"\n  }\n}\n"
+}

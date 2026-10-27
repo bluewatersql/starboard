@@ -1,0 +1,424 @@
+# Tier 1b Execution and Storage Patterns
+version: "1.0.0"
+
+patterns:
+  # ============================================================================
+  # EXECUTION / EXECUTOR PATTERNS
+  # ============================================================================
+  - id: executor_lost
+    name: "Executor Lost"
+    category: execution
+    severity: high
+    responsibility: configuration
+
+    keywords:
+      - "ExecutorLostFailure"
+      - "executor lost"
+      - "Executor heartbeat timed out"
+      - "Lost executor"
+      - "executor is no longer available"
+
+    regex_patterns:
+      - "ExecutorLostFailure"
+      - "[Ll]ost executor \\d+"
+      - "Executor heartbeat timed out"
+      - "executor.*is no longer available"
+      - "Reason: Executor \\d+ (exited|lost)"
+
+    exception_class: "ExecutorLostFailure"
+
+    root_cause: |
+      An executor was lost during job execution. The driver lost contact with
+      the executor, typically due to OOM kill, spot termination, or node failure.
+
+    symptoms:
+      - "ExecutorLostFailure in stage"
+      - "Lost executor N: reason"
+      - "Tasks resubmitted after executor loss"
+
+    root_causes:
+      - "Executor OOM killed (exit code 137)"
+      - "Spot/preemptible instance terminated"
+      - "Node failure or network partition"
+      - "GC pause too long (heartbeat timeout)"
+
+    remediation:
+      - "Check executor logs for OOM before loss"
+      - "Increase executor memory if OOM"
+      - "Enable external shuffle service"
+      - "Use on-demand instances for critical jobs"
+
+    recommendations:
+      - id: check_oom
+        priority: high
+        action: "Check if executor was OOM killed"
+        implementation: "Look for exit code 137 or OOMKilled in cluster events"
+        verification: "Root cause identified"
+
+      - id: use_on_demand
+        priority: medium
+        action: "Use on-demand instances for stability"
+        implementation: "Set spot_instance_policy to ON_DEMAND in cluster config"
+        verification: "No spot terminations"
+
+    evidence_checklist:
+      required:
+        - "ExecutorLostFailure in logs"
+      supporting:
+        - "Exit code 137 from executor"
+        - "Spot termination notice"
+        - "GC timeout before loss"
+
+    confidence_factors:
+      increase:
+        - "Exit code 137 in executor termination"
+        - "Spot termination event in cluster logs"
+        - "GC overhead warnings before loss"
+      decrease:
+        - "Executor restarted successfully"
+        - "Single transient loss"
+
+    related_patterns:
+      - exit_code_137
+      - shuffle_fetch_failed
+      - gc_overhead_limit
+
+    docs:
+      - "https://docs.databricks.com/kb/clusters/executor-lost.html"
+
+  - id: stage_failed_retries
+    name: "Stage Failed After Max Retries"
+    category: execution
+    severity: critical
+    responsibility: configuration
+
+    keywords:
+      - "Stage failed"
+      - "max retries"
+      - "Task failed"
+      - "Stage aborted"
+      - "Job aborted due to stage failure"
+
+    regex_patterns:
+      - "Stage \\d+ failed \\d+ times"
+      - "Job aborted due to stage failure"
+      - "Task \\d+ in stage \\d+ failed \\d+ times"
+      - "max task failures"
+
+    message_pattern: "stage.*failed.*times"
+
+    root_cause: |
+      A stage failed after exhausting all retries. The underlying task failures
+      need investigation - could be OOM, data issues, or code bugs.
+
+    symptoms:
+      - "Stage N failed M times"
+      - "Job aborted due to stage failure"
+      - "All task attempts failed"
+
+    root_causes:
+      - "Underlying OOM errors in tasks"
+      - "Data corruption or malformed records"
+      - "Code bug causing consistent failures"
+      - "External service unavailable"
+
+    remediation:
+      - "Check task failure reasons in Spark UI"
+      - "Look for common exceptions across all failures"
+      - "Increase retries for transient failures"
+      - "Fix underlying data or code issues"
+
+    recommendations:
+      - id: check_task_errors
+        priority: high
+        action: "Examine task failure reasons"
+        implementation: "Review failed task logs in Spark UI"
+        verification: "Root cause of task failures identified"
+
+      - id: increase_retries
+        priority: low
+        action: "Increase max task failures (for transient issues)"
+        implementation: |
+          spark.task.maxFailures = 8
+        verification: "Only use if failures are transient"
+
+    evidence_checklist:
+      required:
+        - "Stage failed after retries"
+        - "Job aborted message"
+      supporting:
+        - "Consistent exception across tasks"
+        - "All task attempts with same error"
+
+    confidence_factors:
+      increase:
+        - "Same error in all task attempts"
+        - "Immediate failure each retry"
+      decrease:
+        - "Intermittent failures with some successes"
+        - "Transient errors"
+
+    related_patterns:
+      - executor_lost
+      - java_heap_space
+      - shuffle_fetch_failed
+
+    docs:
+      - "https://spark.apache.org/docs/latest/configuration.html#scheduling"
+
+  - id: task_not_serializable
+    name: "Task Not Serializable Exception"
+    category: execution
+    severity: high
+    responsibility: user_code
+
+    keywords:
+      - "NotSerializableException"
+      - "Task not serializable"
+      - "object not serializable"
+      - "SparkException: Task not serializable"
+
+    regex_patterns:
+      - "NotSerializableException"
+      - "Task not serializable"
+      - "object not serializable"
+      - "java\\.io\\.NotSerializableException"
+
+    exception_class: "NotSerializableException|SparkException"
+    message_pattern: "[Nn]ot [Ss]erializable"
+
+    root_cause: |
+      Code references an object that cannot be serialized and sent to executors.
+      Common when lambdas/UDFs capture outer scope objects like connections,
+      SparkSession, or non-serializable classes.
+
+    symptoms:
+      - "org.apache.spark.SparkException: Task not serializable"
+      - "java.io.NotSerializableException: ClassName"
+      - "Serialization stack trace"
+
+    root_causes:
+      - "Lambda capturing non-serializable object"
+      - "UDF referencing outer scope connection/client"
+      - "Custom class missing Serializable interface"
+      - "Accidentally capturing SparkContext/Session"
+
+    remediation:
+      - "Move object creation inside the lambda/UDF"
+      - "Use broadcast variables for shared data"
+      - "Make captured classes implement Serializable"
+      - "Use static methods instead of instance methods"
+
+    recommendations:
+      - id: move_creation
+        priority: high
+        action: "Create objects inside the transformation"
+        implementation: |
+          # Instead of:
+          client = create_client()
+          df.map(lambda x: client.process(x))  # WRONG - captures client
+          
+          # Do:
+          def process_with_client(x):
+              client = create_client()  # Create inside
+              return client.process(x)
+          df.map(process_with_client)
+        verification: "No NotSerializableException"
+
+      - id: broadcast_data
+        priority: medium
+        action: "Use broadcast for shared read-only data"
+        implementation: |
+          lookup_data = {...}
+          bc_lookup = spark.sparkContext.broadcast(lookup_data)
+          df.map(lambda x: bc_lookup.value.get(x))
+        verification: "Data available on all executors"
+
+    evidence_checklist:
+      required:
+        - "NotSerializableException in logs"
+        - "Class name that failed serialization"
+      supporting:
+        - "Serialization stack trace"
+        - "Lambda/UDF in failing code"
+
+    confidence_factors:
+      increase:
+        - "Clear class name in exception"
+        - "Stack trace shows lambda capture"
+      decrease:
+        - "Ambiguous error message"
+
+    related_patterns:
+      - stage_failed_retries
+
+    docs:
+      - "https://docs.databricks.com/kb/scala/task-not-serializable.html"
+
+  # ============================================================================
+  # STORAGE / DISK PATTERNS
+  # ============================================================================
+  - id: disk_space_exhausted
+    name: "Disk Space Exhausted"
+    category: storage
+    severity: critical
+    responsibility: configuration
+
+    keywords:
+      - "No space left"
+      - "disk space"
+      - "insufficient disk"
+      - "ENOSPC"
+      - "out of disk"
+
+    regex_patterns:
+      - "No space left on device"
+      - "ENOSPC"
+      - "[Dd]isk space (exhausted|full|insufficient)"
+      - "not enough space"
+      - "IOException.*No space left"
+
+    message_pattern: "(No space left|ENOSPC|disk.*full)"
+
+    root_cause: |
+      Local disk on executor or driver is full. Common during heavy shuffle
+      operations, large cache operations, or when spilling to disk.
+
+    symptoms:
+      - "No space left on device"
+      - "IOException during shuffle write"
+      - "Failed to spill to disk"
+
+    root_causes:
+      - "Shuffle data exceeded local disk capacity"
+      - "Large cache operations filled disk"
+      - "Spill to disk during aggregations"
+      - "Too many shuffle files"
+
+    remediation:
+      - "Use larger instance types with more disk"
+      - "Configure additional scratch volumes"
+      - "Reduce shuffle partitions"
+      - "Clean up intermediate data"
+
+    recommendations:
+      - id: larger_instance
+        priority: high
+        action: "Use instance type with more local storage"
+        implementation: "Choose storage-optimized instance (e.g., i3 family on AWS)"
+        verification: "Sufficient disk space for shuffle"
+
+      - id: add_ebs
+        priority: medium
+        action: "Add additional EBS volumes for scratch space"
+        implementation: "Configure additional volumes in cluster config"
+        verification: "More disk space available"
+
+    evidence_checklist:
+      required:
+        - "No space left error in logs"
+      supporting:
+        - "Shuffle in progress"
+        - "Large cache operations"
+        - "Spill warnings before failure"
+
+    confidence_factors:
+      increase:
+        - "Clear ENOSPC error"
+        - "Shuffle stage running"
+      decrease:
+        - "Transient error"
+        - "Small data job"
+
+    related_patterns:
+      - shuffle_fetch_failed
+      - java_heap_space
+
+    docs:
+      - "https://docs.databricks.com/clusters/configure.html#ssd-storage"
+
+  - id: s3_access_denied
+    name: "S3/Cloud Storage Access Denied"
+    category: storage
+    severity: high
+    responsibility: configuration
+
+    keywords:
+      - "AccessDeniedException"
+      - "Access Denied"
+      - "403 Forbidden"
+      - "s3 access"
+      - "storage access denied"
+
+    regex_patterns:
+      - "AccessDeniedException"
+      - "Access Denied"
+      - "403.*Forbidden"
+      - "S3Exception.*Access Denied"
+      - "Status Code: 403"
+
+    exception_class: "(AccessDeniedException|S3Exception)"
+    message_pattern: "(Access Denied|403.*Forbidden)"
+
+    root_cause: |
+      Cluster cannot access cloud storage location. Missing IAM role,
+      incorrect bucket policy, or storage credential not configured.
+
+    symptoms:
+      - "Access Denied when reading/writing S3"
+      - "403 Forbidden response"
+      - "AccessDeniedException"
+
+    root_causes:
+      - "IAM role lacks required permissions"
+      - "Bucket policy denies access"
+      - "Unity Catalog storage credential missing"
+      - "Cross-account access not configured"
+
+    remediation:
+      - "Verify IAM role has s3:GetObject, s3:PutObject"
+      - "Check bucket policy allows cluster role"
+      - "Configure storage credential in Unity Catalog"
+      - "Verify cross-account trust if applicable"
+
+    recommendations:
+      - id: check_iam
+        priority: high
+        action: "Verify IAM role permissions"
+        implementation: |
+          # Required S3 permissions:
+          s3:GetObject
+          s3:PutObject
+          s3:DeleteObject
+          s3:ListBucket
+        verification: "IAM role has required permissions"
+
+      - id: check_bucket_policy
+        priority: medium
+        action: "Review bucket policy"
+        implementation: "Check bucket policy allows access from cluster role ARN"
+        verification: "Bucket policy permits access"
+
+    evidence_checklist:
+      required:
+        - "Access Denied or 403 in error"
+        - "S3 path in error"
+      supporting:
+        - "IAM role information in cluster config"
+        - "Bucket name visible in error"
+
+    confidence_factors:
+      increase:
+        - "Clear S3 path in error"
+        - "403 status code"
+      decrease:
+        - "Transient 500 error"
+        - "Network-related error"
+
+    related_patterns:
+      - permission_denied
+
+    docs:
+      - "https://docs.databricks.com/storage/amazon-s3.html"
+      - "https://docs.databricks.com/data-governance/unity-catalog/manage-external-locations.html"
+

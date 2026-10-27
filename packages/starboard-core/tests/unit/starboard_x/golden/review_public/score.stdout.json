@@ -1,0 +1,176 @@
+{
+  "ok": true,
+  "domain": "review",
+  "command": "score",
+  "data": {
+    "workspace": "acme",
+    "requested_domains": [
+      "jobs",
+      "sql",
+      "warehouse"
+    ],
+    "findings": [
+      {
+        "finding": {
+          "id": "warehouse_auto_stop_disabled::wh-idle",
+          "severity": "high",
+          "category": "warehouse",
+          "summary": "Reduce idle running time on SQL warehouses",
+          "rationale": "Disabling auto-stop (or setting a very long idle timeout) is a common source of avoidable cost; idle running minutes produce no query value.",
+          "current_state": "Warehouse wh-idle spent 80% of its running time (12h idle) with zero queries \u2014 auto-stop is effectively disabled or set too long.",
+          "suggested_fix": "Set a short auto-stop window (for example 5-10 minutes) unless a documented low-latency SLA requires the warehouse to stay warm.",
+          "impact": 4,
+          "effort": "XS",
+          "confidence": "medium",
+          "location": {
+            "file": null,
+            "line": null,
+            "table": null,
+            "entity": "wh-idle",
+            "entity_type": "warehouse"
+          },
+          "rule_id": "warehouse_auto_stop_disabled",
+          "source": null,
+          "score": 12.0,
+          "bucket": "This Sprint"
+        },
+        "evidence": [
+          {
+            "query_id": "W-W02",
+            "row_index": 0,
+            "row": {
+              "warehouse_id": "wh-idle",
+              "idle_running_hours": 12.0,
+              "auto_stop_waste_pct": 80.0
+            }
+          }
+        ],
+        "metadata": {},
+        "score": 12.0
+      },
+      {
+        "finding": {
+          "id": "non_sargable_partition_filter::stmt-prune",
+          "severity": "high",
+          "category": "query",
+          "summary": "Keep partition filters sargable",
+          "rationale": "A predicate like CAST(event_date AS STRING) = '2026-01-01' cannot use partition metadata, so the scan reads every partition instead of one.",
+          "current_state": "Query stmt-prune read 500 partitions at a 2% pruning ratio \u2014 partition pruning is not applying, the hallmark of a non-sargable partition filter.",
+          "suggested_fix": "Compare the partition column directly (or push the cast onto the literal) so partition pruning applies.",
+          "impact": 4,
+          "effort": "S",
+          "confidence": "medium",
+          "location": {
+            "file": null,
+            "line": null,
+            "table": null,
+            "entity": "stmt-prune",
+            "entity_type": "query"
+          },
+          "rule_id": "non_sargable_partition_filter",
+          "source": null,
+          "score": 6.0,
+          "bucket": "Backlog"
+        },
+        "evidence": [
+          {
+            "query_id": "C-Q02",
+            "row_index": 0,
+            "row": {
+              "statement_id": "stmt-prune",
+              "pruning_ratio": 0.02,
+              "read_partitions": 500
+            }
+          }
+        ],
+        "metadata": {},
+        "score": 6.0
+      }
+    ],
+    "domain_reports": [
+      {
+        "domain": "jobs",
+        "rule_domain": "jobs",
+        "rules_evaluated": 6,
+        "evidence_query_ids": [
+          "C-J03",
+          "C-J04",
+          "C-J08",
+          "C-J09",
+          "F-03"
+        ],
+        "degraded": true,
+        "degraded_reason": "evidence queries unavailable: C-J03, C-J04, C-J08, C-J09, F-03",
+        "finding_count": 0,
+        "unavailable_query_ids": [
+          "C-J03",
+          "C-J04",
+          "C-J08",
+          "C-J09",
+          "F-03"
+        ],
+        "evidence_capped_query_ids": [],
+        "suppressed_rules": {},
+        "capped_rules": {}
+      },
+      {
+        "domain": "sql",
+        "rule_domain": "query",
+        "rules_evaluated": 2,
+        "evidence_query_ids": [
+          "C-Q02"
+        ],
+        "degraded": false,
+        "degraded_reason": null,
+        "finding_count": 1,
+        "unavailable_query_ids": [],
+        "evidence_capped_query_ids": [],
+        "suppressed_rules": {
+          "select_star_projection": "required evidence column 'statement_text' is unavailable in C-Q02 (no row carries it); rule not evaluated"
+        },
+        "capped_rules": {}
+      },
+      {
+        "domain": "warehouse",
+        "rule_domain": "warehouse",
+        "rules_evaluated": 4,
+        "evidence_query_ids": [
+          "W-W01",
+          "W-W02",
+          "W-W07"
+        ],
+        "degraded": true,
+        "degraded_reason": "evidence queries unavailable: W-W01, W-W07",
+        "finding_count": 1,
+        "unavailable_query_ids": [
+          "W-W01",
+          "W-W07"
+        ],
+        "evidence_capped_query_ids": [],
+        "suppressed_rules": {},
+        "capped_rules": {}
+      }
+    ],
+    "cost_basis": "DBU list-price estimate (public data; not a finance-grade figure)",
+    "finding_count": 2,
+    "degraded": true,
+    "unavailable_queries": [
+      "C-J03",
+      "C-J04",
+      "C-J08",
+      "C-J09",
+      "F-03",
+      "W-W01",
+      "W-W07"
+    ],
+    "unavailable_domains": [
+      "jobs",
+      "warehouse"
+    ]
+  },
+  "error": null,
+  "meta": {
+    "format": "json",
+    "contract_version": "1.0"
+  }
+}

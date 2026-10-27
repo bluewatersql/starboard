@@ -1,0 +1,7 @@
+{
+  "exit": 0,
+  "files": {
+    "jobs.json": "{\n  \"ok\": true,\n  \"domain\": \"job\",\n  \"command\": \"list\",\n  \"data\": {\n    \"jobs\": [\n      {\n        \"job_id\": 0,\n        \"name\": \"job-0\"\n      },\n      {\n        \"job_id\": 1,\n        \"name\": \"job-1\"\n      }\n    ],\n    \"count\": 2\n  },\n  \"error\": null,\n  \"meta\": {\n    \"format\": \"json\",\n    \"contract_version\": \"1.0\"\n  }\n}"
+  },
+  "stdout": "{\n  \"ok\": true,\n  \"domain\": \"job\",\n  \"command\": \"list\",\n  \"out\": \"<TMP>/jobs.json\",\n  \"bytes\": 318,\n  \"meta\": {\n    \"format\": \"json\",\n    \"contract_version\": \"1.0\"\n  },\n  \"rows\": 2,\n  \"note\": \"Full JSON written to <TMP>/jobs.json. Read that file for the data.\"\n}\n"
+}

@@ -1,0 +1,54 @@
+{
+  "snapshot_version": "2.0",
+  "run_date": "<VOLATILE>",
+  "workspace": "ws-856",
+  "workspace_id": "856",
+  "lookback_days": 30,
+  "products_dbu": {},
+  "findings": [],
+  "degraded": true,
+  "unavailable_queries": [
+    "C-J03",
+    "C-J04",
+    "C-J08",
+    "C-J09",
+    "C-Q02",
+    "F-03",
+    "W-W01",
+    "W-W02",
+    "W-W07"
+  ],
+  "unavailable_domains": [
+    "jobs",
+    "sql",
+    "warehouse"
+  ],
+  "reviewed_domains": [
+    "jobs",
+    "sql",
+    "warehouse"
+  ],
+  "cost_basis": "DBU list-price estimate (workspace telemetry; not a finance-grade figure)",
+  "evidence_source": {
+    "kind": "discovery",
+    "path": "<ROOT>/outdir",
+    "envelope_file": "<ROOT>/outdir/discovery.json",
+    "discovery_source": "internal",
+    "discovery_generated_at": "<VOLATILE>",
+    "discovery_window": {
+      "start": "<WINDOW_DATE>",
+      "end": "<WINDOW_DATE>",
+      "days": 30,
+      "label": "trailing 30 full days (excludes today)"
+    },
+    "lookback_days": 30,
+    "workspace_ids": [
+      "856"
+    ],
+    "account": null
+  },
+  "discovery_skipped": [],
+  "coverage_note": "0 discovery queries skipped; 9 review evidence queries failed or missing in the discovery output (C-J03, C-J04, C-J08, C-J09, C-Q02, F-03, W-W01, W-W02, W-W07).",
+  "suppressed_rules": {},
+  "finding_count": 0
+}
